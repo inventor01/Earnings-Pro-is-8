@@ -101,3 +101,9 @@ async def delete_entry(entry_id: int, db: Session = Depends(get_db)):
     db.delete(db_entry)
     db.commit()
     return {"message": "Entry deleted successfully"}
+
+@router.delete("/entries")
+async def delete_all_entries(db: Session = Depends(get_db)):
+    db.query(Entry).delete()
+    db.commit()
+    return {"message": "All entries deleted successfully"}

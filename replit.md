@@ -28,6 +28,12 @@ This application helps delivery drivers:
 - Automatic date detection - notifies user when date changes
 
 ## Recent Changes (November 23, 2025 - Latest)
+- **Added "Reset All Data" in Settings**: New "Danger Zone" section in settings drawer allows users to permanently delete all entries with confirmation dialog
+- **Added GPS error handling improvements**: Better error messages for geolocation failures (permission denied, no signal, timeout) with dismiss button
+- **Removed unused imports**: Cleaned up React imports from Dashboard
+
+## Previous Changes
+- Removed Order ID field from entry form to simplify data entry
 - Initial project setup with backend (FastAPI + SQLite) and frontend (React + Vite + Tailwind)
 - Implemented calculator component with numeric keypad, decimal support, backspace, and clear
 - Created database models for Entry (unified ledger) and Settings (cost per mile)

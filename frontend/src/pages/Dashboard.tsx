@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, EntryCreate, EntryType } from '../lib/api';
 import { PeriodChips, Period } from '../components/PeriodChips';
@@ -83,7 +83,6 @@ export function Dashboard() {
   const [period, setPeriod] = useState<Period>('today');
   const [amount, setAmount] = useState('0');
   const [mode, setMode] = useState<CalcMode>('add');
-  const [entryType, setEntryType] = useState<EntryType>('ORDER');
   const [formData, setFormData] = useState<EntryFormData>({
     type: 'ORDER',
     app: 'UBEREATS',
@@ -96,6 +95,7 @@ export function Dashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetAllConfirm, setResetAllConfirm] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [calcExpanded, setCalcExpanded] = useState(false);
@@ -205,6 +205,19 @@ export function Dashboard() {
     },
   });
 
+  const resetAllMutation = useMutation({
+    mutationFn: api.deleteAllEntries,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      setResetAllConfirm(false);
+      setToast({ message: 'All data has been reset!', type: 'success' });
+    },
+    onError: () => {
+      setToast({ message: 'Failed to reset all data', type: 'error' });
+    },
+  });
+
   const handleSave = () => {
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum === 0) {
@@ -262,13 +275,16 @@ export function Dashboard() {
       duration_minutes: durationMinutes.toString(),
       type: 'ORDER',
     });
-    setEntryType('ORDER');
     setCalcExpanded(true);
     setToast({ message: `Trip completed! ${miles} miles tracked`, type: 'success' });
   };
 
   const confirmReset = () => {
     resetTodayMutation.mutate();
+  };
+
+  const confirmResetAll = () => {
+    resetAllMutation.mutate();
   };
 
   return (
@@ -407,6 +423,7 @@ export function Dashboard() {
           onClose={() => setShowSettings(false)}
           settings={settings}
           onSave={(s) => updateSettingsMutation.mutate(s)}
+          onResetAll={() => setResetAllConfirm(true)}
         />
       )}
 
@@ -435,6 +452,17 @@ export function Dashboard() {
           onConfirm={confirmReset}
           onCancel={() => setResetConfirm(false)}
           confirmText="Reset"
+          cancelText="Cancel"
+        />
+      )}
+
+      {resetAllConfirm && (
+        <ConfirmDialog
+          title="Reset All Data"
+          message="This will permanently delete ALL entries from your dashboard. This action cannot be undone."
+          onConfirm={confirmResetAll}
+          onCancel={() => setResetAllConfirm(false)}
+          confirmText="Delete All"
           cancelText="Cancel"
         />
       )}

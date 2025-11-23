@@ -6,15 +6,21 @@ interface SettingsDrawerProps {
   onClose: () => void;
   settings: Settings;
   onSave: (settings: Settings) => void;
+  onResetAll?: () => void;
 }
 
-export function SettingsDrawer({ isOpen, onClose, settings, onSave }: SettingsDrawerProps) {
+export function SettingsDrawer({ isOpen, onClose, settings, onSave, onResetAll }: SettingsDrawerProps) {
   const [costPerMile, setCostPerMile] = useState(settings.cost_per_mile.toString());
 
   if (!isOpen) return null;
 
   const handleSave = () => {
     onSave({ cost_per_mile: parseFloat(costPerMile) });
+    onClose();
+  };
+
+  const handleResetAll = () => {
+    onResetAll?.();
     onClose();
   };
 
@@ -49,10 +55,23 @@ export function SettingsDrawer({ isOpen, onClose, settings, onSave }: SettingsDr
 
         <button
           onClick={handleSave}
-          className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600"
+          className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 mb-3"
         >
           Save Settings
         </button>
+
+        <div className="pt-6 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Danger Zone</h3>
+          <button
+            onClick={handleResetAll}
+            className="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600"
+          >
+            🗑️ Reset All Data
+          </button>
+          <p className="text-xs text-gray-500 mt-2">
+            Permanently delete all entries. This action cannot be undone.
+          </p>
+        </div>
       </div>
     </>
   );
