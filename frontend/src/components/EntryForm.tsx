@@ -12,7 +12,6 @@ interface EntryFormProps {
 export interface EntryFormData {
   type: EntryType;
   app: AppType;
-  order_id: string;
   distance_miles: string;
   duration_minutes: string;
   category: ExpenseCategory;
@@ -58,19 +57,6 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
           <option value="OTHER">Other</option>
         </select>
       </div>
-
-      {isOrder && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Order ID (optional)</label>
-          <input
-            type="text"
-            value={formData.order_id}
-            onChange={(e) => onFormDataChange({ ...formData, order_id: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="ORD-12345"
-          />
-        </div>
-      )}
 
       {isOrder && (
         <>

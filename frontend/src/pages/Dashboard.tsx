@@ -87,7 +87,6 @@ export function Dashboard() {
   const [formData, setFormData] = useState<EntryFormData>({
     type: 'ORDER',
     app: 'UBEREATS',
-    order_id: '',
     distance_miles: '',
     duration_minutes: '',
     category: 'GAS',
@@ -220,7 +219,6 @@ export function Dashboard() {
       type: formData.type,
       app: formData.app,
       amount: finalAmount,
-      order_id: formData.order_id || undefined,
       distance_miles: formData.distance_miles ? parseFloat(formData.distance_miles) : 0,
       duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : 0,
       category: (formData.type === 'EXPENSE' && formData.category) ? formData.category : undefined,
@@ -232,7 +230,6 @@ export function Dashboard() {
     setFormData({
       type: formData.type,
       app: formData.app,
-      order_id: '',
       distance_miles: '',
       duration_minutes: '',
       category: 'GAS',
