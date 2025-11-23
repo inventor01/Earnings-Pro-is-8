@@ -46,6 +46,19 @@ export function TripTracker({ onTripComplete }: TripTrackerProps) {
     };
   }, []);
 
+  const getErrorMessage = (errorCode: number, errorMsg: string): string => {
+    switch (errorCode) {
+      case 1: // PERMISSION_DENIED
+        return 'Location permission denied. Please enable location access in your browser settings to use GPS tracking.';
+      case 2: // POSITION_UNAVAILABLE
+        return 'GPS signal unavailable. Make sure you\'re outdoors with clear sky view.';
+      case 3: // TIMEOUT
+        return 'GPS location request timed out. Please try again.';
+      default:
+        return `GPS Error: ${errorMsg}`;
+    }
+  };
+
   const startTracking = () => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser');
@@ -80,7 +93,8 @@ export function TripTracker({ onTripComplete }: TripTrackerProps) {
         lastPosition.current = newPos;
       },
       (error) => {
-        setError(`GPS Error: ${error.message}`);
+        const errorMessage = getErrorMessage(error.code, error.message);
+        setError(errorMessage);
         if (tempWatchId !== undefined) {
           navigator.geolocation.clearWatch(tempWatchId);
         }
@@ -141,8 +155,15 @@ export function TripTracker({ onTripComplete }: TripTrackerProps) {
       </div>
 
       {error && (
-        <div className="bg-red-500 bg-opacity-20 border border-red-300 rounded p-2 mb-3 text-sm">
-          {error}
+        <div className="bg-red-500 bg-opacity-20 border border-red-300 rounded p-2 mb-3 text-sm flex items-start justify-between gap-2">
+          <div className="flex-1">{error}</div>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-200 hover:text-red-100 font-bold text-lg flex-shrink-0"
+            title="Dismiss error"
+          >
+            ✕
+          </button>
         </div>
       )}
 
