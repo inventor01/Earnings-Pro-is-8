@@ -76,11 +76,17 @@ export function Dashboard() {
   });
   const [showSettings, setShowSettings] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [calcExpanded, setCalcExpanded] = useState(false);
 
   const queryClient = useQueryClient();
   const dates = getPeriodDates(period);
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [period]);
 
   const { data: settings } = useQuery({
     queryKey: ['settings'],
@@ -119,6 +125,21 @@ export function Dashboard() {
     },
     onError: () => {
       setToast({ message: 'Failed to delete entry', type: 'error' });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      await Promise.all(ids.map(id => api.deleteEntry(id)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      setSelectedIds([]);
+      setToast({ message: `${selectedIds.length} entries deleted successfully!`, type: 'success' });
+    },
+    onError: () => {
+      setToast({ message: 'Failed to delete entries', type: 'error' });
     },
   });
 
@@ -173,6 +194,13 @@ export function Dashboard() {
     if (deleteConfirm) {
       deleteMutation.mutate(deleteConfirm);
       setDeleteConfirm(null);
+    }
+  };
+
+  const confirmBulkDelete = () => {
+    if (selectedIds.length > 0) {
+      bulkDeleteMutation.mutate(selectedIds);
+      setBulkDeleteConfirm(false);
     }
   };
 
@@ -246,8 +274,28 @@ export function Dashboard() {
           />
         </div>
 
+        {selectedIds.length > 0 && (
+          <div className="mb-4 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <span className="text-blue-900 font-medium">
+              {selectedIds.length} {selectedIds.length === 1 ? 'entry' : 'entries'} selected
+            </span>
+            <button
+              onClick={() => setBulkDeleteConfirm(true)}
+              disabled={bulkDeleteMutation.isPending}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium disabled:bg-gray-400"
+            >
+              {bulkDeleteMutation.isPending ? 'Deleting...' : 'Delete Selected'}
+            </button>
+          </div>
+        )}
+
         <div className="mb-6">
-          <EntriesTable entries={entries} onDelete={handleDelete} />
+          <EntriesTable 
+            entries={entries} 
+            onDelete={handleDelete}
+            selectedIds={selectedIds}
+            onSelectChange={setSelectedIds}
+          />
         </div>
       </div>
 
@@ -304,6 +352,15 @@ export function Dashboard() {
           message="Are you sure you want to delete this entry? This action cannot be undone."
           onConfirm={confirmDelete}
           onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
+
+      {bulkDeleteConfirm && (
+        <ConfirmDialog
+          title="Delete Selected Entries"
+          message={`Are you sure you want to delete ${selectedIds.length} ${selectedIds.length === 1 ? 'entry' : 'entries'}? This action cannot be undone.`}
+          onConfirm={confirmBulkDelete}
+          onCancel={() => setBulkDeleteConfirm(false)}
         />
       )}
 

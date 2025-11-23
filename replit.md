@@ -22,6 +22,7 @@ This application helps delivery drivers:
 - Settings management
 - Sample data seeded for testing
 - GPS trip tracking with automatic distance calculation
+- Mass select and bulk delete for entries
 
 ## Recent Changes (November 23, 2025)
 - Initial project setup with backend (FastAPI + SQLite) and frontend (React + Vite + Tailwind)
@@ -43,6 +44,7 @@ This application helps delivery drivers:
 - Fixed Vite proxy configuration to allow frontend-backend communication in Replit environment
 - **Added GPS Trip Tracking Feature**: Users can track trips in real-time using phone geolocation, automatically calculating miles driven using Haversine formula
 - TripTracker component displays live distance and duration, auto-fills entry form on trip completion
+- **Added Mass Select and Bulk Delete**: Users can select multiple entries with checkboxes (including select all) and delete them in bulk with confirmation dialog
 
 ## Project Architecture
 

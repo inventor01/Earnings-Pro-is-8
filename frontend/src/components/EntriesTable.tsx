@@ -4,9 +4,29 @@ interface EntriesTableProps {
   entries: Entry[];
   onEdit?: (entry: Entry) => void;
   onDelete?: (id: number) => void;
+  selectedIds?: number[];
+  onSelectChange?: (ids: number[]) => void;
 }
 
-export function EntriesTable({ entries, onEdit, onDelete }: EntriesTableProps) {
+export function EntriesTable({ entries, onEdit, onDelete, selectedIds = [], onSelectChange }: EntriesTableProps) {
+  const allSelected = entries.length > 0 && selectedIds.length === entries.length;
+  const someSelected = selectedIds.length > 0 && selectedIds.length < entries.length;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      onSelectChange?.([]);
+    } else {
+      onSelectChange?.(entries.map(e => e.id));
+    }
+  };
+
+  const handleSelectOne = (id: number) => {
+    if (selectedIds.includes(id)) {
+      onSelectChange?.(selectedIds.filter(i => i !== id));
+    } else {
+      onSelectChange?.([...selectedIds, id]);
+    }
+  };
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'ORDER':
@@ -56,6 +76,19 @@ export function EntriesTable({ entries, onEdit, onDelete }: EntriesTableProps) {
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
+              <th className="px-4 py-3 text-left">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={input => {
+                    if (input) {
+                      input.indeterminate = someSelected;
+                    }
+                  }}
+                  onChange={handleSelectAll}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+              </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">App</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
@@ -67,7 +100,15 @@ export function EntriesTable({ entries, onEdit, onDelete }: EntriesTableProps) {
           </thead>
           <tbody className="divide-y">
             {entries.map((entry) => (
-              <tr key={entry.id} className="hover:bg-gray-50">
+              <tr key={entry.id} className={`hover:bg-gray-50 ${selectedIds.includes(entry.id) ? 'bg-blue-50' : ''}`}>
+                <td className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(entry.id)}
+                    onChange={() => handleSelectOne(entry.id)}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </td>
                 <td className="px-4 py-3">
                   <span className="text-xl mr-2">{getTypeIcon(entry.type)}</span>
                   <span className="text-sm">{entry.type}</span>
