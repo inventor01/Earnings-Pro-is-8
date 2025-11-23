@@ -1,0 +1,49 @@
+from sqlalchemy import Column, Integer, String, Float, Numeric, DateTime, Text, Enum as SQLEnum
+from datetime import datetime
+from decimal import Decimal
+import enum
+from backend.db import Base
+
+class EntryType(str, enum.Enum):
+    ORDER = "ORDER"
+    BONUS = "BONUS"
+    EXPENSE = "EXPENSE"
+    CANCELLATION = "CANCELLATION"
+
+class AppType(str, enum.Enum):
+    DOORDASH = "DOORDASH"
+    UBEREATS = "UBEREATS"
+    INSTACART = "INSTACART"
+    GRUBHUB = "GRUBHUB"
+    OTHER = "OTHER"
+
+class ExpenseCategory(str, enum.Enum):
+    GAS = "GAS"
+    PARKING = "PARKING"
+    TOLLS = "TOLLS"
+    MAINTENANCE = "MAINTENANCE"
+    PHONE = "PHONE"
+    SUBSCRIPTION = "SUBSCRIPTION"
+    OTHER = "OTHER"
+
+class Entry(Base):
+    __tablename__ = "entries"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    type = Column(SQLEnum(EntryType), nullable=False)
+    app = Column(SQLEnum(AppType), nullable=False)
+    order_id = Column(String, nullable=True)
+    amount = Column(Numeric(10, 2), nullable=False)
+    distance_miles = Column(Float, default=0.0)
+    duration_minutes = Column(Integer, default=0)
+    category = Column(SQLEnum(ExpenseCategory), nullable=True)
+    note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+class Settings(Base):
+    __tablename__ = "settings"
+    
+    id = Column(Integer, primary_key=True, default=1)
+    cost_per_mile = Column(Numeric(10, 2), default=Decimal("0.35"), nullable=False)

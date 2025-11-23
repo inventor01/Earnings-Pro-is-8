@@ -1,0 +1,63 @@
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from backend.models import Entry, Settings, EntryType, AppType
+from decimal import Decimal
+from datetime import datetime
+from typing import Optional
+
+def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None):
+    query = db.query(Entry)
+    
+    if from_date:
+        query = query.filter(Entry.timestamp >= from_date)
+    if to_date:
+        query = query.filter(Entry.timestamp <= to_date)
+    
+    entries = query.all()
+    
+    settings = db.query(Settings).first()
+    cost_per_mile = settings.cost_per_mile if settings else Decimal("0.35")
+    
+    total_amount = Decimal("0")
+    revenue = Decimal("0")
+    expenses = Decimal("0")
+    miles = 0.0
+    total_minutes = 0
+    
+    by_type = {t.value: Decimal("0") for t in EntryType}
+    by_app = {a.value: Decimal("0") for a in AppType}
+    
+    for entry in entries:
+        amount = Decimal(str(entry.amount))
+        total_amount += amount
+        
+        if amount > 0:
+            revenue += amount
+        else:
+            expenses += abs(amount)
+        
+        miles += entry.distance_miles
+        total_minutes += entry.duration_minutes
+        
+        by_type[entry.type.value] += amount
+        by_app[entry.app.value] += amount
+    
+    hours = total_minutes / 60.0 if total_minutes > 0 else 0.0
+    cost_of_miles = Decimal(str(miles)) * cost_per_mile
+    profit = total_amount - cost_of_miles
+    net_earnings = total_amount
+    
+    dollars_per_mile = net_earnings / Decimal(str(miles)) if miles > 0 else Decimal("0")
+    dollars_per_hour = net_earnings / Decimal(str(hours)) if hours > 0 else Decimal("0")
+    
+    return {
+        "revenue": float(revenue),
+        "expenses": float(expenses),
+        "profit": float(profit),
+        "miles": miles,
+        "hours": round(hours, 2),
+        "dollars_per_mile": float(round(dollars_per_mile, 2)),
+        "dollars_per_hour": float(round(dollars_per_hour, 2)),
+        "by_type": {k: float(v) for k, v in by_type.items()},
+        "by_app": {k: float(v) for k, v in by_app.items()}
+    }
