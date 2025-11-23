@@ -15,7 +15,7 @@ This application helps delivery drivers:
 ✅ Fully functional MVP with all core features implemented:
 - Calculator-style input with Add/Subtract modes
 - Real-time KPI dashboard
-- Time period filtering
+- Time period filtering with automatic daily rollover
 - Multi-platform support
 - Expense tracking with categories
 - Mileage cost calculation
@@ -23,8 +23,10 @@ This application helps delivery drivers:
 - Sample data seeded for testing
 - GPS trip tracking with automatic distance calculation
 - Mass select and bulk delete for entries
+- Daily data reset feature with confirmation dialog
+- Automatic date detection - notifies user when date changes
 
-## Recent Changes (November 23, 2025)
+## Recent Changes (November 23, 2025 - Latest)
 - Initial project setup with backend (FastAPI + SQLite) and frontend (React + Vite + Tailwind)
 - Implemented calculator component with numeric keypad, decimal support, backspace, and clear
 - Created database models for Entry (unified ledger) and Settings (cost per mile)
@@ -47,6 +49,10 @@ This application helps delivery drivers:
 - **Added Mass Select and Bulk Delete**: Users can select multiple entries with checkboxes (including select all) and delete them in bulk with confirmation dialog
 - **Fixed timezone handling for date filters**: Backend now properly converts incoming UTC timestamps to naive datetimes for SQLite comparison; frontend calculates all date ranges in UTC to prevent timezone offset issues
 - **Verified all time period filters working correctly**: Tested Today, Yesterday, Last 7 Days, This Week, This Month, Last Month - all filters update data properly and will roll forward automatically each day
+- **Fixed date range calculation bug**: Filters were using current time instead of end-of-day; updated week, last7, and month filters to use `endOfDay()` instead of `now.toISOString()`
+- **Added "Reset Today" feature**: Red button in header allows users to manually delete all entries from the current day with confirmation dialog
+- **Added automatic date change detection**: App tracks last visit date in localStorage; notifies user when crossing midnight with "New day! Previous data moved to Yesterday" message
+- **Updated ConfirmDialog component**: Now supports custom button text via optional `confirmText` and `cancelText` props
 
 ## Project Architecture
 

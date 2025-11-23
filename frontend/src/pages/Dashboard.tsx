@@ -96,12 +96,26 @@ export function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [calcExpanded, setCalcExpanded] = useState(false);
 
   const queryClient = useQueryClient();
   const dates = getPeriodDates(period);
+
+  // Check if date has changed and auto-reset if needed
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const lastVisitDate = localStorage.getItem('lastVisitDate');
+    
+    if (lastVisitDate && lastVisitDate !== today) {
+      // Date has changed - reset to yesterday and show notification
+      setToast({ message: 'New day! Previous data moved to Yesterday.', type: 'success' });
+    }
+    
+    localStorage.setItem('lastVisitDate', today);
+  }, []);
 
   useEffect(() => {
     setSelectedIds([]);
@@ -171,6 +185,27 @@ export function Dashboard() {
     },
   });
 
+  const resetTodayMutation = useMutation({
+    mutationFn: async () => {
+      // Delete all entries from today
+      const todayEntries = entries.filter(e => {
+        const entryDate = new Date(e.timestamp).toDateString();
+        const today = new Date().toDateString();
+        return entryDate === today;
+      });
+      await Promise.all(todayEntries.map(e => api.deleteEntry(e.id)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      setResetConfirm(false);
+      setToast({ message: "Today's data has been reset!", type: 'success' });
+    },
+    onError: () => {
+      setToast({ message: 'Failed to reset today data', type: 'error' });
+    },
+  });
+
   const handleSave = () => {
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum === 0) {
@@ -235,25 +270,38 @@ export function Dashboard() {
     setToast({ message: `Trip completed! ${miles} miles tracked`, type: 'success' });
   };
 
+  const confirmReset = () => {
+    resetTodayMutation.mutate();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="flex-1 overflow-y-auto max-w-6xl mx-auto px-4 py-6 pb-24 w-full">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Driver Earnings</h1>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="p-2 text-gray-600 hover:text-gray-900"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-              />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setResetConfirm(true)}
+              className="px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-medium"
+              title="Reset today's data"
+            >
+              Reset Today
+            </button>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-2 text-gray-600 hover:text-gray-900"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="mb-6">
@@ -380,6 +428,17 @@ export function Dashboard() {
           message={`Are you sure you want to delete ${selectedIds.length} ${selectedIds.length === 1 ? 'entry' : 'entries'}? This action cannot be undone.`}
           onConfirm={confirmBulkDelete}
           onCancel={() => setBulkDeleteConfirm(false)}
+        />
+      )}
+
+      {resetConfirm && (
+        <ConfirmDialog
+          title="Reset Today's Data"
+          message="This will delete all entries from today and cannot be undone. Previous days' data will remain intact."
+          onConfirm={confirmReset}
+          onCancel={() => setResetConfirm(false)}
+          confirmText="Reset"
+          cancelText="Cancel"
         />
       )}
 
