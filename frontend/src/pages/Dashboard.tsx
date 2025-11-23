@@ -45,7 +45,7 @@ function getPeriodDates(period: Period): { from: string; to: string } {
       weekStart.setHours(0, 0, 0, 0);
       return {
         from: weekStart.toISOString(),
-        to: now.toISOString(),
+        to: endOfDay(now).toISOString(),
       };
     case 'last7':
       const last7 = new Date(now);
@@ -53,14 +53,14 @@ function getPeriodDates(period: Period): { from: string; to: string } {
       last7.setHours(0, 0, 0, 0);
       return {
         from: last7.toISOString(),
-        to: now.toISOString(),
+        to: endOfDay(now).toISOString(),
       };
     case 'month':
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       monthStart.setHours(0, 0, 0, 0);
       return {
         from: monthStart.toISOString(),
-        to: now.toISOString(),
+        to: endOfDay(now).toISOString(),
       };
     case 'lastMonth':
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
