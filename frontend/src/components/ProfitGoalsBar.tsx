@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api, TimeframeType } from '../lib/api';
 
 interface ProfitGoalsBarProps {
   timeframe: TimeframeType;
   currentProfit: number;
   goalProgress?: number;
+  onGoalReached?: (timeframe: TimeframeType) => void;
 }
 
 const TIMEFRAME_LABELS: Record<TimeframeType, string> = {
@@ -16,11 +17,12 @@ const TIMEFRAME_LABELS: Record<TimeframeType, string> = {
   LAST_MONTH: 'Last Month',
 };
 
-export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0 }: ProfitGoalsBarProps) {
+export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onGoalReached }: ProfitGoalsBarProps) {
   const [goalAmount, setGoalAmount] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [tempGoal, setTempGoal] = useState('');
+  const goalReachedRef = useRef<boolean>(false);
 
   useEffect(() => {
     // Load current goal on mount and when timeframe changes
@@ -31,7 +33,21 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0 }: P
         setGoalAmount('');
       }
     });
+    // Reset goal reached flag when timeframe changes
+    goalReachedRef.current = false;
   }, [timeframe]);
+
+  useEffect(() => {
+    // Show success message when goal is reached for the first time
+    if (goalProgress >= 100 && !goalReachedRef.current && goalAmount) {
+      goalReachedRef.current = true;
+      onGoalReached?.(timeframe);
+    }
+    // Reset when goal progress drops below 100 (e.g., after deleting entries)
+    if (goalProgress < 100) {
+      goalReachedRef.current = false;
+    }
+  }, [goalProgress, goalAmount, timeframe, onGoalReached]);
 
   const handleEditClick = () => {
     setTempGoal(goalAmount);

@@ -316,6 +316,22 @@ export function Dashboard() {
     return mapping[p] || 'TODAY';
   };
 
+  const timeframeLabels: Record<TimeframeType, string> = {
+    TODAY: 'Today',
+    YESTERDAY: 'Yesterday',
+    THIS_WEEK: 'This Week',
+    LAST_7_DAYS: 'Last 7 Days',
+    THIS_MONTH: 'This Month',
+    LAST_MONTH: 'Last Month',
+  };
+
+  const handleGoalReached = (tf: TimeframeType) => {
+    setToast({
+      message: `🎉 Congratulations! You've reached your ${timeframeLabels[tf].toLowerCase()} profit goal!`,
+      type: 'success',
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {rollup && (
@@ -323,6 +339,7 @@ export function Dashboard() {
           timeframe={getTimeframeFromPeriod(period)}
           currentProfit={rollup.profit}
           goalProgress={rollup.goal_progress}
+          onGoalReached={handleGoalReached}
         />
       )}
       <div className="flex-1 overflow-y-auto max-w-6xl mx-auto px-4 py-6 pb-24 w-full">

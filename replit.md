@@ -31,9 +31,10 @@ This application helps delivery drivers:
 - Profit goals with visual progress tracking for all timeframes
 
 ## Recent Changes (November 23, 2025 - Latest)
-- **Added Profit Goal Tracking**: Users can now set profit targets for each timeframe (Today, Yesterday, This Week, Last 7 Days, This Month, Last Month)
-- **Goal Progress Visualization**: Profit KPI card displays progress bar showing % toward goal target with color coding (blue for in-progress, green when goal exceeded)
-- **Set Goals in Settings**: New "Profit Goals" section in settings drawer allows configuring targets for all timeframes
+- **Added Profit Goal Tracking**: Users can now set profit targets for each timeframe (Today, Yesterday, This Week, Last 7 Days, This Month, Last Month) with inline editing on the top progress bar
+- **Goal Progress Bar at Top**: Beautiful progress bar displays at the top of the dashboard showing current profit vs goal with Edit button for quick goal adjustments
+- **Success Message on Goal Achievement**: When users reach their profit goal, a celebratory green success toast appears with "🎉 Congratulations! You've reached your {timeframe} profit goal!"
+- **Progress Visualization**: Progress bar shows % toward goal with color coding (blue for in-progress, green when goal exceeded)
 - **Fixed Profit Calculation**: Changed profit formula to only subtract actual expenses (no automatic mileage cost deduction). Now Profit = Revenue - Expenses, so profit equals revenue when there are no expenses
 - **Added Receipt Support for Expenses**: Users can now upload receipt images for expense entries with preview
 - **Enhanced Expense Categories with Emojis**: Added 2 new categories (FOOD 🍔, LEISURE 🎮) and all categories now display with emojis in dropdown
