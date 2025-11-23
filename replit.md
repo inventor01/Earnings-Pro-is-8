@@ -28,9 +28,14 @@ This application helps delivery drivers:
 - Created database models for Entry (unified ledger) and Settings (cost per mile)
 - Built API endpoints for CRUD operations and rollup calculations
 - Implemented all React components (KPI cards, period filters, entry form, entries table, settings drawer, toast notifications)
-- Added seed script with 65 sample entries across 7 days
+- Added seed script with 62 sample entries across 7 days
 - Configured workflows for both backend (port 8000) and frontend (port 5000)
+- Fixed rollup calculations: profit = revenue - expenses - (miles × cost_per_mile), $/mile and $/hour use net_earnings
+- Fixed Pydantic schema serialization to use float types for all numeric rollup values
+- Fixed frontend form validation to accept positive amounts in both modes, backend handles sign conversion
+- Removed auto-reset behavior from EntryForm to preserve user type selection across mode changes
 - All backend tests passing (9/9)
+- Database seeded and application fully operational
 
 ## Project Architecture
 

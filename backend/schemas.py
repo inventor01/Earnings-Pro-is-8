@@ -53,12 +53,12 @@ class SettingsUpdate(BaseModel):
     cost_per_mile: Decimal
 
 class RollupResponse(BaseModel):
-    revenue: Decimal
-    expenses: Decimal
-    profit: Decimal
+    revenue: float
+    expenses: float
+    profit: float
     miles: float
     hours: float
-    dollars_per_mile: Decimal
-    dollars_per_hour: Decimal
-    by_type: dict
-    by_app: dict
+    dollars_per_mile: float
+    dollars_per_hour: float
+    by_type: dict[str, float]
+    by_app: dict[str, float]
