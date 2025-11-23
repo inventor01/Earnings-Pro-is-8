@@ -34,8 +34,11 @@ This application helps delivery drivers:
 - Fixed Pydantic schema serialization to use float types for all numeric rollup values
 - Fixed frontend form validation to accept positive amounts in both modes, backend handles sign conversion
 - Removed auto-reset behavior from EntryForm to preserve user type selection across mode changes
+- Fixed TypeScript compilation error by adding vite-env.d.ts for import.meta.env typing
+- Fixed layout padding issue - calculator section now has proper spacing (fixed bottom with 500px padding)
+- Added scroll-to-top on component mount to ensure KPI cards are visible
 - All backend tests passing (9/9)
-- Database seeded and application fully operational
+- Database seeded with 62 entries; application fully operational with real-time KPIs displaying correctly
 
 ## Project Architecture
 

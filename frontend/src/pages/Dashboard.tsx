@@ -95,6 +95,10 @@ export function Dashboard() {
     queryFn: () => api.getEntries(dates.from, dates.to),
   });
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const createMutation = useMutation({
     mutationFn: api.createEntry,
     onSuccess: () => {
@@ -175,8 +179,8 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32">
-      <div className="max-w-6xl mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-6 pb-[500px]">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Driver Earnings</h1>
           <button
@@ -237,7 +241,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <CalcPad
