@@ -33,6 +33,10 @@ This application helps delivery drivers:
 - Full CRUD operations: Create, Read, Update, Delete
 
 ## Recent Changes (November 23, 2025 - Latest)
+- **Added Daily Metrics**: Two new KPI cards display:
+  - **Avg Order**: Average order value calculated from all orders
+  - **$/Hour (1st-Last)**: Per-hour earnings rate based on time elapsed between first and last order of the day
+- **Enhanced KPI Dashboard**: Expanded from 6 to 8 metrics for better daily performance insights
 - **Added Edit Entry Functionality**: Users can now click the Edit button on any entry to modify amount, type, app, distance, duration, category, and notes
 - **Edit Modal Sidebar**: Beautiful right-side panel opens with entry details pre-filled for easy editing
 - **Save & Cancel Options**: Users can save changes or cancel editing with confirmation buttons

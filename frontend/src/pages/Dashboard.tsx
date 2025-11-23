@@ -443,7 +443,7 @@ export function Dashboard() {
           <PeriodChips selected={period} onSelect={setPeriod} />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
           <KpiCard
             title="Revenue"
             value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
@@ -473,6 +473,16 @@ export function Dashboard() {
             title="$/Hour"
             value={`$${rollup?.dollars_per_hour.toFixed(2) || '0.00'}`}
             color="gray"
+          />
+          <KpiCard
+            title="Avg Order"
+            value={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
+            color="blue"
+          />
+          <KpiCard
+            title="$/Hour (1st-Last)"
+            value={`$${rollup?.per_hour_first_to_last.toFixed(2) || '0.00'}`}
+            color="orange"
           />
         </div>
 
