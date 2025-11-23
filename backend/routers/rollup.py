@@ -4,7 +4,7 @@ from backend.db import get_db
 from backend.schemas import RollupResponse
 from backend.services.rollup_service import calculate_rollup
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 router = APIRouter()
 
@@ -18,9 +18,9 @@ async def get_rollup(
     to_dt = None
     
     if from_date:
-        from_dt = datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+        from_dt = datetime.fromisoformat(from_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
     if to_date:
-        to_dt = datetime.fromisoformat(to_date.replace('Z', '+00:00'))
+        to_dt = datetime.fromisoformat(to_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
     
     rollup = calculate_rollup(db, from_dt, to_dt)
     return rollup

@@ -4,7 +4,7 @@ from backend.db import get_db
 from backend.models import Entry, EntryType
 from backend.schemas import EntryCreate, EntryUpdate, EntryResponse
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 router = APIRouter()
@@ -45,9 +45,11 @@ async def get_entries(
     query = db.query(Entry)
     
     if from_date:
-        query = query.filter(Entry.timestamp >= datetime.fromisoformat(from_date.replace('Z', '+00:00')))
+        from_dt = datetime.fromisoformat(from_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
+        query = query.filter(Entry.timestamp >= from_dt)
     if to_date:
-        query = query.filter(Entry.timestamp <= datetime.fromisoformat(to_date.replace('Z', '+00:00')))
+        to_dt = datetime.fromisoformat(to_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
+        query = query.filter(Entry.timestamp <= to_dt)
     if cursor:
         query = query.filter(Entry.id < cursor)
     
