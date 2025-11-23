@@ -127,9 +127,21 @@ export function Dashboard() {
     queryFn: api.getSettings,
   });
 
+  const getTimeframe = (p: Period): string => {
+    const mapping: Record<Period, string> = {
+      'today': 'TODAY',
+      'yesterday': 'YESTERDAY',
+      'week': 'THIS_WEEK',
+      'last7': 'LAST_7_DAYS',
+      'month': 'THIS_MONTH',
+      'lastMonth': 'LAST_MONTH',
+    };
+    return mapping[p] || 'TODAY';
+  };
+
   const { data: rollup } = useQuery({
-    queryKey: ['rollup', dates.from, dates.to],
-    queryFn: () => api.getRollup(dates.from, dates.to),
+    queryKey: ['rollup', dates.from, dates.to, period],
+    queryFn: () => api.getRollup(dates.from, dates.to, getTimeframe(period)),
   });
 
   const { data: entries = [] } = useQuery({
@@ -340,6 +352,8 @@ export function Dashboard() {
             title="Profit"
             value={`$${rollup?.profit.toFixed(2) || '0.00'}`}
             color="blue"
+            goalProgress={rollup?.goal_progress}
+            goalTarget={rollup?.goal?.target_profit}
           />
           <KpiCard
             title="Miles"

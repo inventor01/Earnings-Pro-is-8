@@ -12,6 +12,7 @@ router = APIRouter()
 async def get_rollup(
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
+    timeframe: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     from_dt = None
@@ -22,5 +23,5 @@ async def get_rollup(
     if to_date:
         to_dt = datetime.fromisoformat(to_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
     
-    rollup = calculate_rollup(db, from_dt, to_dt)
+    rollup = calculate_rollup(db, from_dt, to_dt, timeframe)
     return rollup

@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from backend.models import EntryType, AppType, ExpenseCategory
+from backend.models import EntryType, AppType, ExpenseCategory, TimeframeType
 
 class EntryCreate(BaseModel):
     timestamp: Optional[datetime] = None
@@ -55,6 +55,23 @@ class SettingsResponse(BaseModel):
 class SettingsUpdate(BaseModel):
     cost_per_mile: Decimal
 
+class GoalCreate(BaseModel):
+    timeframe: TimeframeType
+    target_profit: Decimal
+
+class GoalUpdate(BaseModel):
+    target_profit: Decimal
+
+class GoalResponse(BaseModel):
+    id: int
+    timeframe: TimeframeType
+    target_profit: Decimal
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 class RollupResponse(BaseModel):
     revenue: float
     expenses: float
@@ -65,3 +82,5 @@ class RollupResponse(BaseModel):
     dollars_per_hour: float
     by_type: dict[str, float]
     by_app: dict[str, float]
+    goal: Optional[GoalResponse] = None
+    goal_progress: Optional[float] = None

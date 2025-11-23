@@ -14,22 +14,26 @@ This application helps delivery drivers:
 ## Current State
 ✅ Fully functional MVP with all core features implemented:
 - Calculator-style input with Add/Subtract modes
-- Real-time KPI dashboard
+- Real-time KPI dashboard with profit goal tracking
 - Time period filtering with automatic daily rollover
 - Multi-platform support (DoorDash, UberEats, Instacart, GrubHub, Shipt, Other)
 - Default app set to UberEats
 - Expense tracking with emoji-enhanced categories (Gas ⛽, Parking 🅿️, Tolls 🛣️, Maintenance 🔧, Phone 📱, Subscription 📦, Food 🍔, Leisure 🎮, Other 📋)
 - Receipt image upload support for expenses
 - Mileage cost calculation
-- Settings management
+- Settings management with profit goal configuration
 - Sample data seeded for testing
 - GPS trip tracking with automatic distance calculation
 - Mass select and bulk delete for entries
 - Daily data reset feature with confirmation dialog
 - Reset all data feature in settings
 - Automatic date detection - notifies user when date changes
+- Profit goals with visual progress tracking for all timeframes
 
 ## Recent Changes (November 23, 2025 - Latest)
+- **Added Profit Goal Tracking**: Users can now set profit targets for each timeframe (Today, Yesterday, This Week, Last 7 Days, This Month, Last Month)
+- **Goal Progress Visualization**: Profit KPI card displays progress bar showing % toward goal target with color coding (blue for in-progress, green when goal exceeded)
+- **Set Goals in Settings**: New "Profit Goals" section in settings drawer allows configuring targets for all timeframes
 - **Fixed Profit Calculation**: Changed profit formula to only subtract actual expenses (no automatic mileage cost deduction). Now Profit = Revenue - Expenses, so profit equals revenue when there are no expenses
 - **Added Receipt Support for Expenses**: Users can now upload receipt images for expense entries with preview
 - **Enhanced Expense Categories with Emojis**: Added 2 new categories (FOOD 🍔, LEISURE 🎮) and all categories now display with emojis in dropdown
@@ -106,7 +110,11 @@ This application helps delivery drivers:
 - `GET /api/entries` - List entries with filtering
 - `PUT /api/entries/{id}` - Update entry
 - `DELETE /api/entries/{id}` - Delete entry
-- `GET /api/rollup` - Get aggregated stats for a time period
+- `GET /api/rollup` - Get aggregated stats for a time period (with optional goal progress)
+- `POST /api/goals` - Create or update profit goal for timeframe
+- `GET /api/goals/{timeframe}` - Get profit goal for specific timeframe
+- `PUT /api/goals/{timeframe}` - Update profit goal for timeframe
+- `DELETE /api/goals/{timeframe}` - Delete profit goal for timeframe
 
 ## Database Schema
 
@@ -114,18 +122,25 @@ This application helps delivery drivers:
 - `id` (PK)
 - `timestamp` - UTC datetime
 - `type` - ORDER | BONUS | EXPENSE | CANCELLATION
-- `app` - DOORDASH | UBEREATS | INSTACART | GRUBHUB | OTHER
+- `app` - DOORDASH | UBEREATS | INSTACART | GRUBHUB | SHIPT | OTHER
 - `order_id` - Optional string
 - `amount` - Decimal (signed: positive for revenue, negative for expenses)
 - `distance_miles` - Float
 - `duration_minutes` - Integer
-- `category` - Optional (for expenses: GAS, PARKING, TOLLS, etc.)
+- `category` - Optional (for expenses: GAS, PARKING, TOLLS, MAINTENANCE, PHONE, SUBSCRIPTION, FOOD, LEISURE, OTHER)
 - `note` - Optional text
+- `receipt_url` - Optional URL to uploaded receipt image
 - `created_at`, `updated_at`
 
 ### Settings Table
 - `id` = 1 (singleton)
 - `cost_per_mile` - Decimal (default 0.35)
+
+### Goal Table
+- `id` (PK)
+- `timeframe` - TODAY | YESTERDAY | THIS_WEEK | LAST_7_DAYS | THIS_MONTH | LAST_MONTH
+- `target_profit` - Decimal (profit goal amount)
+- `created_at`, `updated_at`
 
 ## Running the Application
 

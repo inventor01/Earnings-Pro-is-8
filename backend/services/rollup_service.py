@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from backend.models import Entry, Settings, EntryType, AppType
+from backend.models import Entry, Settings, EntryType, AppType, Goal, TimeframeType
 from decimal import Decimal
 from datetime import datetime
 from typing import Optional
 
-def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None):
+def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None, timeframe: Optional[str] = None):
     query = db.query(Entry)
     
     if from_date:
@@ -49,6 +49,27 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
     dollars_per_mile = net_earnings / Decimal(str(miles)) if miles > 0 else Decimal("0")
     dollars_per_hour = net_earnings / Decimal(str(hours)) if hours > 0 else Decimal("0")
     
+    # Get goal data if timeframe provided
+    goal_data = None
+    goal_progress = None
+    if timeframe:
+        try:
+            tf = TimeframeType[timeframe]
+            goal = db.query(Goal).filter(Goal.timeframe == tf).first()
+            if goal:
+                goal_data = {
+                    "id": goal.id,
+                    "timeframe": goal.timeframe.value,
+                    "target_profit": float(goal.target_profit),
+                    "created_at": goal.created_at.isoformat(),
+                    "updated_at": goal.updated_at.isoformat()
+                }
+                target = float(goal.target_profit)
+                if target > 0:
+                    goal_progress = min(100.0, (float(profit) / target) * 100)
+        except (KeyError, ValueError):
+            pass
+    
     return {
         "revenue": float(revenue),
         "expenses": float(expenses),
@@ -58,5 +79,7 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
         "dollars_per_mile": float(round(dollars_per_mile, 2)),
         "dollars_per_hour": float(round(dollars_per_hour, 2)),
         "by_type": {k: float(v) for k, v in by_type.items()},
-        "by_app": {k: float(v) for k, v in by_app.items()}
+        "by_app": {k: float(v) for k, v in by_app.items()},
+        "goal": goal_data,
+        "goal_progress": goal_progress
     }

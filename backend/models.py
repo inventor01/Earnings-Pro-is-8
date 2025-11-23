@@ -51,3 +51,20 @@ class Settings(Base):
     
     id = Column(Integer, primary_key=True, default=1)
     cost_per_mile = Column(Numeric(10, 2), default=Decimal("0.35"), nullable=False)
+
+class TimeframeType(str, enum.Enum):
+    TODAY = "TODAY"
+    YESTERDAY = "YESTERDAY"
+    THIS_WEEK = "THIS_WEEK"
+    LAST_7_DAYS = "LAST_7_DAYS"
+    THIS_MONTH = "THIS_MONTH"
+    LAST_MONTH = "LAST_MONTH"
+
+class Goal(Base):
+    __tablename__ = "goals"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    timeframe = Column(SQLEnum(TimeframeType), unique=True, nullable=False)
+    target_profit = Column(Numeric(10, 2), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
