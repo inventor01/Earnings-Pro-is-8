@@ -28,7 +28,6 @@ function calculateDistance(pos1: Position, pos2: Position): number {
 export function TripTracker({ onTripComplete }: TripTrackerProps) {
   const [isTracking, setIsTracking] = useState(false);
   const [distance, setDistance] = useState(0);
-  const [startTime, setStartTime] = useState<number | null>(null);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
   
@@ -56,7 +55,6 @@ export function TripTracker({ onTripComplete }: TripTrackerProps) {
     setError(null);
     setIsTracking(true);
     setDistance(0);
-    setStartTime(Date.now());
     setDuration(0);
     lastPosition.current = null;
 
@@ -121,7 +119,6 @@ export function TripTracker({ onTripComplete }: TripTrackerProps) {
     onTripComplete(parseFloat(distance.toFixed(2)), durationMinutes);
     setDistance(0);
     setDuration(0);
-    setStartTime(null);
     lastPosition.current = null;
   };
 
