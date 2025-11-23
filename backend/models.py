@@ -15,6 +15,7 @@ class AppType(str, enum.Enum):
     UBEREATS = "UBEREATS"
     INSTACART = "INSTACART"
     GRUBHUB = "GRUBHUB"
+    SHIPT = "SHIPT"
     OTHER = "OTHER"
 
 class ExpenseCategory(str, enum.Enum):

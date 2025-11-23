@@ -50,10 +50,11 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
           onChange={(e) => onFormDataChange({ ...formData, app: e.target.value as AppType })}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="DOORDASH">DoorDash</option>
           <option value="UBEREATS">UberEats</option>
+          <option value="DOORDASH">DoorDash</option>
           <option value="INSTACART">Instacart</option>
           <option value="GRUBHUB">GrubHub</option>
+          <option value="SHIPT">Shipt</option>
           <option value="OTHER">Other</option>
         </select>
       </div>

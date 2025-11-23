@@ -86,7 +86,7 @@ export function Dashboard() {
   const [entryType, setEntryType] = useState<EntryType>('ORDER');
   const [formData, setFormData] = useState<EntryFormData>({
     type: 'ORDER',
-    app: 'DOORDASH',
+    app: 'UBEREATS',
     order_id: '',
     distance_miles: '',
     duration_minutes: '',

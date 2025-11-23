@@ -16,7 +16,8 @@ This application helps delivery drivers:
 - Calculator-style input with Add/Subtract modes
 - Real-time KPI dashboard
 - Time period filtering with automatic daily rollover
-- Multi-platform support
+- Multi-platform support (DoorDash, UberEats, Instacart, GrubHub, Shipt, Other)
+- Default app set to UberEats
 - Expense tracking with categories
 - Mileage cost calculation
 - Settings management
@@ -53,6 +54,8 @@ This application helps delivery drivers:
 - **Added "Reset Today" feature**: Red button in header allows users to manually delete all entries from the current day with confirmation dialog
 - **Added automatic date change detection**: App tracks last visit date in localStorage; notifies user when crossing midnight with "New day! Previous data moved to Yesterday" message
 - **Updated ConfirmDialog component**: Now supports custom button text via optional `confirmText` and `cancelText` props
+- **Changed default app to UberEats**: Updated default form selection from DoorDash to UberEats
+- **Added Shipt as platform option**: Extended AppType enum to include SHIPT alongside existing platforms
 
 ## Project Architecture
 
