@@ -1,0 +1,368 @@
+REPLIT MASTER PROMPT — Delivery Driver Earnings Dashboard (Calculator-Style)
+
+Goal: Build a clean, mobile-first web app for delivery drivers (multi-app: DoorDash/UberEats/Instacart/etc.) to log every order, add/subtract expenses/cancellations, track mileage, and see profit, revenue, expenses across quick filters: Today, Yesterday, This Week, This Month, Custom.
+
+Key UX requirement: A calculator-style input that lets users tap amounts and choose Add (➕) to create revenue entries (orders, bonuses) or Subtract (➖) to create expenses/cancellations. All totals and KPIs update live.
+
+Tech Choices (ship fast on Replit)
+
+Backend: FastAPI (Python 3.11), SQLite (SQLAlchemy + Alembic), Pydantic v2.
+
+Frontend: React + Vite + Tailwind CSS; mobile-first, clean “Shopify-like” UI.
+
+State: React Query (TanStack) for API data.
+
+Charts: lightweight sparkline (optional; no heavy libs required).
+
+Build: Single repo, backend on :8000, frontend on :5173. CORS enabled.
+
+Tests: Pytest for backend calculations + a few React component tests (Vitest).
+
+Deliverables
+
+Dashboard UI with:
+
+KPI cards: Revenue, Expenses, Profit, Miles, $/mile, $/hour.
+
+Time filters: Today, Yesterday, This Week, Last 7 Days, This Month, Last Month, Custom.
+
+Calculator panel: keypad (0–9, ., C, ⌫), ➕ Add (Order/Bonus), ➖ Subtract (Expense/Cancel).
+
+Entry form fields (contextual): App, Order ID, Payout, Tip, Distance (mi), Duration (min), Expense Type, Note.
+
+Entries table (infinite scroll) with inline edit/delete.
+
+Sticky Save button; toasts for success/errors.
+
+Data model (SQLAlchemy + Alembic):
+
+Entry (single unified ledger for add/subtract):
+
+id, timestamp, type enum: ORDER | BONUS | EXPENSE | CANCELLATION
+
+app enum: DOORDASH | UBEREATS | INSTACART | GRUBHUB | OTHER
+
+order_id (nullable), amount (signed decimal: +revenue / -expense)
+
+distance_miles (float, default 0)
+
+duration_minutes (int, default 0)
+
+category (for expense types: GAS, PARKING, TOLLS, MAINTENANCE, PHONE, SUBSCRIPTION, OTHER)
+
+note (text)
+
+created_at, updated_at
+
+Settings:
+
+id=singleton, cost_per_mile (decimal), target_hourly (optional)
+
+Profit for a period = sum(amount) - (miles * cost_per_mile) where amount already includes negatives for expenses/cancels.
+
+API (FastAPI)
+
+GET /api/health → {status:"ok"}
+
+GET /api/settings / PUT /api/settings
+
+POST /api/entries (create)
+
+GET /api/entries?from=ISO&to=ISO&limit=&cursor= (list with pagination)
+
+PUT /api/entries/{id} / DELETE /api/entries/{id}
+
+GET /api/rollup?from=ISO&to=ISO
+
+Returns: revenue, expenses, profit, miles, dollars_per_mile, hours, dollars_per_hour, breakdown by type & app.
+
+Frontend pages/components
+
+/ Dashboard with filters + KPI cards + calculator + entries.
+
+Components:
+
+PeriodChips (Today, Yesterday, Week, Month, Custom date range picker)
+
+KpiCard
+
+CalcPad (keypad, ➕/➖ toggle, amount display)
+
+EntryForm (dynamic fields per type)
+
+EntriesTable (virtualized list, edit/delete)
+
+SettingsDrawer (cost per mile)
+
+ConfirmDialog, Toast
+
+Calculator behavior
+
+Numeric keypad builds amount string (supports decimals).
+
+Mode toggle: ➕ creates ORDER (default) or BONUS (selectable). ➖ creates EXPENSE or CANCELLATION.
+
+On Save, assemble entry:
+
+Positive amount for revenue types; store as positive, but back-end converts to signed amount (negative) if expense/cancellation.
+
+Ask for required fields: app, order_id (optional for expenses), distance_miles (for orders), duration_minutes (optional), category when expense.
+
+After save: clear keypad and form; refresh rollup & entries.
+
+Rollups
+
+Live rollup via /api/rollup for selected period.
+
+Daily quick filters compute from/to in the client; server returns aggregates quickly using SQL.
+
+Include $ / mile and $ / hour (hour = sum of duration_minutes / 60).
+
+Design
+
+Tailwind clean aesthetic, big touch targets, bright KPIs.
+
+Dark mode toggle (optional).
+
+Mobile-first: bottom-anchored calculator & Save button.
+
+Seed & Sample
+
+scripts/seed.py to insert a week of mock entries across apps.
+
+Provide a few expenses (gas, parking) & cancellations to verify subtraction.
+
+Tests
+
+Backend: rollup math, signed amount normalization, filters (today/yesterday/week/month).
+
+Frontend: calculator input composability (., backspace), ➕/➖ mode, form validation.
+
+Runbook
+
+make init → install deps + migrate
+
+Backend: make api
+
+Frontend: make web
+
+Seed: make seed
+
+Visit http://localhost:5173
+
+File & Folder Layout
+.
+├── backend/
+│   ├── app.py                  # FastAPI app, CORS, routers
+│   ├── db.py                   # SQLAlchemy engine/session for SQLite (default)
+│   ├── models.py               # Entry, Settings
+│   ├── schemas.py              # Pydantic models
+│   ├── routers/
+│   │   ├── health.py
+│   │   ├── settings.py
+│   │   ├── entries.py
+│   │   └── rollup.py
+│   ├── services/
+│   │   ├── rollup_service.py   # aggregate queries
+│   │   └── period.py           # helpers for today/yesterday/week/month
+│   ├── alembic/                # migrations
+│   ├── tests/
+│   │   ├── test_rollup.py
+│   │   └── test_entries.py
+│   └── scripts/seed.py
+├── frontend/
+│   ├── index.html
+│   ├── vite.config.ts
+│   ├── src/
+│   │   ├── main.tsx
+│   │   ├── App.tsx
+│   │   ├── lib/api.ts          # fetchers with React Query
+│   │   ├── components/
+│   │   │   ├── PeriodChips.tsx
+│   │   │   ├── KpiCard.tsx
+│   │   │   ├── CalcPad.tsx
+│   │   │   ├── EntryForm.tsx
+│   │   │   ├── EntriesTable.tsx
+│   │   │   ├── SettingsDrawer.tsx
+│   │   │   ├── ConfirmDialog.tsx
+│   │   │   └── Toast.tsx
+│   │   ├── pages/Dashboard.tsx
+│   │   └── styles/tailwind.css
+├── .env.example
+├── Makefile
+├── README.md
+└── requirements.txt
+
+Environment (.env.example)
+# Backend
+DATABASE_URL=sqlite:///./driver_ledger.db
+PORT=8000
+COST_PER_MILE_DEFAULT=0.35
+
+# Frontend
+VITE_API_BASE=http://localhost:8000
+
+Backend Details
+Models (SQLAlchemy)
+
+Entry:
+
+id: int PK
+
+timestamp: datetime (default now, UTC)
+
+type: str (enum: ORDER|BONUS|EXPENSE|CANCELLATION)
+
+app: str (enum: DOORDASH|UBEREATS|INSTACART|GRUBHUB|OTHER)
+
+order_id: str|None
+
+amount: Decimal (signed; positive for revenue, negative for expense/cancel)
+
+distance_miles: float (default 0)
+
+duration_minutes: int (default 0)
+
+category: str|None (for EXPENSE)
+
+note: str|None
+
+created_at, updated_at
+
+Settings:
+
+id: int = 1
+
+cost_per_mile: Decimal (default from env)
+
+Endpoints
+
+GET /api/health
+
+GET /api/settings → { cost_per_mile }
+
+PUT /api/settings → update cost_per_mile
+
+POST /api/entries
+
+Accepts a neutral payload (positive amount + type), backend converts to signed if EXPENSE/CANCELLATION.
+
+GET /api/entries (pagination, from, to)
+
+PUT /api/entries/{id}
+
+DELETE /api/entries/{id}
+
+GET /api/rollup (for a from/to period)
+
+Returns:
+
+{
+  revenue,         // sum of positive entries (ORDER+BONUS)
+  expenses,        // abs(sum of negative entries)
+  profit,          // revenue - expenses - (miles * cost_per_mile)
+  miles,           // sum(distance_miles)
+  hours,           // sum(duration_minutes)/60
+  dollars_per_mile,
+  dollars_per_hour,
+  by_type: { ORDER:..., BONUS:..., EXPENSE:..., CANCELLATION:... },
+  by_app: { DOORDASH:..., UBEREATS:..., ... }
+}
+
+Rollup math rules
+
+Revenue: sum of all amount > 0.
+
+Expenses: abs(sum of amount < 0).
+
+Miles: sum of distance_miles (across all entries).
+
+Cost of miles: miles * cost_per_mile.
+
+Profit: revenue - expenses - cost_of_miles.
+
+$/mile: revenue / max(1, miles) (or profit per mile if you prefer—expose both).
+
+$/hour: revenue / max(1, hours) (and/or profit per hour).
+
+Frontend Details
+Calculator + Form flow
+
+CalcPad maintains a local amountStr (“0”, “12.50”, backspace, clear).
+
+Mode toggle: ➕ (ORDER or BONUS) / ➖ (EXPENSE or CANCELLATION).
+
+On Save:
+
+Build payload: { timestamp, type, app, order_id?, amount: parseFloat(amountStr), distance_miles?, duration_minutes?, category?, note? }
+
+POST to /api/entries.
+
+Show toast, reset calculator, refresh rollup and entries.
+
+Period filters
+
+Buttons: Today / Yesterday / This Week / Last 7 Days / This Month / Last Month / Custom.
+
+Each sets from/to and refetches /api/rollup + /api/entries.
+
+UI polish
+
+Tailwind “card” layout, large typography, sticky bottom bar with Save.
+
+Entries table: shows icon per type, app chip, signed amount, miles, time, note; swipe to delete (mobile).
+
+Tests (must pass)
+
+Backend
+
+test_rollup.py: verifies revenue/expense/profit math, mileage cost, $/mile, $/hour.
+
+test_entries.py: ensures negative signing for EXPENSE/CANCELLATION, filters work for Today/Week/Month.
+
+Frontend (Vitest)
+
+Calculator: composing amount, backspace, clear, ➕/➖ mode switches.
+
+EntryForm: required fields per type; saves and triggers refetch.
+
+Makefile
+init:
+\tpip install -r requirements.txt
+\tcd frontend && npm i
+
+api:
+\tuvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
+
+web:
+\tcd frontend && npm run dev -- --host --port 5173
+
+migrate:
+\talembic upgrade head
+
+seed:
+\tpython backend/scripts/seed.py
+
+test:
+\tpytest -q
+\tcd frontend && npm run test
+
+Acceptance Criteria (Definition of Done)
+
+Calculator-style input works (amount build, backspace, clear).
+
+Add (➕) creates revenue entries; Subtract (➖) creates expenses/cancellations (stored as negative on backend).
+
+Dashboard shows Revenue, Expenses, Profit, Miles, $/mile, $/hour and updates instantly after saving.
+
+Time filters Today, Yesterday, This Week, This Month function correctly.
+
+Settings lets you set cost per mile and it affects calculations.
+
+Entries are editable/deletable, with recalculated rollups.
+
+Tests pass for rollups and calculator basics.
+
+Clean, mobile-first UI with Tailwind; easy to use.
+
+Build exactly as specified and provide a short summary of implemented files and how to run (make init && make migrate && make api and make web).
