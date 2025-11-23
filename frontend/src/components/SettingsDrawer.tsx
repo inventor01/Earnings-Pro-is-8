@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, TimeframeType, api } from '../lib/api';
+import { Settings } from '../lib/api';
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -9,69 +9,19 @@ interface SettingsDrawerProps {
   onResetAll?: () => void;
 }
 
-const TIMEFRAMES: TimeframeType[] = ['TODAY', 'YESTERDAY', 'THIS_WEEK', 'LAST_7_DAYS', 'THIS_MONTH', 'LAST_MONTH'];
-const TIMEFRAME_LABELS: Record<TimeframeType, string> = {
-  TODAY: 'Today',
-  YESTERDAY: 'Yesterday',
-  THIS_WEEK: 'This Week',
-  LAST_7_DAYS: 'Last 7 Days',
-  THIS_MONTH: 'This Month',
-  LAST_MONTH: 'Last Month',
-};
-
 export function SettingsDrawer({ isOpen, onClose, settings, onSave, onResetAll }: SettingsDrawerProps) {
   const [costPerMile, setCostPerMile] = useState(settings.cost_per_mile.toString());
-  const [goals, setGoals] = useState<Record<TimeframeType, string>>({
-    TODAY: '',
-    YESTERDAY: '',
-    THIS_WEEK: '',
-    LAST_7_DAYS: '',
-    THIS_MONTH: '',
-    LAST_MONTH: '',
-  });
-  const [loadingGoals, setLoadingGoals] = useState(false);
-
-  if (isOpen && Object.values(goals).every(g => g === '')) {
-    setLoadingGoals(true);
-    Promise.all(TIMEFRAMES.map(tf => api.getGoal(tf))).then(results => {
-      const newGoals = { ...goals };
-      results.forEach((goal, idx) => {
-        if (goal) {
-          newGoals[TIMEFRAMES[idx]] = goal.target_profit.toString();
-        }
-      });
-      setGoals(newGoals);
-      setLoadingGoals(false);
-    });
-  }
 
   if (!isOpen) return null;
 
-  const handleSave = async () => {
+  const handleSave = () => {
     onSave({ cost_per_mile: parseFloat(costPerMile) });
-    
-    // Save goals
-    for (const tf of TIMEFRAMES) {
-      const goal = goals[tf];
-      if (goal && parseFloat(goal) > 0) {
-        try {
-          await api.createGoal(tf, parseFloat(goal));
-        } catch (e) {
-          console.error(`Failed to save goal for ${tf}:`, e);
-        }
-      }
-    }
-    
     onClose();
   };
 
   const handleResetAll = () => {
     onResetAll?.();
     onClose();
-  };
-
-  const handleGoalChange = (tf: TimeframeType, value: string) => {
-    setGoals({ ...goals, [tf]: value });
   };
 
   return (
@@ -103,32 +53,11 @@ export function SettingsDrawer({ isOpen, onClose, settings, onSave, onResetAll }
           </p>
         </div>
 
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Profit Goals</h3>
-          <div className="space-y-2">
-            {TIMEFRAMES.map(tf => (
-              <div key={tf} className="flex items-center gap-2">
-                <label className="text-xs text-gray-600 w-24">{TIMEFRAME_LABELS[tf]}</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={goals[tf]}
-                  onChange={(e) => handleGoalChange(tf, e.target.value)}
-                  placeholder="Goal amount"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                />
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-gray-500 mt-2">Set profit targets for each timeframe</p>
-        </div>
-
         <button
           onClick={handleSave}
-          disabled={loadingGoals}
-          className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 mb-3 disabled:bg-gray-400"
+          className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 mb-3"
         >
-          {loadingGoals ? 'Loading Goals...' : 'Save Settings'}
+          Save Settings
         </button>
 
         <div className="pt-6 border-t border-gray-200">

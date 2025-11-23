@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, EntryCreate, EntryType } from '../lib/api';
+import { api, EntryCreate, EntryType, TimeframeType } from '../lib/api';
 import { PeriodChips, Period } from '../components/PeriodChips';
 import { KpiCard } from '../components/KpiCard';
 import { CalcPad, CalcMode } from '../components/CalcPad';
@@ -10,6 +10,7 @@ import { SettingsDrawer } from '../components/SettingsDrawer';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Toast } from '../components/Toast';
 import { TripTracker } from '../components/TripTracker';
+import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
 
 function getPeriodDates(period: Period): { from: string; to: string } {
   const now = new Date();
@@ -303,8 +304,27 @@ export function Dashboard() {
     resetAllMutation.mutate();
   };
 
+  const getTimeframeFromPeriod = (p: Period): TimeframeType => {
+    const mapping: Record<Period, TimeframeType> = {
+      'today': 'TODAY',
+      'yesterday': 'YESTERDAY',
+      'week': 'THIS_WEEK',
+      'last7': 'LAST_7_DAYS',
+      'month': 'THIS_MONTH',
+      'lastMonth': 'LAST_MONTH',
+    };
+    return mapping[p] || 'TODAY';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {rollup && (
+        <ProfitGoalsBar
+          timeframe={getTimeframeFromPeriod(period)}
+          currentProfit={rollup.profit}
+          goalProgress={rollup.goal_progress}
+        />
+      )}
       <div className="flex-1 overflow-y-auto max-w-6xl mx-auto px-4 py-6 pb-24 w-full">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Driver Earnings</h1>
@@ -352,8 +372,6 @@ export function Dashboard() {
             title="Profit"
             value={`$${rollup?.profit.toFixed(2) || '0.00'}`}
             color="blue"
-            goalProgress={rollup?.goal_progress}
-            goalTarget={rollup?.goal?.target_profit}
           />
           <KpiCard
             title="Miles"
