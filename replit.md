@@ -21,6 +21,7 @@ This application helps delivery drivers:
 - Mileage cost calculation
 - Settings management
 - Sample data seeded for testing
+- GPS trip tracking with automatic distance calculation
 
 ## Recent Changes (November 23, 2025)
 - Initial project setup with backend (FastAPI + SQLite) and frontend (React + Vite + Tailwind)
@@ -39,6 +40,9 @@ This application helps delivery drivers:
 - Added scroll-to-top on component mount to ensure KPI cards are visible
 - All backend tests passing (9/9)
 - Database seeded with 62 entries; application fully operational with real-time KPIs displaying correctly
+- Fixed Vite proxy configuration to allow frontend-backend communication in Replit environment
+- **Added GPS Trip Tracking Feature**: Users can track trips in real-time using phone geolocation, automatically calculating miles driven using Haversine formula
+- TripTracker component displays live distance and duration, auto-fills entry form on trip completion
 
 ## Project Architecture
 

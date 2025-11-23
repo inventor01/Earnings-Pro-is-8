@@ -9,6 +9,7 @@ import { EntriesTable } from '../components/EntriesTable';
 import { SettingsDrawer } from '../components/SettingsDrawer';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Toast } from '../components/Toast';
+import { TripTracker } from '../components/TripTracker';
 
 function getPeriodDates(period: Period): { from: string; to: string } {
   const now = new Date();
@@ -175,6 +176,18 @@ export function Dashboard() {
     }
   };
 
+  const handleTripComplete = (miles: number, durationMinutes: number) => {
+    setFormData({
+      ...formData,
+      distance_miles: miles.toString(),
+      duration_minutes: durationMinutes.toString(),
+      type: 'ORDER',
+    });
+    setEntryType('ORDER');
+    setCalcExpanded(true);
+    setToast({ message: `Trip completed! ${miles} miles tracked`, type: 'success' });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="flex-1 overflow-y-auto max-w-6xl mx-auto px-4 py-6 pb-24 w-full">
@@ -248,6 +261,10 @@ export function Dashboard() {
         </button>
         
         <div className="max-w-6xl mx-auto p-4 max-h-[70vh] overflow-y-auto">
+          <div className="mb-4">
+            <TripTracker onTripComplete={handleTripComplete} />
+          </div>
+          
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <CalcPad
               amount={amount}
