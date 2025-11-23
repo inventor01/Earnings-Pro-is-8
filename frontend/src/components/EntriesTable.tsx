@@ -2,13 +2,12 @@ import { Entry } from '../lib/api';
 
 interface EntriesTableProps {
   entries: Entry[];
-  onEdit?: (entry: Entry) => void;
   onDelete?: (id: number) => void;
   selectedIds?: number[];
   onSelectChange?: (ids: number[]) => void;
 }
 
-export function EntriesTable({ entries, onEdit, onDelete, selectedIds = [], onSelectChange }: EntriesTableProps) {
+export function EntriesTable({ entries, onDelete, selectedIds = [], onSelectChange }: EntriesTableProps) {
   const allSelected = entries.length > 0 && selectedIds.length === entries.length;
   const someSelected = selectedIds.length > 0 && selectedIds.length < entries.length;
 
