@@ -76,6 +76,7 @@ export function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [calcExpanded, setCalcExpanded] = useState(false);
 
   const queryClient = useQueryClient();
   const dates = getPeriodDates(period);
@@ -94,10 +95,6 @@ export function Dashboard() {
     queryKey: ['entries', dates.from, dates.to],
     queryFn: () => api.getEntries(dates.from, dates.to),
   });
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
 
   const createMutation = useMutation({
     mutationFn: api.createEntry,
@@ -179,8 +176,8 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-6 pb-[500px]">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex-1 overflow-y-auto max-w-6xl mx-auto px-4 py-6 pb-24 w-full">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Driver Earnings</h1>
           <button
@@ -241,8 +238,16 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl">
-        <div className="max-w-6xl mx-auto">
+      <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 ${calcExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`}>
+        <button
+          onClick={() => setCalcExpanded(!calcExpanded)}
+          className="w-full py-4 px-4 flex items-center justify-between bg-blue-500 text-white font-bold text-lg hover:bg-blue-600"
+        >
+          <span>{calcExpanded ? '▼ Hide Calculator' : '+ Add Entry'}</span>
+          <span className="text-sm opacity-90">{amount !== '0' ? `$${amount}` : ''}</span>
+        </button>
+        
+        <div className="max-w-6xl mx-auto p-4 max-h-[70vh] overflow-y-auto">
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <CalcPad
               amount={amount}
