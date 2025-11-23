@@ -25,6 +25,8 @@ class ExpenseCategory(str, enum.Enum):
     MAINTENANCE = "MAINTENANCE"
     PHONE = "PHONE"
     SUBSCRIPTION = "SUBSCRIPTION"
+    FOOD = "FOOD"
+    LEISURE = "LEISURE"
     OTHER = "OTHER"
 
 class Entry(Base):
@@ -40,6 +42,7 @@ class Entry(Base):
     duration_minutes = Column(Integer, default=0)
     category = Column(SQLEnum(ExpenseCategory), nullable=True)
     note = Column(Text, nullable=True)
+    receipt_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

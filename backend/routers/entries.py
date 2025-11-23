@@ -27,7 +27,8 @@ async def create_entry(entry: EntryCreate, db: Session = Depends(get_db)):
         distance_miles=entry.distance_miles or 0.0,
         duration_minutes=entry.duration_minutes or 0,
         category=entry.category,
-        note=entry.note
+        note=entry.note,
+        receipt_url=entry.receipt_url
     )
     db.add(db_entry)
     db.commit()

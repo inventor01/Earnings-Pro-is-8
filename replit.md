@@ -18,19 +18,23 @@ This application helps delivery drivers:
 - Time period filtering with automatic daily rollover
 - Multi-platform support (DoorDash, UberEats, Instacart, GrubHub, Shipt, Other)
 - Default app set to UberEats
-- Expense tracking with categories
+- Expense tracking with emoji-enhanced categories (Gas ⛽, Parking 🅿️, Tolls 🛣️, Maintenance 🔧, Phone 📱, Subscription 📦, Food 🍔, Leisure 🎮, Other 📋)
+- Receipt image upload support for expenses
 - Mileage cost calculation
 - Settings management
 - Sample data seeded for testing
 - GPS trip tracking with automatic distance calculation
 - Mass select and bulk delete for entries
 - Daily data reset feature with confirmation dialog
+- Reset all data feature in settings
 - Automatic date detection - notifies user when date changes
 
 ## Recent Changes (November 23, 2025 - Latest)
+- **Added Receipt Support for Expenses**: Users can now upload receipt images for expense entries with preview
+- **Enhanced Expense Categories with Emojis**: Added 2 new categories (FOOD 🍔, LEISURE 🎮) and all categories now display with emojis in dropdown
+- **Receipt Display in Table**: Expense entries with receipts show a "📸 Receipt" button to view uploaded images
 - **Added "Reset All Data" in Settings**: New "Danger Zone" section in settings drawer allows users to permanently delete all entries with confirmation dialog
 - **Added GPS error handling improvements**: Better error messages for geolocation failures (permission denied, no signal, timeout) with dismiss button
-- **Removed unused imports**: Cleaned up React imports from Dashboard
 
 ## Previous Changes
 - Removed Order ID field from entry form to simplify data entry

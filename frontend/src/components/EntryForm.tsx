@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { AppType, EntryType, ExpenseCategory } from '../lib/api';
 import { CalcMode } from './CalcPad';
 
@@ -16,6 +15,7 @@ export interface EntryFormData {
   duration_minutes: string;
   category: ExpenseCategory;
   note: string;
+  receipt_url?: string;
 }
 
 export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: EntryFormProps) {
@@ -86,22 +86,55 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
       )}
 
       {isExpense && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-          <select
-            value={formData.category}
-            onChange={(e) => onFormDataChange({ ...formData, category: e.target.value as ExpenseCategory })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="GAS">Gas</option>
-            <option value="PARKING">Parking</option>
-            <option value="TOLLS">Tolls</option>
-            <option value="MAINTENANCE">Maintenance</option>
-            <option value="PHONE">Phone</option>
-            <option value="SUBSCRIPTION">Subscription</option>
-            <option value="OTHER">Other</option>
-          </select>
-        </div>
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+              value={formData.category}
+              onChange={(e) => onFormDataChange({ ...formData, category: e.target.value as ExpenseCategory })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="GAS">⛽ Gas</option>
+              <option value="PARKING">🅿️ Parking</option>
+              <option value="TOLLS">🛣️ Tolls</option>
+              <option value="MAINTENANCE">🔧 Maintenance</option>
+              <option value="PHONE">📱 Phone</option>
+              <option value="SUBSCRIPTION">📦 Subscription</option>
+              <option value="FOOD">🍔 Food</option>
+              <option value="LEISURE">🎮 Leisure</option>
+              <option value="OTHER">📋 Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Receipt (optional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    const base64 = event.target?.result as string;
+                    onFormDataChange({ ...formData, receipt_url: base64 });
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {formData.receipt_url && (
+              <div className="mt-2">
+                <img 
+                  src={formData.receipt_url} 
+                  alt="Receipt preview" 
+                  className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                />
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       <div>

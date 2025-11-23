@@ -83,6 +83,7 @@ export function Dashboard() {
   const [period, setPeriod] = useState<Period>('today');
   const [amount, setAmount] = useState('0');
   const [mode, setMode] = useState<CalcMode>('add');
+  const [, setEntryType] = useState<EntryType>('ORDER');
   const [formData, setFormData] = useState<EntryFormData>({
     type: 'ORDER',
     app: 'UBEREATS',
@@ -90,6 +91,7 @@ export function Dashboard() {
     duration_minutes: '',
     category: 'GAS',
     note: '',
+    receipt_url: undefined,
   });
   const [showSettings, setShowSettings] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
@@ -236,6 +238,7 @@ export function Dashboard() {
       duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : 0,
       category: (formData.type === 'EXPENSE' && formData.category) ? formData.category : undefined,
       note: formData.note || undefined,
+      receipt_url: formData.receipt_url || undefined,
     };
 
     createMutation.mutate(entry);
@@ -247,6 +250,7 @@ export function Dashboard() {
       duration_minutes: '',
       category: 'GAS',
       note: '',
+      receipt_url: undefined,
     });
   };
 

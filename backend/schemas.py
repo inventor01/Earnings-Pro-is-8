@@ -14,6 +14,7 @@ class EntryCreate(BaseModel):
     duration_minutes: Optional[int] = 0
     category: Optional[ExpenseCategory] = None
     note: Optional[str] = None
+    receipt_url: Optional[str] = None
 
 class EntryUpdate(BaseModel):
     timestamp: Optional[datetime] = None
@@ -25,6 +26,7 @@ class EntryUpdate(BaseModel):
     duration_minutes: Optional[int] = None
     category: Optional[ExpenseCategory] = None
     note: Optional[str] = None
+    receipt_url: Optional[str] = None
 
 class EntryResponse(BaseModel):
     id: int
@@ -37,6 +39,7 @@ class EntryResponse(BaseModel):
     duration_minutes: int
     category: Optional[ExpenseCategory]
     note: Optional[str]
+    receipt_url: Optional[str]
     created_at: datetime
     updated_at: datetime
     

@@ -128,8 +128,26 @@ export function EntriesTable({ entries, onDelete, selectedIds = [], onSelectChan
                 <td className="px-4 py-3 text-right text-sm text-gray-600">
                   {entry.distance_miles > 0 ? `${entry.distance_miles.toFixed(1)} mi` : '-'}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-600 truncate max-w-xs">
-                  {entry.note || '-'}
+                <td className="px-4 py-3 text-sm text-gray-600">
+                  <div className="flex flex-col gap-1">
+                    {entry.note && <span className="truncate max-w-xs">{entry.note}</span>}
+                    {entry.receipt_url && (
+                      <button
+                        onClick={() => {
+                          const img = new Image();
+                          img.src = entry.receipt_url!;
+                          const link = document.createElement('a');
+                          link.href = entry.receipt_url!;
+                          link.target = '_blank';
+                          link.click();
+                        }}
+                        className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                        title="View receipt"
+                      >
+                        📸 Receipt
+                      </button>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button
