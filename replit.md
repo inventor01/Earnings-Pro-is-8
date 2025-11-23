@@ -7,7 +7,7 @@ A mobile-first web application for delivery drivers to track earnings, expenses,
 This application helps delivery drivers:
 - Track revenue from orders and bonuses across multiple platforms
 - Log expenses (gas, parking, tolls, etc.) and cancellations
-- Calculate profit automatically accounting for mileage costs
+- Calculate profit based on revenue minus logged expenses only
 - View real-time KPIs: Revenue, Expenses, Profit, Miles, $/mile, $/hour
 - Filter data by time periods (Today, Yesterday, This Week, Last 7 Days, This Month, Last Month)
 
@@ -30,11 +30,13 @@ This application helps delivery drivers:
 - Automatic date detection - notifies user when date changes
 
 ## Recent Changes (November 23, 2025 - Latest)
+- **Fixed Profit Calculation**: Changed profit formula to only subtract actual expenses (no automatic mileage cost deduction). Now Profit = Revenue - Expenses, so profit equals revenue when there are no expenses
 - **Added Receipt Support for Expenses**: Users can now upload receipt images for expense entries with preview
 - **Enhanced Expense Categories with Emojis**: Added 2 new categories (FOOD 🍔, LEISURE 🎮) and all categories now display with emojis in dropdown
 - **Receipt Display in Table**: Expense entries with receipts show a "📸 Receipt" button to view uploaded images
 - **Added "Reset All Data" in Settings**: New "Danger Zone" section in settings drawer allows users to permanently delete all entries with confirmation dialog
 - **Added GPS error handling improvements**: Better error messages for geolocation failures (permission denied, no signal, timeout) with dismiss button
+- **Fixed Database Migration Issue**: Deleted old database to force recreation with new schema including receipt_url field
 
 ## Previous Changes
 - Removed Order ID field from entry form to simplify data entry
@@ -45,7 +47,7 @@ This application helps delivery drivers:
 - Implemented all React components (KPI cards, period filters, entry form, entries table, settings drawer, toast notifications)
 - Added seed script with 62 sample entries across 7 days
 - Configured workflows for both backend (port 8000) and frontend (port 5000)
-- Fixed rollup calculations: profit = revenue - expenses - (miles × cost_per_mile), $/mile and $/hour use net_earnings
+- Fixed rollup calculations: profit = revenue - expenses, $/mile and $/hour use net_earnings
 - Fixed Pydantic schema serialization to use float types for all numeric rollup values
 - Fixed frontend form validation to accept positive amounts in both modes, backend handles sign conversion
 - Removed auto-reset behavior from EntryForm to preserve user type selection across mode changes
@@ -88,7 +90,7 @@ This application helps delivery drivers:
 2. **Signed Amount Storage**: Expenses and cancellations stored as negative amounts in the database for simpler aggregation
 3. **Calculator-First UX**: Bottom-anchored calculator and form for mobile-first touch interaction
 4. **Unified Entry Ledger**: Single table for all transaction types (ORDER, BONUS, EXPENSE, CANCELLATION) with type enum
-5. **Real-Time Calculations**: Profit calculated dynamically: revenue - expenses - (miles * cost_per_mile)
+5. **Real-Time Calculations**: Profit calculated dynamically: revenue - expenses (expenses only deducted if logged)
 
 ## User Preferences
 - Mobile-first design is priority #1

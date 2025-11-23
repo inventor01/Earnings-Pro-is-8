@@ -43,9 +43,8 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
         by_app[entry.app.value] += amount
     
     hours = total_minutes / 60.0 if total_minutes > 0 else 0.0
-    cost_of_miles = Decimal(str(miles)) * cost_per_mile
-    profit = total_amount - cost_of_miles
     net_earnings = total_amount
+    profit = total_amount
     
     dollars_per_mile = net_earnings / Decimal(str(miles)) if miles > 0 else Decimal("0")
     dollars_per_hour = net_earnings / Decimal(str(hours)) if hours > 0 else Decimal("0")

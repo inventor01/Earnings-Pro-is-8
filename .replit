@@ -54,9 +54,5 @@ externalPort = 8000
 localPort = 33819
 externalPort = 3000
 
-[[ports]]
-localPort = 37807
-externalPort = 3001
-
 [nix]
 channel = "stable-25_05"
