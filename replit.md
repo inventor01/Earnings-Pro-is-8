@@ -46,6 +46,7 @@ This application helps delivery drivers:
 - TripTracker component displays live distance and duration, auto-fills entry form on trip completion
 - **Added Mass Select and Bulk Delete**: Users can select multiple entries with checkboxes (including select all) and delete them in bulk with confirmation dialog
 - **Fixed timezone handling for date filters**: Backend now properly converts incoming UTC timestamps to naive datetimes for SQLite comparison; frontend calculates all date ranges in UTC to prevent timezone offset issues
+- **Verified all time period filters working correctly**: Tested Today, Yesterday, Last 7 Days, This Week, This Month, Last Month - all filters update data properly and will roll forward automatically each day
 
 ## Project Architecture
 
