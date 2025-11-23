@@ -29,9 +29,14 @@ This application helps delivery drivers:
 - Reset all data feature in settings
 - Automatic date detection - notifies user when date changes
 - Profit goals with visual progress tracking for all timeframes
+- Edit any entry (amount, type, app, distance, duration, category, notes) with modal sidebar
+- Full CRUD operations: Create, Read, Update, Delete
 
 ## Recent Changes (November 23, 2025 - Latest)
-- **Added Profit Goal Tracking**: Users can now set profit targets for each timeframe (Today, Yesterday, This Week, Last 7 Days, This Month, Last Month) with inline editing on the top progress bar
+- **Added Edit Entry Functionality**: Users can now click the Edit button on any entry to modify amount, type, app, distance, duration, category, and notes
+- **Edit Modal Sidebar**: Beautiful right-side panel opens with entry details pre-filled for easy editing
+- **Save & Cancel Options**: Users can save changes or cancel editing with confirmation buttons
+- **Profit Goal Tracking**: Users can now set profit targets for each timeframe (Today, Yesterday, This Week, Last 7 Days, This Month, Last Month) with inline editing on the top progress bar
 - **Goal Progress Bar at Top**: Beautiful progress bar displays at the top of the dashboard showing current profit vs goal with Edit button for quick goal adjustments
 - **Success Message on Goal Achievement**: When users reach their profit goal, a celebratory green success toast appears with "🎉 Congratulations! You've reached your {timeframe} profit goal!"
 - **Progress Visualization**: Progress bar shows % toward goal with color coding (blue for in-progress, green when goal exceeded)

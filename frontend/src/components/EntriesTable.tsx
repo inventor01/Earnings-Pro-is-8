@@ -3,11 +3,12 @@ import { Entry } from '../lib/api';
 interface EntriesTableProps {
   entries: Entry[];
   onDelete?: (id: number) => void;
+  onEdit?: (entry: Entry) => void;
   selectedIds?: number[];
   onSelectChange?: (ids: number[]) => void;
 }
 
-export function EntriesTable({ entries, onDelete, selectedIds = [], onSelectChange }: EntriesTableProps) {
+export function EntriesTable({ entries, onDelete, onEdit, selectedIds = [], onSelectChange }: EntriesTableProps) {
   const allSelected = entries.length > 0 && selectedIds.length === entries.length;
   const someSelected = selectedIds.length > 0 && selectedIds.length < entries.length;
 
@@ -149,7 +150,13 @@ export function EntriesTable({ entries, onDelete, selectedIds = [], onSelectChan
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-right space-x-2 flex justify-end">
+                  <button
+                    onClick={() => onEdit && onEdit(entry)}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Edit
+                  </button>
                   <button
                     onClick={() => onDelete && onDelete(entry.id)}
                     className="text-red-600 hover:text-red-800 text-sm font-medium"
