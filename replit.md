@@ -45,6 +45,7 @@ This application helps delivery drivers:
 - **Added GPS Trip Tracking Feature**: Users can track trips in real-time using phone geolocation, automatically calculating miles driven using Haversine formula
 - TripTracker component displays live distance and duration, auto-fills entry form on trip completion
 - **Added Mass Select and Bulk Delete**: Users can select multiple entries with checkboxes (including select all) and delete them in bulk with confirmation dialog
+- **Fixed timezone handling for date filters**: Backend now properly converts incoming UTC timestamps to naive datetimes for SQLite comparison; frontend calculates all date ranges in UTC to prevent timezone offset issues
 
 ## Project Architecture
 

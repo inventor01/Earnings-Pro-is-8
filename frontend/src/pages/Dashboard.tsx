@@ -13,49 +13,68 @@ import { TripTracker } from '../components/TripTracker';
 
 function getPeriodDates(period: Period): { from: string; to: string } {
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  const startOfDay = (date: Date): Date => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+  
+  const endOfDay = (date: Date): Date => {
+    const d = new Date(date);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  };
 
   switch (period) {
     case 'today':
       return {
-        from: today.toISOString(),
-        to: new Date(today.getTime() + 86400000 - 1).toISOString(),
+        from: startOfDay(now).toISOString(),
+        to: endOfDay(now).toISOString(),
       };
     case 'yesterday':
-      const yesterday = new Date(today.getTime() - 86400000);
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
       return {
-        from: yesterday.toISOString(),
-        to: new Date(yesterday.getTime() + 86400000 - 1).toISOString(),
+        from: startOfDay(yesterday).toISOString(),
+        to: endOfDay(yesterday).toISOString(),
       };
     case 'week':
-      const weekStart = new Date(today.getTime() - today.getDay() * 86400000);
+      const weekStart = new Date(now);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      weekStart.setHours(0, 0, 0, 0);
       return {
         from: weekStart.toISOString(),
-        to: new Date().toISOString(),
+        to: now.toISOString(),
       };
     case 'last7':
-      const last7 = new Date(today.getTime() - 6 * 86400000);
+      const last7 = new Date(now);
+      last7.setDate(last7.getDate() - 6);
+      last7.setHours(0, 0, 0, 0);
       return {
         from: last7.toISOString(),
-        to: new Date().toISOString(),
+        to: now.toISOString(),
       };
     case 'month':
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      monthStart.setHours(0, 0, 0, 0);
       return {
         from: monthStart.toISOString(),
-        to: new Date().toISOString(),
+        to: now.toISOString(),
       };
     case 'lastMonth':
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      lastMonthStart.setHours(0, 0, 0, 0);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+      lastMonthEnd.setHours(23, 59, 59, 999);
       return {
         from: lastMonthStart.toISOString(),
         to: lastMonthEnd.toISOString(),
       };
     default:
       return {
-        from: today.toISOString(),
-        to: new Date().toISOString(),
+        from: startOfDay(now).toISOString(),
+        to: now.toISOString(),
       };
   }
 }
