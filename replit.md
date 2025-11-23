@@ -40,8 +40,8 @@ This application helps delivery drivers:
 - **Added Edit Entry Functionality**: Users can now click the Edit button on any entry to modify amount, type, app, distance, duration, category, and notes
 - **Edit Modal Sidebar**: Beautiful right-side panel opens with entry details pre-filled for easy editing
 - **Save & Cancel Options**: Users can save changes or cancel editing with confirmation buttons
-- **Profit Goal Tracking**: Users can now set profit targets for each timeframe (Today, Yesterday, This Week, Last 7 Days, This Month, Last Month) with inline editing on the top progress bar
-- **Goal Progress Bar at Top**: Beautiful progress bar displays at the top of the dashboard showing current profit vs goal with Edit button for quick goal adjustments
+- **Revenue Goal Tracking**: Users can now set revenue targets for each timeframe (Today, Yesterday, This Week, Last 7 Days, This Month, Last Month) with inline editing on the top progress bar
+- **Goal Progress Bar at Top**: Beautiful progress bar displays at the top of the dashboard showing current revenue vs goal with Edit button for quick goal adjustments
 - **Success Message on Goal Achievement**: When users reach their profit goal, a celebratory green success toast appears with "🎉 Congratulations! You've reached your {timeframe} profit goal!"
 - **Progress Visualization**: Progress bar shows % toward goal with color coding (blue for in-progress, green when goal exceeded)
 - **Fixed Profit Calculation**: Changed profit formula to only subtract actual expenses (no automatic mileage cost deduction). Now Profit = Revenue - Expenses, so profit equals revenue when there are no expenses

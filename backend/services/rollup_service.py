@@ -89,7 +89,7 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
                 }
                 target = float(goal.target_profit)
                 if target > 0:
-                    goal_progress = min(100.0, (float(profit) / target) * 100)
+                    goal_progress = min(100.0, (float(revenue) / target) * 100)
         except (KeyError, ValueError):
             pass
     
