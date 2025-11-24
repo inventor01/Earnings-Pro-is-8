@@ -12,7 +12,7 @@ router = APIRouter()
 async def get_settings(db: Session = Depends(get_db)):
     settings = db.query(Settings).first()
     if not settings:
-        default_cost = Decimal(os.getenv("COST_PER_MILE_DEFAULT", "0.35"))
+        default_cost = Decimal(os.getenv("COST_PER_MILE_DEFAULT", "0"))
         settings = Settings(id=1, cost_per_mile=default_cost)
         db.add(settings)
         db.commit()

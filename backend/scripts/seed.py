@@ -16,7 +16,7 @@ def seed_database():
     db.query(Entry).delete()
     db.query(Settings).delete()
     
-    settings = Settings(id=1, cost_per_mile=Decimal("0.35"))
+    settings = Settings(id=1, cost_per_mile=Decimal("0"))
     db.add(settings)
     
     now = datetime.utcnow()

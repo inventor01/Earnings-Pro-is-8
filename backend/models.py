@@ -50,7 +50,7 @@ class Settings(Base):
     __tablename__ = "settings"
     
     id = Column(Integer, primary_key=True, default=1)
-    cost_per_mile = Column(Numeric(10, 2), default=Decimal("0.35"), nullable=False)
+    cost_per_mile = Column(Numeric(10, 2), default=Decimal("0"), nullable=False)
 
 class TimeframeType(str, enum.Enum):
     TODAY = "TODAY"
