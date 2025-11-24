@@ -88,7 +88,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
 
   if (!goalAmount) {
     return (
-      <div className="w-full bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 px-4 py-3 animate-pulse">
+      <div className="w-full bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 px-4 py-3">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className="text-sm text-gray-600">
             <span className="font-medium">{TIMEFRAME_LABELS[timeframe]} Goal:</span> Set a target to track progress
@@ -163,7 +163,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
         </div>
         <div className={`w-full bg-gray-300 rounded-full h-4 overflow-hidden shadow-inner transition-all duration-500 progress-section ${isGoalReached ? 'shadow-green-300 shadow-lg' : 'shadow-blue-300'}`}>
           <div
-            className={`${progressColor} h-4 rounded-full transition-all duration-500 ease-out progress-bar-fill ${goalProgress > 50 ? 'shimmer-effect' : ''} ${isGoalReached ? 'goal-pulse shadow-lg' : ''}`}
+            className={`${progressColor} h-4 rounded-full transition-all duration-500 ease-out progress-bar-fill ${goalProgress > 50 ? 'shimmer-effect' : ''}`}
             style={{ width: `${displayProgress}%` }}
           />
         </div>
