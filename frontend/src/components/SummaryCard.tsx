@@ -31,7 +31,7 @@ export function SummaryCard({ revenue, expenses, profit, miles, orders, margin }
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
           {/* Revenue */}
           <div className="space-y-1">
-            <div className="text-xs opacity-60 font-medium">Revenue</div>
+            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>Revenue</div>
             <div className={`text-2xl md:text-3xl font-black ${colorConfig.accent} font-mono`}>
               {revenue}
             </div>
@@ -39,7 +39,7 @@ export function SummaryCard({ revenue, expenses, profit, miles, orders, margin }
 
           {/* Expenses */}
           <div className="space-y-1">
-            <div className="text-xs opacity-60 font-medium">Expenses</div>
+            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['red'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>Expenses</div>
             <div className={`text-2xl md:text-3xl font-black ${themeConfig.kpiColors['red'].accent} font-mono`}>
               {expenses}
             </div>
@@ -47,7 +47,7 @@ export function SummaryCard({ revenue, expenses, profit, miles, orders, margin }
 
           {/* Profit */}
           <div className="space-y-1">
-            <div className="text-xs opacity-60 font-medium">Profit</div>
+            <div className={`text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>Profit</div>
             <div className={`text-2xl md:text-3xl font-black ${colorConfig.accent} font-mono`}>
               {profit}
             </div>
@@ -56,7 +56,7 @@ export function SummaryCard({ revenue, expenses, profit, miles, orders, margin }
 
           {/* Miles */}
           <div className="space-y-1">
-            <div className="text-xs opacity-60 font-medium">Miles</div>
+            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['purple'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>Miles</div>
             <div className={`text-2xl md:text-3xl font-black ${themeConfig.kpiColors['purple'].accent} font-mono`}>
               {miles}
             </div>
@@ -64,7 +64,7 @@ export function SummaryCard({ revenue, expenses, profit, miles, orders, margin }
 
           {/* Orders */}
           <div className="space-y-1">
-            <div className="text-xs opacity-60 font-medium">Orders</div>
+            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>Orders</div>
             <div className={`text-2xl md:text-3xl font-black ${themeConfig.kpiColors['green'].accent} font-mono`}>
               {orders}
             </div>
