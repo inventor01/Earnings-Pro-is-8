@@ -49,13 +49,13 @@ export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color
           <div className="space-y-2 pt-2">
             {detail1 && (
               <div className="flex justify-between items-center text-xs md:text-sm">
-                <span className="opacity-70">{detail1.label}</span>
+                <span className={`${colorConfig.accent}`}>{detail1.label}</span>
                 <span className={`font-semibold ${colorConfig.accent}`}>{detail1.value}</span>
               </div>
             )}
             {detail2 && (
               <div className="flex justify-between items-center text-xs md:text-sm">
-                <span className="opacity-70">{detail2.label}</span>
+                <span className={`${colorConfig.accent}`}>{detail2.label}</span>
                 <span className={`font-semibold ${colorConfig.accent}`}>{detail2.value}</span>
               </div>
             )}
