@@ -65,23 +65,23 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'GAS':
-        return 'border border-blue-500 text-blue-400 bg-blue-950/30';
+        return 'border border-blue-500 text-blue-400 bg-white';
       case 'PARKING':
-        return 'border border-purple-500 text-purple-400 bg-purple-950/30';
+        return 'border border-purple-500 text-purple-400 bg-white';
       case 'TOLLS':
-        return 'border border-indigo-500 text-indigo-400 bg-indigo-950/30';
+        return 'border border-indigo-500 text-indigo-400 bg-white';
       case 'MAINTENANCE':
-        return 'border border-cyan-500 text-cyan-400 bg-cyan-950/30';
+        return 'border border-cyan-500 text-cyan-400 bg-white';
       case 'PHONE':
-        return 'border border-pink-500 text-pink-400 bg-pink-950/30';
+        return 'border border-pink-500 text-pink-400 bg-white';
       case 'SUBSCRIPTION':
-        return 'border border-violet-500 text-violet-400 bg-violet-950/30';
+        return 'border border-violet-500 text-violet-400 bg-white';
       case 'FOOD':
-        return 'border border-amber-500 text-amber-400 bg-amber-950/30';
+        return 'border border-amber-500 text-amber-400 bg-white';
       case 'LEISURE':
-        return 'border border-rose-500 text-rose-400 bg-rose-950/30';
+        return 'border border-rose-500 text-rose-400 bg-white';
       default:
-        return 'border border-gray-500 text-gray-400 bg-gray-950/30';
+        return 'border border-gray-500 text-gray-400 bg-white';
     }
   };
 
