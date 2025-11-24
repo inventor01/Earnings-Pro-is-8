@@ -23,9 +23,9 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
   const isOrder = formData.type === 'ORDER' || formData.type === 'CANCELLATION';
 
   return (
-    <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg p-6 space-y-4">
+    <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg md:rounded-2xl shadow-lg p-4 md:p-6 space-y-3 md:space-y-4">
       <div>
-        <label className="block text-base font-bold text-gray-800 mb-2">📝 Type</label>
+        <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📝 Type</label>
         <select
           value={formData.type}
           onChange={(e) => {
@@ -38,7 +38,7 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
             onFormDataChange(updatedData);
             onTypeChange(newType);
           }}
-          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
+          className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
         >
           <option value="ORDER">Order</option>
           <option value="BONUS">Bonus</option>
@@ -49,11 +49,11 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
 
       {!isExpense && (
         <div>
-          <label className="block text-base font-bold text-gray-800 mb-2">🚗 App</label>
+          <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🚗 App</label>
           <select
             value={formData.app}
             onChange={(e) => onFormDataChange({ ...formData, app: e.target.value as AppType })}
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
+            className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
           >
             <option value="UBEREATS">UberEats</option>
             <option value="DOORDASH">DoorDash</option>
@@ -68,24 +68,24 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
       {isOrder && (
         <>
           <div>
-            <label className="block text-base font-bold text-gray-800 mb-2">🛣️ Distance (miles)</label>
+            <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🛣️ Distance (miles)</label>
             <input
               type="number"
               step="0.1"
               value={formData.distance_miles}
               onChange={(e) => onFormDataChange({ ...formData, distance_miles: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
+              className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
               placeholder="5.5"
             />
           </div>
 
           <div>
-            <label className="block text-base font-bold text-gray-800 mb-2">⏱️ Duration (minutes)</label>
+            <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">⏱️ Duration (minutes)</label>
             <input
               type="number"
               value={formData.duration_minutes}
               onChange={(e) => onFormDataChange({ ...formData, duration_minutes: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
+              className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
               placeholder="30"
             />
           </div>
@@ -95,11 +95,11 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
       {isExpense && (
         <>
           <div>
-            <label className="block text-base font-bold text-gray-800 mb-2">🏷️ Category</label>
+            <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🏷️ Category</label>
             <select
               value={formData.category}
               onChange={(e) => onFormDataChange({ ...formData, category: e.target.value as ExpenseCategory })}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
+              className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
             >
               <option value="GAS">⛽ Gas</option>
               <option value="PARKING">🅿️ Parking</option>

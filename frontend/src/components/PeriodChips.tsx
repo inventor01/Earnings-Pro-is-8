@@ -18,7 +18,7 @@ export function PeriodChips({ selected, onSelect, onCustomClick }: PeriodChipsPr
   ];
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2">
+    <div className="flex gap-1 md:gap-2 overflow-x-auto pb-2 -mx-1">
       {periods.map((period) => (
         <button
           key={period.value}
@@ -29,7 +29,7 @@ export function PeriodChips({ selected, onSelect, onCustomClick }: PeriodChipsPr
               onSelect(period.value);
             }
           }}
-          className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+          className={`px-2 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium whitespace-nowrap touch-manipulation ${
             selected === period.value
               ? 'bg-blue-500 text-white'
               : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'

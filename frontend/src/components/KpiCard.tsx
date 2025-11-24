@@ -22,10 +22,10 @@ export function KpiCard({ title, value, trend, color = 'blue', goalProgress, goa
     : 'bg-gray-300';
 
   return (
-    <div className={`${colorClasses[color as keyof typeof colorClasses] || colorClasses.blue} p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow`}>
-      <div className="text-base text-gray-700 font-bold uppercase tracking-wide">{title}</div>
-      <div className="text-4xl font-black mt-3 text-gray-900">{value}</div>
-      {trend && <div className="text-sm text-gray-600 mt-2 font-semibold">{trend}</div>}
+    <div className={`${colorClasses[color as keyof typeof colorClasses] || colorClasses.blue} p-3 md:p-6 rounded-lg md:rounded-xl shadow-lg hover:shadow-xl transition-shadow`}>
+      <div className="text-xs md:text-base text-gray-700 font-bold uppercase tracking-wide">{title}</div>
+      <div className="text-2xl md:text-4xl font-black mt-2 md:mt-3 text-gray-900">{value}</div>
+      {trend && <div className="text-xs md:text-sm text-gray-600 mt-1 md:mt-2 font-semibold">{trend}</div>}
       
       {goalProgress !== null && goalProgress !== undefined && goalTarget && (
         <div className="mt-3">
