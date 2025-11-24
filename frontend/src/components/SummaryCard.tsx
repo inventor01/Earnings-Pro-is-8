@@ -48,7 +48,7 @@ export function SummaryCard({ revenue, expenses, profit, miles, orders, margin }
           {/* Profit */}
           <div className="space-y-1">
             <div className={`text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>Profit</div>
-            <div className={`text-2xl md:text-3xl font-black ${colorConfig.accent} font-mono`}>
+            <div className={`text-2xl md:text-3xl font-black ${themeConfig.kpiColors['green'].accent} font-mono`}>
               {profit}
             </div>
             <div className="text-xs opacity-50">Margin: {margin}</div>
