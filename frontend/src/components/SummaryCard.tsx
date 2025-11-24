@@ -53,7 +53,7 @@ export function SummaryCard({ revenue, expenses, profit, miles, orders, margin, 
             <div className={`text-3xl md:text-4xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer shimmer`}>
               <CountUpNumber value={profit} />
             </div>
-            <div className="text-xs text-white">Margin: {margin}</div>
+            <div className={`text-xs ${themeConfig.kpiColors['green'].accent}`}>Margin: {margin}</div>
           </div>
 
           {/* Miles */}
