@@ -11,9 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 FROM node:18-alpine AS frontend-builder
 
 WORKDIR /frontend
-COPY frontend/package*.json ./
+COPY frontend/ ./
 RUN npm ci
-COPY frontend ./
 RUN npm run build
 
 # Final stage: Runtime
