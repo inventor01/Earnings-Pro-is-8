@@ -356,6 +356,19 @@ export function Dashboard() {
     });
   };
 
+  const handleModeChange = (newMode: CalcMode) => {
+    setMode(newMode);
+    // When switching to subtract, automatically change type to EXPENSE
+    if (newMode === 'subtract') {
+      setFormData(prev => ({
+        ...prev,
+        type: 'EXPENSE',
+        app: 'OTHER', // Set app to OTHER for expenses
+      }));
+      setEntryType('EXPENSE');
+    }
+  };
+
   const handleEditEntry = (entry: api.Entry) => {
     setEditingEntry(entry);
     setEditingFormData({
@@ -531,7 +544,7 @@ export function Dashboard() {
               amount={amount}
               mode={mode}
               onAmountChange={setAmount}
-              onModeChange={setMode}
+              onModeChange={handleModeChange}
             />
             <EntryForm 
               mode={mode} 

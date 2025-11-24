@@ -33,6 +33,13 @@ This application helps delivery drivers:
 - Full CRUD operations: Create, Read, Update, Delete
 
 ## Recent Changes (November 24, 2025 - Latest)
+- **Auto-Switch to EXPENSE on Subtract**: When user presses ➖ Subtract button, entry type automatically changes to EXPENSE and app defaults to OTHER
+- **Faster Expense Logging**: Streamlined workflow - just press Subtract and enter the expense amount
+- **Larger, More Playful Design**: 
+  - KPI cards now use gradients, bigger fonts (text-4xl), and thicker left borders
+  - Calculator buttons enlarged with scale animations and colorful gradients
+  - Form inputs larger with emoji labels (📝 Type, 🚗 App, 🛣️ Distance, ⏱️ Duration, 🏷️ Category, 📸 Receipt, 📝 Note)
+  - Title increased to text-5xl with 🚗 emoji
 - **Expense Category Display in Table**: Table now shows expense category with emoji instead of app for EXPENSE entries (e.g., ⛽ GAS, 🅿️ PARKING, 🛣️ TOLLS)
 - **Column Header Update**: Changed "APP" to "APP / CATEGORY" to reflect dual purpose
 - **Fixed App Field for Expenses**: When selecting EXPENSE type, app now defaults to 'OTHER' instead of UberEats (app field is hidden for expenses)
