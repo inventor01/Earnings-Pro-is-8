@@ -401,7 +401,7 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-slate-900 to-black flex flex-col">
       {rollup && (
         <ProfitGoalsBar
           timeframe={getTimeframeFromPeriod(period)}
@@ -416,14 +416,14 @@ export function Dashboard() {
           <div className="flex gap-1 md:gap-2">
             <button
               onClick={() => setResetConfirm(true)}
-              className="px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-medium whitespace-nowrap"
+              className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-700 hover:to-red-600 font-bold whitespace-nowrap shadow-lg hover:shadow-red-500/50 transition-all"
               title="Reset today's data"
             >
               Reset
             </button>
             <button
               onClick={() => setShowSettings(true)}
-              className="p-1.5 md:p-2 text-gray-600 hover:text-gray-900"
+              className="p-2 md:p-2.5 text-cyan-400 hover:text-cyan-300 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
