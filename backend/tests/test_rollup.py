@@ -18,7 +18,7 @@ def db_session():
     Base.metadata.drop_all(bind=test_engine)
 
 def test_rollup_revenue_calculation(db_session):
-    settings = Settings(id=1, cost_per_mile=Decimal("0.35"))
+    settings = Settings(id=1, cost_per_mile=Decimal("0"))
     db_session.add(settings)
     
     entry1 = Entry(
@@ -47,7 +47,7 @@ def test_rollup_revenue_calculation(db_session):
     assert rollup["expenses"] == Decimal("0")
 
 def test_rollup_expense_calculation(db_session):
-    settings = Settings(id=1, cost_per_mile=Decimal("0.35"))
+    settings = Settings(id=1, cost_per_mile=Decimal("0"))
     db_session.add(settings)
     
     expense1 = Entry(
@@ -67,7 +67,7 @@ def test_rollup_expense_calculation(db_session):
     assert rollup["expenses"] == Decimal("40.00")
 
 def test_rollup_profit_with_mileage(db_session):
-    settings = Settings(id=1, cost_per_mile=Decimal("0.35"))
+    settings = Settings(id=1, cost_per_mile=Decimal("0"))
     db_session.add(settings)
     
     entry = Entry(
@@ -96,12 +96,12 @@ def test_rollup_profit_with_mileage(db_session):
     assert rollup["revenue"] == Decimal("100.00")
     assert rollup["expenses"] == Decimal("20.00")
     assert rollup["miles"] == 10.0
-    cost_of_miles = Decimal("10.0") * Decimal("0.35")
+    cost_of_miles = Decimal("10.0") * Decimal("0")
     expected_profit = Decimal("100.00") - Decimal("20.00") - cost_of_miles
     assert rollup["profit"] == expected_profit
 
 def test_rollup_dollars_per_mile(db_session):
-    settings = Settings(id=1, cost_per_mile=Decimal("0.35"))
+    settings = Settings(id=1, cost_per_mile=Decimal("0"))
     db_session.add(settings)
     
     entry = Entry(
@@ -120,7 +120,7 @@ def test_rollup_dollars_per_mile(db_session):
     assert rollup["dollars_per_mile"] == Decimal("5.00")
 
 def test_rollup_dollars_per_hour(db_session):
-    settings = Settings(id=1, cost_per_mile=Decimal("0.35"))
+    settings = Settings(id=1, cost_per_mile=Decimal("0"))
     db_session.add(settings)
     
     entry = Entry(

@@ -16,7 +16,7 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
     entries = query.all()
     
     settings = db.query(Settings).first()
-    cost_per_mile = settings.cost_per_mile if settings else Decimal("0.35")
+    cost_per_mile = settings.cost_per_mile if settings else Decimal("0")
     
     total_amount = Decimal("0")
     revenue = Decimal("0")
