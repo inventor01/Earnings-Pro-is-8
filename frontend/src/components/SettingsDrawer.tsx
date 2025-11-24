@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Settings, api } from '../lib/api';
+import { useState } from 'react';
+import { Settings } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
 import { getAllThemes, ThemeName } from '../lib/themes';
 
@@ -11,65 +11,9 @@ interface SettingsDrawerProps {
   onResetAll?: () => void;
 }
 
-interface OAuthStatus {
-  [key: string]: { connected: boolean; token_expires_at: string | null };
-}
-
 export function SettingsDrawer({ isOpen, onClose, settings, onSave, onResetAll }: SettingsDrawerProps) {
   const { theme, setTheme, config } = useTheme();
   const [costPerMile, setCostPerMile] = useState(settings.cost_per_mile.toString());
-  const [oauthStatus, setOAuthStatus] = useState<OAuthStatus>({});
-  const [loadingOAuth, setLoadingOAuth] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchOAuthStatus();
-    }
-  }, [isOpen]);
-
-  const fetchOAuthStatus = async () => {
-    try {
-      const status = await api.getOAuthStatus();
-      setOAuthStatus(status);
-    } catch (error) {
-      console.error('Failed to fetch OAuth status:', error);
-    }
-  };
-
-  const handleConnectUber = async () => {
-    setLoadingOAuth(true);
-    try {
-      const { auth_url } = await api.getUberAuthUrl();
-      window.open(auth_url, '_blank', 'width=500,height=600');
-      // Refresh status after a delay
-      setTimeout(fetchOAuthStatus, 2000);
-    } catch (error) {
-      console.error('Failed to connect Uber:', error);
-    }
-    setLoadingOAuth(false);
-  };
-
-  const handleConnectShipt = async () => {
-    setLoadingOAuth(true);
-    try {
-      const { auth_url } = await api.getShiptAuthUrl();
-      window.open(auth_url, '_blank', 'width=500,height=600');
-      // Refresh status after a delay
-      setTimeout(fetchOAuthStatus, 2000);
-    } catch (error) {
-      console.error('Failed to connect Shipt:', error);
-    }
-    setLoadingOAuth(false);
-  };
-
-  const handleDisconnect = async (platform: string) => {
-    try {
-      await api.disconnectPlatform(platform);
-      fetchOAuthStatus();
-    } catch (error) {
-      console.error(`Failed to disconnect ${platform}:`, error);
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -153,79 +97,6 @@ export function SettingsDrawer({ isOpen, onClose, settings, onSave, onResetAll }
         >
           Save Settings
         </button>
-
-        <div className={`pt-6 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-          <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Platform Integrations</h3>
-          <div className="space-y-3">
-            {/* Uber Connection */}
-            <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">🚗 Uber Eats</span>
-                <span className={`text-xs font-medium ${oauthStatus['UBER']?.connected ? 'text-green-500' : 'text-gray-500'}`}>
-                  {oauthStatus['UBER']?.connected ? '✓ Connected' : 'Not connected'}
-                </span>
-              </div>
-              {oauthStatus['UBER']?.connected ? (
-                <button
-                  onClick={() => handleDisconnect('UBER')}
-                  className={`w-full py-2 rounded text-sm font-medium transition-all ${
-                    isDark
-                      ? 'bg-red-900/30 hover:bg-red-900/50 border border-red-500 text-red-400'
-                      : 'bg-red-50 hover:bg-red-100 border border-red-300 text-red-600'
-                  }`}
-                >
-                  Disconnect
-                </button>
-              ) : (
-                <button
-                  onClick={handleConnectUber}
-                  disabled={loadingOAuth}
-                  className={`w-full py-2 rounded text-sm font-medium transition-all ${
-                    isDark
-                      ? 'bg-cyan-500/30 hover:bg-cyan-500/40 border border-cyan-400 text-cyan-300'
-                      : 'bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-600'
-                  } disabled:opacity-50`}
-                >
-                  {loadingOAuth ? 'Connecting...' : 'Connect'}
-                </button>
-              )}
-            </div>
-
-            {/* Shipt Connection */}
-            <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">🛒 Shipt</span>
-                <span className={`text-xs font-medium ${oauthStatus['SHIPT']?.connected ? 'text-green-500' : 'text-gray-500'}`}>
-                  {oauthStatus['SHIPT']?.connected ? '✓ Connected' : 'Not connected'}
-                </span>
-              </div>
-              {oauthStatus['SHIPT']?.connected ? (
-                <button
-                  onClick={() => handleDisconnect('SHIPT')}
-                  className={`w-full py-2 rounded text-sm font-medium transition-all ${
-                    isDark
-                      ? 'bg-red-900/30 hover:bg-red-900/50 border border-red-500 text-red-400'
-                      : 'bg-red-50 hover:bg-red-100 border border-red-300 text-red-600'
-                  }`}
-                >
-                  Disconnect
-                </button>
-              ) : (
-                <button
-                  onClick={handleConnectShipt}
-                  disabled={loadingOAuth}
-                  className={`w-full py-2 rounded text-sm font-medium transition-all ${
-                    isDark
-                      ? 'bg-cyan-500/30 hover:bg-cyan-500/40 border border-cyan-400 text-cyan-300'
-                      : 'bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-600'
-                  } disabled:opacity-50`}
-                >
-                  {loadingOAuth ? 'Connecting...' : 'Connect'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
 
         <div className={`pt-6 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
           <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Danger Zone</h3>
