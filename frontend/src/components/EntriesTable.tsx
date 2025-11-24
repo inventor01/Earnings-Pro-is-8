@@ -48,15 +48,17 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   const getAppColor = (app: string) => {
     switch (app) {
       case 'DOORDASH':
-        return 'border border-red-500 text-red-400 bg-red-950/30';
+        return 'border border-red-500 text-red-400 bg-white';
       case 'UBEREATS':
         return 'border border-green-500 text-green-400 bg-white';
       case 'INSTACART':
-        return 'border border-orange-500 text-orange-400 bg-orange-950/30';
+        return 'border border-orange-500 text-orange-400 bg-white';
       case 'GRUBHUB':
-        return 'border border-yellow-500 text-yellow-400 bg-yellow-950/30';
+        return 'border border-yellow-500 text-yellow-400 bg-white';
+      case 'SHIPT':
+        return 'border border-blue-500 text-blue-400 bg-white';
       default:
-        return 'border border-gray-500 text-gray-400 bg-gray-950/30';
+        return 'border border-gray-500 text-gray-400 bg-white';
     }
   };
 
