@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, EntryCreate, EntryType, TimeframeType } from '../lib/api';
 import { PeriodChips, Period } from '../components/PeriodChips';
 import { KpiCard } from '../components/KpiCard';
+import { SummaryCard } from '../components/SummaryCard';
 import { CalcPad, CalcMode } from '../components/CalcPad';
 import { EntryForm, EntryFormData } from '../components/EntryForm';
 import { EntriesTable } from '../components/EntriesTable';
@@ -497,13 +498,22 @@ export function Dashboard() {
           <PeriodChips selected={period} onSelect={setPeriod} />
         </div>
 
+        <SummaryCard
+          revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
+          expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
+          profit={`$${rollup?.profit.toFixed(2) || '0.00'}`}
+          miles={rollup?.miles.toFixed(1) || '0.0'}
+          orders={entries.filter(e => e.type === 'ORDER').length}
+          margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
+        />
+
         <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth">
           <div className="flex gap-3 md:gap-4 pb-2 min-w-max">
             <div className="flex-shrink-0 w-80">
               <KpiCard
                 title="Revenue"
                 value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
-                detail1={{ label: 'Orders', value: rollup?.by_type?.ORDER ? Math.round(rollup.by_type.ORDER / (entries.filter(e => e.type === 'ORDER').length > 0 ? entries.filter(e => e.type === 'ORDER').reduce((sum) => sum + 1, 0) : 1)) : '-' }}
+                detail1={{ label: 'Orders', value: entries.filter(e => e.type === 'ORDER').length }}
                 color="green"
               />
             </div>
