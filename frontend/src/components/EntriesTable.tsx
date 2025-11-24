@@ -1,4 +1,5 @@
 import { Entry } from '../lib/api';
+import { useTheme } from '../lib/themeContext';
 
 interface EntriesTableProps {
   entries: Entry[];
@@ -10,6 +11,7 @@ interface EntriesTableProps {
 }
 
 export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = [], onSelectChange }: EntriesTableProps) {
+  const { config } = useTheme();
   const allSelected = entries.length > 0 && selectedIds.length === entries.length;
   const someSelected = selectedIds.length > 0 && selectedIds.length < entries.length;
 
@@ -110,18 +112,19 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   };
 
   if (entries.length === 0) {
+    const isDarkTheme = config.name !== 'simple-light';
     return (
-      <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow p-8 text-center text-cyan-400">
+      <div className={`rounded-lg shadow p-8 text-center ${config.tableBg} ${isDarkTheme ? 'text-cyan-400' : 'text-blue-600'}`}>
         No entries yet. Add your first entry using the calculator below!
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-800/40 border border-slate-700 rounded-lg shadow overflow-hidden">
+    <div className={`rounded-lg shadow overflow-hidden ${config.tableBg}`}>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-slate-900/60 border-b border-slate-700">
+          <thead className={config.tableHeader}>
             <tr>
               <th className="px-4 py-3 text-left">
                 <input
@@ -133,32 +136,32 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                     }
                   }}
                   onChange={handleSelectAll}
-                  className="w-4 h-4 rounded border-cyan-500 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
+                  className={`w-4 h-4 rounded cursor-pointer ${config.name === 'bw-neon' ? 'border-white text-white' : config.name === 'simple-light' ? 'border-blue-500 text-blue-600' : 'border-cyan-500 text-cyan-400'}`}
                 />
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-cyan-400 uppercase">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-cyan-400 uppercase">App / Category</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-cyan-400 uppercase">Time</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-cyan-400 uppercase">Amount</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-cyan-400 uppercase">Miles</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-cyan-400 uppercase">Note</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-cyan-400 uppercase">Actions</th>
+              <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>Type</th>
+              <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>App / Category</th>
+              <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>Time</th>
+              <th className={`px-4 py-3 text-right text-xs font-medium uppercase ${config.tableHeaderText}`}>Amount</th>
+              <th className={`px-4 py-3 text-right text-xs font-medium uppercase ${config.tableHeaderText}`}>Miles</th>
+              <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>Note</th>
+              <th className={`px-4 py-3 text-right text-xs font-medium uppercase ${config.tableHeaderText}`}>Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700">
+          <tbody className={`divide-y ${config.name === 'simple-light' ? 'divide-gray-200' : 'divide-slate-700'}`}>
             {entries.map((entry) => (
-              <tr key={entry.id} className={`hover:bg-slate-700/30 transition-colors ${selectedIds.includes(entry.id) ? 'bg-cyan-500/10 border-l-2 border-cyan-400' : ''}`}>
+              <tr key={entry.id} className={`${config.tableRowHover} transition-colors ${selectedIds.includes(entry.id) ? config.tableRowSelected : ''}`}>
                 <td className="px-4 py-3">
                   <input
                     type="checkbox"
                     checked={selectedIds.includes(entry.id)}
                     onChange={() => handleSelectOne(entry.id)}
-                    className="w-4 h-4 rounded border-cyan-500 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
+                    className={`w-4 h-4 rounded cursor-pointer ${config.name === 'bw-neon' ? 'border-white text-white' : config.name === 'simple-light' ? 'border-blue-500 text-blue-600' : 'border-cyan-500 text-cyan-400'}`}
                   />
                 </td>
                 <td className="px-4 py-3">
                   <span className="text-xl mr-2">{getTypeIcon(entry.type)}</span>
-                  <span className="text-sm text-cyan-300">{entry.type}</span>
+                  <span className={`text-sm ${config.textPrimary}`}>{entry.type}</span>
                 </td>
                 <td className="px-4 py-3">
                   {entry.type === 'EXPENSE' ? (
@@ -171,18 +174,18 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-sm text-slate-400">
+                <td className={`px-4 py-3 text-sm ${config.textSecondary}`}>
                   {formatDate(entry.timestamp)}
                 </td>
                 <td className={`px-4 py-3 text-right font-black ${
-                  entry.amount >= 0 ? 'text-green-400' : 'text-red-400'
+                  entry.amount >= 0 ? config.textGreen : config.textRed
                 }`}>
                   ${Math.abs(entry.amount).toFixed(2)}
                 </td>
-                <td className="px-4 py-3 text-right text-sm text-slate-400">
+                <td className={`px-4 py-3 text-right text-sm ${config.textSecondary}`}>
                   {entry.distance_miles > 0 ? `${entry.distance_miles.toFixed(1)} mi` : '-'}
                 </td>
-                <td className="px-4 py-3 text-sm text-slate-400">
+                <td className={`px-4 py-3 text-sm ${config.textSecondary}`}>
                   <div className="flex flex-col gap-1">
                     {entry.note && <span className="truncate max-w-xs">{entry.note}</span>}
                     {entry.receipt_url && (
@@ -195,7 +198,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                           link.target = '_blank';
                           link.click();
                         }}
-                        className="text-cyan-400 hover:text-cyan-300 text-xs font-medium"
+                        className={`text-xs font-medium ${config.textCyan} hover:opacity-80 transition-opacity`}
                         title="View receipt"
                       >
                         📸 Receipt
@@ -206,20 +209,20 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                 <td className="px-4 py-3 text-right space-x-2 flex justify-end">
                   <button
                     onClick={() => onView && onView(entry)}
-                    className="text-slate-400 hover:text-cyan-400 text-sm font-medium transition-colors"
+                    className={`text-sm font-medium transition-colors ${config.textSecondary} hover:${config.textCyan}`}
                     title="View entry details"
                   >
                     👁️
                   </button>
                   <button
                     onClick={() => onEdit && onEdit(entry)}
-                    className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
+                    className={`text-sm font-medium transition-colors ${config.textCyan} hover:opacity-80`}
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => onDelete && onDelete(entry.id)}
-                    className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors"
+                    className={`text-sm font-medium transition-colors ${config.textRed} hover:opacity-80`}
                   >
                     Delete
                   </button>

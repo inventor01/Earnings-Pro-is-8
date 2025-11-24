@@ -12,6 +12,7 @@ import { Toast } from '../components/Toast';
 import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
 import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
+import { useTheme } from '../lib/themeContext';
 
 function getPeriodDates(period: Period): { from: string; to: string } {
   const now = new Date();
@@ -400,8 +401,23 @@ export function Dashboard() {
     setAmount('0');
   };
 
+  const { config } = useTheme();
+  const isDarkTheme = config.name !== 'simple-light';
+
+  const dashboardClass = config.name === 'simple-light' 
+    ? 'min-h-screen bg-gradient-to-b from-gray-50 via-gray-100 to-white flex flex-col'
+    : config.name === 'bw-neon'
+    ? 'min-h-screen bg-gradient-to-b from-black via-gray-900 to-black flex flex-col'
+    : 'min-h-screen bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950 flex flex-col';
+
+  const contentClass = config.name === 'simple-light'
+    ? 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-gray-50 via-gray-100 to-white'
+    : config.name === 'bw-neon'
+    ? 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-black via-gray-900 to-black'
+    : 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950';
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-slate-900 to-black flex flex-col">
+    <div className={dashboardClass}>
       {rollup && (
         <ProfitGoalsBar
           timeframe={getTimeframeFromPeriod(period)}
@@ -410,29 +426,33 @@ export function Dashboard() {
           onGoalReached={handleGoalReached}
         />
       )}
-      <div className="flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950">
+      <div className={contentClass}>
         <div className="flex justify-between items-center mb-3 md:mb-6 gap-2">
           <div className="flex items-center gap-3">
             <span className="text-5xl md:text-6xl drop-shadow-lg" style={{
-              textShadow: '0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)',
-              filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))',
+              textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)' : 'none',
+              filter: isDarkTheme ? 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))' : 'none',
               animation: 'car-drive 2s ease-in-out infinite'
             }}>
               🚗
             </span>
-            <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">EARNINGS</h1>
+            <h1 className={`text-3xl md:text-5xl font-black ${config.titleColor}`}>EARNINGS</h1>
           </div>
           <div className="flex gap-1 md:gap-2">
             <button
               onClick={() => setResetConfirm(true)}
-              className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-700 hover:to-red-600 font-bold whitespace-nowrap shadow-lg hover:shadow-red-500/50 transition-all"
+              className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
+                isDarkTheme
+                  ? 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-700 hover:to-red-600 hover:shadow-red-500/50'
+                  : 'bg-red-500 text-white hover:bg-red-600'
+              }`}
               title="Reset today's data"
             >
               Reset
             </button>
             <button
               onClick={() => setShowSettings(true)}
-              className="p-2 md:p-2.5 text-cyan-400 hover:text-cyan-300 transition-colors"
+              className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path

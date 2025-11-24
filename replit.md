@@ -12,7 +12,12 @@ A mobile-first web application enabling delivery drivers to track earnings, expe
 ## System Architecture
 
 ### UI/UX Decisions
-The application features a "Car Dashboard Aesthetic" with a dark gradient background, neon-glowing KPI gauges, and a monospace font for a digital feel. Animated car emojis, goal sections with diverse fonts (Poppins, Space Grotesk, Outfit), and subtle animations (goal-flip, money-bounce, float-glow, slide-up-fade) enhance the visual experience. Receipt upload sections have a colorful gradient background with a cloud icon and hover animations. Form fields are reordered for better UX (Category → Note → Receipt).
+The application features a multi-theme system with three distinct themes:
+1. **Dark Neon** (Default): Car Dashboard Aesthetic with dark gradient background, neon-glowing KPI gauges, cyan-blue-purple gradients, and monospace fonts for a digital feel.
+2. **Simple Light**: Clean, professional light theme with soft grays and blues, ideal for bright environments.
+3. **B/W Neon**: High-contrast black and white theme with neon borders and white text on black backgrounds.
+
+All themes feature animated car emojis with driving/sway animations, goal sections with diverse fonts (Poppins, Space Grotesk, Outfit), and consistent animations (goal-flip, money-bounce, float-glow, slide-up-fade). Receipt uploads, form fields (reordered: Category → Note → Receipt), and UI components adapt dynamically to the selected theme.
 
 ### Technical Implementations
 The application provides a calculator-style input with add/subtract modes, real-time KPI dashboards with profit goal tracking, and time period filtering. It supports multi-platform data entry (DoorDash, UberEats, Instacart, GrubHub, Shipt, Other), expense tracking with emoji categories, and receipt image uploads. GPS trip tracking automatically calculates distance. Users can mass select and bulk delete entries, reset daily or all data, and edit any entry via a modal sidebar. Profit goals are visually tracked with progress bars and celebratory messages. AI-powered earning suggestions provide recommendations for minimum order amounts, peak earning hours, and cost-saving strategies.
@@ -23,7 +28,7 @@ The application provides a calculator-style input with add/subtract modes, real-
 - Multi-platform support (DoorDash, UberEats, Instacart, GrubHub, Shipt, Other).
 - Expense tracking with emoji-enhanced categories and receipt image upload.
 - Mileage cost calculation and GPS trip tracking.
-- Settings management with profit goal configuration.
+- Settings management with profit goal configuration and **theme selection** (Dark Neon, Simple Light, B/W Neon).
 - Mass select and bulk delete for entries.
 - Daily data reset and "Reset All Data" features.
 - Automatic date detection with notifications.
@@ -33,7 +38,8 @@ The application provides a calculator-style input with add/subtract modes, real-
 ### System Design Choices
 - **Backend**: FastAPI (Python 3.11) with SQLite (SQLAlchemy ORM) for simplicity and rapid MVP development.
 - **Frontend**: React 18 with TypeScript, Vite, and Tailwind CSS for a modern, mobile-first web experience.
-- **State Management**: TanStack React Query.
+- **State Management**: TanStack React Query + Theme Context API (for theme management and persistence).
+- **Theme System**: Three-theme system with theme configuration in `lib/themes.ts` and React Context provider (`lib/themeContext.tsx`). Themes persist to localStorage.
 - **Data Storage**: Signed amounts for expenses and cancellations stored as negative values for simplified aggregation.
 - **Unified Entry Ledger**: A single database table for all transaction types (ORDER, BONUS, EXPENSE, CANCELLATION) using an enum.
 - **Real-Time Calculations**: Profit is dynamically calculated as revenue minus logged expenses.

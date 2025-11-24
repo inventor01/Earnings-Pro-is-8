@@ -1,3 +1,5 @@
+import { useTheme } from '../lib/themeContext';
+
 export type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth' | 'custom';
 
 interface PeriodChipsProps {
@@ -7,6 +9,8 @@ interface PeriodChipsProps {
 }
 
 export function PeriodChips({ selected, onSelect, onCustomClick }: PeriodChipsProps) {
+  const { config } = useTheme();
+  
   const periods: { value: Period; label: string }[] = [
     { value: 'today', label: 'Today' },
     { value: 'yesterday', label: 'Yesterday' },
@@ -31,8 +35,8 @@ export function PeriodChips({ selected, onSelect, onCustomClick }: PeriodChipsPr
           }}
           className={`px-2 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium whitespace-nowrap touch-manipulation transition-all ${
             selected === period.value
-              ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/50'
-              : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50 hover:text-cyan-400'
+              ? `${config.chipActiveBg} ${config.chipActive} shadow-lg`
+              : config.chipInactive
           }`}
         >
           {period.label}
