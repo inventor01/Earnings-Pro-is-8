@@ -9,7 +9,6 @@ import { EntriesTable } from '../components/EntriesTable';
 import { SettingsDrawer } from '../components/SettingsDrawer';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Toast } from '../components/Toast';
-import { TripTracker } from '../components/TripTracker';
 import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
 import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
@@ -308,15 +307,6 @@ export function Dashboard() {
     }
   };
 
-  const handleTripComplete = (miles: number) => {
-    setFormData({
-      ...formData,
-      distance_miles: miles.toString(),
-      type: 'ORDER',
-    });
-    setCalcExpanded(true);
-    setToast({ message: `Trip completed! ${miles} miles tracked`, type: 'success' });
-  };
 
   const confirmReset = () => {
     resetTodayMutation.mutate();
@@ -553,14 +543,10 @@ export function Dashboard() {
           <button
             onClick={handleSave}
             disabled={createMutation.isPending}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-lg text-lg font-bold disabled:bg-gray-400 mb-4"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-lg text-lg font-bold disabled:bg-gray-400"
           >
             {createMutation.isPending ? 'Saving...' : 'Save Entry'}
           </button>
-
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <TripTracker onTripComplete={handleTripComplete} />
-          </div>
         </div>
       </div>
 
