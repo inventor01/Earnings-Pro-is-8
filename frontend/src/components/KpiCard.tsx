@@ -46,7 +46,7 @@ export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color
       {/* Content */}
       <div className="relative z-10 space-y-3">
         {/* Title - Dashboard label */}
-        <div className={`text-xs md:text-sm font-bold uppercase tracking-widest ${colorConfig.accent} opacity-80 font-mono flex items-center gap-2`}>
+        <div className={`text-xs md:text-sm font-bold uppercase tracking-wide md:tracking-widest ${colorConfig.accent} opacity-80 font-mono flex items-center gap-1 whitespace-nowrap`}>
           <span>{ICON_MAP[title] || '📈'}</span>
           {title}
         </div>
