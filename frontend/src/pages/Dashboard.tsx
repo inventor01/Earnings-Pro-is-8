@@ -413,7 +413,7 @@ export function Dashboard() {
       )}
       <div className="flex-1 overflow-y-auto max-w-6xl mx-auto px-4 py-6 pb-24 w-full">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Driver Earnings</h1>
+          <h1 className="text-5xl font-black text-gray-900">🚗 Driver Earnings</h1>
           <div className="flex gap-2">
             <button
               onClick={() => setResetConfirm(true)}

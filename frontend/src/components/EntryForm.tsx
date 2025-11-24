@@ -23,9 +23,9 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
   const isOrder = formData.type === 'ORDER' || formData.type === 'CANCELLATION';
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4 space-y-3">
+    <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg p-6 space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+        <label className="block text-base font-bold text-gray-800 mb-2">📝 Type</label>
         <select
           value={formData.type}
           onChange={(e) => {
@@ -38,7 +38,7 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
             onFormDataChange(updatedData);
             onTypeChange(newType);
           }}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
         >
           <option value="ORDER">Order</option>
           <option value="BONUS">Bonus</option>
@@ -49,11 +49,11 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
 
       {!isExpense && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">App</label>
+          <label className="block text-base font-bold text-gray-800 mb-2">🚗 App</label>
           <select
             value={formData.app}
             onChange={(e) => onFormDataChange({ ...formData, app: e.target.value as AppType })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
           >
             <option value="UBEREATS">UberEats</option>
             <option value="DOORDASH">DoorDash</option>
@@ -68,24 +68,24 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
       {isOrder && (
         <>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Distance (miles)</label>
+            <label className="block text-base font-bold text-gray-800 mb-2">🛣️ Distance (miles)</label>
             <input
               type="number"
               step="0.1"
               value={formData.distance_miles}
               onChange={(e) => onFormDataChange({ ...formData, distance_miles: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
               placeholder="5.5"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+            <label className="block text-base font-bold text-gray-800 mb-2">⏱️ Duration (minutes)</label>
             <input
               type="number"
               value={formData.duration_minutes}
               onChange={(e) => onFormDataChange({ ...formData, duration_minutes: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
               placeholder="30"
             />
           </div>
@@ -95,11 +95,11 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
       {isExpense && (
         <>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <label className="block text-base font-bold text-gray-800 mb-2">🏷️ Category</label>
             <select
               value={formData.category}
               onChange={(e) => onFormDataChange({ ...formData, category: e.target.value as ExpenseCategory })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
             >
               <option value="GAS">⛽ Gas</option>
               <option value="PARKING">🅿️ Parking</option>
@@ -114,7 +114,7 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Receipt (optional)</label>
+            <label className="block text-base font-bold text-gray-800 mb-2">📸 Receipt (optional)</label>
             <input
               type="file"
               accept="image/*"
@@ -129,14 +129,14 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
                   reader.readAsDataURL(file);
                 }
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
             />
             {formData.receipt_url && (
-              <div className="mt-2">
+              <div className="mt-3">
                 <img 
                   src={formData.receipt_url} 
                   alt="Receipt preview" 
-                  className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                  className="w-full h-48 object-cover rounded-xl border-2 border-gray-200"
                 />
               </div>
             )}
@@ -145,12 +145,12 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Note (optional)</label>
+        <label className="block text-base font-bold text-gray-800 mb-2">📝 Note (optional)</label>
         <textarea
           value={formData.note}
           onChange={(e) => onFormDataChange({ ...formData, note: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          rows={2}
+          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-semibold"
+          rows={3}
           placeholder="Add a note..."
         />
       </div>
