@@ -68,3 +68,32 @@ class Goal(Base):
     target_profit = Column(Numeric(10, 2), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+class PlatformIntegration(str, enum.Enum):
+    UBER = "UBER"
+    SHIPT = "SHIPT"
+
+class ApiCredential(Base):
+    __tablename__ = "api_credentials"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    platform = Column(SQLEnum(PlatformIntegration), nullable=False, unique=True)
+    access_token = Column(String, nullable=False)
+    refresh_token = Column(String, nullable=True)
+    token_expires_at = Column(DateTime, nullable=True)
+    is_active = Column(Integer, default=1, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+class SyncedOrder(Base):
+    __tablename__ = "synced_orders"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    platform = Column(SQLEnum(PlatformIntegration), nullable=False)
+    platform_order_id = Column(String, nullable=False, index=True)
+    entry_id = Column(Integer, nullable=True)
+    sync_status = Column(String, default="pending", nullable=False)
+    synced_at = Column(DateTime, nullable=True)
+    raw_data = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
