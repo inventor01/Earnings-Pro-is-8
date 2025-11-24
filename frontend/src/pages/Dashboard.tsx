@@ -11,6 +11,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Toast } from '../components/Toast';
 import { TripTracker } from '../components/TripTracker';
 import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
+import { AISuggestions } from '../components/AISuggestions';
 
 function getPeriodDates(period: Period): { from: string; to: string } {
   const now = new Date();
@@ -497,6 +498,10 @@ export function Dashboard() {
             value={`$${rollup?.per_hour_first_to_last.toFixed(2) || '0.00'}`}
             color="orange"
           />
+        </div>
+
+        <div>
+          <AISuggestions fromDate={getPeriodDates(period).from} toDate={getPeriodDates(period).to} />
         </div>
 
         {selectedIds.length > 0 && (

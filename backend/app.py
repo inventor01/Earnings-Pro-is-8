@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import health, settings, entries, rollup, goals
+from backend.routers import health, settings, entries, rollup, goals, suggestions
 from backend.db import engine, Base
 
 Base.metadata.create_all(bind=engine)
@@ -20,6 +20,7 @@ app.include_router(settings.router, prefix="/api", tags=["settings"])
 app.include_router(entries.router, prefix="/api", tags=["entries"])
 app.include_router(rollup.router, prefix="/api", tags=["rollup"])
 app.include_router(goals.router, prefix="/api", tags=["goals"])
+app.include_router(suggestions.router, prefix="/api", tags=["suggestions"])
 
 @app.get("/")
 async def root():

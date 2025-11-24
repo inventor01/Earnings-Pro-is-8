@@ -1,6 +1,7 @@
 modules = ["python-3.11", "nodejs-20", "postgresql-16"]
 [agent]
 expertMode = true
+integrations = ["python_openai_ai_integrations:1.0.0"]
 
 [workflows]
 runButton = "Project"
@@ -51,10 +52,6 @@ localPort = 8000
 externalPort = 8000
 
 [[ports]]
-localPort = 33593
-externalPort = 3003
-
-[[ports]]
 localPort = 33821
 externalPort = 3000
 
@@ -63,8 +60,13 @@ localPort = 36705
 externalPort = 3002
 
 [[ports]]
+localPort = 36857
+externalPort = 3003
+
+[[ports]]
 localPort = 40299
 externalPort = 3001
 
 [nix]
 channel = "stable-25_05"
+packages = ["libxcrypt"]

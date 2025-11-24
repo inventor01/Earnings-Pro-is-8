@@ -33,6 +33,13 @@ This application helps delivery drivers:
 - Full CRUD operations: Create, Read, Update, Delete
 
 ## Recent Changes (November 24, 2025 - Latest)
+- **🤖 AI Earning Suggestions**: New AI-powered feature analyzes driver data to provide:
+  - Recommended minimum order amounts to accept for maximum profit
+  - Peak earning hours based on historical order data
+  - Cost-saving strategies tailored to driver's expenses
+  - Expandable "💡 AI Earning Tips" component shows stats and AI recommendations
+  - Uses OpenAI GPT-4o-mini via Replit AI Integrations (no API key needed, credits-based billing)
+  - Backend endpoint: `GET /api/suggestions?from_date=&to_date=` generates contextual optimization tips
 - **Auto-Switch to EXPENSE on Subtract**: When user presses ➖ Subtract button, entry type automatically changes to EXPENSE and app defaults to OTHER
 - **Faster Expense Logging**: Streamlined workflow - just press Subtract and enter the expense amount
 - **Larger, More Playful Design**: 
