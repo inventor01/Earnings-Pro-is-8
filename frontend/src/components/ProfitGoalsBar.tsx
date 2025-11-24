@@ -10,12 +10,12 @@ interface ProfitGoalsBarProps {
 }
 
 const TIMEFRAME_LABELS: Record<TimeframeType, string> = {
-  TODAY: 'Today',
-  YESTERDAY: 'Yesterday',
-  THIS_WEEK: 'This Week',
+  TODAY: "Today's",
+  YESTERDAY: "Yesterday's",
+  THIS_WEEK: "This Week's",
   LAST_7_DAYS: 'Last 7 Days',
-  THIS_MONTH: 'This Month',
-  LAST_MONTH: 'Last Month',
+  THIS_MONTH: "This Month's",
+  LAST_MONTH: "Last Month's",
 };
 
 export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onGoalReached, onToggle }: ProfitGoalsBarProps) {
