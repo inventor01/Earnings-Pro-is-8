@@ -84,12 +84,12 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
     setIsEditing(false);
   };
 
-  const progressColor = goalProgress > 100 ? 'bg-green-500' : 'bg-blue-500';
+  const progressColor = goalProgress > 100 ? 'bg-green-500' : 'bg-cyan-500';
   const displayProgress = Math.min(goalProgress, 100);
 
   if (!goalAmount) {
     return (
-      <div className="w-full bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 px-4 py-3 animate-pulse">
+      <div className="w-full bg-gradient-to-r from-cyan-50 to-blue-50 border-b border-cyan-200 px-4 py-3 animate-pulse">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className="text-sm text-gray-600">
             <span className="font-medium">{TIMEFRAME_LABELS[timeframe]} Goal:</span> Set a target to track progress
@@ -97,7 +97,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
           <div className="flex gap-2">
             <button
               onClick={handleEditClick}
-              className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 hover:shadow-lg transition-all duration-200 font-medium edit-button-hover"
+              className="px-3 py-1 bg-cyan-500 text-white text-sm rounded-lg hover:bg-cyan-600 hover:shadow-lg transition-all duration-200 font-medium edit-button-hover"
             >
               Set Goal
             </button>
@@ -117,11 +117,11 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
   }
 
   return (
-    <div className={`w-full bg-gradient-to-r ${isGoalReached ? 'from-green-50 via-green-50 to-green-100 border-green-300' : 'from-blue-50 via-indigo-50 to-blue-100 border-blue-300'} border-b px-4 py-4 transition-all duration-500 shadow-md`}>
+    <div className={`w-full bg-gradient-to-r ${isGoalReached ? 'from-green-50 via-green-50 to-green-100 border-green-300' : 'from-cyan-50 via-blue-50 to-purple-50 border-cyan-300'} border-b px-4 py-4 transition-all duration-500 shadow-md`}>
       <div className="max-w-6xl mx-auto space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
-            <span className={`text-base md:text-lg font-bold transition-colors duration-500 goal-label-animated ${isGoalReached ? 'text-green-700' : 'text-blue-700'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <span className={`text-base md:text-lg font-bold transition-colors duration-500 goal-label-animated ${isGoalReached ? 'text-green-700' : 'text-cyan-700'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
               {TIMEFRAME_LABELS[timeframe]} Goal:
             </span>
             {isEditing ? (
@@ -151,12 +151,12 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span className={`text-2xl md:text-3xl font-black transition-colors duration-500 ${isGoalReached ? 'text-green-600' : 'text-blue-600'}`} style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <span className={`text-2xl md:text-3xl font-black transition-colors duration-500 ${isGoalReached ? 'text-green-600' : 'text-cyan-600'}`} style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   ${goalAmount}
                 </span>
                 <button
                   onClick={handleEditClick}
-                  className="text-xs md:text-sm text-blue-600 hover:text-blue-800 hover:scale-110 underline font-bold transition-all duration-200 edit-button-hover uppercase"
+                  className="text-xs md:text-sm text-cyan-600 hover:text-cyan-800 hover:scale-110 underline font-bold transition-all duration-200 edit-button-hover uppercase"
                   style={{ fontFamily: "'Poppins', sans-serif" }}
                 >
                   Edit
@@ -169,7 +169,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
               <span>${currentProfit.toFixed(2)}</span>
               <span className="text-gray-500">/</span>
               <span>${goalAmount}</span>
-              <span key={percentageKey} className={`ml-1 font-black text-lg md:text-xl percentage-display inline-block ${goalProgress > 100 ? 'text-green-600' : 'text-blue-600'}`} style={{ fontFamily: "'Outfit', sans-serif" }}>
+              <span key={percentageKey} className={`ml-1 font-black text-lg md:text-xl percentage-display inline-block ${goalProgress > 100 ? 'text-green-600' : 'text-cyan-600'}`} style={{ fontFamily: "'Outfit', sans-serif" }}>
                 {Math.round(goalProgress)}%
               </span>
             </span>
