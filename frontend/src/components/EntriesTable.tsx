@@ -1,5 +1,6 @@
 import { Entry } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
+import { formatDateEST } from '../lib/dateUtils';
 
 interface EntriesTableProps {
   entries: Entry[];
@@ -116,10 +117,6 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
 
   if (entries.length === 0) {
     const isDarkTheme = config.name !== 'simple-light';
@@ -185,7 +182,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                   )}
                 </td>
                 <td className={`px-4 py-3 text-sm ${config.textSecondary}`}>
-                  {formatDate(entry.timestamp)}
+                  {formatDateEST(entry.timestamp)}
                 </td>
                 <td className={`px-4 py-3 text-right font-black ${
                   entry.amount >= 0 ? config.textGreen : config.textRed

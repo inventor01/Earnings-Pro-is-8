@@ -1,4 +1,5 @@
 import { Entry } from '../lib/api';
+import { formatDateEST } from '../lib/dateUtils';
 
 interface EntryViewerProps {
   entry: Entry;
@@ -44,10 +45,6 @@ export function EntryViewer({ entry, onClose }: EntryViewerProps) {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center" onClick={onClose}>
@@ -60,7 +57,7 @@ export function EntryViewer({ entry, onClose }: EntryViewerProps) {
             <span className="text-3xl md:text-4xl">{getTypeEmoji(entry.type)}</span>
             <div>
               <h2 className="text-lg md:text-xl font-bold">{entry.type}</h2>
-              <p className="text-xs md:text-sm opacity-90">{formatDate(entry.timestamp)}</p>
+              <p className="text-xs md:text-sm opacity-90">{formatDateEST(entry.timestamp)}</p>
             </div>
           </div>
           <button
@@ -144,7 +141,7 @@ export function EntryViewer({ entry, onClose }: EntryViewerProps) {
 
           {/* Timestamp */}
           <div className="text-xs md:text-sm text-gray-500 text-center bg-gray-50 rounded-lg p-3 md:p-4">
-            Created: {new Date(entry.created_at).toLocaleString()}
+            Created: {formatDateEST(entry.created_at)}
           </div>
         </div>
 
