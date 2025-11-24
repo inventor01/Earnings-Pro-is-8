@@ -25,6 +25,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
   const [tempGoal, setTempGoal] = useState('');
   const [isGoalReached, setIsGoalReached] = useState(false);
   const [percentageKey, setPercentageKey] = useState(0);
+  const [error, setError] = useState('');
   const goalReachedRef = useRef<boolean>(false);
   const previousProgressRef = useRef(0);
 
@@ -68,26 +69,73 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
 
   const handleSave = async () => {
     setIsSaving(true);
+    setError('');
     try {
-      if (tempGoal && parseFloat(tempGoal) > 0) {
-        await api.createGoal(timeframe, parseFloat(tempGoal));
-        setGoalAmount(tempGoal);
+      if (!tempGoal || parseFloat(tempGoal) <= 0) {
+        setError('Please enter a valid amount greater than 0');
+        setIsSaving(false);
+        return;
       }
+      await api.createGoal(timeframe, parseFloat(tempGoal));
+      setGoalAmount(tempGoal);
+      setIsEditing(false);
     } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : 'Failed to save goal';
+      setError(errorMsg);
       console.error('Failed to save goal:', e);
     }
     setIsSaving(false);
-    setIsEditing(false);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    setError('');
   };
 
   const progressColor = 'bg-blue-500';
   const displayProgress = Math.min(goalProgress, 100);
 
   if (!goalAmount) {
+    // Show edit form if editing, otherwise show "Set Goal" button
+    if (isEditing) {
+      return (
+        <div className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-4 py-3">
+          <div className="max-w-6xl mx-auto space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-600">{TIMEFRAME_LABELS[timeframe]} Goal:</span>
+              <input
+                type="number"
+                step="0.01"
+                value={tempGoal}
+                onChange={(e) => setTempGoal(e.target.value)}
+                placeholder="Enter goal amount"
+                className="px-3 py-2 border-2 border-blue-400 rounded-lg text-sm w-32 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium"
+                autoFocus
+              />
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-bold rounded-lg hover:from-blue-700 hover:to-blue-600 hover:shadow-lg hover:scale-105 disabled:bg-gray-400 transition-all duration-200 uppercase tracking-wide"
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={handleCancel}
+                className="px-3 py-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white text-xs font-bold rounded-lg hover:from-gray-500 hover:to-gray-600 hover:scale-105 transition-all duration-200 uppercase tracking-wide"
+              >
+                Cancel
+              </button>
+            </div>
+            {error && (
+              <div className="text-red-600 text-sm font-medium">
+                ⚠️ {error}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-4 py-3 animate-pulse">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
