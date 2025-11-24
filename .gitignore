@@ -49,3 +49,8 @@ dist-ssr/
 *.njsproj
 *.sln
 *.sw?
+
+# Replit-specific files
+attached_assets/
+.replit
+replit.nix

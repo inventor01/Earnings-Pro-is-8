@@ -1,0 +1,10 @@
+# Add this to your .gitignore to prevent accidental commits
+.env
+.env.local
+*.db
+*.sqlite
+*.sqlite3
+node_modules/
+dist/
+build/
+.pythonlibs/
