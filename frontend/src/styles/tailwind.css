@@ -93,6 +93,24 @@
   }
 }
 
+@keyframes car-drive {
+  0% {
+    transform: translateX(0) rotate(0deg) translateY(0);
+  }
+  25% {
+    transform: translateX(8px) rotate(2deg) translateY(-2px);
+  }
+  50% {
+    transform: translateX(0) rotate(0deg) translateY(0);
+  }
+  75% {
+    transform: translateX(-8px) rotate(-2deg) translateY(-2px);
+  }
+  100% {
+    transform: translateX(0) rotate(0deg) translateY(0);
+  }
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

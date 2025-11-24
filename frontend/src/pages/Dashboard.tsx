@@ -413,9 +413,10 @@ export function Dashboard() {
       <div className="flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950">
         <div className="flex justify-between items-center mb-3 md:mb-6 gap-2">
           <div className="flex items-center gap-3">
-            <span className="text-5xl md:text-6xl animate-bounce drop-shadow-lg" style={{
+            <span className="text-5xl md:text-6xl drop-shadow-lg" style={{
               textShadow: '0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)',
-              filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))'
+              filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))',
+              animation: 'car-drive 2s ease-in-out infinite'
             }}>
               🚗
             </span>
