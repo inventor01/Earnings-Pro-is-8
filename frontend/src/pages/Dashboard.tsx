@@ -478,11 +478,6 @@ export function Dashboard() {
             value={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
             color="blue"
           />
-          <KpiCard
-            title="$/Hour (1st-Last)"
-            value={`$${rollup?.per_hour_first_to_last.toFixed(2) || '0.00'}`}
-            color="orange"
-          />
         </div>
 
         <div>
