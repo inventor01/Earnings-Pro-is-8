@@ -32,7 +32,9 @@ This application helps delivery drivers:
 - Edit any entry (amount, type, app, distance, duration, category, notes) with modal sidebar
 - Full CRUD operations: Create, Read, Update, Delete
 
-## Recent Changes (November 23, 2025 - Latest)
+## Recent Changes (November 24, 2025 - Latest)
+- **Expense Category Display in Table**: Table now shows expense category with emoji instead of app for EXPENSE entries (e.g., ⛽ GAS, 🅿️ PARKING, 🛣️ TOLLS)
+- **Column Header Update**: Changed "APP" to "APP / CATEGORY" to reflect dual purpose
 - **Fixed App Field for Expenses**: When selecting EXPENSE type, app now defaults to 'OTHER' instead of UberEats (app field is hidden for expenses)
 - **Added Daily Metrics**: Two new KPI cards display:
   - **Avg Order**: Average order value calculated from all orders

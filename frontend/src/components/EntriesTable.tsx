@@ -57,6 +57,52 @@ export function EntriesTable({ entries, onDelete, onEdit, selectedIds = [], onSe
     }
   };
 
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'GAS':
+        return 'bg-blue-100 text-blue-800';
+      case 'PARKING':
+        return 'bg-purple-100 text-purple-800';
+      case 'TOLLS':
+        return 'bg-indigo-100 text-indigo-800';
+      case 'MAINTENANCE':
+        return 'bg-cyan-100 text-cyan-800';
+      case 'PHONE':
+        return 'bg-pink-100 text-pink-800';
+      case 'SUBSCRIPTION':
+        return 'bg-violet-100 text-violet-800';
+      case 'FOOD':
+        return 'bg-amber-100 text-amber-800';
+      case 'LEISURE':
+        return 'bg-rose-100 text-rose-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getCategoryEmoji = (category: string) => {
+    switch (category) {
+      case 'GAS':
+        return '⛽';
+      case 'PARKING':
+        return '🅿️';
+      case 'TOLLS':
+        return '🛣️';
+      case 'MAINTENANCE':
+        return '🔧';
+      case 'PHONE':
+        return '📱';
+      case 'SUBSCRIPTION':
+        return '📦';
+      case 'FOOD':
+        return '🍔';
+      case 'LEISURE':
+        return '🎮';
+      default:
+        return '📋';
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -90,7 +136,7 @@ export function EntriesTable({ entries, onDelete, onEdit, selectedIds = [], onSe
                 />
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">App</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">App / Category</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
               <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
               <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Miles</th>
@@ -114,9 +160,15 @@ export function EntriesTable({ entries, onDelete, onEdit, selectedIds = [], onSe
                   <span className="text-sm">{entry.type}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getAppColor(entry.app)}`}>
-                    {entry.app}
-                  </span>
+                  {entry.type === 'EXPENSE' ? (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(entry.category || 'OTHER')}`}>
+                      {getCategoryEmoji(entry.category || 'OTHER')} {entry.category || 'OTHER'}
+                    </span>
+                  ) : (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getAppColor(entry.app)}`}>
+                      {entry.app}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-600">
                   {formatDate(entry.timestamp)}
