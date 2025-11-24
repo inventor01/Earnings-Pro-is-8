@@ -12,7 +12,6 @@ export interface EntryFormData {
   type: EntryType;
   app: AppType;
   distance_miles: string;
-  duration_minutes: string;
   category: ExpenseCategory;
   note: string;
   receipt_url?: string;
@@ -66,30 +65,17 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
       )}
 
       {isOrder && (
-        <>
-          <div>
-            <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🛣️ Distance (miles)</label>
-            <input
-              type="number"
-              step="0.1"
-              value={formData.distance_miles}
-              onChange={(e) => onFormDataChange({ ...formData, distance_miles: e.target.value })}
-              className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-              placeholder="5.5"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">⏱️ Duration (minutes)</label>
-            <input
-              type="number"
-              value={formData.duration_minutes}
-              onChange={(e) => onFormDataChange({ ...formData, duration_minutes: e.target.value })}
-              className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-              placeholder="30"
-            />
-          </div>
-        </>
+        <div>
+          <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🛣️ Distance (miles)</label>
+          <input
+            type="number"
+            step="0.1"
+            value={formData.distance_miles}
+            onChange={(e) => onFormDataChange({ ...formData, distance_miles: e.target.value })}
+            className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+            placeholder="5.5"
+          />
+        </div>
       )}
 
       {isExpense && (

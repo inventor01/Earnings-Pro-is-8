@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 interface TripTrackerProps {
-  onTripComplete: (miles: number, durationMinutes: number) => void;
+  onTripComplete: (miles: number) => void;
 }
 
 interface Position {
@@ -128,9 +128,8 @@ export function TripTracker({ onTripComplete }: TripTrackerProps) {
   };
 
   const completeTrip = () => {
-    const durationMinutes = Math.round(duration / 60);
     stopTracking();
-    onTripComplete(parseFloat(distance.toFixed(2)), durationMinutes);
+    onTripComplete(parseFloat(distance.toFixed(2)));
     setDistance(0);
     setDuration(0);
     lastPosition.current = null;

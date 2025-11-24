@@ -91,7 +91,6 @@ export function Dashboard() {
     type: 'ORDER',
     app: 'UBEREATS',
     distance_miles: '',
-    duration_minutes: '',
     category: 'GAS',
     note: '',
     receipt_url: undefined,
@@ -110,7 +109,6 @@ export function Dashboard() {
     type: 'ORDER',
     app: 'UBEREATS',
     distance_miles: '',
-    duration_minutes: '',
     category: 'GAS',
     note: '',
     receipt_url: undefined,
@@ -275,7 +273,6 @@ export function Dashboard() {
       app: formData.app,
       amount: finalAmount,
       distance_miles: formData.distance_miles ? parseFloat(formData.distance_miles) : 0,
-      duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : 0,
       category: (formData.type === 'EXPENSE' && formData.category) ? formData.category : undefined,
       note: formData.note || undefined,
       receipt_url: formData.receipt_url || undefined,
@@ -287,7 +284,6 @@ export function Dashboard() {
       type: formData.type,
       app: formData.app,
       distance_miles: '',
-      duration_minutes: '',
       category: 'GAS',
       note: '',
       receipt_url: undefined,
@@ -312,11 +308,10 @@ export function Dashboard() {
     }
   };
 
-  const handleTripComplete = (miles: number, durationMinutes: number) => {
+  const handleTripComplete = (miles: number) => {
     setFormData({
       ...formData,
       distance_miles: miles.toString(),
-      duration_minutes: durationMinutes.toString(),
       type: 'ORDER',
     });
     setCalcExpanded(true);
@@ -378,7 +373,6 @@ export function Dashboard() {
       type: entry.type,
       app: entry.app,
       distance_miles: entry.distance_miles.toString(),
-      duration_minutes: entry.duration_minutes.toString(),
       category: entry.category as any || 'GAS',
       note: entry.note || '',
       receipt_url: entry.receipt_url,
@@ -402,7 +396,6 @@ export function Dashboard() {
       app: editingFormData.app,
       amount: finalAmount,
       distance_miles: editingFormData.distance_miles ? parseFloat(editingFormData.distance_miles) : 0,
-      duration_minutes: editingFormData.duration_minutes ? parseInt(editingFormData.duration_minutes) : 0,
       category: (editingFormData.type === 'EXPENSE' && editingFormData.category) ? editingFormData.category : undefined,
       note: editingFormData.note || undefined,
       receipt_url: editingFormData.receipt_url || undefined,

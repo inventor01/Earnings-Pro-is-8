@@ -107,16 +107,6 @@ export function EntryViewer({ entry, onClose }: EntryViewerProps) {
                 </p>
               </div>
             )}
-
-            {/* Duration */}
-            {entry.duration_minutes > 0 && (
-              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 md:p-5">
-                <p className="text-xs md:text-sm font-medium text-gray-600 mb-1">Duration</p>
-                <p className="text-2xl md:text-3xl font-bold text-green-600">
-                  {entry.duration_minutes} min
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Notes */}
