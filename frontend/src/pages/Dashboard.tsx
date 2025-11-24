@@ -17,67 +17,66 @@ import { EntryViewer } from '../components/EntryViewer';
 function getPeriodDates(period: Period): { from: string; to: string } {
   const now = new Date();
   
-  const startOfDayUTC = (date: Date): Date => {
+  const startOfDay = (date: Date): Date => {
     const d = new Date(date);
-    d.setUTCHours(0, 0, 0, 0);
+    d.setHours(0, 0, 0, 0);
     return d;
   };
   
-  const endOfDayUTC = (date: Date): Date => {
+  const endOfDay = (date: Date): Date => {
     const d = new Date(date);
-    d.setUTCHours(23, 59, 59, 999);
+    d.setHours(23, 59, 59, 999);
     return d;
   };
 
   switch (period) {
     case 'today':
       return {
-        from: startOfDayUTC(now).toISOString(),
-        to: endOfDayUTC(now).toISOString(),
+        from: startOfDay(now).toISOString(),
+        to: endOfDay(now).toISOString(),
       };
     case 'yesterday':
       const yesterday = new Date(now);
-      yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+      yesterday.setDate(yesterday.getDate() - 1);
       return {
-        from: startOfDayUTC(yesterday).toISOString(),
-        to: endOfDayUTC(yesterday).toISOString(),
+        from: startOfDay(yesterday).toISOString(),
+        to: endOfDay(yesterday).toISOString(),
       };
     case 'week':
       const weekStart = new Date(now);
-      const day = weekStart.getUTCDay();
-      weekStart.setUTCDate(weekStart.getUTCDate() - day);
-      weekStart.setUTCHours(0, 0, 0, 0);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      weekStart.setHours(0, 0, 0, 0);
       return {
         from: weekStart.toISOString(),
-        to: endOfDayUTC(now).toISOString(),
+        to: endOfDay(now).toISOString(),
       };
     case 'last7':
       const last7 = new Date(now);
-      last7.setUTCDate(last7.getUTCDate() - 6);
-      last7.setUTCHours(0, 0, 0, 0);
+      last7.setDate(last7.getDate() - 6);
+      last7.setHours(0, 0, 0, 0);
       return {
         from: last7.toISOString(),
-        to: endOfDayUTC(now).toISOString(),
+        to: endOfDay(now).toISOString(),
       };
     case 'month':
-      const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-      monthStart.setUTCHours(0, 0, 0, 0);
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      monthStart.setHours(0, 0, 0, 0);
       return {
         from: monthStart.toISOString(),
-        to: endOfDayUTC(now).toISOString(),
+        to: endOfDay(now).toISOString(),
       };
     case 'lastMonth':
-      const lastMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
-      lastMonthStart.setUTCHours(0, 0, 0, 0);
-      const lastMonthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
-      lastMonthEnd.setUTCHours(23, 59, 59, 999);
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      lastMonthStart.setHours(0, 0, 0, 0);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+      lastMonthEnd.setHours(23, 59, 59, 999);
       return {
         from: lastMonthStart.toISOString(),
         to: lastMonthEnd.toISOString(),
       };
     default:
       return {
-        from: startOfDayUTC(now).toISOString(),
+        from: startOfDay(now).toISOString(),
         to: now.toISOString(),
       };
   }
