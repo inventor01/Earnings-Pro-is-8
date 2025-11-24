@@ -30,7 +30,12 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
           value={formData.type}
           onChange={(e) => {
             const newType = e.target.value as EntryType;
-            onFormDataChange({ ...formData, type: newType });
+            const updatedData = { ...formData, type: newType };
+            // Set app to 'OTHER' when switching to EXPENSE (since app field is hidden for expenses)
+            if (newType === 'EXPENSE') {
+              updatedData.app = 'OTHER';
+            }
+            onFormDataChange(updatedData);
             onTypeChange(newType);
           }}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"

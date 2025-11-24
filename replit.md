@@ -33,6 +33,7 @@ This application helps delivery drivers:
 - Full CRUD operations: Create, Read, Update, Delete
 
 ## Recent Changes (November 23, 2025 - Latest)
+- **Fixed App Field for Expenses**: When selecting EXPENSE type, app now defaults to 'OTHER' instead of UberEats (app field is hidden for expenses)
 - **Added Daily Metrics**: Two new KPI cards display:
   - **Avg Order**: Average order value calculated from all orders
   - **$/Hour (1st-Last)**: Per-hour earnings rate based on time elapsed between first and last order of the day
