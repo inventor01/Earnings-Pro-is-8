@@ -18,7 +18,7 @@ export function PeriodChips({ selected, onSelect, onCustomClick }: PeriodChipsPr
   ];
 
   return (
-    <div className="flex gap-1 md:gap-2 overflow-x-auto pb-2 -mx-1">
+    <div className="flex gap-1 md:gap-2 overflow-x-auto pb-2 px-1">
       {periods.map((period) => (
         <button
           key={period.value}
