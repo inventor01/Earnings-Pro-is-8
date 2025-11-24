@@ -46,6 +46,10 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   };
 
   const getAppColor = (app: string) => {
+    const isBWTheme = config.name === 'bw-neon';
+    if (isBWTheme) {
+      return 'border border-white text-white bg-black';
+    }
     switch (app) {
       case 'DOORDASH':
         return 'border border-red-500 text-red-400 bg-white';
@@ -63,6 +67,10 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   };
 
   const getCategoryColor = (category: string) => {
+    const isBWTheme = config.name === 'bw-neon';
+    if (isBWTheme) {
+      return 'border border-white text-white bg-black';
+    }
     switch (category) {
       case 'GAS':
         return 'border border-blue-500 text-blue-400 bg-white';
