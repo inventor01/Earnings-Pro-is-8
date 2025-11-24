@@ -86,9 +86,9 @@ export function AISuggestions({ fromDate, toDate }: AISuggestionsProps) {
             <div className="border-t-2 border-purple-100 pt-3">
               <div className="flex gap-2 md:gap-3">
                 <span className="text-xl md:text-2xl flex-shrink-0">🎯</span>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <h4 className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">Suggestions</h4>
-                  <p className="text-xs md:text-sm text-gray-700 leading-relaxed whitespace-pre-wrap line-clamp-6">
+                  <p className="text-xs md:text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
                     {suggestions.suggestion}
                   </p>
                 </div>
