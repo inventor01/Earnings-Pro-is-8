@@ -530,7 +530,7 @@ export function Dashboard() {
                 title="Profit"
                 value={`$${rollup?.profit.toFixed(2) || '0.00'}`}
                 detail1={{ label: 'Margin', value: rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-' }}
-                color="blue"
+                color="green"
               />
             </div>
             <div className="flex-shrink-0 w-80">
