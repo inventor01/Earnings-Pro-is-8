@@ -4,11 +4,12 @@ interface EntriesTableProps {
   entries: Entry[];
   onDelete?: (id: number) => void;
   onEdit?: (entry: Entry) => void;
+  onView?: (entry: Entry) => void;
   selectedIds?: number[];
   onSelectChange?: (ids: number[]) => void;
 }
 
-export function EntriesTable({ entries, onDelete, onEdit, selectedIds = [], onSelectChange }: EntriesTableProps) {
+export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = [], onSelectChange }: EntriesTableProps) {
   const allSelected = entries.length > 0 && selectedIds.length === entries.length;
   const someSelected = selectedIds.length > 0 && selectedIds.length < entries.length;
 
@@ -203,6 +204,13 @@ export function EntriesTable({ entries, onDelete, onEdit, selectedIds = [], onSe
                   </div>
                 </td>
                 <td className="px-4 py-3 text-right space-x-2 flex justify-end">
+                  <button
+                    onClick={() => onView && onView(entry)}
+                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                    title="View entry details"
+                  >
+                    👁️
+                  </button>
                   <button
                     onClick={() => onEdit && onEdit(entry)}
                     className="text-blue-600 hover:text-blue-800 text-sm font-medium"

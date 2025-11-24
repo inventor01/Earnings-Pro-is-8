@@ -12,6 +12,7 @@ import { Toast } from '../components/Toast';
 import { TripTracker } from '../components/TripTracker';
 import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
 import { AISuggestions } from '../components/AISuggestions';
+import { EntryViewer } from '../components/EntryViewer';
 
 function getPeriodDates(period: Period): { from: string; to: string } {
   const now = new Date();
@@ -104,6 +105,7 @@ export function Dashboard() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [calcExpanded, setCalcExpanded] = useState(false);
   const [editingEntry, setEditingEntry] = useState<api.Entry | null>(null);
+  const [viewingEntry, setViewingEntry] = useState<api.Entry | null>(null);
   const [editingFormData, setEditingFormData] = useState<EntryFormData>({
     type: 'ORDER',
     app: 'UBEREATS',
@@ -524,6 +526,7 @@ export function Dashboard() {
             entries={entries} 
             onDelete={handleDelete}
             onEdit={handleEditEntry}
+            onView={setViewingEntry}
             selectedIds={selectedIds}
             onSelectChange={setSelectedIds}
           />
@@ -667,6 +670,13 @@ export function Dashboard() {
           onCancel={() => setResetAllConfirm(false)}
           confirmText="Delete All"
           cancelText="Cancel"
+        />
+      )}
+
+      {viewingEntry && (
+        <EntryViewer
+          entry={viewingEntry}
+          onClose={() => setViewingEntry(null)}
         />
       )}
 
