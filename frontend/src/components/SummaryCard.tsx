@@ -1,4 +1,5 @@
 import { useTheme } from '../lib/themeContext';
+import { CountUpNumber } from './CountUpNumber';
 
 interface SummaryCardProps {
   revenue: string;
@@ -7,9 +8,10 @@ interface SummaryCardProps {
   miles: string;
   orders: number;
   margin: string;
+  avgOrder?: string;
 }
 
-export function SummaryCard({ revenue, expenses, profit, miles, orders, margin }: SummaryCardProps) {
+export function SummaryCard({ revenue, expenses, profit, miles, orders, margin, avgOrder }: SummaryCardProps) {
   const { config: themeConfig } = useTheme();
   const colorConfig = themeConfig.kpiColors['blue'];
 
@@ -28,47 +30,57 @@ export function SummaryCard({ revenue, expenses, profit, miles, orders, margin }
           Performance Overview
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 md:gap-6">
           {/* Revenue */}
-          <div className="space-y-1">
-            <div className={`text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>Revenue</div>
+          <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className={`text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>💰 Revenue</div>
             <div className={`text-3xl md:text-4xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
-              {revenue}
+              <CountUpNumber value={revenue} />
             </div>
           </div>
 
           {/* Expenses */}
-          <div className="space-y-1">
-            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['red'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>Expenses</div>
+          <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['red'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>💸 Expenses</div>
             <div className={`text-3xl md:text-4xl font-black ${themeConfig.kpiColors['red'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
-              {expenses}
+              <CountUpNumber value={expenses} />
             </div>
           </div>
 
           {/* Profit */}
-          <div className="space-y-1">
-            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>Profit</div>
+          <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>🎯 Profit</div>
             <div className={`text-3xl md:text-4xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
-              {profit}
+              <CountUpNumber value={profit} />
             </div>
             <div className="text-xs text-white">Margin: {margin}</div>
           </div>
 
           {/* Miles */}
-          <div className="space-y-1">
-            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['purple'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>Miles</div>
+          <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['purple'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>🛣️ Miles</div>
             <div className={`text-3xl md:text-4xl font-black ${themeConfig.kpiColors['purple'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
-              {miles}
+              <CountUpNumber value={miles} />
             </div>
           </div>
 
           {/* Orders */}
-          <div className="space-y-1">
-            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>Orders</div>
+          <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>📦 Orders</div>
             <div className={`text-3xl md:text-4xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
-              {orders}
+              <CountUpNumber value={orders} />
             </div>
           </div>
+
+          {/* Avg Order */}
+          {avgOrder && (
+            <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+              <div className={`text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>📊 Avg Order</div>
+              <div className={`text-3xl md:text-4xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
+                <CountUpNumber value={avgOrder} />
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Bottom accent line */}

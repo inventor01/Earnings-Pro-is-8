@@ -505,6 +505,7 @@ export function Dashboard() {
           miles={rollup?.miles.toFixed(1) || '0.0'}
           orders={entries.filter(e => e.type === 'ORDER').length}
           margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
+          avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
         />
 
         <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth">
