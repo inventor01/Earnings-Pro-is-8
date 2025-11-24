@@ -37,7 +37,7 @@ export function KpiCard({ title, value, trend, color = 'blue', goalProgress, goa
         
         {/* Main value - Large and prominent like speedometer */}
         <div className="flex items-end gap-1 mb-2">
-          <div className={`text-3xl md:text-5xl font-black ${config.accent} font-mono tracking-tighter drop-shadow-2xl`} style={{textShadow: '0 0 8px currentColor'}}>
+          <div className={`text-3xl md:text-5xl font-black ${config.accent} font-mono tracking-tight drop-shadow-lg`}>
             {value}
           </div>
         </div>
