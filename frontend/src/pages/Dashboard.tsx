@@ -113,6 +113,10 @@ export function Dashboard() {
     note: '',
     receipt_url: undefined,
   });
+  const [showGoalBanner, setShowGoalBanner] = useState(() => {
+    const saved = localStorage.getItem('showGoalBanner');
+    return saved === null ? true : saved === 'true';
+  });
 
   const queryClient = useQueryClient();
   const dates = getPeriodDates(period);
@@ -401,6 +405,14 @@ export function Dashboard() {
     setAmount('0');
   };
 
+  const handleToggleGoalBanner = () => {
+    setShowGoalBanner(prev => {
+      const newValue = !prev;
+      localStorage.setItem('showGoalBanner', newValue.toString());
+      return newValue;
+    });
+  };
+
   const { config } = useTheme();
   const isDarkTheme = config.name !== 'simple-light';
 
@@ -418,13 +430,27 @@ export function Dashboard() {
 
   return (
     <div className={dashboardClass}>
-      {rollup && (
+      {rollup && showGoalBanner && (
         <ProfitGoalsBar
           timeframe={getTimeframeFromPeriod(period)}
           currentProfit={rollup.profit}
           goalProgress={rollup.goal_progress}
           onGoalReached={handleGoalReached}
+          onToggle={handleToggleGoalBanner}
         />
+      )}
+      {rollup && !showGoalBanner && (
+        <div className="w-full bg-gray-200 border-b border-gray-300 px-4 py-2">
+          <div className="max-w-6xl mx-auto flex justify-end">
+            <button
+              onClick={handleToggleGoalBanner}
+              className="text-xs md:text-sm text-gray-600 hover:text-gray-800 font-medium underline transition-colors"
+              title="Show goal banner"
+            >
+              Show Goal
+            </button>
+          </div>
+        </div>
       )}
       <div className={contentClass}>
         <div className="flex justify-between items-center mb-3 md:mb-6 gap-2">

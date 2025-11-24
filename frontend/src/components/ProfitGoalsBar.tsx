@@ -6,6 +6,7 @@ interface ProfitGoalsBarProps {
   currentProfit: number;
   goalProgress?: number;
   onGoalReached?: (timeframe: TimeframeType) => void;
+  onToggle?: () => void;
 }
 
 const TIMEFRAME_LABELS: Record<TimeframeType, string> = {
@@ -17,7 +18,7 @@ const TIMEFRAME_LABELS: Record<TimeframeType, string> = {
   LAST_MONTH: 'Last Month',
 };
 
-export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onGoalReached }: ProfitGoalsBarProps) {
+export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onGoalReached, onToggle }: ProfitGoalsBarProps) {
   const [goalAmount, setGoalAmount] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -93,12 +94,23 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
           <div className="text-sm text-gray-600">
             <span className="font-medium">{TIMEFRAME_LABELS[timeframe]} Goal:</span> Set a target to track progress
           </div>
-          <button
-            onClick={handleEditClick}
-            className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 hover:shadow-lg transition-all duration-200 font-medium edit-button-hover"
-          >
-            Set Goal
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleEditClick}
+              className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 hover:shadow-lg transition-all duration-200 font-medium edit-button-hover"
+            >
+              Set Goal
+            </button>
+            <button
+              onClick={onToggle}
+              className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+              title="Hide goal banner"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -108,7 +120,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
     <div className={`w-full bg-gradient-to-r ${isGoalReached ? 'from-green-50 via-green-50 to-green-100 border-green-300' : 'from-blue-50 via-indigo-50 to-blue-100 border-blue-300'} border-b px-4 py-4 transition-all duration-500 shadow-md`}>
       <div className="max-w-6xl mx-auto space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-1">
             <span className={`text-base md:text-lg font-bold transition-colors duration-500 goal-label-animated ${isGoalReached ? 'text-green-700' : 'text-blue-700'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
               {TIMEFRAME_LABELS[timeframe]} Goal:
             </span>
@@ -152,14 +164,25 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
               </div>
             )}
           </div>
-          <span className={`text-sm md:text-base font-bold transition-colors duration-500 flex items-center gap-2 ${isGoalReached ? 'text-green-700' : 'text-gray-700'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
-            <span>${currentProfit.toFixed(2)}</span>
-            <span className="text-gray-500">/</span>
-            <span>${goalAmount}</span>
-            <span key={percentageKey} className={`ml-1 font-black text-lg md:text-xl percentage-display inline-block ${goalProgress > 100 ? 'text-green-600' : 'text-blue-600'}`} style={{ fontFamily: "'Outfit', sans-serif" }}>
-              {Math.round(goalProgress)}%
+          <div className="flex items-center gap-3">
+            <span className={`text-sm md:text-base font-bold transition-colors duration-500 flex items-center gap-2 ${isGoalReached ? 'text-green-700' : 'text-gray-700'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
+              <span>${currentProfit.toFixed(2)}</span>
+              <span className="text-gray-500">/</span>
+              <span>${goalAmount}</span>
+              <span key={percentageKey} className={`ml-1 font-black text-lg md:text-xl percentage-display inline-block ${goalProgress > 100 ? 'text-green-600' : 'text-blue-600'}`} style={{ fontFamily: "'Outfit', sans-serif" }}>
+                {Math.round(goalProgress)}%
+              </span>
             </span>
-          </span>
+            <button
+              onClick={onToggle}
+              className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+              title="Hide goal banner"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div className={`w-full bg-gray-300 rounded-full h-4 overflow-hidden shadow-inner transition-all duration-500 progress-section ${isGoalReached ? 'shadow-green-300 shadow-lg' : 'shadow-blue-300'}`}>
           <div
