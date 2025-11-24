@@ -46,38 +46,38 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   const getAppColor = (app: string) => {
     switch (app) {
       case 'DOORDASH':
-        return 'bg-red-100 text-red-800';
+        return 'border border-red-500 text-red-400 bg-red-950/30';
       case 'UBEREATS':
-        return 'bg-green-100 text-green-800';
+        return 'border border-green-500 text-green-400 bg-green-950/30';
       case 'INSTACART':
-        return 'bg-orange-100 text-orange-800';
+        return 'border border-orange-500 text-orange-400 bg-orange-950/30';
       case 'GRUBHUB':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'border border-yellow-500 text-yellow-400 bg-yellow-950/30';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'border border-gray-500 text-gray-400 bg-gray-950/30';
     }
   };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'GAS':
-        return 'bg-blue-100 text-blue-800';
+        return 'border border-blue-500 text-blue-400 bg-blue-950/30';
       case 'PARKING':
-        return 'bg-purple-100 text-purple-800';
+        return 'border border-purple-500 text-purple-400 bg-purple-950/30';
       case 'TOLLS':
-        return 'bg-indigo-100 text-indigo-800';
+        return 'border border-indigo-500 text-indigo-400 bg-indigo-950/30';
       case 'MAINTENANCE':
-        return 'bg-cyan-100 text-cyan-800';
+        return 'border border-cyan-500 text-cyan-400 bg-cyan-950/30';
       case 'PHONE':
-        return 'bg-pink-100 text-pink-800';
+        return 'border border-pink-500 text-pink-400 bg-pink-950/30';
       case 'SUBSCRIPTION':
-        return 'bg-violet-100 text-violet-800';
+        return 'border border-violet-500 text-violet-400 bg-violet-950/30';
       case 'FOOD':
-        return 'bg-amber-100 text-amber-800';
+        return 'border border-amber-500 text-amber-400 bg-amber-950/30';
       case 'LEISURE':
-        return 'bg-rose-100 text-rose-800';
+        return 'border border-rose-500 text-rose-400 bg-rose-950/30';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'border border-gray-500 text-gray-400 bg-gray-950/30';
     }
   };
 
@@ -111,17 +111,17 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
 
   if (entries.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+      <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow p-8 text-center text-cyan-400">
         No entries yet. Add your first entry using the calculator below!
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-slate-800/40 border border-slate-700 rounded-lg shadow overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-slate-900/60 border-b border-slate-700">
             <tr>
               <th className="px-4 py-3 text-left">
                 <input
@@ -133,32 +133,32 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                     }
                   }}
                   onChange={handleSelectAll}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  className="w-4 h-4 rounded border-cyan-500 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
                 />
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">App / Category</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Miles</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Note</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-cyan-400 uppercase">Type</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-cyan-400 uppercase">App / Category</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-cyan-400 uppercase">Time</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-cyan-400 uppercase">Amount</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-cyan-400 uppercase">Miles</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-cyan-400 uppercase">Note</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-cyan-400 uppercase">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-slate-700">
             {entries.map((entry) => (
-              <tr key={entry.id} className={`hover:bg-gray-50 ${selectedIds.includes(entry.id) ? 'bg-blue-50' : ''}`}>
+              <tr key={entry.id} className={`hover:bg-slate-700/30 transition-colors ${selectedIds.includes(entry.id) ? 'bg-cyan-500/10 border-l-2 border-cyan-400' : ''}`}>
                 <td className="px-4 py-3">
                   <input
                     type="checkbox"
                     checked={selectedIds.includes(entry.id)}
                     onChange={() => handleSelectOne(entry.id)}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    className="w-4 h-4 rounded border-cyan-500 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
                   />
                 </td>
                 <td className="px-4 py-3">
                   <span className="text-xl mr-2">{getTypeIcon(entry.type)}</span>
-                  <span className="text-sm">{entry.type}</span>
+                  <span className="text-sm text-cyan-300">{entry.type}</span>
                 </td>
                 <td className="px-4 py-3">
                   {entry.type === 'EXPENSE' ? (
@@ -171,18 +171,18 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
+                <td className="px-4 py-3 text-sm text-slate-400">
                   {formatDate(entry.timestamp)}
                 </td>
                 <td className={`px-4 py-3 text-right font-semibold ${
-                  entry.amount >= 0 ? 'text-green-600' : 'text-red-600'
+                  entry.amount >= 0 ? 'text-green-400' : 'text-red-400'
                 }`}>
                   ${Math.abs(entry.amount).toFixed(2)}
                 </td>
-                <td className="px-4 py-3 text-right text-sm text-gray-600">
+                <td className="px-4 py-3 text-right text-sm text-slate-400">
                   {entry.distance_miles > 0 ? `${entry.distance_miles.toFixed(1)} mi` : '-'}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
+                <td className="px-4 py-3 text-sm text-slate-400">
                   <div className="flex flex-col gap-1">
                     {entry.note && <span className="truncate max-w-xs">{entry.note}</span>}
                     {entry.receipt_url && (
@@ -195,7 +195,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                           link.target = '_blank';
                           link.click();
                         }}
-                        className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                        className="text-cyan-400 hover:text-cyan-300 text-xs font-medium"
                         title="View receipt"
                       >
                         📸 Receipt
@@ -206,20 +206,20 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                 <td className="px-4 py-3 text-right space-x-2 flex justify-end">
                   <button
                     onClick={() => onView && onView(entry)}
-                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                    className="text-slate-400 hover:text-cyan-400 text-sm font-medium transition-colors"
                     title="View entry details"
                   >
                     👁️
                   </button>
                   <button
                     onClick={() => onEdit && onEdit(entry)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => onDelete && onDelete(entry.id)}
-                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                    className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors"
                   >
                     Delete
                   </button>
