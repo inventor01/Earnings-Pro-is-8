@@ -52,17 +52,17 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
     }
     switch (app) {
       case 'DOORDASH':
-        return 'border border-red-500 text-red-400 bg-white';
+        return 'border border-red-500 text-white bg-red-500';
       case 'UBEREATS':
-        return 'border border-green-500 text-green-400 bg-white';
+        return 'border border-green-500 text-white bg-green-500';
       case 'INSTACART':
-        return 'border border-orange-500 text-orange-400 bg-white';
+        return 'border border-orange-500 text-white bg-orange-500';
       case 'GRUBHUB':
-        return 'border border-yellow-500 text-yellow-400 bg-white';
+        return 'border border-yellow-500 text-white bg-yellow-500';
       case 'SHIPT':
-        return 'border border-blue-500 text-blue-400 bg-white';
+        return 'border border-blue-500 text-white bg-blue-500';
       default:
-        return 'border border-gray-500 text-gray-400 bg-white';
+        return 'border border-gray-500 text-white bg-gray-500';
     }
   };
 
@@ -73,23 +73,23 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
     }
     switch (category) {
       case 'GAS':
-        return 'border border-blue-500 text-blue-400 bg-white';
+        return 'border border-blue-500 text-white bg-blue-500';
       case 'PARKING':
-        return 'border border-purple-500 text-purple-400 bg-white';
+        return 'border border-purple-500 text-white bg-purple-500';
       case 'TOLLS':
-        return 'border border-indigo-500 text-indigo-400 bg-white';
+        return 'border border-indigo-500 text-white bg-indigo-500';
       case 'MAINTENANCE':
-        return 'border border-cyan-500 text-cyan-400 bg-white';
+        return 'border border-cyan-500 text-white bg-cyan-500';
       case 'PHONE':
-        return 'border border-pink-500 text-pink-400 bg-white';
+        return 'border border-pink-500 text-white bg-pink-500';
       case 'SUBSCRIPTION':
-        return 'border border-violet-500 text-violet-400 bg-white';
+        return 'border border-violet-500 text-white bg-violet-500';
       case 'FOOD':
-        return 'border border-amber-500 text-amber-400 bg-white';
+        return 'border border-amber-500 text-white bg-amber-500';
       case 'LEISURE':
-        return 'border border-rose-500 text-rose-400 bg-white';
+        return 'border border-rose-500 text-white bg-rose-500';
       default:
-        return 'border border-gray-500 text-gray-400 bg-white';
+        return 'border border-gray-500 text-white bg-gray-500';
     }
   };
 
