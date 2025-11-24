@@ -497,42 +497,58 @@ export function Dashboard() {
           <PeriodChips selected={period} onSelect={setPeriod} />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
-          <KpiCard
-            title="Revenue"
-            value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
-            color="green"
-          />
-          <KpiCard
-            title="Expenses"
-            value={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
-            color="red"
-          />
-          <KpiCard
-            title="Profit"
-            value={`$${rollup?.profit.toFixed(2) || '0.00'}`}
-            color="blue"
-          />
-          <KpiCard
-            title="Miles"
-            value={rollup?.miles.toFixed(1) || '0.0'}
-            color="purple"
-          />
-          <KpiCard
-            title="$/Mile"
-            value={`$${rollup?.dollars_per_mile.toFixed(2) || '0.00'}`}
-            color="orange"
-          />
-          <KpiCard
-            title="$/Hour"
-            value={`$${rollup?.dollars_per_hour.toFixed(2) || '0.00'}`}
-            color="gray"
-          />
-          <KpiCard
-            title="Avg Order"
-            value={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
-            color="blue"
-          />
+        <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth">
+          <div className="flex gap-3 md:gap-4 pb-2 min-w-max">
+            <div className="flex-shrink-0 w-80">
+              <KpiCard
+                title="Revenue"
+                value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
+                color="green"
+              />
+            </div>
+            <div className="flex-shrink-0 w-80">
+              <KpiCard
+                title="Expenses"
+                value={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
+                color="red"
+              />
+            </div>
+            <div className="flex-shrink-0 w-80">
+              <KpiCard
+                title="Profit"
+                value={`$${rollup?.profit.toFixed(2) || '0.00'}`}
+                color="blue"
+              />
+            </div>
+            <div className="flex-shrink-0 w-80">
+              <KpiCard
+                title="Miles"
+                value={rollup?.miles.toFixed(1) || '0.0'}
+                color="purple"
+              />
+            </div>
+            <div className="flex-shrink-0 w-80">
+              <KpiCard
+                title="$/Mile"
+                value={`$${rollup?.dollars_per_mile.toFixed(2) || '0.00'}`}
+                color="orange"
+              />
+            </div>
+            <div className="flex-shrink-0 w-80">
+              <KpiCard
+                title="$/Hour"
+                value={`$${rollup?.dollars_per_hour.toFixed(2) || '0.00'}`}
+                color="gray"
+              />
+            </div>
+            <div className="flex-shrink-0 w-80">
+              <KpiCard
+                title="Avg Order"
+                value={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
+                color="blue"
+              />
+            </div>
+          </div>
         </div>
 
         <div>
