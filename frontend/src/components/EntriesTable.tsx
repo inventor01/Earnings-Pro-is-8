@@ -50,7 +50,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
       case 'DOORDASH':
         return 'border border-red-500 text-red-400 bg-red-950/30';
       case 'UBEREATS':
-        return 'border border-green-500 text-green-400 bg-green-950/30';
+        return 'border border-green-500 text-green-400 bg-green-900/50';
       case 'INSTACART':
         return 'border border-orange-500 text-orange-400 bg-orange-950/30';
       case 'GRUBHUB':
