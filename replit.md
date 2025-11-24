@@ -33,6 +33,9 @@ This application helps delivery drivers:
 - Full CRUD operations: Create, Read, Update, Delete
 
 ## Recent Changes (November 24, 2025 - Latest)
+- **✅ FIXED: UTC Date Range Calculations**: Fixed critical bug where date filters were using local timezone instead of UTC, causing metrics to show 5-hour offset dates and display yesterday's data. Changed frontend `getPeriodDates()` function to use UTC methods (`setUTCHours()`, `setUTCDate()`, etc.) instead of local timezone methods. Date ranges now correctly query `2025-11-24T00:00:00Z to 2025-11-24T23:59:59Z` instead of `2025-11-24T05:00:00Z to 2025-11-25T04:59:59Z`
+- **👁️ Entry Viewer Modal**: Added ability to view detailed entry information by clicking eye icon (👁️) on any entry row. Modal displays all entry details including amount, app/category, distance, duration, notes, and receipt images with preview
+- **📱 Mobile Optimization**: All components now responsive with mobile-first padding (p-3→p-6) and text sizing (text-sm→text-xl), responsive grids (1→4 columns), and touch-friendly button sizes
 - **🤖 AI Earning Suggestions**: New AI-powered feature analyzes driver data to provide:
   - Recommended minimum order amounts to accept for maximum profit
   - Peak earning hours based on historical order data
