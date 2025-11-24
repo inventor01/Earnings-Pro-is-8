@@ -503,6 +503,7 @@ export function Dashboard() {
               <KpiCard
                 title="Revenue"
                 value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
+                detail1={{ label: 'Orders', value: rollup?.by_type?.ORDER ? Math.round(rollup.by_type.ORDER / (entries.filter(e => e.type === 'ORDER').length > 0 ? entries.filter(e => e.type === 'ORDER').reduce((sum) => sum + 1, 0) : 1)) : '-' }}
                 color="green"
               />
             </div>
@@ -510,6 +511,7 @@ export function Dashboard() {
               <KpiCard
                 title="Expenses"
                 value={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
+                detail1={{ label: 'Count', value: entries.filter(e => e.type === 'EXPENSE').length }}
                 color="red"
               />
             </div>
@@ -517,6 +519,7 @@ export function Dashboard() {
               <KpiCard
                 title="Profit"
                 value={`$${rollup?.profit.toFixed(2) || '0.00'}`}
+                detail1={{ label: 'Margin', value: rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-' }}
                 color="blue"
               />
             </div>
@@ -524,6 +527,7 @@ export function Dashboard() {
               <KpiCard
                 title="Miles"
                 value={rollup?.miles.toFixed(1) || '0.0'}
+                detail1={{ label: 'Trips', value: entries.filter(e => e.distance_miles > 0).length }}
                 color="purple"
               />
             </div>
@@ -531,6 +535,7 @@ export function Dashboard() {
               <KpiCard
                 title="$/Mile"
                 value={`$${rollup?.dollars_per_mile.toFixed(2) || '0.00'}`}
+                detail1={{ label: 'Efficiency', value: rollup?.miles ? `${(rollup.revenue / rollup.miles).toFixed(2)}/mile` : '-' }}
                 color="orange"
               />
             </div>
@@ -538,6 +543,7 @@ export function Dashboard() {
               <KpiCard
                 title="$/Hour"
                 value={`$${rollup?.dollars_per_hour.toFixed(2) || '0.00'}`}
+                detail1={{ label: 'Hours', value: rollup ? `${(rollup.by_type?.total_minutes / 60 || 0).toFixed(1)}h` : '-' }}
                 color="gray"
               />
             </div>
@@ -545,6 +551,7 @@ export function Dashboard() {
               <KpiCard
                 title="Avg Order"
                 value={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
+                detail1={{ label: 'Orders', value: entries.filter(e => e.type === 'ORDER').length }}
                 color="blue"
               />
             </div>
