@@ -174,7 +174,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                 <td className="px-4 py-3 text-sm text-slate-400">
                   {formatDate(entry.timestamp)}
                 </td>
-                <td className={`px-4 py-3 text-right font-semibold ${
+                <td className={`px-4 py-3 text-right font-black ${
                   entry.amount >= 0 ? 'text-green-400' : 'text-red-400'
                 }`}>
                   ${Math.abs(entry.amount).toFixed(2)}
