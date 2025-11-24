@@ -522,10 +522,10 @@ export function Dashboard() {
       <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 ${calcExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`}>
         <button
           onClick={() => setCalcExpanded(!calcExpanded)}
-          className="w-full py-4 px-4 flex items-center justify-between bg-blue-500 text-white font-bold text-lg hover:bg-blue-600"
+          className="w-full py-4 px-4 flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold text-lg hover:from-blue-700 hover:to-blue-600 opacity-100 shadow-lg"
         >
           <span>{calcExpanded ? '▼ Hide Calculator' : '+ Add Entry'}</span>
-          <span className="text-sm opacity-90">{amount !== '0' ? `$${amount}` : ''}</span>
+          <span className="text-sm font-semibold">{amount !== '0' ? `$${amount}` : ''}</span>
         </button>
         
         <div className="max-w-6xl mx-auto p-4 max-h-[70vh] overflow-y-auto">
