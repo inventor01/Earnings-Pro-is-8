@@ -13,14 +13,8 @@ interface SettingsDrawerProps {
 
 export function SettingsDrawer({ isOpen, onClose, settings, onSave, onResetAll }: SettingsDrawerProps) {
   const { theme, setTheme, config } = useTheme();
-  const [costPerMile, setCostPerMile] = useState(settings.cost_per_mile.toString());
 
   if (!isOpen) return null;
-
-  const handleSave = () => {
-    onSave({ cost_per_mile: parseFloat(costPerMile) });
-    onClose();
-  };
 
   const handleResetAll = () => {
     onResetAll?.();
@@ -70,33 +64,6 @@ export function SettingsDrawer({ isOpen, onClose, settings, onSave, onResetAll }
             ))}
           </div>
         </div>
-
-        <div className="mb-6">
-          <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-            Cost Per Mile ($)
-          </label>
-          <input
-            type="number"
-            step="0.01"
-            value={costPerMile}
-            onChange={(e) => setCostPerMile(e.target.value)}
-            className={`w-full px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${
-              isDark
-                ? 'bg-slate-800 border border-slate-700 text-white focus:ring-cyan-400 focus:border-cyan-400'
-                : 'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500'
-            }`}
-          />
-          <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-            This is used to calculate profit from mileage
-          </p>
-        </div>
-
-        <button
-          onClick={handleSave}
-          className={`w-full py-3 rounded-lg font-medium mb-3 transition-all ${config.buttonPrimary} ${config.buttonPrimaryText}`}
-        >
-          Save Settings
-        </button>
 
         <div className={`pt-6 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
           <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Danger Zone</h3>
