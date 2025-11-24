@@ -151,7 +151,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span className={`text-2xl md:text-3xl font-black transition-colors duration-500 goal-amount-animated ${isGoalReached ? 'text-green-600' : 'text-blue-600'}`} style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <span className={`text-2xl md:text-3xl font-black transition-colors duration-500 ${isGoalReached ? 'text-green-600' : 'text-blue-600'}`} style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   ${goalAmount}
                 </span>
                 <button
