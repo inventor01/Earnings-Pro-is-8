@@ -593,7 +593,7 @@ export function Dashboard() {
           <button
             onClick={handleSave}
             disabled={createMutation.isPending}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-lg text-lg font-bold disabled:bg-gray-400"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-lg text-lg font-bold disabled:bg-gray-400 mb-6"
           >
             {createMutation.isPending ? 'Saving...' : 'Save Entry'}
           </button>
