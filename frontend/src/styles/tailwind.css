@@ -123,6 +123,15 @@
   }
 }
 
+@keyframes stripe-animation {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 50px 0;
+  }
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -138,13 +147,27 @@ body {
 }
 
 .progress-bar-fill {
-  animation: slideInLeft 1s ease-out, progress-glow 2s ease-in-out infinite;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.2) 10px,
+    rgba(255, 255, 255, 0.2) 20px
+  );
+  background-size: 50px 50px;
+  animation: slideInLeft 1s ease-out, stripe-animation 1s linear infinite, progress-glow 2s ease-in-out infinite;
 }
 
 .progress-bar-fill.shimmer-effect {
-  background-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  background-size: 1000px 100%;
-  animation: slideInLeft 1s ease-out, shimmer 2s infinite, progress-glow 2s ease-in-out infinite;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.3) 10px,
+    rgba(255, 255, 255, 0.3) 20px
+  );
+  background-size: 50px 50px;
+  animation: slideInLeft 1s ease-out, stripe-animation 1s linear infinite, progress-glow 2s ease-in-out infinite;
 }
 
 .goal-pulse {
