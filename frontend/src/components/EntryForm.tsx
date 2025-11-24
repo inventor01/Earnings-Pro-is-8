@@ -100,6 +100,17 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
           </div>
 
           <div>
+            <label className="block text-base font-bold text-gray-800 mb-2">📝 Note (optional)</label>
+            <textarea
+              value={formData.note}
+              onChange={(e) => onFormDataChange({ ...formData, note: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-semibold"
+              rows={3}
+              placeholder="Add a note..."
+            />
+          </div>
+
+          <div>
             <label className="block text-base font-bold text-gray-800 mb-3">📸 Receipt (optional)</label>
             <label className="flex flex-col items-center justify-center w-full px-4 py-6 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 border-2 border-dashed border-gradient-to-r border-purple-300 rounded-xl cursor-pointer hover:from-purple-100 hover:via-pink-100 hover:to-orange-100 transition-all duration-200 group shadow-sm hover:shadow-md">
               <div className="flex flex-col items-center justify-center">
@@ -143,16 +154,18 @@ export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: En
         </>
       )}
 
-      <div>
-        <label className="block text-base font-bold text-gray-800 mb-2">📝 Note (optional)</label>
-        <textarea
-          value={formData.note}
-          onChange={(e) => onFormDataChange({ ...formData, note: e.target.value })}
-          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-semibold"
-          rows={3}
-          placeholder="Add a note..."
-        />
-      </div>
+      {!isExpense && (
+        <div>
+          <label className="block text-base font-bold text-gray-800 mb-2">📝 Note (optional)</label>
+          <textarea
+            value={formData.note}
+            onChange={(e) => onFormDataChange({ ...formData, note: e.target.value })}
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-semibold"
+            rows={3}
+            placeholder="Add a note..."
+          />
+        </div>
+      )}
     </div>
   );
 }
