@@ -34,6 +34,9 @@ The application provides a calculator-style input with add/subtract modes, real-
 - Automatic date detection with notifications.
 - Full CRUD operations for entries, including a modal sidebar for editing.
 - AI Earning Suggestions based on driver data for optimal profit.
+- **Platform OAuth Integration**: Connect Uber Eats and Shipt accounts for automatic order syncing.
+- **Automatic Order Sync**: Background job syncs orders from connected platforms hourly.
+- **Synced Order Tracking**: Tracks which orders have been synced to prevent duplicates.
 
 ### System Design Choices
 - **Backend**: FastAPI (Python 3.11) with SQLite (SQLAlchemy ORM) for simplicity and rapid MVP development.
@@ -43,6 +46,9 @@ The application provides a calculator-style input with add/subtract modes, real-
 - **Data Storage**: Signed amounts for expenses and cancellations stored as negative values for simplified aggregation.
 - **Unified Entry Ledger**: A single database table for all transaction types (ORDER, BONUS, EXPENSE, CANCELLATION) using an enum.
 - **Real-Time Calculations**: Profit is dynamically calculated as revenue minus logged expenses.
+- **OAuth Integration**: Secure OAuth 2.0 implementation for Uber and Shipt with encrypted credential storage.
+- **Background Syncing**: APScheduler manages hourly background jobs to sync orders from connected platforms.
+- **Sync Service**: Dedicated sync service converts platform-specific order data to standardized Entry records.
 
 ## External Dependencies
 - **OpenAI GPT-4o-mini**: Utilized via Replit AI Integrations for AI Earning Suggestions.
@@ -52,3 +58,38 @@ The application provides a calculator-style input with add/subtract modes, real-
 - **SQLAlchemy**: ORM for interacting with the SQLite database.
 - **Uvicorn**: ASGI server for the FastAPI backend.
 - **Vite**: Frontend build tool.
+- **APScheduler**: Background job scheduler for periodic order syncing.
+- **httpx**: Async HTTP client for making API calls to Uber and Shipt platforms.
+
+## Recent Additions (November 24, 2025)
+
+### Platform Integration & Auto-Sync
+1. **New Database Tables**:
+   - `api_credentials`: Stores encrypted OAuth tokens for Uber/Shipt with expiration tracking
+   - `synced_orders`: Tracks synced orders to prevent duplicates
+
+2. **OAuth Endpoints** (`backend/routers/oauth.py`):
+   - `/api/oauth/uber/authorize`: Initiates Uber OAuth flow
+   - `/api/oauth/shipt/authorize`: Initiates Shipt OAuth flow
+   - `/api/oauth/{platform}/callback`: Handles OAuth callbacks and token storage
+   - `/api/oauth/{platform}/disconnect`: Removes stored credentials
+   - `/api/oauth/status`: Returns connection status of all platforms
+
+3. **Sync Service** (`backend/services/sync_service.py`):
+   - `UberSyncService`: Fetches orders from Uber Eats API and converts to Entry records
+   - `ShiptSyncService`: Fetches orders from Shipt API and converts to Entry records
+   - Automatic duplicate prevention using platform order IDs
+
+4. **Background Job Scheduler** (`backend/services/background_jobs.py`):
+   - Runs hourly sync job to fetch new orders from connected platforms
+   - Automatically starts on application startup
+
+5. **Frontend Settings Integration**:
+   - Updated `SettingsDrawer` component with Platform Integrations section
+   - Connect/Disconnect buttons for Uber and Shipt accounts
+   - Real-time connection status display with auto-refresh
+
+### Progress Bar Animation Enhancement
+- Added animated striped pattern to progress bar with continuous movement
+- Creates "flowing" effect to indicate progress momentum
+- Combined with glow animation for enhanced visual appeal
