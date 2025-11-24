@@ -84,12 +84,12 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
     setIsEditing(false);
   };
 
-  const progressColor = 'bg-green-500';
+  const progressColor = 'bg-blue-500';
   const displayProgress = Math.min(goalProgress, 100);
 
   if (!goalAmount) {
     return (
-      <div className="w-full bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 px-4 py-3 animate-pulse">
+      <div className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-4 py-3 animate-pulse">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className="text-sm text-gray-600">
             <span className="font-medium">{TIMEFRAME_LABELS[timeframe]} Goal:</span> Set a target to track progress
@@ -97,7 +97,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
           <div className="flex gap-2">
             <button
               onClick={handleEditClick}
-              className="px-3 py-1 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 hover:shadow-lg transition-all duration-200 font-medium edit-button-hover"
+              className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 hover:shadow-lg transition-all duration-200 font-medium edit-button-hover"
             >
               Set Goal
             </button>
@@ -117,11 +117,11 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
   }
 
   return (
-    <div className={`w-full bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 border-b border-green-300 px-4 py-4 transition-all duration-500 shadow-md`}>
+    <div className={`w-full bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border-b border-blue-300 px-4 py-4 transition-all duration-500 shadow-md`}>
       <div className="max-w-6xl mx-auto space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
-            <span className={`text-base md:text-lg font-bold transition-colors duration-500 goal-label-animated text-green-700`} style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <span className={`text-base md:text-lg font-bold transition-colors duration-500 goal-label-animated text-blue-700`} style={{ fontFamily: "'Poppins', sans-serif" }}>
               {TIMEFRAME_LABELS[timeframe]} Goal:
             </span>
             {isEditing ? (
@@ -138,7 +138,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-lg hover:from-green-600 hover:to-emerald-600 hover:shadow-lg hover:scale-105 disabled:bg-gray-400 transition-all duration-200 uppercase tracking-wide"
+                  className="px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-bold rounded-lg hover:from-blue-700 hover:to-blue-600 hover:shadow-lg hover:scale-105 disabled:bg-gray-400 transition-all duration-200 uppercase tracking-wide"
                 >
                   Save
                 </button>
@@ -151,12 +151,12 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span className={`text-2xl md:text-3xl font-black transition-colors duration-500 text-green-600`} style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <span className={`text-2xl md:text-3xl font-black transition-colors duration-500 text-blue-600`} style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   ${goalAmount}
                 </span>
                 <button
                   onClick={handleEditClick}
-                  className="text-xs md:text-sm text-green-600 hover:text-green-800 hover:scale-110 underline font-bold transition-all duration-200 edit-button-hover uppercase"
+                  className="text-xs md:text-sm text-blue-600 hover:text-blue-800 hover:scale-110 underline font-bold transition-all duration-200 edit-button-hover uppercase"
                   style={{ fontFamily: "'Poppins', sans-serif" }}
                 >
                   Edit
@@ -165,11 +165,11 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
             )}
           </div>
           <div className="flex items-center gap-3">
-            <span className={`text-sm md:text-base font-bold transition-colors duration-500 flex items-center gap-2 ${isGoalReached ? 'text-green-700' : 'text-gray-700'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <span className={`text-sm md:text-base font-bold transition-colors duration-500 flex items-center gap-2 ${isGoalReached ? 'text-blue-700' : 'text-gray-700'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
               <span>${currentProfit.toFixed(2)}</span>
               <span className="text-gray-500">/</span>
               <span>${goalAmount}</span>
-              <span key={percentageKey} className={`ml-1 font-black text-lg md:text-xl percentage-display inline-block text-green-600`} style={{ fontFamily: "'Outfit', sans-serif" }}>
+              <span key={percentageKey} className={`ml-1 font-black text-lg md:text-xl percentage-display inline-block text-blue-600`} style={{ fontFamily: "'Outfit', sans-serif" }}>
                 {Math.round(goalProgress)}%
               </span>
             </span>
@@ -184,7 +184,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
             </button>
           </div>
         </div>
-        <div className={`w-full bg-gray-300 rounded-full h-4 overflow-hidden shadow-inner transition-all duration-500 progress-section ${isGoalReached ? 'shadow-green-300 shadow-lg' : 'shadow-blue-300'}`}>
+        <div className={`w-full bg-gray-300 rounded-full h-4 overflow-hidden shadow-inner transition-all duration-500 progress-section shadow-blue-300`}>
           <div
             className={`${progressColor} h-4 rounded-full transition-all duration-500 ease-out progress-bar-fill ${goalProgress > 50 ? 'shimmer-effect' : ''} ${isGoalReached ? 'goal-pulse shadow-lg' : ''}`}
             style={{ width: `${displayProgress}%` }}
