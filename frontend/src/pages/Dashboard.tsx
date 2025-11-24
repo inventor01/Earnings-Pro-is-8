@@ -410,9 +410,9 @@ export function Dashboard() {
           onGoalReached={handleGoalReached}
         />
       )}
-      <div className="flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full">
+      <div className="flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950">
         <div className="flex justify-between items-center mb-3 md:mb-6 gap-2">
-          <h1 className="text-3xl md:text-5xl font-black text-gray-900">🚗 Earnings</h1>
+          <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">🚗 EARNINGS</h1>
           <div className="flex gap-1 md:gap-2">
             <button
               onClick={() => setResetConfirm(true)}
@@ -442,7 +442,7 @@ export function Dashboard() {
           <PeriodChips selected={period} onSelect={setPeriod} />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
           <KpiCard
             title="Revenue"
             value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}

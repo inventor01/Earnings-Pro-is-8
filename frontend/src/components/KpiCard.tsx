@@ -8,39 +8,49 @@ interface KpiCardProps {
 }
 
 export function KpiCard({ title, value, trend, color = 'blue', goalProgress, goalTarget }: KpiCardProps) {
-  const colorClasses = {
-    blue: 'border-l-8 border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100',
-    green: 'border-l-8 border-green-500 bg-gradient-to-br from-green-50 to-green-100',
-    red: 'border-l-8 border-red-500 bg-gradient-to-br from-red-50 to-red-100',
-    purple: 'border-l-8 border-purple-500 bg-gradient-to-br from-purple-50 to-purple-100',
-    orange: 'border-l-8 border-orange-500 bg-gradient-to-br from-orange-50 to-orange-100',
-    gray: 'border-l-8 border-gray-500 bg-gradient-to-br from-gray-50 to-gray-100',
+  const colorConfig = {
+    blue: { glow: 'from-blue-400 to-blue-600', accent: 'text-blue-400', border: 'border-blue-500', bg: 'bg-blue-900/20' },
+    green: { glow: 'from-green-400 to-green-600', accent: 'text-green-400', border: 'border-green-500', bg: 'bg-green-900/20' },
+    red: { glow: 'from-red-400 to-red-600', accent: 'text-red-400', border: 'border-red-500', bg: 'bg-red-900/20' },
+    purple: { glow: 'from-purple-400 to-purple-600', accent: 'text-purple-400', border: 'border-purple-500', bg: 'bg-purple-900/20' },
+    orange: { glow: 'from-orange-400 to-orange-600', accent: 'text-orange-400', border: 'border-orange-500', bg: 'bg-orange-900/20' },
+    gray: { glow: 'from-gray-400 to-gray-600', accent: 'text-gray-400', border: 'border-gray-500', bg: 'bg-gray-900/20' },
   };
 
-  const progressColor = goalProgress !== null && goalProgress !== undefined
-    ? goalProgress >= 100 ? 'bg-green-500' : 'bg-blue-500'
-    : 'bg-gray-300';
+  const config = colorConfig[color as keyof typeof colorConfig] || colorConfig.blue;
 
   return (
-    <div className={`${colorClasses[color as keyof typeof colorClasses] || colorClasses.blue} p-3 md:p-6 rounded-lg md:rounded-xl shadow-lg hover:shadow-xl transition-shadow`}>
-      <div className="text-xs md:text-base text-gray-700 font-bold uppercase tracking-wide">{title}</div>
-      <div className="text-2xl md:text-4xl font-black mt-2 md:mt-3 text-gray-900">{value}</div>
-      {trend && <div className="text-xs md:text-sm text-gray-600 mt-1 md:mt-2 font-semibold">{trend}</div>}
+    <div className={`relative p-4 md:p-6 rounded-2xl overflow-hidden group`}>
+      {/* Background with dark dashboard effect */}
+      <div className={`absolute inset-0 ${config.bg} backdrop-blur-sm border-2 ${config.border} rounded-2xl`} />
+      <div className={`absolute inset-0 bg-gradient-to-br ${config.glow} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`} />
       
-      {goalProgress !== null && goalProgress !== undefined && goalTarget && (
-        <div className="mt-3">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-xs text-gray-500">Goal: ${typeof goalTarget === 'string' ? goalTarget : goalTarget.toFixed(2)}</span>
-            <span className="text-xs font-medium text-gray-600">{Math.round(goalProgress)}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className={`${progressColor} h-2 rounded-full transition-all duration-300`}
-              style={{ width: `${Math.min(goalProgress, 100)}%` }}
-            />
+      {/* Gauge arc effect */}
+      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${config.glow} rounded-full opacity-60`} />
+      
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Title - Dashboard label */}
+        <div className={`text-xs md:text-sm font-bold uppercase tracking-widest ${config.accent} opacity-80 mb-3 font-mono`}>
+          {title}
+        </div>
+        
+        {/* Main value - Large and prominent like speedometer */}
+        <div className="flex items-end gap-1 mb-2">
+          <div className={`text-3xl md:text-5xl font-black ${config.accent} font-mono tracking-tight drop-shadow-lg`}>
+            {value}
           </div>
         </div>
-      )}
+
+        {trend && (
+          <div className={`text-xs md:text-sm opacity-70 font-semibold font-mono`}>
+            {trend}
+          </div>
+        )}
+        
+        {/* Bottom accent line */}
+        <div className={`h-0.5 bg-gradient-to-r ${config.glow} opacity-50 mt-3 rounded-full`} />
+      </div>
     </div>
   );
 }
