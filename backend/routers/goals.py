@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import Optional
 from backend.db import get_db
 from backend.models import Goal, TimeframeType
 from backend.schemas import GoalCreate, GoalUpdate, GoalResponse
 
 router = APIRouter()
 
-@router.get("/goals/{timeframe}", response_model=GoalResponse)
+@router.get("/goals/{timeframe}", response_model=Optional[GoalResponse])
 def get_goal(timeframe: str, db: Session = Depends(get_db)):
     try:
         tf = TimeframeType[timeframe]
@@ -15,7 +16,8 @@ def get_goal(timeframe: str, db: Session = Depends(get_db)):
     
     goal = db.query(Goal).filter(Goal.timeframe == tf).first()
     if not goal:
-        raise HTTPException(status_code=404, detail="Goal not found")
+        # Return None/null instead of 404 to allow frontend to handle gracefully
+        return None
     return goal
 
 @router.post("/goals", response_model=GoalResponse)
@@ -42,7 +44,12 @@ def update_goal(timeframe: str, goal: GoalUpdate, db: Session = Depends(get_db))
     
     db_goal = db.query(Goal).filter(Goal.timeframe == tf).first()
     if not db_goal:
-        raise HTTPException(status_code=404, detail="Goal not found")
+        # Create the goal if it doesn't exist instead of returning 404
+        db_goal = Goal(timeframe=tf, target_profit=goal.target_profit)
+        db.add(db_goal)
+        db.commit()
+        db.refresh(db_goal)
+        return db_goal
     
     db_goal.target_profit = goal.target_profit
     db.commit()
@@ -58,7 +65,8 @@ def delete_goal(timeframe: str, db: Session = Depends(get_db)):
     
     db_goal = db.query(Goal).filter(Goal.timeframe == tf).first()
     if not db_goal:
-        raise HTTPException(status_code=404, detail="Goal not found")
+        # Return success even if goal doesn't exist (idempotent delete)
+        return {"message": "Goal deleted"}
     
     db.delete(db_goal)
     db.commit()
