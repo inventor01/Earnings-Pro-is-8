@@ -583,6 +583,22 @@ export function Dashboard() {
           <div className="flex gap-3 md:gap-4 pb-2 min-w-max">
             <div className="flex-shrink-0 w-80">
               <KpiCard
+                title="$/Mile"
+                value={`$${rollup?.dollars_per_mile.toFixed(2) || '0.00'}`}
+                detail1={{ label: 'Efficiency', value: rollup?.miles ? `${(rollup.revenue / rollup.miles).toFixed(2)}/mile` : '-' }}
+                color="orange"
+              />
+            </div>
+            <div className="flex-shrink-0 w-80">
+              <KpiCard
+                title="$/Hour"
+                value={`$${rollup?.dollars_per_hour.toFixed(2) || '0.00'}`}
+                detail1={{ label: 'Hours', value: rollup ? `${(rollup.by_type?.total_minutes / 60 || 0).toFixed(1)}h` : '-' }}
+                color="gray"
+              />
+            </div>
+            <div className="flex-shrink-0 w-80">
+              <KpiCard
                 title="Revenue"
                 value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
                 detail1={{ label: 'Orders', value: entries.filter(e => e.type === 'ORDER').length }}
@@ -611,22 +627,6 @@ export function Dashboard() {
                 value={rollup?.miles.toFixed(1) || '0.0'}
                 detail1={{ label: 'Trips', value: entries.filter(e => e.distance_miles > 0).length }}
                 color="purple"
-              />
-            </div>
-            <div className="flex-shrink-0 w-80">
-              <KpiCard
-                title="$/Mile"
-                value={`$${rollup?.dollars_per_mile.toFixed(2) || '0.00'}`}
-                detail1={{ label: 'Efficiency', value: rollup?.miles ? `${(rollup.revenue / rollup.miles).toFixed(2)}/mile` : '-' }}
-                color="orange"
-              />
-            </div>
-            <div className="flex-shrink-0 w-80">
-              <KpiCard
-                title="$/Hour"
-                value={`$${rollup?.dollars_per_hour.toFixed(2) || '0.00'}`}
-                detail1={{ label: 'Hours', value: rollup ? `${(rollup.by_type?.total_minutes / 60 || 0).toFixed(1)}h` : '-' }}
-                color="gray"
               />
             </div>
             <div className="flex-shrink-0 w-80">
