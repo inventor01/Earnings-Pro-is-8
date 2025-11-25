@@ -589,14 +589,21 @@ export function Dashboard() {
           dayOffset={dayOffset}
           onDayChange={(offset) => {
             setDayOffset(offset);
-            // Ensure period is set to 'today' when navigating days
-            if (period !== 'today') {
+            // Update period based on day offset
+            if (offset === -1) {
+              setPeriod('yesterday');
+            } else if (offset === 0) {
               setPeriod('today');
+            } else {
+              // For other offsets, keep on 'today' period
+              if (period !== 'today') {
+                setPeriod('today');
+              }
             }
           }}
           getDateLabel={getDateLabel}
           isDarkTheme={isDarkTheme}
-          showDayNav={period === 'today'}
+          showDayNav={period === 'today' || period === 'yesterday'}
         />
 
         <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth">
