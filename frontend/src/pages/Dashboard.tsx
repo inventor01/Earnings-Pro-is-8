@@ -465,12 +465,10 @@ export function Dashboard() {
 
     const finalAmount = Math.abs(amountNum);
 
-    // Convert date and time to ISO timestamp
-    const dateTime = `${editingFormData.date}T${editingFormData.time}:00`;
-    const timestamp = new Date(dateTime).toISOString();
-
+    // Send date and time separately to backend for proper EST timezone handling
     const entry: EntryCreate = {
-      timestamp,
+      date: editingFormData.date,
+      time: editingFormData.time,
       type: editingFormData.type,
       app: editingFormData.app,
       amount: finalAmount,
@@ -850,6 +848,7 @@ export function Dashboard() {
                 onFormDataChange={setEditingFormData}
                 period={period}
                 dayOffset={dayOffset}
+                isEditing={true}
               />
             </div>
 

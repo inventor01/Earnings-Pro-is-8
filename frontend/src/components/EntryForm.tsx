@@ -10,6 +10,7 @@ interface EntryFormProps {
   onFormDataChange: (data: EntryFormData) => void;
   period?: Period;
   dayOffset?: number;
+  isEditing?: boolean;
 }
 
 export interface EntryFormData {
@@ -23,11 +24,11 @@ export interface EntryFormData {
   time: string;
 }
 
-export function EntryForm({ onTypeChange, formData, onFormDataChange, period = 'today', dayOffset = 0 }: EntryFormProps) {
+export function EntryForm({ onTypeChange, formData, onFormDataChange, period = 'today', dayOffset = 0, isEditing = false }: EntryFormProps) {
   const isExpense = formData.type === 'EXPENSE';
   const isOrder = formData.type === 'ORDER' || formData.type === 'CANCELLATION';
 
-  // Calculate date constraints based on timeframe
+  // Calculate date constraints based on timeframe (disabled when editing)
   const getDateConstraints = () => {
     const now = new Date();
     const formatDate = (date: Date) => date.toISOString().split('T')[0];
@@ -43,6 +44,15 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
       d.setHours(23, 59, 59, 999);
       return d;
     };
+
+    // If editing, allow any date without constraints
+    if (isEditing) {
+      return {
+        minDate: '',
+        maxDate: '',
+        defaultDate: formData.date,
+      };
+    }
 
     let minDate, maxDate, defaultDate;
 
