@@ -186,7 +186,10 @@ export function Dashboard() {
 
   useEffect(() => {
     setSelectedIds([]);
-    setDayOffset(0); // Reset day offset when changing periods
+    // Only reset day offset for major period changes, not for today/yesterday transitions
+    if (period !== 'today' && period !== 'yesterday') {
+      setDayOffset(0);
+    }
   }, [period]);
 
   const { data: settings } = useQuery({
