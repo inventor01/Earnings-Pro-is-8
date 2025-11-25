@@ -1,17 +1,18 @@
 from datetime import datetime, timedelta
 
-def get_today():
+def get_day_offset(offset_days: int = 0):
+    """Get a specific day with offset. 0 = today, -1 = yesterday, 1 = tomorrow, etc."""
     now = datetime.utcnow()
-    start = datetime(now.year, now.month, now.day, 0, 0, 0)
-    end = datetime(now.year, now.month, now.day, 23, 59, 59)
+    target_day = now + timedelta(days=offset_days)
+    start = datetime(target_day.year, target_day.month, target_day.day, 0, 0, 0)
+    end = datetime(target_day.year, target_day.month, target_day.day, 23, 59, 59)
     return start, end
 
+def get_today():
+    return get_day_offset(0)
+
 def get_yesterday():
-    now = datetime.utcnow()
-    yesterday = now - timedelta(days=1)
-    start = datetime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0)
-    end = datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59)
-    return start, end
+    return get_day_offset(-1)
 
 def get_this_week():
     now = datetime.utcnow()

@@ -5,7 +5,7 @@ from backend.schemas import RollupResponse
 from backend.services.rollup_service import calculate_rollup
 from backend.services.period import (
     get_today, get_yesterday, get_this_week, get_last_7_days,
-    get_this_month, get_last_month
+    get_this_month, get_last_month, get_day_offset
 )
 from typing import Optional
 
@@ -14,6 +14,7 @@ router = APIRouter()
 @router.get("/rollup", response_model=RollupResponse)
 async def get_rollup(
     timeframe: Optional[str] = None,
+    day_offset: int = 0,
     db: Session = Depends(get_db)
 ):
     from_dt = None
@@ -23,7 +24,8 @@ async def get_rollup(
     if timeframe:
         try:
             if timeframe == "TODAY":
-                from_dt, to_dt = get_today()
+                # When TODAY is requested, apply day_offset for day navigation
+                from_dt, to_dt = get_day_offset(day_offset)
             elif timeframe == "YESTERDAY":
                 from_dt, to_dt = get_yesterday()
             elif timeframe == "THIS_WEEK":
