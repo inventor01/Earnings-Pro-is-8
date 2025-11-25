@@ -1,24 +1,21 @@
-# Multi-stage build: Backend and Frontend
+# Multi-stage build: Frontend
 FROM node:18-alpine AS frontend-builder
 
-WORKDIR /build/frontend
+WORKDIR /app/frontend
 
-# Copy frontend code
+# Copy only package files first
 COPY frontend/package*.json ./
+
+# Install dependencies
 RUN npm ci
 
+# Copy the rest of the frontend code
 COPY frontend/ .
+
+# Build frontend
 RUN npm run build
 
-# Backend build stage (Python)
-FROM python:3.11-slim AS backend-builder
-
-WORKDIR /build/backend
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Final stage: Runtime
+# Final stage: Python runtime
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -30,17 +27,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend code
 COPY backend ./backend
 
-# Copy built frontend from frontend-builder
-COPY --from=frontend-builder /build/frontend/dist ./frontend/dist
+# Copy the built frontend from the frontend-builder stage
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Copy start script
+# Copy the startup script
 COPY start.sh .
 RUN chmod +x start.sh
 
 # Expose ports
 EXPOSE 5000 8000
 
-# Set environment variables
+# Environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
 
