@@ -6,12 +6,13 @@ WORKDIR /app
 # Create frontend directory structure
 RUN mkdir -p frontend/src/components frontend/src/lib frontend/src/pages frontend/src/styles
 
-# Copy frontend files
+# Copy package files
 COPY package.json package-lock.json ./frontend/
-COPY main.tsx index.html vite.config.ts tsconfig.json tsconfig.node.json tailwind.config.js postcss.config.js ./frontend/
-COPY vite-env.d.ts ./frontend/src/
 
-# Copy all TypeScript/TSX component files
+# Copy config files
+COPY main.tsx index.html vite.config.ts tsconfig.json tsconfig.node.json tailwind.config.js postcss.config.js vite-env.d.ts App.tsx ./frontend/
+
+# Copy all TypeScript/TSX component files to components
 COPY AISuggestions.tsx CalcPad.tsx ConfirmDialog.tsx CountUpNumber.tsx EntryForm.tsx EntriesTable.tsx EntryViewer.tsx KpiCard.tsx PeriodChips.tsx ProfitGoalsBar.tsx SettingsDrawer.tsx SummaryCard.tsx Toast.tsx TripTracker.tsx ./frontend/src/components/
 
 # Copy all lib files
@@ -39,23 +40,30 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create backend directory structure
+# Create complete backend directory structure
 RUN mkdir -p backend/routers backend/services backend/scripts backend/tests
 
 # Copy backend core files
 COPY app.py db.py models.py schemas.py __init__.py ./backend/
 
-# Copy router files
+# Copy router files and create __init__.py
 COPY entries.py goals.py health.py oauth.py rollup.py settings.py suggestions.py ./backend/routers/
+RUN echo "" > ./backend/routers/__init__.py
 
-# Copy service files
+# Copy service files and create __init__.py
 COPY period.py rollup_service.py sync_service.py background_jobs.py ai_suggestions.py ./backend/services/
+RUN echo "" > ./backend/services/__init__.py
 
-# Copy scripts
+# Copy scripts and create __init__.py
 COPY seed.py seed_this_week.py ./backend/scripts/
+RUN echo "" > ./backend/scripts/__init__.py
 
-# Copy tests
+# Copy tests and create __init__.py
 COPY test_entries.py test_rollup.py ./backend/tests/
+RUN echo "" > ./backend/tests/__init__.py
+
+# Copy documentation and config files
+COPY README.md replit.md Makefile ./
 
 # Copy the built frontend from the frontend-builder stage
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
