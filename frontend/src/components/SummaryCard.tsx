@@ -9,9 +9,21 @@ interface SummaryCardProps {
   orders: number;
   margin: string;
   avgOrder?: string;
+  dayOffset?: number;
+  onDayChange?: (offset: number) => void;
+  getDateLabel?: (offset: number) => string;
+  isDarkTheme?: boolean;
+  showDayNav?: boolean;
 }
 
-export function SummaryCard({ revenue, expenses, profit, miles, orders, margin, avgOrder }: SummaryCardProps) {
+export function SummaryCard({ 
+  revenue, expenses, profit, miles, orders, margin, avgOrder,
+  dayOffset = 0,
+  onDayChange,
+  getDateLabel,
+  isDarkTheme = true,
+  showDayNav = false
+}: SummaryCardProps) {
   const { config: themeConfig } = useTheme();
   const colorConfig = themeConfig.kpiColors['blue'];
 
@@ -26,8 +38,45 @@ export function SummaryCard({ revenue, expenses, profit, miles, orders, margin, 
       
       {/* Content */}
       <div className="relative z-10">
-        <div className={`text-sm font-bold uppercase tracking-widest ${colorConfig.accent} opacity-80 font-mono mb-6`}>
-          Performance Overview
+        <div className="flex items-center justify-between mb-6">
+          <div className={`text-sm font-bold uppercase tracking-widest ${colorConfig.accent} opacity-80 font-mono`}>
+            Performance Overview
+          </div>
+          
+          {/* Day Navigation with Arrows */}
+          {showDayNav && onDayChange && getDateLabel && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onDayChange(dayOffset - 1)}
+                className={`p-1.5 md:p-2 rounded-lg transition-all ${
+                  isDarkTheme
+                    ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                } font-bold text-sm md:text-base`}
+                title="Previous day"
+              >
+                ←
+              </button>
+              <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
+                isDarkTheme
+                  ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 border border-cyan-500/30'
+                  : 'bg-gray-100 text-gray-800 border border-gray-300'
+              }`}>
+                {getDateLabel(dayOffset)}
+              </div>
+              <button
+                onClick={() => onDayChange(dayOffset + 1)}
+                className={`p-1.5 md:p-2 rounded-lg transition-all ${
+                  isDarkTheme
+                    ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                } font-bold text-sm md:text-base`}
+                title="Next day"
+              >
+                →
+              </button>
+            </div>
+          )}
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 md:gap-6">

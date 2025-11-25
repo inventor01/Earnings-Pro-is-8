@@ -583,42 +583,12 @@ export function Dashboard() {
           orders={entries.filter(e => e.type === 'ORDER').length}
           margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
           avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
+          dayOffset={dayOffset}
+          onDayChange={setDayOffset}
+          getDateLabel={getDateLabel}
+          isDarkTheme={isDarkTheme}
+          showDayNav={period === 'today'}
         />
-
-        {/* Day Navigation with Arrows */}
-        {period === 'today' && (
-          <div className="mb-6 flex items-center justify-center gap-4">
-            <button
-              onClick={() => setDayOffset(dayOffset - 1)}
-              className={`p-2 md:p-3 rounded-lg transition-all ${
-                isDarkTheme
-                  ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/30'
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
-              } font-bold text-lg md:text-2xl`}
-              title="Previous day"
-            >
-              ←
-            </button>
-            <div className={`px-6 py-2 md:px-8 md:py-3 rounded-lg font-bold text-lg md:text-xl whitespace-nowrap ${
-              isDarkTheme
-                ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 border border-cyan-500/30'
-                : 'bg-gray-100 text-gray-800 border border-gray-300'
-            }`}>
-              {getDateLabel(dayOffset)}
-            </div>
-            <button
-              onClick={() => setDayOffset(dayOffset + 1)}
-              className={`p-2 md:p-3 rounded-lg transition-all ${
-                isDarkTheme
-                  ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/30'
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
-              } font-bold text-lg md:text-2xl`}
-              title="Next day"
-            >
-              →
-            </button>
-          </div>
-        )}
 
         <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth">
           <div className="flex gap-3 md:gap-4 pb-2 min-w-max">
