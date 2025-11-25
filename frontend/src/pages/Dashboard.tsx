@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, Entry, EntryCreate, EntryType, TimeframeType } from '../lib/api';
 import { PeriodChips, Period } from '../components/PeriodChips';
 import { KpiCard } from '../components/KpiCard';
-import { SummaryCard } from '../components/SummaryCard';
+import { SummaryCard, MetricVisibility } from '../components/SummaryCard';
 import { CalcPad, CalcMode } from '../components/CalcPad';
 import { EntryForm, EntryFormData } from '../components/EntryForm';
 import { EntriesTable } from '../components/EntriesTable';
@@ -84,6 +84,23 @@ export function Dashboard() {
     const saved = localStorage.getItem('showGoalBanner');
     return saved === null ? true : saved === 'true';
   });
+  
+  const [metricVisibility, setMetricVisibility] = useState<Partial<MetricVisibility>>(() => {
+    const saved = localStorage.getItem('metricVisibility');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  });
+
+  const handleMetricVisibilityChange = (visibility: Partial<MetricVisibility>) => {
+    setMetricVisibility(visibility);
+    localStorage.setItem('metricVisibility', JSON.stringify(visibility));
+  };
 
   const queryClient = useQueryClient();
 
@@ -577,6 +594,7 @@ export function Dashboard() {
           isDarkTheme={isDarkTheme}
           showDayNav={period === 'today' || period === 'yesterday'}
           periodLabel={getPeriodLabel()}
+          visibilityConfig={metricVisibility}
         />
 
         <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth">
@@ -817,6 +835,8 @@ export function Dashboard() {
           settings={settings}
           onSave={(s) => updateSettingsMutation.mutate(s)}
           onResetAll={() => setResetAllConfirm(true)}
+          metricVisibility={metricVisibility}
+          onMetricVisibilityChange={handleMetricVisibilityChange}
         />
       )}
 

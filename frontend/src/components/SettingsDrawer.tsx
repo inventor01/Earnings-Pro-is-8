@@ -1,6 +1,7 @@
 import { Settings } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
 import { getAllThemes, ThemeName } from '../lib/themes';
+import { MetricVisibility } from './SummaryCard';
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -8,9 +9,11 @@ interface SettingsDrawerProps {
   settings: Settings;
   onSave: (settings: Settings) => void;
   onResetAll?: () => void;
+  metricVisibility?: Partial<MetricVisibility>;
+  onMetricVisibilityChange?: (visibility: Partial<MetricVisibility>) => void;
 }
 
-export function SettingsDrawer({ isOpen, onClose, onResetAll }: SettingsDrawerProps) {
+export function SettingsDrawer({ isOpen, onClose, onResetAll, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
   const { theme, setTheme, config } = useTheme();
 
   if (!isOpen) return null;
@@ -18,6 +21,14 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll }: SettingsDrawerPr
   const handleResetAll = () => {
     onResetAll?.();
     onClose();
+  };
+
+  const handleMetricToggle = (metric: keyof MetricVisibility) => {
+    const newVisibility = {
+      ...metricVisibility,
+      [metric]: !(metricVisibility[metric] !== false)
+    };
+    onMetricVisibilityChange?.(newVisibility);
   };
 
   const isDark = config.name !== 'simple-light';
@@ -59,6 +70,42 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll }: SettingsDrawerPr
                 }`}
               >
                 {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={`py-6 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+          <h3 className={`text-sm font-medium mb-4 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Performance Overview Metrics</h3>
+          <div className="space-y-3">
+            {[
+              { key: 'revenue' as const, label: '💰 Revenue' },
+              { key: 'expenses' as const, label: '💸 Expenses' },
+              { key: 'profit' as const, label: '🎯 Profit' },
+              { key: 'miles' as const, label: '🛣️ Miles' },
+              { key: 'orders' as const, label: '📦 Orders' },
+              { key: 'avgOrder' as const, label: '📊 Avg Order' },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => handleMetricToggle(key)}
+                className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-3 ${
+                  metricVisibility[key] !== false
+                    ? isDark
+                      ? 'bg-cyan-500/20 border border-cyan-400 text-cyan-300'
+                      : 'bg-blue-100 border border-blue-500 text-blue-700'
+                    : isDark
+                    ? 'bg-slate-800 border border-slate-700 text-slate-400 opacity-50'
+                    : 'bg-gray-100 border border-gray-300 text-gray-500 opacity-50'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={metricVisibility[key] !== false}
+                  onChange={() => {}}
+                  className="w-4 h-4 cursor-pointer"
+                />
+                {label}
               </button>
             ))}
           </div>
