@@ -15,6 +15,8 @@ export interface EntryFormData {
   category: ExpenseCategory;
   note: string;
   receipt_url?: string;
+  date: string;
+  time: string;
 }
 
 export function EntryForm({ onTypeChange, formData, onFormDataChange }: EntryFormProps) {
@@ -77,6 +79,28 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange }: EntryFor
           />
         </div>
       )}
+
+      {/* Date and Time Fields */}
+      <div className="grid grid-cols-2 gap-2 md:gap-3">
+        <div>
+          <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📅 Date</label>
+          <input
+            type="date"
+            value={formData.date}
+            onChange={(e) => onFormDataChange({ ...formData, date: e.target.value })}
+            className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+          />
+        </div>
+        <div>
+          <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🕐 Time</label>
+          <input
+            type="time"
+            value={formData.time}
+            onChange={(e) => onFormDataChange({ ...formData, time: e.target.value })}
+            className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+          />
+        </div>
+      </div>
 
       {isExpense && (
         <>

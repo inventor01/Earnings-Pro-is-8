@@ -88,6 +88,18 @@ export function Dashboard() {
   const [amount, setAmount] = useState('0');
   const [mode, setMode] = useState<CalcMode>('add');
   const [, setEntryType] = useState<EntryType>('ORDER');
+  const getDefaultDate = () => {
+    const now = new Date();
+    return now.toISOString().split('T')[0];
+  };
+
+  const getDefaultTime = () => {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const [formData, setFormData] = useState<EntryFormData>({
     type: 'ORDER',
     app: 'UBEREATS',
@@ -95,6 +107,8 @@ export function Dashboard() {
     category: 'GAS',
     note: '',
     receipt_url: undefined,
+    date: getDefaultDate(),
+    time: getDefaultTime(),
   });
   const [showSettings, setShowSettings] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
@@ -113,6 +127,8 @@ export function Dashboard() {
     category: 'GAS',
     note: '',
     receipt_url: undefined,
+    date: getDefaultDate(),
+    time: getDefaultTime(),
   });
   const [showGoalBanner, setShowGoalBanner] = useState(() => {
     const saved = localStorage.getItem('showGoalBanner');
@@ -159,7 +175,7 @@ export function Dashboard() {
 
   const { data: rollup } = useQuery({
     queryKey: ['rollup', period],
-    queryFn: () => api.getRollup(undefined, undefined, getTimeframe(period)),
+    queryFn: () => api.getRollup(getTimeframe(period)),
   });
 
   const { data: entries = [] } = useQuery({
@@ -273,8 +289,12 @@ export function Dashboard() {
 
     const finalAmount = Math.abs(amountNum);
 
+    // Convert date and time to ISO timestamp
+    const dateTime = `${formData.date}T${formData.time}:00`;
+    const timestamp = new Date(dateTime).toISOString();
+
     const entry: EntryCreate = {
-      timestamp: new Date().toISOString(),
+      timestamp,
       type: formData.type,
       app: formData.app,
       amount: finalAmount,
@@ -293,6 +313,8 @@ export function Dashboard() {
       category: 'GAS',
       note: '',
       receipt_url: undefined,
+      date: getDefaultDate(),
+      time: getDefaultTime(),
     });
   };
 
@@ -360,12 +382,21 @@ export function Dashboard() {
         ...prev,
         type: 'EXPENSE',
         app: 'OTHER', // Set app to OTHER for expenses
+        date: prev.date,
+        time: prev.time,
       }));
       setEntryType('EXPENSE');
     }
   };
 
   const handleEditEntry = (entry: Entry) => {
+    // Parse timestamp to date and time
+    const entryDate = new Date(entry.timestamp);
+    const date = entryDate.toISOString().split('T')[0];
+    const hours = String(entryDate.getHours()).padStart(2, '0');
+    const minutes = String(entryDate.getMinutes()).padStart(2, '0');
+    const time = `${hours}:${minutes}`;
+
     setEditingEntry(entry);
     setEditingFormData({
       type: entry.type,
@@ -374,6 +405,8 @@ export function Dashboard() {
       category: entry.category as any || 'GAS',
       note: entry.note || '',
       receipt_url: entry.receipt_url,
+      date,
+      time,
     });
   };
 
@@ -388,8 +421,12 @@ export function Dashboard() {
 
     const finalAmount = Math.abs(amountNum);
 
+    // Convert date and time to ISO timestamp
+    const dateTime = `${editingFormData.date}T${editingFormData.time}:00`;
+    const timestamp = new Date(dateTime).toISOString();
+
     const entry: EntryCreate = {
-      timestamp: editingEntry.timestamp,
+      timestamp,
       type: editingFormData.type,
       app: editingFormData.app,
       amount: finalAmount,
