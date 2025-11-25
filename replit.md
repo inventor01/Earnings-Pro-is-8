@@ -37,6 +37,8 @@ The application provides a calculator-style input with add/subtract modes, real-
 - **Platform OAuth Integration**: Connect Uber Eats and Shipt accounts for automatic order syncing.
 - **Automatic Order Sync**: Background job syncs orders from connected platforms hourly.
 - **Synced Order Tracking**: Tracks which orders have been synced to prevent duplicates.
+- **Transaction Search**: Search transactions by note, platform, category, type, or amount with real-time filtering.
+- **CSV Data Export**: Export timeframe-specific data to CSV including summary stats and all transactions.
 
 ### System Design Choices
 - **Backend**: FastAPI (Python 3.11) with SQLite (SQLAlchemy ORM) for simplicity and rapid MVP development.
@@ -60,6 +62,40 @@ The application provides a calculator-style input with add/subtract modes, real-
 - **Vite**: Frontend build tool.
 - **APScheduler**: Background job scheduler for periodic order syncing.
 - **httpx**: Async HTTP client for making API calls to Uber and Shipt platforms.
+
+## Recent Additions (November 25, 2025)
+
+### Data Export & Search Functionality
+1. **Transaction Search** (`frontend/src/pages/Dashboard.tsx`):
+   - Real-time search bar with magnifying glass icon
+   - Filters transactions by:
+     - **Notes**: Search by entry description
+     - **Platform**: Search by app (DOORDASH, UBEREATS, INSTACART, GRUBHUB, SHIPT)
+     - **Category**: Search by expense category (GAS, PARKING, TOLLS, MAINTENANCE, etc.)
+     - **Type**: Search by entry type (ORDER, EXPENSE, BONUS, CANCELLATION)
+     - **Amount**: Search by dollar amount
+   - Case-insensitive filtering with zero-latency updates
+   - Clear button (✕) appears when text is entered
+   - Theme-aware styling across all themes
+
+2. **CSV Export** (`frontend/src/lib/csvExport.ts`):
+   - New utility module for generating CSV files
+   - Export button (📥 icon) in top toolbar next to refresh button
+   - Exports all visible transactions for the selected timeframe
+   - CSV includes:
+     - **Summary Section**: Revenue, Expenses, Profit, Miles, Timeframe, Export Date
+     - **Transaction Details**: Date, Type, Platform/Category, Amount, Miles, Note
+   - Automatic filename generation: `earnings-pro-{timeframe}-{date}.csv`
+   - Works with all time periods (Today, Yesterday, This Week, Last 7 Days, This Month, Last Month)
+
+3. **Settings Menu Enhancement**:
+   - Restructured SettingsDrawer with scrollable content
+   - Fixed header (Settings title) and footer (Danger Zone)
+   - Scrollable middle section for Theme and Performance Overview Metrics
+   - Performance Overview Metrics toggle:
+     - Toggle individual metrics on/off (Revenue, Expenses, Profit, Miles, Orders, Avg Order)
+     - Preferences saved to localStorage with key `metricVisibility`
+     - Default: all metrics shown if no preference saved
 
 ## Recent Additions (November 24, 2025)
 

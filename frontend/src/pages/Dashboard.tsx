@@ -15,6 +15,7 @@ import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
 import { useTheme } from '../lib/themeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
+import { exportToCSV } from '../lib/csvExport';
 
 export function Dashboard() {
   const [period, setPeriod] = useState<Period>('today');
@@ -460,6 +461,27 @@ export function Dashboard() {
     }
   };
 
+  const handleExport = () => {
+    if (!rollup) {
+      setToast({ message: 'No data to export', type: 'error' });
+      return;
+    }
+
+    try {
+      exportToCSV({
+        entries: entries,
+        revenue: rollup.revenue,
+        expenses: rollup.expenses,
+        profit: rollup.profit,
+        miles: rollup.miles,
+        timeframe: getPeriodLabel(),
+      });
+      setToast({ message: 'Data exported successfully!', type: 'success' });
+    } catch {
+      setToast({ message: 'Failed to export data', type: 'error' });
+    }
+  };
+
   // Filter entries based on search query
   const filteredEntries = searchQuery.trim() === '' 
     ? entries 
@@ -565,6 +587,20 @@ export function Dashboard() {
                   strokeLinejoin="round"
                   strokeWidth={2}
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={handleExport}
+              className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
+              title="Export to CSV"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33A3 3 0 0116.5 19.5H6.75z"
                 />
               </svg>
             </button>
