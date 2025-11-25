@@ -10,19 +10,19 @@ RUN mkdir -p frontend/src/components frontend/src/lib frontend/src/pages fronten
 COPY package.json package-lock.json ./frontend/
 
 # Copy config files to frontend root
-COPY main.tsx index.html vite.config.ts tsconfig.json tsconfig.node.json tailwind.config.js postcss.config.js vite-env.d.ts App.tsx ./frontend/ || true
+COPY main.tsx index.html vite.config.ts tsconfig.json tsconfig.node.json tailwind.config.js postcss.config.js vite-env.d.ts App.tsx ./frontend/
 
 # Copy all React component files
-COPY AISuggestions.tsx CalcPad.tsx ConfirmDialog.tsx CountUpNumber.tsx EntryForm.tsx EntriesTable.tsx EntryViewer.tsx KpiCard.tsx PeriodChips.tsx ProfitGoalsBar.tsx SettingsDrawer.tsx SummaryCard.tsx Toast.tsx TripTracker.tsx ./frontend/src/components/ || true
+COPY AISuggestions.tsx CalcPad.tsx ConfirmDialog.tsx CountUpNumber.tsx EntryForm.tsx EntriesTable.tsx EntryViewer.tsx KpiCard.tsx PeriodChips.tsx ProfitGoalsBar.tsx SettingsDrawer.tsx SummaryCard.tsx Toast.tsx TripTracker.tsx ./frontend/src/components/
 
 # Copy lib files
-COPY api.ts dateUtils.ts themes.ts themeContext.tsx ./frontend/src/lib/ || true
+COPY api.ts dateUtils.ts themes.ts themeContext.tsx ./frontend/src/lib/
 
 # Copy page components
-COPY Dashboard.tsx ./frontend/src/pages/ || true
+COPY Dashboard.tsx ./frontend/src/pages/
 
 # Copy styles
-COPY tailwind.css index.css ./frontend/src/styles/ || true
+COPY tailwind.css index.css ./frontend/src/styles/
 
 # Install dependencies
 WORKDIR /app/frontend
@@ -41,22 +41,22 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir -p backend/routers backend/services backend/scripts backend/tests
 
 # Copy backend core files
-COPY app.py db.py models.py schemas.py __init__.py ./backend/ || true
+COPY app.py db.py models.py schemas.py __init__.py ./backend/
 
 # Copy router files
-COPY entries.py goals.py health.py oauth.py rollup.py settings.py suggestions.py ./backend/routers/ || true
+COPY entries.py goals.py health.py oauth.py rollup.py settings.py suggestions.py ./backend/routers/
 RUN touch ./backend/routers/__init__.py
 
 # Copy service files
-COPY period.py rollup_service.py sync_service.py background_jobs.py ai_suggestions.py ./backend/services/ || true
+COPY period.py rollup_service.py sync_service.py background_jobs.py ai_suggestions.py ./backend/services/
 RUN touch ./backend/services/__init__.py
 
 # Copy scripts
-COPY seed.py seed_this_week.py ./backend/scripts/ || true
+COPY seed.py seed_this_week.py ./backend/scripts/
 RUN touch ./backend/scripts/__init__.py
 
 # Copy tests
-COPY test_entries.py test_rollup.py ./backend/tests/ || true
+COPY test_entries.py test_rollup.py ./backend/tests/
 RUN touch ./backend/tests/__init__.py
 
 # Copy the built frontend from the frontend-builder stage
