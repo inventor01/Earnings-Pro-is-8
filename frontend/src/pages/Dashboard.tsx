@@ -14,6 +14,7 @@ import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
 import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
 import { useTheme } from '../lib/themeContext';
+import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 
 function getPeriodDates(period: Period): { from: string; to: string } {
   const now = new Date();
@@ -435,11 +436,11 @@ export function Dashboard() {
   };
 
   const handleEditEntry = (entry: Entry) => {
-    // Parse timestamp to date and time
-    const entryDate = new Date(entry.timestamp);
-    const date = entryDate.toISOString().split('T')[0];
-    const hours = String(entryDate.getHours()).padStart(2, '0');
-    const minutes = String(entryDate.getMinutes()).padStart(2, '0');
+    // Parse timestamp to EST date and time
+    const date = getESTDateString(entry.timestamp);
+    
+    // Get EST time components (handles timezone conversion correctly)
+    const { hours, minutes } = getESTTimeComponents(entry.timestamp);
     const time = `${hours}:${minutes}`;
 
     setEditingEntry(entry);
