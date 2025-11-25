@@ -210,6 +210,23 @@ export function Dashboard() {
     return mapping[p] || 'TODAY';
   };
 
+  const getPeriodLabel = (): string => {
+    if (period === 'today') {
+      return 'Today';
+    } else if (period === 'yesterday') {
+      return 'Yesterday';
+    } else if (period === 'week') {
+      return 'This Week';
+    } else if (period === 'last7') {
+      return 'Last 7 Days';
+    } else if (period === 'month') {
+      return 'This Month';
+    } else if (period === 'lastMonth') {
+      return 'Last Month';
+    }
+    return period.charAt(0).toUpperCase() + period.slice(1);
+  };
+
   // Use day offset when on 'today' period to show individual day stats
   const rollupDates = period === 'today' ? getDayDates(dayOffset) : dates;
   const rollupTimeframe = getTimeframe(period);
@@ -607,6 +624,7 @@ export function Dashboard() {
           getDateLabel={getDateLabel}
           isDarkTheme={isDarkTheme}
           showDayNav={period === 'today' || period === 'yesterday'}
+          periodLabel={getPeriodLabel()}
         />
 
         <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth">
