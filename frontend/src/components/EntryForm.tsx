@@ -17,7 +17,7 @@ export interface EntryFormData {
   receipt_url?: string;
 }
 
-export function EntryForm({ mode, onTypeChange, formData, onFormDataChange }: EntryFormProps) {
+export function EntryForm({ onTypeChange, formData, onFormDataChange }: EntryFormProps) {
   const isExpense = formData.type === 'EXPENSE';
   const isOrder = formData.type === 'ORDER' || formData.type === 'CANCELLATION';
 

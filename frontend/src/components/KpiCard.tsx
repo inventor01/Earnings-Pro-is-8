@@ -23,7 +23,7 @@ interface KpiCardProps {
   goalTarget?: number | null;
 }
 
-export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color = 'blue', goalProgress, goalTarget }: KpiCardProps) {
+export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color = 'blue' }: KpiCardProps) {
   const { config: themeConfig } = useTheme();
   const colorConfig = themeConfig.kpiColors[color];
 

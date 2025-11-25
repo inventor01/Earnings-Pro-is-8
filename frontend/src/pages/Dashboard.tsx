@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, EntryCreate, EntryType, TimeframeType } from '../lib/api';
+import { api, Entry, EntryCreate, EntryType, TimeframeType } from '../lib/api';
 import { PeriodChips, Period } from '../components/PeriodChips';
 import { KpiCard } from '../components/KpiCard';
 import { SummaryCard } from '../components/SummaryCard';
@@ -104,8 +104,8 @@ export function Dashboard() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [calcExpanded, setCalcExpanded] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<api.Entry | null>(null);
-  const [viewingEntry, setViewingEntry] = useState<api.Entry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const [viewingEntry, setViewingEntry] = useState<Entry | null>(null);
   const [editingFormData, setEditingFormData] = useState<EntryFormData>({
     type: 'ORDER',
     app: 'UBEREATS',
@@ -152,6 +152,7 @@ export function Dashboard() {
       'last7': 'LAST_7_DAYS',
       'month': 'THIS_MONTH',
       'lastMonth': 'LAST_MONTH',
+      'custom': 'TODAY',
     };
     return mapping[p] || 'TODAY';
   };
@@ -250,7 +251,7 @@ export function Dashboard() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: { id: number; entry: api.EntryCreate }) =>
+    mutationFn: (data: { id: number; entry: EntryCreate }) =>
       api.updateEntry(data.id, data.entry),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
@@ -330,6 +331,7 @@ export function Dashboard() {
       'last7': 'LAST_7_DAYS',
       'month': 'THIS_MONTH',
       'lastMonth': 'LAST_MONTH',
+      'custom': 'TODAY',
     };
     return mapping[p] || 'TODAY';
   };
@@ -363,7 +365,7 @@ export function Dashboard() {
     }
   };
 
-  const handleEditEntry = (entry: api.Entry) => {
+  const handleEditEntry = (entry: Entry) => {
     setEditingEntry(entry);
     setEditingFormData({
       type: entry.type,
@@ -386,7 +388,7 @@ export function Dashboard() {
 
     const finalAmount = Math.abs(amountNum);
 
-    const entry: api.EntryCreate = {
+    const entry: EntryCreate = {
       timestamp: editingEntry.timestamp,
       type: editingFormData.type,
       app: editingFormData.app,
@@ -435,7 +437,7 @@ export function Dashboard() {
         <ProfitGoalsBar
           timeframe={getTimeframeFromPeriod(period)}
           currentProfit={rollup.profit}
-          goalProgress={rollup.goal_progress}
+          goalProgress={rollup.goal_progress ?? 0}
           onGoalReached={handleGoalReached}
           onToggle={handleToggleGoalBanner}
         />

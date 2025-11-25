@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 export type CalcMode = 'add' | 'subtract';
 
 interface CalcPadProps {

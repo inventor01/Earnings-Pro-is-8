@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Settings } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
 import { getAllThemes, ThemeName } from '../lib/themes';
@@ -11,7 +10,7 @@ interface SettingsDrawerProps {
   onResetAll?: () => void;
 }
 
-export function SettingsDrawer({ isOpen, onClose, settings, onSave, onResetAll }: SettingsDrawerProps) {
+export function SettingsDrawer({ isOpen, onClose, onResetAll }: SettingsDrawerProps) {
   const { theme, setTheme, config } = useTheme();
 
   if (!isOpen) return null;
