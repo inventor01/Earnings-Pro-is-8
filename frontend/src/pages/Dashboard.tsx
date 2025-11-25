@@ -16,74 +16,6 @@ import { EntryViewer } from '../components/EntryViewer';
 import { useTheme } from '../lib/themeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 
-function getPeriodDates(period: Period): { from: string; to: string } {
-  const now = new Date();
-  
-  const startOfDay = (date: Date): Date => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  };
-  
-  const endOfDay = (date: Date): Date => {
-    const d = new Date(date);
-    d.setHours(23, 59, 59, 999);
-    return d;
-  };
-
-  switch (period) {
-    case 'today':
-      return {
-        from: startOfDay(now).toISOString(),
-        to: endOfDay(now).toISOString(),
-      };
-    case 'yesterday':
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      return {
-        from: startOfDay(yesterday).toISOString(),
-        to: endOfDay(yesterday).toISOString(),
-      };
-    case 'week':
-      const weekStart = new Date(now);
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      return {
-        from: weekStart.toISOString(),
-        to: endOfDay(now).toISOString(),
-      };
-    case 'last7':
-      const last7 = new Date(now);
-      last7.setDate(last7.getDate() - 6);
-      last7.setHours(0, 0, 0, 0);
-      return {
-        from: last7.toISOString(),
-        to: endOfDay(now).toISOString(),
-      };
-    case 'month':
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      monthStart.setHours(0, 0, 0, 0);
-      return {
-        from: monthStart.toISOString(),
-        to: endOfDay(now).toISOString(),
-      };
-    case 'lastMonth':
-      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      lastMonthStart.setHours(0, 0, 0, 0);
-      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-      lastMonthEnd.setHours(23, 59, 59, 999);
-      return {
-        from: lastMonthStart.toISOString(),
-        to: lastMonthEnd.toISOString(),
-      };
-    default:
-      return {
-        from: startOfDay(now).toISOString(),
-        to: now.toISOString(),
-      };
-  }
-}
-
 export function Dashboard() {
   const [period, setPeriod] = useState<Period>('today');
   const [amount, setAmount] = useState('0');
@@ -137,7 +69,6 @@ export function Dashboard() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [calcExpanded, setCalcExpanded] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
-  const [editingOriginalDate, setEditingOriginalDate] = useState<string | null>(null);
   const [viewingEntry, setViewingEntry] = useState<Entry | null>(null);
   const [editingFormData, setEditingFormData] = useState<EntryFormData>({
     type: 'ORDER',
@@ -444,7 +375,6 @@ export function Dashboard() {
     const time = `${hours}:${minutes}`;
 
     setEditingEntry(entry);
-    setEditingOriginalDate(date);
     setAmount(Math.abs(entry.amount).toString());
     setEditingFormData({
       type: entry.type,
@@ -488,7 +418,6 @@ export function Dashboard() {
 
   const handleCancelEdit = () => {
     setEditingEntry(null);
-    setEditingOriginalDate(null);
     setAmount('0');
   };
 
