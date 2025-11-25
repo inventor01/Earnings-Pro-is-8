@@ -102,23 +102,6 @@ export function Dashboard() {
     return `${hours}:${minutes}`;
   };
 
-  const getDayDates = (offset: number) => {
-    const baseDate = new Date();
-    baseDate.setDate(baseDate.getDate() + offset);
-    baseDate.setHours(0, 0, 0, 0);
-
-    const startOfDay = new Date(baseDate);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(baseDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    return {
-      from: startOfDay.toISOString(),
-      to: endOfDay.toISOString(),
-    };
-  };
-
   const getDateLabel = (offset: number) => {
     const date = new Date();
     date.setDate(date.getDate() + offset);
@@ -170,7 +153,6 @@ export function Dashboard() {
   });
 
   const queryClient = useQueryClient();
-  const dates = getPeriodDates(period);
 
   // Check if date has changed and auto-reset if needed
   useEffect(() => {
@@ -228,8 +210,7 @@ export function Dashboard() {
     return period.charAt(0).toUpperCase() + period.slice(1);
   };
 
-  // Use day offset when on 'today' period to show individual day stats
-  const rollupDates = period === 'today' ? getDayDates(dayOffset) : dates;
+  // Use backend's date calculation to avoid timezone issues
   const rollupTimeframe = getTimeframe(period);
 
   const { data: rollup, refetch: refetchRollup } = useQuery({
@@ -241,8 +222,11 @@ export function Dashboard() {
   });
 
   const { data: entries = [], refetch: refetchEntries } = useQuery({
-    queryKey: ['entries', rollupDates.from, rollupDates.to],
-    queryFn: () => api.getEntries(rollupDates.from, rollupDates.to),
+    queryKey: ['entries', period, dayOffset],
+    queryFn: () => api.getEntries(
+      rollupTimeframe,
+      period === 'today' ? dayOffset : undefined
+    ),
   });
 
   const createMutation = useMutation({
@@ -722,7 +706,55 @@ export function Dashboard() {
         </div>
 
         <div>
-          <AISuggestions fromDate={rollupDates.from} toDate={rollupDates.to} />
+          {/* Calculate date range for AI suggestions based on current period */}
+          {(() => {
+            let fromDate = '';
+            let toDate = '';
+            
+            const now = new Date();
+            const startOfDay = (date: Date) => {
+              const d = new Date(date);
+              d.setHours(0, 0, 0, 0);
+              return d;
+            };
+            const endOfDay = (date: Date) => {
+              const d = new Date(date);
+              d.setHours(23, 59, 59, 999);
+              return d;
+            };
+            
+            if (period === 'today' || period === 'yesterday') {
+              const offset = period === 'today' ? dayOffset : -1;
+              const targetDay = new Date(now);
+              targetDay.setDate(targetDay.getDate() + offset);
+              fromDate = startOfDay(targetDay).toISOString();
+              toDate = endOfDay(targetDay).toISOString();
+            } else if (period === 'week') {
+              const weekStart = new Date(now);
+              weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+              fromDate = startOfDay(weekStart).toISOString();
+              toDate = endOfDay(now).toISOString();
+            } else if (period === 'last7') {
+              const last7 = new Date(now);
+              last7.setDate(last7.getDate() - 6);
+              fromDate = startOfDay(last7).toISOString();
+              toDate = endOfDay(now).toISOString();
+            } else if (period === 'month') {
+              const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+              fromDate = startOfDay(monthStart).toISOString();
+              toDate = endOfDay(now).toISOString();
+            } else if (period === 'lastMonth') {
+              const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+              const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+              fromDate = startOfDay(lastMonthStart).toISOString();
+              toDate = endOfDay(lastMonthEnd).toISOString();
+            } else {
+              fromDate = startOfDay(now).toISOString();
+              toDate = endOfDay(now).toISOString();
+            }
+            
+            return <AISuggestions fromDate={fromDate} toDate={toDate} />;
+          })()}
         </div>
 
         {selectedIds.length > 0 && (

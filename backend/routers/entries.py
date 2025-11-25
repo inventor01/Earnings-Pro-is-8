@@ -37,20 +37,52 @@ async def create_entry(entry: EntryCreate, db: Session = Depends(get_db)):
 
 @router.get("/entries", response_model=List[EntryResponse])
 async def get_entries(
+    timeframe: Optional[str] = None,
+    day_offset: Optional[int] = None,
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
     limit: int = 100,
     cursor: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
+    from backend.services.period import (
+        get_today, get_yesterday, get_this_week, get_last_7_days,
+        get_this_month, get_last_month, get_day_offset
+    )
+    
     query = db.query(Entry)
     
-    if from_date:
-        from_dt = datetime.fromisoformat(from_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
+    # Use timeframe if provided (new approach - avoids timezone issues)
+    if timeframe:
+        if timeframe == 'TODAY':
+            if day_offset is not None:
+                from_dt, to_dt = get_day_offset(day_offset)
+            else:
+                from_dt, to_dt = get_today()
+        elif timeframe == 'YESTERDAY':
+            from_dt, to_dt = get_yesterday()
+        elif timeframe == 'THIS_WEEK':
+            from_dt, to_dt = get_this_week()
+        elif timeframe == 'LAST_7_DAYS':
+            from_dt, to_dt = get_last_7_days()
+        elif timeframe == 'THIS_MONTH':
+            from_dt, to_dt = get_this_month()
+        elif timeframe == 'LAST_MONTH':
+            from_dt, to_dt = get_last_month()
+        else:
+            from_dt, to_dt = get_today()
+        
         query = query.filter(Entry.timestamp >= from_dt)
-    if to_date:
-        to_dt = datetime.fromisoformat(to_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
         query = query.filter(Entry.timestamp <= to_dt)
+    # Fall back to old from_date/to_date parameters for backward compatibility
+    elif from_date or to_date:
+        if from_date:
+            from_dt = datetime.fromisoformat(from_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
+            query = query.filter(Entry.timestamp >= from_dt)
+        if to_date:
+            to_dt = datetime.fromisoformat(to_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
+            query = query.filter(Entry.timestamp <= to_dt)
+    
     if cursor:
         query = query.filter(Entry.id < cursor)
     
