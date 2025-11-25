@@ -28,7 +28,7 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
   const isExpense = formData.type === 'EXPENSE';
   const isOrder = formData.type === 'ORDER' || formData.type === 'CANCELLATION';
 
-  // Calculate date constraints based on timeframe (disabled when editing)
+  // Calculate date constraints based on timeframe (disabled when creating new entries)
   const getDateConstraints = () => {
     const now = new Date();
     const formatDate = (date: Date) => date.toISOString().split('T')[0];
@@ -45,72 +45,45 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
       return d;
     };
 
-    // If editing, allow any date without constraints
-    if (isEditing) {
-      return {
-        minDate: '',
-        maxDate: '',
-        defaultDate: formData.date,
-      };
-    }
-
-    let minDate, maxDate, defaultDate;
+    // Allow any date for new entries and editing - no constraints
+    // This ensures entries can be saved to any date regardless of current period view
+    let defaultDate;
 
     switch (period) {
       case 'today': {
         const date = new Date();
         date.setDate(date.getDate() + dayOffset);
-        minDate = formatDate(date);
-        maxDate = formatDate(date);
         defaultDate = formatDate(date);
         break;
       }
       case 'yesterday': {
         const date = new Date();
         date.setDate(date.getDate() - 1);
-        minDate = formatDate(date);
-        maxDate = formatDate(date);
         defaultDate = formatDate(date);
         break;
       }
       case 'week': {
-        const weekStart = new Date(now);
-        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-        minDate = formatDate(startOfDay(weekStart));
-        maxDate = formatDate(endOfDay(now));
         defaultDate = formatDate(now);
         break;
       }
       case 'last7': {
-        const last7 = new Date(now);
-        last7.setDate(last7.getDate() - 6);
-        minDate = formatDate(startOfDay(last7));
-        maxDate = formatDate(endOfDay(now));
         defaultDate = formatDate(now);
         break;
       }
       case 'month': {
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        minDate = formatDate(startOfDay(monthStart));
-        maxDate = formatDate(endOfDay(now));
         defaultDate = formatDate(now);
         break;
       }
       case 'lastMonth': {
-        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-        minDate = formatDate(startOfDay(lastMonthStart));
-        maxDate = formatDate(endOfDay(lastMonthEnd));
         defaultDate = formatDate(lastMonthEnd);
         break;
       }
       default:
-        minDate = formatDate(startOfDay(new Date('2020-01-01')));
-        maxDate = formatDate(endOfDay(now));
         defaultDate = formatDate(now);
     }
 
-    return { minDate, maxDate, defaultDate };
+    return { minDate: '', maxDate: '', defaultDate };
   };
 
   const { minDate, maxDate, defaultDate } = getDateConstraints();
