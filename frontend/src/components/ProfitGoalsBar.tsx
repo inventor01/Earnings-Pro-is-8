@@ -93,7 +93,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
   };
 
   const progressColor = 'bg-blue-500';
-  const displayProgress = Math.min(goalProgress, 100);
+  const displayProgress = Math.max(0, Math.min(goalProgress, 100));
 
   if (!goalAmount) {
     // Show edit form if editing, otherwise show "Set Goal" button
