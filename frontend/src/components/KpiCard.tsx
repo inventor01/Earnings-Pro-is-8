@@ -37,7 +37,7 @@ export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color
   return (
     <div className={`relative p-4 md:p-6 rounded-2xl overflow-hidden group min-h-max ${glowClass}`}>
       {/* Background with dark dashboard effect */}
-      <div className={`absolute inset-0 ${colorConfig.bg} backdrop-blur-sm border-2 ${colorConfig.border} rounded-2xl`} />
+      <div className={`absolute inset-0 ${colorConfig.bg} border-2 ${colorConfig.border} rounded-2xl`} />
       <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.glow} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`} />
       
       {/* Gauge arc effect */}
@@ -53,7 +53,7 @@ export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color
         
         {/* Main value - Large and prominent like speedometer */}
         <div className="flex items-end gap-1">
-          <div className={`text-4xl md:text-6xl font-black ${colorConfig.accent} font-mono tracking-tight drop-shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-2xl cursor-pointer shimmer`} style={{ textShadow: `0 0 20px ${colorConfig.accent.includes('green') ? 'rgba(34, 197, 94, 0.5)' : colorConfig.accent.includes('red') ? 'rgba(239, 68, 68, 0.5)' : colorConfig.accent.includes('blue') ? 'rgba(59, 130, 246, 0.5)' : colorConfig.accent.includes('purple') ? 'rgba(168, 85, 247, 0.5)' : 'rgba(249, 115, 22, 0.5)'}` }}>
+          <div className={`text-4xl md:text-6xl font-black ${colorConfig.accent} font-mono tracking-tight drop-shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-2xl cursor-pointer`} style={{ textShadow: `0 0 20px ${colorConfig.accent.includes('green') ? 'rgba(34, 197, 94, 0.5)' : colorConfig.accent.includes('red') ? 'rgba(239, 68, 68, 0.5)' : colorConfig.accent.includes('blue') ? 'rgba(59, 130, 246, 0.5)' : colorConfig.accent.includes('purple') ? 'rgba(168, 85, 247, 0.5)' : 'rgba(249, 115, 22, 0.5)'}` }}>
             <CountUpNumber value={value} />
           </div>
         </div>
