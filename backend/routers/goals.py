@@ -24,7 +24,7 @@ def get_goal(timeframe: str, db: Session = Depends(get_db)):
 def create_goal(goal: GoalCreate, db: Session = Depends(get_db)):
     existing = db.query(Goal).filter(Goal.timeframe == goal.timeframe).first()
     if existing:
-        existing.target_profit = goal.target_profit
+        setattr(existing, 'target_profit', goal.target_profit)
         db.commit()
         db.refresh(existing)
         return existing
@@ -51,7 +51,7 @@ def update_goal(timeframe: str, goal: GoalUpdate, db: Session = Depends(get_db))
         db.refresh(db_goal)
         return db_goal
     
-    db_goal.target_profit = goal.target_profit
+    setattr(db_goal, 'target_profit', goal.target_profit)
     db.commit()
     db.refresh(db_goal)
     return db_goal

@@ -76,19 +76,19 @@ async def update_entry(entry_id: int, entry_update: EntryUpdate, db: Session = D
     elif "amount" in update_data:
         amount = update_data["amount"]
         if db_entry.type in [EntryType.EXPENSE, EntryType.CANCELLATION]:
-            update_data["amount"] = -abs(amount)
+            update_data["amount"] = -abs(Decimal(str(amount)))
         else:
-            update_data["amount"] = abs(amount)
+            update_data["amount"] = abs(Decimal(str(amount)))
     elif "type" in update_data:
         if update_data["type"] in [EntryType.EXPENSE, EntryType.CANCELLATION]:
-            update_data["amount"] = -abs(db_entry.amount)
+            update_data["amount"] = -abs(Decimal(str(db_entry.amount)))
         else:
-            update_data["amount"] = abs(db_entry.amount)
+            update_data["amount"] = abs(Decimal(str(db_entry.amount)))
     
     for key, value in update_data.items():
         setattr(db_entry, key, value)
     
-    db_entry.updated_at = datetime.utcnow()
+    setattr(db_entry, 'updated_at', datetime.utcnow())
     db.commit()
     db.refresh(db_entry)
     return db_entry
