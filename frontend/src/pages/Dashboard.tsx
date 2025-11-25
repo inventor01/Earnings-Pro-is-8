@@ -97,6 +97,8 @@ export function Dashboard() {
     return {};
   });
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   const handleMetricVisibilityChange = (visibility: Partial<MetricVisibility>) => {
     setMetricVisibility(visibility);
     localStorage.setItem('metricVisibility', JSON.stringify(visibility));
@@ -458,6 +460,20 @@ export function Dashboard() {
     }
   };
 
+  // Filter entries based on search query
+  const filteredEntries = searchQuery.trim() === '' 
+    ? entries 
+    : entries.filter(entry => {
+        const query = searchQuery.toLowerCase();
+        return (
+          entry.note?.toLowerCase().includes(query) ||
+          entry.app?.toLowerCase().includes(query) ||
+          entry.category?.toLowerCase().includes(query) ||
+          entry.type?.toLowerCase().includes(query) ||
+          entry.amount.toString().includes(query)
+        );
+      });
+
   const { config } = useTheme();
   const isDarkTheme = config.name !== 'simple-light';
 
@@ -571,6 +587,33 @@ export function Dashboard() {
 
         <div className="mb-3 md:mb-6 overflow-x-auto">
           <PeriodChips selected={period} onSelect={setPeriod} />
+        </div>
+
+        <div className="mb-4 md:mb-6">
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+            isDarkTheme
+              ? 'bg-slate-800 border-slate-700 focus-within:border-cyan-400'
+              : 'bg-white border-gray-300 focus-within:border-blue-500'
+          }`}>
+            <svg className={`w-5 h-5 ${isDarkTheme ? 'text-slate-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`flex-1 bg-transparent outline-none text-sm ${isDarkTheme ? 'text-white placeholder-slate-400' : 'text-gray-900 placeholder-gray-400'}`}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className={`text-sm font-medium ${isDarkTheme ? 'text-slate-400 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         <SummaryCard
@@ -727,7 +770,7 @@ export function Dashboard() {
 
         <div className="mb-6">
           <EntriesTable 
-            entries={entries} 
+            entries={filteredEntries} 
             onDelete={handleDelete}
             onEdit={handleEditEntry}
             onView={setViewingEntry}
