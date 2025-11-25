@@ -128,7 +128,16 @@
     background-position: 0 0;
   }
   100% {
-    background-position: 50px 0;
+    background-position: 60px 0;
+  }
+}
+
+@keyframes progress-stripe-flow {
+  0% {
+    background-position: -60px 0;
+  }
+  100% {
+    background-position: 120px 0;
   }
 }
 
@@ -206,31 +215,65 @@ textarea {
 }
 
 .progress-bar-fill {
+  background: linear-gradient(
+    90deg,
+    #3b82f6 0%,
+    #60a5fa 50%,
+    #3b82f6 100%
+  );
+  background-size: 120px 100%;
+  position: relative;
+  overflow: hidden;
+  animation: slideInLeft 1s ease-out, progress-stripe-flow 2s linear infinite;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+}
+
+.progress-bar-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
   background-image: repeating-linear-gradient(
     45deg,
     transparent,
-    transparent 10px,
-    rgba(255, 255, 255, 0.2) 10px,
-    rgba(255, 255, 255, 0.2) 20px
+    transparent 12px,
+    rgba(255, 255, 255, 0.2) 12px,
+    rgba(255, 255, 255, 0.2) 24px
   );
-  background-size: 50px 50px;
-  animation: slideInLeft 1s ease-out, stripe-animation 1s linear infinite, progress-glow 2s ease-in-out infinite;
+  background-size: 60px 60px;
+  animation: stripe-animation 3s linear infinite;
+  pointer-events: none;
 }
 
 .progress-bar-fill.shimmer-effect {
+  background: linear-gradient(
+    90deg,
+    #2563eb 0%,
+    #93c5fd 50%,
+    #2563eb 100%
+  );
+  background-size: 120px 100%;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+  animation: slideInLeft 1s ease-out, progress-stripe-flow 1.5s linear infinite;
+}
+
+.progress-bar-fill.shimmer-effect::before {
   background-image: repeating-linear-gradient(
     45deg,
     transparent,
-    transparent 10px,
-    rgba(255, 255, 255, 0.3) 10px,
-    rgba(255, 255, 255, 0.3) 20px
+    transparent 12px,
+    rgba(255, 255, 255, 0.35) 12px,
+    rgba(255, 255, 255, 0.35) 24px
   );
-  background-size: 50px 50px;
-  animation: slideInLeft 1s ease-out, stripe-animation 1s linear infinite, progress-glow 2s ease-in-out infinite;
+  background-size: 60px 60px;
+  animation: stripe-animation 2s linear infinite;
 }
 
 .goal-pulse {
-  animation: pulse-glow 2s infinite;
+  animation: pulse-glow 2s infinite !important;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.8) !important;
 }
 
 .percentage-bounce {
