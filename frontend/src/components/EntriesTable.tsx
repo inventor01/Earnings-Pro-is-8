@@ -172,11 +172,11 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                 </td>
                 <td className="px-4 py-3">
                   {entry.type === 'EXPENSE' ? (
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(entry.category || 'OTHER')}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block ${getCategoryColor(entry.category || 'OTHER')}`}>
                       {getCategoryEmoji(entry.category || 'OTHER')} {entry.category || 'OTHER'}
                     </span>
                   ) : (
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getAppColor(entry.app)}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block ${getAppColor(entry.app)}`}>
                       {entry.app}
                     </span>
                   )}
