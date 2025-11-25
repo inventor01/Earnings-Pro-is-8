@@ -486,11 +486,11 @@ export function Dashboard() {
             <span className="text-5xl md:text-6xl drop-shadow-lg" style={{
               textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)' : 'none',
               filter: isDarkTheme ? 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))' : 'none',
-              animation: 'money-bounce 2s ease-in-out infinite'
+              animation: 'car-drive 2s ease-in-out infinite'
             }}>
-              💰
+              🚗
             </span>
-            <h1 className={`text-3xl md:text-5xl font-black ${config.titleColor}`}>Earnings Pro</h1>
+            <h1 className={`text-3xl md:text-5xl font-black ${config.titleColor}`}>EARNINGS PRO</h1>
           </div>
           <div className="flex gap-1 md:gap-2">
             <button
