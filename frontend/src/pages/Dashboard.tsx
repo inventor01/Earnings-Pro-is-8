@@ -88,6 +88,7 @@ export function Dashboard() {
   const [amount, setAmount] = useState('0');
   const [mode, setMode] = useState<CalcMode>('add');
   const [, setEntryType] = useState<EntryType>('ORDER');
+  const [dayOffset, setDayOffset] = useState(0); // 0 = today, -1 = yesterday, 1 = tomorrow, etc.
   const getDefaultDate = () => {
     const now = new Date();
     return now.toISOString().split('T')[0];
@@ -98,6 +99,38 @@ export function Dashboard() {
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
+  };
+
+  const getDayDates = (offset: number) => {
+    const baseDate = new Date();
+    baseDate.setDate(baseDate.getDate() + offset);
+    baseDate.setHours(0, 0, 0, 0);
+
+    const startOfDay = new Date(baseDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(baseDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return {
+      from: startOfDay.toISOString(),
+      to: endOfDay.toISOString(),
+    };
+  };
+
+  const getDateLabel = (offset: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    
+    if (offset === 0) {
+      return 'Today';
+    } else if (offset === -1) {
+      return 'Yesterday';
+    } else if (offset === 1) {
+      return 'Tomorrow';
+    } else {
+      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
   };
 
   const [formData, setFormData] = useState<EntryFormData>({
@@ -153,6 +186,7 @@ export function Dashboard() {
 
   useEffect(() => {
     setSelectedIds([]);
+    setDayOffset(0); // Reset day offset when changing periods
   }, [period]);
 
   const { data: settings } = useQuery({
@@ -173,14 +207,18 @@ export function Dashboard() {
     return mapping[p] || 'TODAY';
   };
 
+  // Use day offset when on 'today' period to show individual day stats
+  const rollupDates = period === 'today' ? getDayDates(dayOffset) : dates;
+  const rollupTimeframe = period === 'today' ? 'TODAY' : getTimeframe(period);
+
   const { data: rollup } = useQuery({
-    queryKey: ['rollup', period],
-    queryFn: () => api.getRollup(getTimeframe(period)),
+    queryKey: ['rollup', period, dayOffset],
+    queryFn: () => api.getRollup(rollupTimeframe),
   });
 
   const { data: entries = [] } = useQuery({
-    queryKey: ['entries', dates.from, dates.to],
-    queryFn: () => api.getEntries(dates.from, dates.to),
+    queryKey: ['entries', rollupDates.from, rollupDates.to],
+    queryFn: () => api.getEntries(rollupDates.from, rollupDates.to),
   });
 
   const createMutation = useMutation({
@@ -547,6 +585,41 @@ export function Dashboard() {
           avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
         />
 
+        {/* Day Navigation with Arrows */}
+        {period === 'today' && (
+          <div className="mb-6 flex items-center justify-center gap-4">
+            <button
+              onClick={() => setDayOffset(dayOffset - 1)}
+              className={`p-2 md:p-3 rounded-lg transition-all ${
+                isDarkTheme
+                  ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/30'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              } font-bold text-lg md:text-2xl`}
+              title="Previous day"
+            >
+              ←
+            </button>
+            <div className={`px-6 py-2 md:px-8 md:py-3 rounded-lg font-bold text-lg md:text-xl whitespace-nowrap ${
+              isDarkTheme
+                ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 border border-cyan-500/30'
+                : 'bg-gray-100 text-gray-800 border border-gray-300'
+            }`}>
+              {getDateLabel(dayOffset)}
+            </div>
+            <button
+              onClick={() => setDayOffset(dayOffset + 1)}
+              className={`p-2 md:p-3 rounded-lg transition-all ${
+                isDarkTheme
+                  ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/30'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              } font-bold text-lg md:text-2xl`}
+              title="Next day"
+            >
+              →
+            </button>
+          </div>
+        )}
+
         <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth">
           <div className="flex gap-3 md:gap-4 pb-2 min-w-max">
             <div className="flex-shrink-0 w-80">
@@ -609,7 +682,7 @@ export function Dashboard() {
         </div>
 
         <div>
-          <AISuggestions fromDate={getPeriodDates(period).from} toDate={getPeriodDates(period).to} />
+          <AISuggestions fromDate={rollupDates.from} toDate={rollupDates.to} />
         </div>
 
         {selectedIds.length > 0 && (
