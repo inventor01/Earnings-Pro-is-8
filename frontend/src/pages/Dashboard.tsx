@@ -627,21 +627,15 @@ export function Dashboard() {
           dayOffset={dayOffset}
           onDayChange={(offset) => {
             setDayOffset(offset);
-            // Update period based on day offset
-            if (offset === -1) {
-              setPeriod('yesterday');
-            } else if (offset === 0) {
+            // Keep period as 'today' to always show day navigation
+            // The backend handles different dates via dayOffset parameter
+            if (period !== 'today') {
               setPeriod('today');
-            } else {
-              // For other offsets, keep on 'today' period
-              if (period !== 'today') {
-                setPeriod('today');
-              }
             }
           }}
           getDateLabel={getDateLabel}
           isDarkTheme={isDarkTheme}
-          showDayNav={period === 'today'}
+          showDayNav={period === 'today' || period === 'yesterday'}
           periodLabel={getPeriodLabel()}
         />
 
