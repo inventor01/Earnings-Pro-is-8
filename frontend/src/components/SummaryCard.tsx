@@ -1,5 +1,6 @@
 import { useTheme } from '../lib/themeContext';
 import { CountUpNumber } from './CountUpNumber';
+import { useRef, useState } from 'react';
 
 interface SummaryCardProps {
   revenue: string;
@@ -26,9 +27,48 @@ export function SummaryCard({
 }: SummaryCardProps) {
   const { config: themeConfig } = useTheme();
   const colorConfig = themeConfig.kpiColors['blue'];
+  
+  // Swipe detection for mobile day navigation
+  const touchStartX = useRef<number | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!showDayNav || !onDayChange) return;
+    touchStartX.current = e.touches[0].clientX;
+  };
+  
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!showDayNav || !onDayChange || touchStartX.current === null) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+    const minSwipeDistance = 50; // Minimum pixels to register as swipe
+    
+    if (Math.abs(diff) < minSwipeDistance) {
+      touchStartX.current = null;
+      return;
+    }
+    
+    setIsTransitioning(true);
+    if (diff > 0) {
+      // Swiped left - go to next day
+      onDayChange(dayOffset + 1);
+    } else {
+      // Swiped right - go to previous day
+      onDayChange(dayOffset - 1);
+    }
+    
+    setTimeout(() => setIsTransitioning(false), 300);
+    touchStartX.current = null;
+  };
 
   return (
-    <div className="w-full relative p-6 md:p-8 rounded-2xl overflow-hidden group mb-6">
+    <div 
+      className={`w-full relative p-6 md:p-8 rounded-2xl overflow-hidden group mb-6 transition-opacity ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      style={{ cursor: showDayNav ? 'grab' : 'default' }}
+    >
       {/* Background with dark dashboard effect */}
       <div className={`absolute inset-0 ${colorConfig.bg} backdrop-blur-sm border-2 ${colorConfig.border} rounded-2xl`} />
       <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.glow} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`} />
