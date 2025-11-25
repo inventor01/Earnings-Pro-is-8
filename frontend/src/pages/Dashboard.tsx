@@ -707,6 +707,8 @@ export function Dashboard() {
               onTypeChange={setEntryType} 
               formData={formData}
               onFormDataChange={setFormData}
+              period={period}
+              dayOffset={dayOffset}
             />
           </div>
           <button
@@ -749,6 +751,8 @@ export function Dashboard() {
                 onTypeChange={(type) => setEditingFormData({ ...editingFormData, type })}
                 formData={editingFormData}
                 onFormDataChange={setEditingFormData}
+                period={period}
+                dayOffset={dayOffset}
               />
             </div>
 

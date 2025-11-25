@@ -1,11 +1,15 @@
 import { AppType, EntryType, ExpenseCategory } from '../lib/api';
 import { CalcMode } from './CalcPad';
+import { Period } from './PeriodChips';
+import { useEffect } from 'react';
 
 interface EntryFormProps {
   mode: CalcMode;
   onTypeChange: (type: EntryType) => void;
   formData: EntryFormData;
   onFormDataChange: (data: EntryFormData) => void;
+  period?: Period;
+  dayOffset?: number;
 }
 
 export interface EntryFormData {
@@ -19,9 +23,94 @@ export interface EntryFormData {
   time: string;
 }
 
-export function EntryForm({ onTypeChange, formData, onFormDataChange }: EntryFormProps) {
+export function EntryForm({ onTypeChange, formData, onFormDataChange, period = 'today', dayOffset = 0 }: EntryFormProps) {
   const isExpense = formData.type === 'EXPENSE';
   const isOrder = formData.type === 'ORDER' || formData.type === 'CANCELLATION';
+
+  // Calculate date constraints based on timeframe
+  const getDateConstraints = () => {
+    const now = new Date();
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+    const startOfDay = (date: Date) => {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
+
+    const endOfDay = (date: Date) => {
+      const d = new Date(date);
+      d.setHours(23, 59, 59, 999);
+      return d;
+    };
+
+    let minDate, maxDate, defaultDate;
+
+    switch (period) {
+      case 'today': {
+        const date = new Date();
+        date.setDate(date.getDate() + dayOffset);
+        minDate = formatDate(date);
+        maxDate = formatDate(date);
+        defaultDate = formatDate(date);
+        break;
+      }
+      case 'yesterday': {
+        const date = new Date();
+        date.setDate(date.getDate() - 1);
+        minDate = formatDate(date);
+        maxDate = formatDate(date);
+        defaultDate = formatDate(date);
+        break;
+      }
+      case 'week': {
+        const weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        minDate = formatDate(startOfDay(weekStart));
+        maxDate = formatDate(endOfDay(now));
+        defaultDate = formatDate(now);
+        break;
+      }
+      case 'last7': {
+        const last7 = new Date(now);
+        last7.setDate(last7.getDate() - 6);
+        minDate = formatDate(startOfDay(last7));
+        maxDate = formatDate(endOfDay(now));
+        defaultDate = formatDate(now);
+        break;
+      }
+      case 'month': {
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        minDate = formatDate(startOfDay(monthStart));
+        maxDate = formatDate(endOfDay(now));
+        defaultDate = formatDate(now);
+        break;
+      }
+      case 'lastMonth': {
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        minDate = formatDate(startOfDay(lastMonthStart));
+        maxDate = formatDate(endOfDay(lastMonthEnd));
+        defaultDate = formatDate(lastMonthEnd);
+        break;
+      }
+      default:
+        minDate = formatDate(startOfDay(new Date('2020-01-01')));
+        maxDate = formatDate(endOfDay(now));
+        defaultDate = formatDate(now);
+    }
+
+    return { minDate, maxDate, defaultDate };
+  };
+
+  const { minDate, maxDate, defaultDate } = getDateConstraints();
+
+  // Auto-set date to default when timeframe changes
+  useEffect(() => {
+    if (!formData.date || formData.date < minDate || formData.date > maxDate) {
+      onFormDataChange({ ...formData, date: defaultDate });
+    }
+  }, [period, dayOffset]);
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg md:rounded-2xl shadow-lg p-4 md:p-6 space-y-3 md:space-y-4">
@@ -87,6 +176,8 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange }: EntryFor
           <input
             type="date"
             value={formData.date}
+            min={minDate}
+            max={maxDate}
             onChange={(e) => onFormDataChange({ ...formData, date: e.target.value })}
             className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
           />
