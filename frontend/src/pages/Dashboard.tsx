@@ -483,7 +483,7 @@ export function Dashboard() {
       <div className={contentClass}>
         <div className="flex justify-between items-center mb-3 md:mb-6 gap-2">
           <div className="flex items-center gap-1 md:gap-3">
-            <span className="text-3xl md:text-6xl drop-shadow-lg" style={{
+            <span className="text-4xl md:text-6xl drop-shadow-lg" style={{
               textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)' : 'none',
               filter: isDarkTheme ? 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))' : 'none',
               animation: 'car-drive 2s ease-in-out infinite'
