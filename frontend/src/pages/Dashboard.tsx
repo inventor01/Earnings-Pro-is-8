@@ -209,11 +209,15 @@ export function Dashboard() {
 
   // Use day offset when on 'today' period to show individual day stats
   const rollupDates = period === 'today' ? getDayDates(dayOffset) : dates;
-  const rollupTimeframe = period === 'today' ? 'TODAY' : getTimeframe(period);
+  const rollupTimeframe = period === 'today' && dayOffset === 0 ? 'TODAY' : (period !== 'today' ? getTimeframe(period) : undefined);
 
   const { data: rollup } = useQuery({
     queryKey: ['rollup', period, dayOffset],
-    queryFn: () => api.getRollup(rollupTimeframe),
+    queryFn: () => api.getRollup(
+      rollupTimeframe,
+      period === 'today' ? rollupDates.from : undefined,
+      period === 'today' ? rollupDates.to : undefined
+    ),
   });
 
   const { data: entries = [] } = useQuery({
