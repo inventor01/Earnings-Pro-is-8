@@ -248,8 +248,8 @@ export function Dashboard() {
   const createMutation = useMutation({
     mutationFn: api.createEntry,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       setAmount('0');
       setToast({ message: 'Entry added successfully!', type: 'success' });
     },
@@ -261,8 +261,8 @@ export function Dashboard() {
   const deleteMutation = useMutation({
     mutationFn: api.deleteEntry,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       setToast({ message: 'Entry deleted successfully!', type: 'success' });
     },
     onError: () => {
@@ -275,8 +275,8 @@ export function Dashboard() {
       await Promise.all(ids.map(id => api.deleteEntry(id)));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       setSelectedIds([]);
       setToast({ message: `${selectedIds.length} entries deleted successfully!`, type: 'success' });
     },
@@ -289,7 +289,7 @@ export function Dashboard() {
     mutationFn: api.updateSettings,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       setToast({ message: 'Settings updated!', type: 'success' });
     },
   });
@@ -305,8 +305,8 @@ export function Dashboard() {
       await Promise.all(todayEntries.map(e => api.deleteEntry(e.id)));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       setResetConfirm(false);
       setToast({ message: "Today's data has been reset!", type: 'success' });
     },
@@ -318,8 +318,8 @@ export function Dashboard() {
   const resetAllMutation = useMutation({
     mutationFn: api.deleteAllEntries,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       setResetAllConfirm(false);
       setToast({ message: 'All data has been reset!', type: 'success' });
     },
@@ -332,8 +332,8 @@ export function Dashboard() {
     mutationFn: (data: { id: number; entry: EntryCreate }) =>
       api.updateEntry(data.id, data.entry),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       setEditingEntry(null);
       setToast({ message: 'Entry updated successfully!', type: 'success' });
     },
