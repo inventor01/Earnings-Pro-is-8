@@ -4,6 +4,7 @@ import { useTheme } from '../lib/themeContext';
 interface OnboardingTourProps {
   isOpen: boolean;
   onComplete: () => void;
+  onStepChange?: (step: number) => void;
 }
 
 interface TourStep {
@@ -87,7 +88,7 @@ const tourSteps: TourStep[] = [
   },
 ];
 
-export function OnboardingTour({ isOpen, onComplete }: OnboardingTourProps) {
+export function OnboardingTour({ isOpen, onComplete, onStepChange }: OnboardingTourProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const { config } = useTheme();
   const isDarkTheme = config.name !== 'simple-light';
@@ -99,7 +100,9 @@ export function OnboardingTour({ isOpen, onComplete }: OnboardingTourProps) {
     if (isLastStep) {
       onComplete();
     } else {
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      onStepChange?.(nextStep);
     }
   };
 
