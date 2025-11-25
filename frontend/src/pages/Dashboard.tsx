@@ -13,6 +13,7 @@ import { Toast } from '../components/Toast';
 import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
 import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
+import { OnboardingTour } from '../components/OnboardingTour';
 import { useTheme } from '../lib/themeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
@@ -99,6 +100,15 @@ export function Dashboard() {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding');
+    return !hasCompletedOnboarding;
+  });
+
+  const handleCompleteOnboarding = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('hasCompletedOnboarding', 'true');
+  };
 
   const handleMetricVisibilityChange = (visibility: Partial<MetricVisibility>) => {
     setMetricVisibility(visibility);
@@ -594,6 +604,7 @@ export function Dashboard() {
               onClick={handleExport}
               className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
               title="Export to CSV"
+              data-tour="export"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -607,6 +618,7 @@ export function Dashboard() {
             <button
               onClick={() => setShowSettings(true)}
               className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
+              data-tour="settings"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -621,11 +633,11 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="mb-3 md:mb-6 overflow-x-auto">
+        <div className="mb-3 md:mb-6 overflow-x-auto" data-tour="timeframe">
           <PeriodChips selected={period} onSelect={setPeriod} />
         </div>
 
-        <div className="mb-4 md:mb-6">
+        <div className="mb-4 md:mb-6" data-tour="search">
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
             isDarkTheme
               ? 'bg-slate-800 border-slate-700 focus-within:border-cyan-400'
@@ -652,31 +664,33 @@ export function Dashboard() {
           </div>
         </div>
 
-        <SummaryCard
-          revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
-          expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
-          profit={`$${rollup?.profit.toFixed(2) || '0.00'}`}
-          miles={rollup?.miles.toFixed(1) || '0.0'}
-          orders={entries.filter(e => e.type === 'ORDER').length}
-          margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
-          avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
-          dayOffset={dayOffset}
-          onDayChange={(offset) => {
-            setDayOffset(offset);
-            // Keep period as 'today' to always show day navigation
-            // The backend handles different dates via dayOffset parameter
-            if (period !== 'today') {
-              setPeriod('today');
-            }
-          }}
-          getDateLabel={getDateLabel}
-          isDarkTheme={isDarkTheme}
-          showDayNav={period === 'today' || period === 'yesterday'}
-          periodLabel={getPeriodLabel()}
-          visibilityConfig={metricVisibility}
-        />
+        <div data-tour="performance">
+          <SummaryCard
+            revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
+            expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
+            profit={`$${rollup?.profit.toFixed(2) || '0.00'}`}
+            miles={rollup?.miles.toFixed(1) || '0.0'}
+            orders={entries.filter(e => e.type === 'ORDER').length}
+            margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
+            avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
+            dayOffset={dayOffset}
+            onDayChange={(offset) => {
+              setDayOffset(offset);
+              // Keep period as 'today' to always show day navigation
+              // The backend handles different dates via dayOffset parameter
+              if (period !== 'today') {
+                setPeriod('today');
+              }
+            }}
+            getDateLabel={getDateLabel}
+            isDarkTheme={isDarkTheme}
+            showDayNav={period === 'today' || period === 'yesterday'}
+            periodLabel={getPeriodLabel()}
+            visibilityConfig={metricVisibility}
+          />
+        </div>
 
-        <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth">
+        <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth" data-tour="kpis">
           <div className="flex gap-3 md:gap-4 pb-2 min-w-max">
             <div className="flex-shrink-0 w-80">
               <KpiCard
@@ -804,7 +818,7 @@ export function Dashboard() {
           </div>
         )}
 
-        <div className="mb-6">
+        <div className="mb-6" data-tour="entries">
           <EntriesTable 
             entries={filteredEntries} 
             onDelete={handleDelete}
@@ -816,7 +830,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 z-50 ${calcExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`}>
+      <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 z-50 ${calcExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`} data-tour="calculator">
         <button
           onClick={() => setCalcExpanded(!calcExpanded)}
           className="w-full py-4 px-4 flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold text-lg hover:from-blue-700 hover:to-blue-600 opacity-100 shadow-lg"
@@ -967,6 +981,12 @@ export function Dashboard() {
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+      {/* Onboarding Tour for First-Time Users */}
+      <OnboardingTour 
+        isOpen={showOnboarding} 
+        onComplete={handleCompleteOnboarding}
+      />
     </div>
   );
 }

@@ -65,6 +65,27 @@ The application provides a calculator-style input with add/subtract modes, real-
 
 ## Recent Additions (November 25, 2025)
 
+### Interactive Onboarding Tour
+1. **OnboardingTour Component** (`frontend/src/components/OnboardingTour.tsx`):
+   - 10-step interactive explainer for first-time users
+   - Walks through all essential features:
+     - Search transactions
+     - Export to CSV
+     - Timeframe filtering
+     - Performance Overview metrics
+     - KPI cards
+     - Calculator/Entry creation
+     - Transaction history
+     - Settings & themes
+     - Completion message
+   - **Skip button** for users who want to skip the tour
+   - **Back/Next navigation** with disabled state on first/last steps
+   - **Progress indicator** showing current step and total steps
+   - **LocalStorage persistence** - tour stored as 'hasCompletedOnboarding'
+   - **Theme-aware styling** - matches Dark Neon, Simple Light, and B/W Neon themes
+   - **Smooth animations** with gradient progress bar
+   - All tour elements marked with `data-tour` attributes in Dashboard
+
 ### Data Export & Search Functionality
 1. **Transaction Search** (`frontend/src/pages/Dashboard.tsx`):
    - Real-time search bar with magnifying glass icon
