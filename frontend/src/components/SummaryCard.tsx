@@ -80,7 +80,7 @@ export function SummaryCard({
       style={{ cursor: showDayNav ? 'grab' : 'default', touchAction: showDayNav ? 'none' : 'auto' }}
     >
       {/* Background with dark dashboard effect */}
-      <div className={`absolute inset-0 ${colorConfig.bg} backdrop-blur-sm border-2 ${colorConfig.border} rounded-2xl`} />
+      <div className={`absolute inset-0 ${colorConfig.bg} border-2 ${colorConfig.border} rounded-2xl`} />
       <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.glow} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`} />
       
       {/* Gauge arc effect */}
