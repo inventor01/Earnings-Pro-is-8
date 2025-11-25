@@ -159,53 +159,53 @@ export function SummaryCard({
           )}
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 md:gap-4 lg:gap-6">
           {/* Revenue */}
-          <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
-            <div className={`text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>💰 Revenue</div>
-            <div className={`text-3xl md:text-4xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
+          <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>💰 Revenue</div>
+            <div className={`text-xl md:text-3xl lg:text-4xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
               <CountUpNumber value={revenue} />
             </div>
           </div>
 
           {/* Expenses */}
-          <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
-            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['red'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>💸 Expenses</div>
-            <div className={`text-3xl md:text-4xl font-black ${themeConfig.kpiColors['red'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
+          <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['red'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>💸 Expenses</div>
+            <div className={`text-xl md:text-3xl lg:text-4xl font-black ${themeConfig.kpiColors['red'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
               <CountUpNumber value={expenses} />
             </div>
           </div>
 
           {/* Profit */}
-          <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
-            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>🎯 Profit</div>
-            <div className={`text-3xl md:text-4xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
+          <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>🎯 Profit</div>
+            <div className={`text-xl md:text-3xl lg:text-4xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
               <CountUpNumber value={profit} />
             </div>
             <div className={`text-xs ${themeConfig.kpiColors['green'].accent}`}>Margin: {margin}</div>
           </div>
 
           {/* Miles */}
-          <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
-            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['purple'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>🛣️ Miles</div>
-            <div className={`text-3xl md:text-4xl font-black ${themeConfig.kpiColors['purple'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
+          <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['purple'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>🛣️ Miles</div>
+            <div className={`text-xl md:text-3xl lg:text-4xl font-black ${themeConfig.kpiColors['purple'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
               <CountUpNumber value={miles} />
             </div>
           </div>
 
           {/* Orders */}
-          <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
-            <div className={`text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>📦 Orders</div>
-            <div className={`text-3xl md:text-4xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
+          <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>📦 Orders</div>
+            <div className={`text-xl md:text-3xl lg:text-4xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
               <CountUpNumber value={orders} />
             </div>
           </div>
 
           {/* Avg Order */}
           {avgOrder && (
-            <div className="space-y-2 p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
-              <div className={`text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>📊 Avg Order</div>
-              <div className={`text-3xl md:text-4xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer`}>
+            <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+              <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>📊 Avg Order</div>
+              <div className={`text-xl md:text-3xl lg:text-4xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
                 <CountUpNumber value={avgOrder} />
               </div>
             </div>
