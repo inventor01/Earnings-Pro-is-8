@@ -30,30 +30,36 @@ export function SummaryCard({
   
   // Swipe detection for mobile day navigation
   const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!showDayNav || !onDayChange) return;
     touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
   };
   
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!showDayNav || !onDayChange || touchStartX.current === null) return;
+    if (!showDayNav || !onDayChange || touchStartX.current === null || touchStartY.current === null) return;
     
     const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const diffX = touchStartX.current - touchEndX;
+    const diffY = touchStartY.current - touchEndY;
     const minSwipeDistance = 50; // Minimum pixels to register as swipe
     
-    if (Math.abs(diff) < minSwipeDistance) {
+    // Only treat as horizontal swipe if horizontal movement > vertical movement
+    if (Math.abs(diffX) < minSwipeDistance || Math.abs(diffY) > Math.abs(diffX)) {
       touchStartX.current = null;
+      touchStartY.current = null;
       return;
     }
     
-    // Prevent default scrolling/zooming behavior
+    // Prevent default scrolling/zooming behavior only for horizontal swipes
     e.preventDefault();
     
     setIsTransitioning(true);
-    if (diff > 0) {
+    if (diffX > 0) {
       // Swiped left - go to next day
       onDayChange(dayOffset + 1);
     } else {
@@ -63,10 +69,19 @@ export function SummaryCard({
     
     setTimeout(() => setIsTransitioning(false), 300);
     touchStartX.current = null;
+    touchStartY.current = null;
   };
   
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (showDayNav && touchStartX.current !== null) {
+    if (!showDayNav || touchStartX.current === null || touchStartY.current === null) return;
+    
+    const currentY = e.touches[0].clientY;
+    const currentX = e.touches[0].clientX;
+    const diffX = Math.abs(touchStartX.current - currentX);
+    const diffY = Math.abs(touchStartY.current - currentY);
+    
+    // Only prevent default if it's clearly a horizontal swipe
+    if (diffX > diffY && diffX > 10) {
       e.preventDefault();
     }
   };
@@ -77,7 +92,7 @@ export function SummaryCard({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      style={{ cursor: showDayNav ? 'grab' : 'default', touchAction: showDayNav ? 'none' : 'auto' }}
+      style={{ cursor: showDayNav ? 'grab' : 'default' }}
     >
       {/* Background with dark dashboard effect */}
       <div className={`absolute inset-0 ${colorConfig.bg} border-2 ${colorConfig.border} rounded-2xl`} />
