@@ -490,7 +490,10 @@ export function Dashboard() {
             }}>
               🚗
             </span>
-            <h1 className={`text-lg md:text-5xl font-black whitespace-nowrap ${config.titleColor}`}>EARNINGS PRO</h1>
+            <div className="flex items-center gap-0">
+              <h1 className={`text-lg md:text-5xl font-black ${config.titleColor}`}>EARNINGS</h1>
+              <h1 className="text-lg md:text-5xl font-black whitespace-nowrap bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent"> PRO</h1>
+            </div>
           </div>
           <div className="flex gap-1 md:gap-2">
             <button
