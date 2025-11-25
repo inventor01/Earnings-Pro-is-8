@@ -623,7 +623,7 @@ export function Dashboard() {
           }}
           getDateLabel={getDateLabel}
           isDarkTheme={isDarkTheme}
-          showDayNav={period === 'today' || period === 'yesterday'}
+          showDayNav={period === 'today'}
           periodLabel={getPeriodLabel()}
         />
 
