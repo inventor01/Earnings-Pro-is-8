@@ -49,6 +49,9 @@ export function SummaryCard({
       return;
     }
     
+    // Prevent default scrolling/zooming behavior
+    e.preventDefault();
+    
     setIsTransitioning(true);
     if (diff > 0) {
       // Swiped left - go to next day
@@ -61,13 +64,20 @@ export function SummaryCard({
     setTimeout(() => setIsTransitioning(false), 300);
     touchStartX.current = null;
   };
+  
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (showDayNav && touchStartX.current !== null) {
+      e.preventDefault();
+    }
+  };
 
   return (
     <div 
       className={`w-full relative p-6 md:p-8 rounded-2xl overflow-hidden group mb-6 transition-opacity ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      style={{ cursor: showDayNav ? 'grab' : 'default' }}
+      style={{ cursor: showDayNav ? 'grab' : 'default', touchAction: showDayNav ? 'none' : 'auto' }}
     >
       {/* Background with dark dashboard effect */}
       <div className={`absolute inset-0 ${colorConfig.bg} backdrop-blur-sm border-2 ${colorConfig.border} rounded-2xl`} />
