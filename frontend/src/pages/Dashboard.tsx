@@ -335,12 +335,10 @@ export function Dashboard() {
 
     const finalAmount = Math.abs(amountNum);
 
-    // Convert date and time to ISO timestamp
-    const dateTime = `${formData.date}T${formData.time}:00`;
-    const timestamp = new Date(dateTime).toISOString();
-
+    // Send date and time separately to backend for proper EST timezone handling
     const entry: EntryCreate = {
-      timestamp,
+      date: formData.date,
+      time: formData.time,
       type: formData.type,
       app: formData.app,
       amount: finalAmount,

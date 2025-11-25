@@ -6,6 +6,8 @@ from backend.models import EntryType, AppType, ExpenseCategory, TimeframeType
 
 class EntryCreate(BaseModel):
     timestamp: Optional[datetime] = None
+    date: Optional[str] = None
+    time: Optional[str] = None
     type: EntryType
     app: AppType
     order_id: Optional[str] = None
@@ -18,6 +20,8 @@ class EntryCreate(BaseModel):
 
 class EntryUpdate(BaseModel):
     timestamp: Optional[datetime] = None
+    date: Optional[str] = None
+    time: Optional[str] = None
     type: Optional[EntryType] = None
     app: Optional[AppType] = None
     order_id: Optional[str] = None

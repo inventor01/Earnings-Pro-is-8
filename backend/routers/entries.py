@@ -11,6 +11,8 @@ router = APIRouter()
 
 @router.post("/entries", response_model=EntryResponse)
 async def create_entry(entry: EntryCreate, db: Session = Depends(get_db)):
+    from pytz import timezone as pytz_timezone
+    
     amount = entry.amount
     
     if entry.type in [EntryType.EXPENSE, EntryType.CANCELLATION]:
@@ -18,8 +20,24 @@ async def create_entry(entry: EntryCreate, db: Session = Depends(get_db)):
     else:
         amount = abs(amount)
     
+    # Calculate timestamp - prefer date/time components over timestamp (for proper timezone handling)
+    if entry.date and entry.time:
+        # Parse date and time as EST, then convert to UTC
+        try:
+            est = pytz_timezone('US/Eastern')
+            datetime_str = f"{entry.date}T{entry.time}:00"
+            # Create a naive datetime and localize it to EST
+            naive_dt = datetime.fromisoformat(datetime_str)
+            est_dt = est.localize(naive_dt)
+            # Convert to UTC
+            timestamp = est_dt.astimezone(timezone.utc).replace(tzinfo=None)
+        except Exception:
+            timestamp = entry.timestamp or datetime.utcnow()
+    else:
+        timestamp = entry.timestamp or datetime.utcnow()
+    
     db_entry = Entry(
-        timestamp=entry.timestamp or datetime.utcnow(),
+        timestamp=timestamp,
         type=entry.type,
         app=entry.app,
         order_id=entry.order_id,
@@ -93,11 +111,29 @@ async def get_entries(
 
 @router.put("/entries/{entry_id}", response_model=EntryResponse)
 async def update_entry(entry_id: int, entry_update: EntryUpdate, db: Session = Depends(get_db)):
+    from pytz import timezone as pytz_timezone
+    
     db_entry = db.query(Entry).filter(Entry.id == entry_id).first()
     if not db_entry:
         raise HTTPException(status_code=404, detail="Entry not found")
     
     update_data = entry_update.model_dump(exclude_unset=True)
+    
+    # Handle date/time components if provided (for proper timezone handling)
+    if "date" in update_data and "time" in update_data and update_data["date"] and update_data["time"]:
+        try:
+            est = pytz_timezone('US/Eastern')
+            datetime_str = f"{update_data['date']}T{update_data['time']}:00"
+            naive_dt = datetime.fromisoformat(datetime_str)
+            est_dt = est.localize(naive_dt)
+            timestamp = est_dt.astimezone(timezone.utc).replace(tzinfo=None)
+            update_data["timestamp"] = timestamp
+        except Exception:
+            pass
+    
+    # Remove date/time from update_data as they're not database columns
+    update_data.pop("date", None)
+    update_data.pop("time", None)
     
     if "amount" in update_data and "type" in update_data:
         amount = update_data["amount"]
