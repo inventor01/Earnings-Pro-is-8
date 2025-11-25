@@ -587,7 +587,13 @@ export function Dashboard() {
           margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
           avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
           dayOffset={dayOffset}
-          onDayChange={setDayOffset}
+          onDayChange={(offset) => {
+            setDayOffset(offset);
+            // Ensure period is set to 'today' when navigating days
+            if (period !== 'today') {
+              setPeriod('today');
+            }
+          }}
           getDateLabel={getDateLabel}
           isDarkTheme={isDarkTheme}
           showDayNav={period === 'today'}
