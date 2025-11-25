@@ -60,7 +60,7 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadP
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            ➖ Subtract
+            ➖ Expense
           </button>
         </div>
       </div>
