@@ -136,6 +136,7 @@ export function Dashboard() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [calcExpanded, setCalcExpanded] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const [editingOriginalDate, setEditingOriginalDate] = useState<string | null>(null);
   const [viewingEntry, setViewingEntry] = useState<Entry | null>(null);
   const [editingFormData, setEditingFormData] = useState<EntryFormData>({
     type: 'ORDER',
@@ -442,6 +443,7 @@ export function Dashboard() {
     const time = `${hours}:${minutes}`;
 
     setEditingEntry(entry);
+    setEditingOriginalDate(date);
     setAmount(Math.abs(entry.amount).toString());
     setEditingFormData({
       type: entry.type,
@@ -485,6 +487,7 @@ export function Dashboard() {
 
   const handleCancelEdit = () => {
     setEditingEntry(null);
+    setEditingOriginalDate(null);
     setAmount('0');
   };
 
