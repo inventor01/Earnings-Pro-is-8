@@ -180,12 +180,12 @@ export function SummaryCard({
           )}
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 md:gap-4 lg:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 md:gap-3 lg:gap-4">
           {/* Revenue */}
           {visibility.revenue && (
-            <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
               <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>💰 Revenue</div>
-              <div className={`text-5xl md:text-7xl lg:text-8xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
+              <div className={`text-3xl md:text-5xl lg:text-6xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
                 <CountUpNumber value={revenue} />
               </div>
             </div>
@@ -193,9 +193,9 @@ export function SummaryCard({
 
           {/* Expenses */}
           {visibility.expenses && (
-            <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
               <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['red'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>💸 Expenses</div>
-              <div className={`text-5xl md:text-7xl lg:text-8xl font-black ${themeConfig.kpiColors['red'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
+              <div className={`text-3xl md:text-5xl lg:text-6xl font-black ${themeConfig.kpiColors['red'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
                 <CountUpNumber value={expenses} />
               </div>
             </div>
@@ -203,9 +203,9 @@ export function SummaryCard({
 
           {/* Profit */}
           {visibility.profit && (
-            <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
               <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>🎯 Profit</div>
-              <div className={`text-5xl md:text-7xl lg:text-8xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
+              <div className={`text-3xl md:text-5xl lg:text-6xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
                 <CountUpNumber value={profit} />
               </div>
               <div className={`text-xs ${themeConfig.kpiColors['green'].accent}`}>Margin: {margin}</div>
@@ -214,9 +214,9 @@ export function SummaryCard({
 
           {/* Miles */}
           {visibility.miles && (
-            <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
               <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['purple'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>🛣️ Miles</div>
-              <div className={`text-5xl md:text-7xl lg:text-8xl font-black ${themeConfig.kpiColors['purple'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
+              <div className={`text-3xl md:text-5xl lg:text-6xl font-black ${themeConfig.kpiColors['purple'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
                 <CountUpNumber value={miles} />
               </div>
             </div>
@@ -224,9 +224,9 @@ export function SummaryCard({
 
           {/* Orders */}
           {visibility.orders && (
-            <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
               <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>📦 Orders</div>
-              <div className={`text-5xl md:text-7xl lg:text-8xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
+              <div className={`text-3xl md:text-5xl lg:text-6xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
                 <CountUpNumber value={orders} />
               </div>
             </div>
@@ -234,9 +234,9 @@ export function SummaryCard({
 
           {/* Avg Order */}
           {visibility.avgOrder && avgOrder && (
-            <div className="space-y-1 p-2 md:p-3 rounded-lg transition-all duration-300 hover:bg-white/5">
+            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
               <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>📊 Avg Order</div>
-              <div className={`text-5xl md:text-7xl lg:text-8xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer whitespace-nowrap`}>
+              <div className={`text-3xl md:text-5xl lg:text-6xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
                 <CountUpNumber value={avgOrder} />
               </div>
             </div>
