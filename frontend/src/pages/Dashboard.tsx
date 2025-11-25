@@ -158,8 +158,8 @@ export function Dashboard() {
   };
 
   const { data: rollup } = useQuery({
-    queryKey: ['rollup', dates.from, dates.to, period],
-    queryFn: () => api.getRollup(dates.from, dates.to, getTimeframe(period)),
+    queryKey: ['rollup', period],
+    queryFn: () => api.getRollup(undefined, undefined, getTimeframe(period)),
   });
 
   const { data: entries = [] } = useQuery({
