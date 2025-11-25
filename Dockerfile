@@ -1,19 +1,19 @@
 # Multi-stage build: Frontend
 FROM node:18-alpine AS frontend-builder
 
-WORKDIR /app/frontend
+WORKDIR /app
 
 # Copy only package files first
-COPY frontend/package*.json ./
+COPY frontend/package*.json ./frontend/
 
 # Install dependencies
-RUN npm ci
+RUN cd frontend && npm ci
 
 # Copy the rest of the frontend code
-COPY frontend/ .
+COPY frontend ./frontend
 
 # Build frontend
-RUN npm run build
+RUN cd frontend && npm run build
 
 # Final stage: Python runtime
 FROM python:3.11-slim
