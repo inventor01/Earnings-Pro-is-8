@@ -85,7 +85,6 @@ class RollupResponse(BaseModel):
     dollars_per_mile: float
     dollars_per_hour: float
     average_order_value: float
-    per_hour_first_to_last: float
     by_type: dict[str, float]
     by_app: dict[str, float]
     goal: Optional[GoalResponse] = None
