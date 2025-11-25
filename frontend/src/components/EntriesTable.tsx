@@ -167,8 +167,10 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                   />
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-xl mr-2">{getTypeIcon(entry.type)}</span>
-                  <span className={`text-sm ${config.textPrimary}`}>{entry.type}</span>
+                  <div className="flex items-center gap-1 whitespace-nowrap">
+                    <span className="text-xl">{getTypeIcon(entry.type)}</span>
+                    <span className={`text-sm ${config.textPrimary}`}>{entry.type}</span>
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   {entry.type === 'EXPENSE' ? (
