@@ -89,6 +89,7 @@ export function Dashboard() {
   const [mode, setMode] = useState<CalcMode>('add');
   const [, setEntryType] = useState<EntryType>('ORDER');
   const [dayOffset, setDayOffset] = useState(0); // 0 = today, -1 = yesterday, 1 = tomorrow, etc.
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const getDefaultDate = () => {
     const now = new Date();
     return now.toISOString().split('T')[0];
@@ -231,7 +232,7 @@ export function Dashboard() {
   const rollupDates = period === 'today' ? getDayDates(dayOffset) : dates;
   const rollupTimeframe = getTimeframe(period);
 
-  const { data: rollup } = useQuery({
+  const { data: rollup, refetch: refetchRollup } = useQuery({
     queryKey: ['rollup', period, dayOffset],
     queryFn: () => api.getRollup(
       rollupTimeframe,
@@ -239,7 +240,7 @@ export function Dashboard() {
     ),
   });
 
-  const { data: entries = [] } = useQuery({
+  const { data: entries = [], refetch: refetchEntries } = useQuery({
     queryKey: ['entries', rollupDates.from, rollupDates.to],
     queryFn: () => api.getEntries(rollupDates.from, rollupDates.to),
   });
@@ -514,6 +515,18 @@ export function Dashboard() {
     });
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refetchRollup(), refetchEntries()]);
+      setToast({ message: 'Data refreshed!', type: 'success' });
+    } catch {
+      setToast({ message: 'Failed to refresh data', type: 'error' });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const { config } = useTheme();
   const isDarkTheme = config.name !== 'simple-light';
 
@@ -576,6 +589,26 @@ export function Dashboard() {
               title="Reset today's data"
             >
               Reset
+            </button>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={`p-2 md:p-2.5 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : config.textPrimary + ' hover:opacity-80'}`}
+              title="Refresh data"
+            >
+              <svg 
+                className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
             </button>
             <button
               onClick={() => setShowSettings(true)}
