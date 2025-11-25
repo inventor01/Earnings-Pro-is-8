@@ -6,13 +6,22 @@ WORKDIR /app
 # Create frontend directory structure
 RUN mkdir -p frontend/src/components frontend/src/lib frontend/src/pages frontend/src/styles
 
-# Copy all frontend files and reorganize them
-COPY *.tsx ./frontend/src/components/ 2>/dev/null || true
-COPY *.ts ./frontend/src/lib/ 2>/dev/null || true
-COPY Dashboard.tsx ./frontend/src/pages/ 2>/dev/null || true
-COPY *.css ./frontend/src/styles/ 2>/dev/null || true
-COPY main.tsx index.html vite.config.ts tsconfig.json tailwind.config.js postcss.config.js ./frontend/
-COPY package*.json ./frontend/
+# Copy frontend files
+COPY package.json package-lock.json ./frontend/
+COPY main.tsx index.html vite.config.ts tsconfig.json tsconfig.node.json tailwind.config.js postcss.config.js ./frontend/
+COPY vite-env.d.ts ./frontend/src/
+
+# Copy all TypeScript/TSX component files
+COPY AISuggestions.tsx CalcPad.tsx ConfirmDialog.tsx CountUpNumber.tsx EntryForm.tsx EntriesTable.tsx EntryViewer.tsx KpiCard.tsx PeriodChips.tsx ProfitGoalsBar.tsx SettingsDrawer.tsx SummaryCard.tsx Toast.tsx TripTracker.tsx ./frontend/src/components/
+
+# Copy all lib files
+COPY api.ts dateUtils.ts themes.ts themeContext.tsx ./frontend/src/lib/
+
+# Copy page components
+COPY Dashboard.tsx ./frontend/src/pages/
+
+# Copy styles
+COPY tailwind.css index.css ./frontend/src/styles/
 
 # Install dependencies
 WORKDIR /app/frontend
@@ -33,13 +42,20 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Create backend directory structure
 RUN mkdir -p backend/routers backend/services backend/scripts backend/tests
 
-# Copy all Python files and reorganize them
-COPY *.py ./backend/ 2>/dev/null || true
+# Copy backend core files
 COPY app.py db.py models.py schemas.py __init__.py ./backend/
+
+# Copy router files
 COPY entries.py goals.py health.py oauth.py rollup.py settings.py suggestions.py ./backend/routers/
-COPY period.py rollup_service.py sync_service.py ./backend/services/
+
+# Copy service files
+COPY period.py rollup_service.py sync_service.py background_jobs.py ai_suggestions.py ./backend/services/
+
+# Copy scripts
 COPY seed.py seed_this_week.py ./backend/scripts/
-COPY test_*.py ./backend/tests/
+
+# Copy tests
+COPY test_entries.py test_rollup.py ./backend/tests/
 
 # Copy the built frontend from the frontend-builder stage
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
