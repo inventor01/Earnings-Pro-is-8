@@ -47,13 +47,12 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
     profit = total_amount
     
     dollars_per_mile = net_earnings / Decimal(str(miles)) if miles > 0 else Decimal("0")
-    dollars_per_hour = net_earnings / Decimal(str(hours)) if hours > 0 else Decimal("0")
     
     # Calculate metrics for orders
     order_entries = [e for e in entries if e.type.value == 'ORDER']
     order_count = len(order_entries)
     average_order_value = Decimal("0")
-    per_hour_first_to_last = Decimal("0")
+    dollars_per_hour = Decimal("0")
     
     if order_count > 0:
         total_order_revenue = Decimal("0")
@@ -61,16 +60,19 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
             total_order_revenue += Decimal(str(order.amount))
         average_order_value = total_order_revenue / Decimal(str(order_count))
         
-        # Calculate per-hour rate based on first and last order
+        # Calculate per-hour rate based on first and last order timestamp
         order_timestamps = sorted([e.timestamp for e in order_entries])
         first_timestamp = order_timestamps[0]
         last_timestamp = order_timestamps[-1]
         
         hours_first_to_last = (last_timestamp - first_timestamp).total_seconds() / 3600.0
         if hours_first_to_last > 0:
-            per_hour_first_to_last = profit / Decimal(str(hours_first_to_last))
+            dollars_per_hour = profit / Decimal(str(hours_first_to_last))
         elif order_count == 1:
-            per_hour_first_to_last = Decimal("0")
+            dollars_per_hour = Decimal("0")
+    else:
+        # If no orders, fallback to duration-based calculation
+        dollars_per_hour = net_earnings / Decimal(str(hours)) if hours > 0 else Decimal("0")
     
     # Get goal data if timeframe provided
     goal_data = None
@@ -103,7 +105,6 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
         "dollars_per_mile": float(round(dollars_per_mile, 2)),
         "dollars_per_hour": float(round(dollars_per_hour, 2)),
         "average_order_value": float(round(average_order_value, 2)),
-        "per_hour_first_to_last": float(round(per_hour_first_to_last, 2)),
         "by_type": {k: float(v) for k, v in by_type.items()},
         "by_app": {k: float(v) for k, v in by_app.items()},
         "goal": goal_data,
