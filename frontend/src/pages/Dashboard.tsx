@@ -442,6 +442,7 @@ export function Dashboard() {
     const time = `${hours}:${minutes}`;
 
     setEditingEntry(entry);
+    setAmount(Math.abs(entry.amount).toString());
     setEditingFormData({
       type: entry.type,
       app: entry.app,
