@@ -3,17 +3,18 @@ FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app
 
-# Copy only package files first
+# Copy package files
 COPY frontend/package*.json ./frontend/
 
 # Install dependencies
-RUN cd frontend && npm ci
+WORKDIR /app/frontend
+RUN npm ci
 
 # Copy the rest of the frontend code
 COPY frontend ./frontend
 
 # Build frontend
-RUN cd frontend && npm run build
+RUN npm run build
 
 # Final stage: Python runtime
 FROM python:3.11-slim
