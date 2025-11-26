@@ -27,8 +27,6 @@ export function ShareCard({
         scale: 2,
         allowTaint: true,
         useCORS: true,
-        width: 600,
-        height: 800,
       });
       
       const link = document.createElement('a');
@@ -47,8 +45,6 @@ export function ShareCard({
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#0f172a',
         scale: 2,
-        width: 600,
-        height: 800,
       });
       
       canvas.toBlob(async (blob) => {
@@ -77,68 +73,66 @@ export function ShareCard({
       {/* Shareable Card */}
       <div
         ref={cardRef}
-        className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl md:rounded-2xl p-6 border-2"
+        className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg p-4 border-2 inline-block"
         style={{
           borderColor: themeConfig.kpiColors.blue.border,
           background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
-          width: '600px',
-          boxSizing: 'border-box',
         }}
       >
         {/* Header */}
-        <div className="mb-6 text-center">
-          <div className="text-4xl font-bold mb-2">
+        <div className="mb-3 text-center">
+          <div className="text-2xl font-bold mb-0.5">
             <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">EARNINGS</span>
-            <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent ml-2">PRO</span>
+            <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent ml-1">PRO</span>
           </div>
-          <p className="text-gray-400 text-lg">{periodLabel} Performance</p>
+          <p className="text-gray-400 text-xs">{periodLabel} Performance</p>
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           {/* Revenue */}
-          <div className="bg-gradient-to-br from-green-900/30 to-green-800/10 rounded-xl p-4 border border-green-500/30">
-            <p className="text-green-400 text-sm font-semibold mb-1">📈 REVENUE</p>
-            <p className="text-green-300 text-3xl font-bold break-words">${revenue}</p>
+          <div className="bg-gradient-to-br from-green-900/30 to-green-800/10 rounded-lg p-2 border border-green-500/30">
+            <p className="text-green-400 text-xs font-semibold mb-0.5">📈 REVENUE</p>
+            <p className="text-green-300 text-lg font-bold break-words">${revenue}</p>
           </div>
 
           {/* Expenses */}
-          <div className="bg-gradient-to-br from-red-900/30 to-red-800/10 rounded-xl p-4 border border-red-500/30">
-            <p className="text-red-400 text-sm font-semibold mb-1">💸 EXPENSES</p>
-            <p className="text-red-300 text-3xl font-bold break-words">${expenses}</p>
+          <div className="bg-gradient-to-br from-red-900/30 to-red-800/10 rounded-lg p-2 border border-red-500/30">
+            <p className="text-red-400 text-xs font-semibold mb-0.5">💸 EXPENSES</p>
+            <p className="text-red-300 text-lg font-bold break-words">${expenses}</p>
           </div>
 
           {/* Profit */}
-          <div className="bg-gradient-to-br from-cyan-900/30 to-blue-800/10 rounded-xl p-4 border border-cyan-500/30">
-            <p className="text-cyan-400 text-sm font-semibold mb-1">💰 PROFIT</p>
-            <p className="text-cyan-300 text-3xl font-bold break-words">${profit}</p>
+          <div className="bg-gradient-to-br from-cyan-900/30 to-blue-800/10 rounded-lg p-2 border border-cyan-500/30">
+            <p className="text-cyan-400 text-xs font-semibold mb-0.5">💰 PROFIT</p>
+            <p className="text-cyan-300 text-lg font-bold break-words">${profit}</p>
           </div>
 
           {/* Miles */}
-          <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/10 rounded-xl p-4 border border-orange-500/30">
-            <p className="text-orange-400 text-sm font-semibold mb-1">🛣️ MILES</p>
-            <p className="text-orange-300 text-3xl font-bold break-words">{miles}</p>
+          <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/10 rounded-lg p-2 border border-orange-500/30">
+            <p className="text-orange-400 text-xs font-semibold mb-0.5">🛣️ MILES</p>
+            <p className="text-orange-300 text-lg font-bold break-words">{miles}</p>
           </div>
         </div>
 
         {/* Additional Stats */}
-        <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-600">
+        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-600">
           <div className="text-center">
-            <p className="text-gray-500 text-xs font-semibold mb-1">ORDERS</p>
-            <p className="text-white text-2xl font-bold">{orders}</p>
+            <p className="text-gray-500 text-xs font-semibold mb-0.5">ORDERS</p>
+            <p className="text-white text-sm font-bold">{orders}</p>
           </div>
           <div className="text-center">
-            <p className="text-gray-500 text-xs font-semibold mb-1">AVG ORDER</p>
-            <p className="text-white text-2xl font-bold break-words">${avgOrder || '0.00'}</p>
+            <p className="text-gray-500 text-xs font-semibold mb-0.5">AVG ORDER</p>
+            <p className="text-white text-sm font-bold break-words">${avgOrder || '0.00'}</p>
           </div>
           <div className="text-center">
-            <p className="text-gray-500 text-xs font-semibold mb-1">PERIOD</p>
-            <p className="text-white text-xl font-bold">{periodLabel}</p>
+            <p className="text-gray-500 text-xs font-semibold mb-0.5">PERIOD</p>
+            <p className="text-white text-xs font-bold">{periodLabel}</p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-gray-500 text-xs">
+        <div className="mt-3 text-center text-gray-500 text-xs">
           <p>Generated on {new Date().toLocaleDateString()}</p>
         </div>
       </div>
