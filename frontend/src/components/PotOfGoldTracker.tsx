@@ -317,19 +317,24 @@ export function PotOfGoldTracker() {
           {[...Array(5)].map((_, i) => {
             const barFillPercent = (i + 1) / 5;
             const isFilled = progressPercent / 100 >= barFillPercent;
-            const colors = ['bg-red-400', 'bg-yellow-400', 'bg-green-400', 'bg-blue-400', 'bg-purple-400'];
+            const colors = themeConfig.name === 'simple-light' 
+              ? ['bg-blue-400', 'bg-blue-500', 'bg-teal-400', 'bg-teal-500', 'bg-cyan-400']
+              : ['bg-red-400', 'bg-yellow-400', 'bg-green-400', 'bg-blue-400', 'bg-purple-400'];
+            const colorRgb = themeConfig.name === 'simple-light'
+              ? ['rgb(96, 165, 250)', 'rgb(59, 130, 246)', 'rgb(20, 184, 166)', 'rgb(14, 165, 233)', 'rgb(34, 211, 238)']
+              : ['rgb(248, 113, 113)', 'rgb(250, 204, 21)', 'rgb(74, 222, 128)', 'rgb(96, 165, 250)', 'rgb(192, 132, 250)'];
             return (
               <div
                 key={i}
                 className={`flex-1 rounded-full transition-all duration-500 transform group-hover/rainbow:scale-y-110 ${
                   isFilled
                     ? colors[i]
-                    : themeConfig.name === 'simple-light' ? 'bg-gray-300' : 'bg-gray-700'
+                    : themeConfig.name === 'simple-light' ? 'bg-blue-100' : 'bg-gray-700'
                 }`}
                 style={{
                   height: `${24 + i * 8}px`,
                   opacity: isFilled ? 1 : 0.2,
-                  boxShadow: isFilled ? `0 0 15px ${colors[i].split('-')[1] === 'red' ? 'rgb(248, 113, 113)' : colors[i].split('-')[1] === 'yellow' ? 'rgb(250, 204, 21)' : colors[i].split('-')[1] === 'green' ? 'rgb(74, 222, 128)' : colors[i].split('-')[1] === 'blue' ? 'rgb(96, 165, 250)' : 'rgb(192, 132, 250)'}` : 'none'
+                  boxShadow: isFilled ? `0 0 15px ${colorRgb[i]}` : 'none'
                 }}
               />
             );
@@ -428,7 +433,7 @@ export function PotOfGoldTracker() {
 
       {/* Hint text */}
       <div className={`relative z-10 text-sm text-center mt-6 opacity-70 transition-all group-hover:opacity-100 ${
-        themeConfig.name === 'simple-light' ? 'text-purple-700' : 'text-cyan-300'
+        themeConfig.name === 'simple-light' ? 'text-blue-600' : 'text-cyan-300'
       }`}
       style={themeConfig.name !== 'simple-light' ? {
         backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
