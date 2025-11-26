@@ -88,8 +88,9 @@ export function FeatureTour() {
       if (element) {
         setIsHighlighting(true);
         
-        // For KPI container, highlight only the first card on mobile
+        // Special handling for different tour steps
         if (step.id === 'kpis') {
+          // For KPI container, highlight only the first card on mobile
           const container = element.querySelector('.flex') as HTMLElement;
           const firstCard = element.querySelector('[class*="flex-shrink"]') as HTMLElement;
           
@@ -106,6 +107,34 @@ export function FeatureTour() {
               setHighlightBox(rect);
               calculateTooltipPosition(rect);
             }, 50);
+          } else {
+            const rect = element.getBoundingClientRect();
+            setHighlightBox(rect);
+            element.scrollIntoView({ behavior: 'auto', block: 'start' });
+            calculateTooltipPosition(rect);
+          }
+        } else if (step.id === 'periods') {
+          // For periods, highlight the button container
+          const buttonContainer = element.querySelector('.flex') as HTMLElement;
+          if (buttonContainer) {
+            element.scrollIntoView({ behavior: 'auto', block: 'start' });
+            const rect = buttonContainer.getBoundingClientRect();
+            setHighlightBox(rect);
+            calculateTooltipPosition(rect);
+          } else {
+            const rect = element.getBoundingClientRect();
+            setHighlightBox(rect);
+            element.scrollIntoView({ behavior: 'auto', block: 'start' });
+            calculateTooltipPosition(rect);
+          }
+        } else if (step.id === 'search') {
+          // For search, highlight the input container
+          const inputContainer = element.querySelector('div[class*="flex"]') as HTMLElement;
+          if (inputContainer) {
+            element.scrollIntoView({ behavior: 'auto', block: 'start' });
+            const rect = inputContainer.getBoundingClientRect();
+            setHighlightBox(rect);
+            calculateTooltipPosition(rect);
           } else {
             const rect = element.getBoundingClientRect();
             setHighlightBox(rect);
