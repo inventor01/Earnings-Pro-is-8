@@ -257,6 +257,16 @@ export function PotOfGoldTracker() {
             transform: rotateY(720deg) rotateZ(180deg);
           }
         }
+        @keyframes blink-red {
+          0%, 100% {
+            filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+            opacity: 1;
+          }
+          50% {
+            filter: drop-shadow(0 0 16px rgba(239, 68, 68, 1));
+            opacity: 0.7;
+          }
+        }
       `}</style>
 
       {/* Header section */}
@@ -369,7 +379,10 @@ export function PotOfGoldTracker() {
       <div className="relative z-10 flex items-center justify-between mb-6 gap-4">
         <div className="flex items-baseline gap-3">
           <span className={`text-4xl font-black`}
-          style={themeConfig.name === 'simple-light' ? {
+          style={currentProfit < 0 ? {
+            animation: 'blink-red 0.8s ease-in-out infinite',
+            color: 'rgb(239, 68, 68)'
+          } : themeConfig.name === 'simple-light' ? {
             animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none',
             backgroundImage: 'linear-gradient(to right, rgb(5, 150, 105), rgb(16, 185, 129))',
             WebkitBackgroundClip: 'text',
