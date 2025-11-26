@@ -44,110 +44,52 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
   };
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-lg md:rounded-xl p-3 md:p-4">
-      <label className="block text-sm md:text-base font-bold text-blue-900 mb-2 md:mb-3">
-        🛣️ Distance (miles)
-      </label>
-
-      {/* Display */}
-      <div className="bg-white border-2 border-blue-400 rounded-lg md:rounded-xl p-3 md:p-4 mb-3 md:mb-4 text-right">
-        <div className="text-2xl md:text-3xl font-bold text-blue-900 font-mono">
-          {display}
+    <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg md:rounded-2xl shadow-xl p-4 md:p-6">
+      <div className="mb-4 md:mb-6">
+        <div className="text-4xl md:text-6xl font-black text-right mb-3 md:mb-6 p-3 md:p-6 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg md:rounded-xl border-4 border-blue-300">
+          {display} mi
         </div>
       </div>
 
-      {/* Calculator Grid */}
-      <div className="grid grid-cols-4 gap-2">
-        {/* Row 1 */}
-        <button
-          onClick={() => handleNumber('7')}
-          className="bg-white border-2 border-blue-300 rounded p-2 md:p-3 font-bold text-lg md:text-xl hover:bg-blue-50 transition-colors"
-        >
-          7
-        </button>
-        <button
-          onClick={() => handleNumber('8')}
-          className="bg-white border-2 border-blue-300 rounded p-2 md:p-3 font-bold text-lg md:text-xl hover:bg-blue-50 transition-colors"
-        >
-          8
-        </button>
-        <button
-          onClick={() => handleNumber('9')}
-          className="bg-white border-2 border-blue-300 rounded p-2 md:p-3 font-bold text-lg md:text-xl hover:bg-blue-50 transition-colors"
-        >
-          9
-        </button>
-        <button
-          onClick={handleBackspace}
-          className="bg-red-500 hover:bg-red-600 text-white border-2 border-red-600 rounded p-2 md:p-3 font-bold text-lg md:text-xl transition-colors"
-        >
-          ⌫
-        </button>
-
-        {/* Row 2 */}
-        <button
-          onClick={() => handleNumber('4')}
-          className="bg-white border-2 border-blue-300 rounded p-2 md:p-3 font-bold text-lg md:text-xl hover:bg-blue-50 transition-colors"
-        >
-          4
-        </button>
-        <button
-          onClick={() => handleNumber('5')}
-          className="bg-white border-2 border-blue-300 rounded p-2 md:p-3 font-bold text-lg md:text-xl hover:bg-blue-50 transition-colors"
-        >
-          5
-        </button>
-        <button
-          onClick={() => handleNumber('6')}
-          className="bg-white border-2 border-blue-300 rounded p-2 md:p-3 font-bold text-lg md:text-xl hover:bg-blue-50 transition-colors"
-        >
-          6
-        </button>
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
+        {['7', '8', '9', '4', '5', '6', '1', '2', '3'].map((num) => (
+          <button
+            key={num}
+            onClick={() => handleNumber(num)}
+            className="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+          >
+            {num}
+          </button>
+        ))}
         <button
           onClick={handleClear}
-          className="bg-orange-500 hover:bg-orange-600 text-white border-2 border-orange-600 rounded p-2 md:p-3 font-bold text-lg md:text-xl transition-colors"
+          className="bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
         >
           C
         </button>
-
-        {/* Row 3 */}
-        <button
-          onClick={() => handleNumber('1')}
-          className="bg-white border-2 border-blue-300 rounded p-2 md:p-3 font-bold text-lg md:text-xl hover:bg-blue-50 transition-colors"
-        >
-          1
-        </button>
-        <button
-          onClick={() => handleNumber('2')}
-          className="bg-white border-2 border-blue-300 rounded p-2 md:p-3 font-bold text-lg md:text-xl hover:bg-blue-50 transition-colors"
-        >
-          2
-        </button>
-        <button
-          onClick={() => handleNumber('3')}
-          className="bg-white border-2 border-blue-300 rounded p-2 md:p-3 font-bold text-lg md:text-xl hover:bg-blue-50 transition-colors"
-        >
-          3
-        </button>
-        <button
-          onClick={handleDecimal}
-          className="bg-purple-500 hover:bg-purple-600 text-white border-2 border-purple-600 rounded p-2 md:p-3 font-bold text-lg md:text-xl transition-colors"
-        >
-          .
-        </button>
-
-        {/* Row 4 */}
         <button
           onClick={() => handleNumber('0')}
-          className="bg-white border-2 border-blue-300 rounded p-2 md:p-3 font-bold text-lg md:text-xl hover:bg-blue-50 transition-colors col-span-2"
+          className="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
         >
           0
         </button>
         <button
+          onClick={handleDecimal}
+          className="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+        >
+          .
+        </button>
+        <button
           onClick={handleSubmit}
-          className="bg-green-500 hover:bg-green-600 text-white border-2 border-green-600 rounded p-2 md:p-3 font-bold text-lg md:text-xl transition-colors col-span-2"
+          className="bg-gradient-to-br from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
         >
           ✓
+        </button>
+        <button
+          onClick={handleBackspace}
+          className="col-span-3 bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 p-4 md:p-6 rounded-lg md:rounded-xl text-base md:text-xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+        >
+          ⌫ Backspace
         </button>
       </div>
     </div>
