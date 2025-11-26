@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTheme } from '../lib/themeContext';
+import { getESTDateString } from '../lib/dateUtils';
 
 interface ProfitCalendarProps {
   entries: any[];
@@ -23,7 +24,16 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
     const dailyData: { [key: string]: { profit: number; revenue: number; expenses: number } } = {};
     
     entries.forEach(entry => {
-      const dateStr = entry.date;
+      // Convert created_at to EST date string format (YYYY-MM-DD)
+      let dateStr = '';
+      if (entry.created_at) {
+        dateStr = getESTDateString(entry.created_at);
+      } else if (entry.date) {
+        dateStr = entry.date;
+      }
+      
+      if (!dateStr) return;
+      
       const amount = entry.amount || 0;
       if (!dailyData[dateStr]) {
         dailyData[dateStr] = { profit: 0, revenue: 0, expenses: 0 };

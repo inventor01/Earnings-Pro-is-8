@@ -748,7 +748,7 @@ export function Dashboard() {
         {/* Dashboard Grid - Everything in One View */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
           {/* Left Column - Performance Overview */}
-          <div className="lg:col-span-2 space-y-4 md:space-y-6" data-tour="performance" className="scroll-smooth">
+          <div className="lg:col-span-2 space-y-4 md:space-y-6 scroll-smooth" data-tour="performance">
             <SummaryCard
               revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
               expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
