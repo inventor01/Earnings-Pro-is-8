@@ -30,30 +30,44 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
       // Try to get date from entry - check multiple possible fields
       let dateStr = '';
       
+      // ALWAYS use timestamp first - it's the authoritative UTC field from backend
       if (entry.timestamp && typeof entry.timestamp === 'string') {
         try {
-          dateStr = getESTDateString(entry.timestamp);
+          // Ensure timestamp is in ISO format
+          let ts = entry.timestamp;
+          // Handle timestamps without Z suffix
+          if (!ts.includes('Z') && !ts.includes('+')) {
+            ts = ts + 'Z'; // Assume UTC if no timezone
+          }
+          dateStr = getESTDateString(ts);
         } catch (e) {
           console.error('Failed to parse timestamp:', entry.timestamp, e);
         }
       }
       
-      // Try created_at as fallback
+      // Try created_at as fallback only if timestamp failed
       if (!dateStr && entry.created_at && typeof entry.created_at === 'string') {
         try {
-          dateStr = getESTDateString(entry.created_at);
+          let ts = entry.created_at;
+          if (!ts.includes('Z') && !ts.includes('+')) {
+            ts = ts + 'Z';
+          }
+          dateStr = getESTDateString(ts);
         } catch (e) {
           console.error('Failed to parse created_at date:', entry.created_at, e);
         }
       }
       
-      // Try date field as last fallback
+      // Try date field as last fallback only
       if (!dateStr && entry.date && typeof entry.date === 'string') {
         // Assume date is already in YYYY-MM-DD format or similar
         dateStr = entry.date.substring(0, 10);
       }
       
-      if (!dateStr) return;
+      if (!dateStr) {
+        console.warn('Could not determine date for entry:', entry);
+        return;
+      }
       
       // Parse amount - ensure it's a number and properly rounded
       let amount = 0;
