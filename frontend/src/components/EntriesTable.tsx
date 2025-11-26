@@ -117,9 +117,31 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
 
   const getAppColor = (app: string) => {
     const isBWTheme = config.name === 'bw-neon';
+    const isLightTheme = config.name === 'simple-light';
+    
     if (isBWTheme) {
       return 'border border-white text-white bg-black';
     }
+    
+    // Light theme uses outline style
+    if (isLightTheme) {
+      switch (app) {
+        case 'DOORDASH':
+          return 'border-2 border-red-500 text-red-600 bg-transparent';
+        case 'UBEREATS':
+          return 'border-2 border-green-500 text-green-600 bg-transparent';
+        case 'INSTACART':
+          return 'border-2 border-orange-500 text-orange-600 bg-transparent';
+        case 'GRUBHUB':
+          return 'border-2 border-yellow-500 text-yellow-600 bg-transparent';
+        case 'SHIPT':
+          return 'border-2 border-blue-500 text-blue-600 bg-transparent';
+        default:
+          return 'border-2 border-gray-500 text-gray-600 bg-transparent';
+      }
+    }
+    
+    // Dark theme uses filled style
     switch (app) {
       case 'DOORDASH':
         return 'border border-red-500 text-white bg-red-500';
@@ -138,9 +160,37 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
 
   const getCategoryColor = (category: string) => {
     const isBWTheme = config.name === 'bw-neon';
+    const isLightTheme = config.name === 'simple-light';
+    
     if (isBWTheme) {
       return 'border border-white text-white bg-black';
     }
+    
+    // Light theme uses outline style
+    if (isLightTheme) {
+      switch (category) {
+        case 'GAS':
+          return 'border-2 border-blue-500 text-blue-600 bg-transparent';
+        case 'PARKING':
+          return 'border-2 border-purple-500 text-purple-600 bg-transparent';
+        case 'TOLLS':
+          return 'border-2 border-indigo-500 text-indigo-600 bg-transparent';
+        case 'MAINTENANCE':
+          return 'border-2 border-cyan-500 text-cyan-600 bg-transparent';
+        case 'PHONE':
+          return 'border-2 border-pink-500 text-pink-600 bg-transparent';
+        case 'SUBSCRIPTION':
+          return 'border-2 border-violet-500 text-violet-600 bg-transparent';
+        case 'FOOD':
+          return 'border-2 border-amber-500 text-amber-600 bg-transparent';
+        case 'LEISURE':
+          return 'border-2 border-rose-500 text-rose-600 bg-transparent';
+        default:
+          return 'border-2 border-gray-500 text-gray-600 bg-transparent';
+      }
+    }
+    
+    // Dark theme uses filled style
     switch (category) {
       case 'GAS':
         return 'border border-blue-500 text-white bg-blue-500';
