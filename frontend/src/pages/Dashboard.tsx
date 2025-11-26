@@ -70,7 +70,8 @@ export function Dashboard() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [calcExpanded, setCalcExpanded] = useState(false);
-  const [entryFormStep, setEntryFormStep] = useState(0); // 0 = main form, 1 = extra info
+  const [entryFormStep, setEntryFormStep] = useState(0); // 0 = type selection, 1 = form fields
+  const [typeSelected, setTypeSelected] = useState(false); // Whether user has selected an entry type
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [viewingEntry, setViewingEntry] = useState<Entry | null>(null);
   const [editingFormData, setEditingFormData] = useState<EntryFormData>({
@@ -852,7 +853,7 @@ export function Dashboard() {
         </button>
         
         <div className="max-w-6xl mx-auto p-4 max-h-[70vh] overflow-y-auto">
-          {/* Step 0: Calculator Only */}
+          {/* Step 0: Calculator + Type Selection */}
           {entryFormStep === 0 && (
             <>
               <div className="mb-4">
@@ -863,17 +864,58 @@ export function Dashboard() {
                   onModeChange={handleModeChange}
                 />
               </div>
-              <button
-                onClick={() => setEntryFormStep(1)}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-lg text-lg font-bold mb-6"
-              >
-                Next Step →
-              </button>
+              
+              {/* Type Selection Buttons */}
+              <div className="mb-6">
+                <label className="block text-sm md:text-base font-bold text-gray-700 mb-3">Select Entry Type:</label>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-2">
+                  <button
+                    onClick={() => {
+                      setFormData({ ...formData, type: 'ORDER', app: 'UBEREATS' });
+                      setTypeSelected(true);
+                      setEntryFormStep(1);
+                    }}
+                    className="bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg font-bold text-sm md:text-base transition-colors"
+                  >
+                    💰 Order
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFormData({ ...formData, type: 'EXPENSE', app: 'OTHER' });
+                      setTypeSelected(true);
+                      setEntryFormStep(1);
+                    }}
+                    className="bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg font-bold text-sm md:text-base transition-colors"
+                  >
+                    💸 Expense
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFormData({ ...formData, type: 'BONUS', app: 'UBEREATS' });
+                      setTypeSelected(true);
+                      setEntryFormStep(1);
+                    }}
+                    className="bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg font-bold text-sm md:text-base transition-colors"
+                  >
+                    🎁 Bonus
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFormData({ ...formData, type: 'CANCELLATION', app: 'UBEREATS' });
+                      setTypeSelected(true);
+                      setEntryFormStep(1);
+                    }}
+                    className="bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-bold text-sm md:text-base transition-colors"
+                  >
+                    ❌ Cancel
+                  </button>
+                </div>
+              </div>
             </>
           )}
 
           {/* Step 1: All Form Fields */}
-          {entryFormStep === 1 && (
+          {entryFormStep === 1 && typeSelected && (
             <>
               <EntryForm 
                 mode={mode} 
@@ -886,7 +928,10 @@ export function Dashboard() {
               />
               <div className="flex gap-3 mt-4 mb-6">
                 <button
-                  onClick={() => setEntryFormStep(0)}
+                  onClick={() => {
+                    setEntryFormStep(0);
+                    setTypeSelected(false);
+                  }}
                   className="flex-1 bg-gray-400 hover:bg-gray-500 text-white py-4 rounded-lg text-lg font-bold"
                 >
                   ← Back
