@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api, TimeframeType } from '../lib/api';
+import { useTheme } from '../lib/themeContext';
 
 interface ProfitGoalsBarProps {
   timeframe: TimeframeType;
@@ -19,6 +20,9 @@ const TIMEFRAME_LABELS: Record<TimeframeType, string> = {
 };
 
 export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onGoalReached, onToggle }: ProfitGoalsBarProps) {
+  const { config } = useTheme();
+  const isDarkTheme = config.name === 'dark-neon';
+  
   const [goalAmount, setGoalAmount] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -99,23 +103,23 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
     // Show edit form if editing, otherwise show "Set Goal" button
     if (isEditing) {
       return (
-        <div className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-4 py-3">
+        <div className={`w-full px-4 py-3 ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200'}`}>
           <div className="max-w-6xl mx-auto space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-600">{TIMEFRAME_LABELS[timeframe]} Goal:</span>
+              <span className={`text-sm font-medium ${isDarkTheme ? 'text-slate-300' : 'text-gray-600'}`}>{TIMEFRAME_LABELS[timeframe]} Goal:</span>
               <input
                 type="number"
                 step="0.01"
                 value={tempGoal}
                 onChange={(e) => setTempGoal(e.target.value)}
                 placeholder="Enter goal amount"
-                className="px-3 py-2 border-2 border-blue-400 rounded-lg text-sm w-32 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium"
+                className={`px-3 py-2 border-2 rounded-lg text-sm w-32 focus:outline-none focus:ring-2 transition-all font-medium ${isDarkTheme ? 'bg-slate-700 border-cyan-500 text-cyan-300 focus:ring-cyan-500 focus:border-cyan-500' : 'bg-white border-blue-400 text-gray-800 focus:ring-blue-500 focus:border-blue-500'}`}
                 autoFocus
               />
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-bold rounded-lg hover:from-blue-700 hover:to-blue-600 hover:shadow-lg hover:scale-105 disabled:bg-gray-400 transition-all duration-200 uppercase tracking-wide"
+                className={`px-3 py-2 text-white text-xs font-bold rounded-lg hover:scale-105 disabled:bg-gray-400 transition-all duration-200 uppercase tracking-wide ${isDarkTheme ? 'bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600' : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 hover:shadow-lg'}`}
               >
                 {isSaving ? 'Saving...' : 'Save'}
               </button>
@@ -137,21 +141,21 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
     }
 
     return (
-      <div className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-4 py-3 animate-pulse">
+      <div className={`w-full px-4 py-3 animate-pulse ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200'}`}>
         <div className="flex items-center justify-between max-w-6xl mx-auto">
-          <div className="text-sm text-gray-600">
+          <div className={`text-sm ${isDarkTheme ? 'text-slate-300' : 'text-gray-600'}`}>
             <span className="font-medium">{TIMEFRAME_LABELS[timeframe]} Goal:</span> Set a target to track progress
           </div>
           <div className="flex gap-2">
             <button
               onClick={handleEditClick}
-              className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 hover:shadow-lg transition-all duration-200 font-medium edit-button-hover"
+              className={`px-3 py-1 text-white text-sm rounded-lg transition-all duration-200 font-medium edit-button-hover ${isDarkTheme ? 'bg-cyan-600 hover:bg-cyan-700 hover:shadow-lg hover:shadow-cyan-500/20' : 'bg-blue-500 hover:bg-blue-600 hover:shadow-lg'}`}
             >
               Set Goal
             </button>
             <button
               onClick={onToggle}
-              className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+              className={`p-1 transition-colors ${isDarkTheme ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700'}`}
               title="Hide goal banner"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,13 +169,13 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
   }
 
   return (
-    <div className={`w-full bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border-b border-blue-300 px-2 md:px-5 py-2 md:py-4 transition-all duration-500 shadow-md`}>
+    <div className={`w-full px-2 md:px-5 py-2 md:py-4 transition-all duration-500 shadow-md ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b border-slate-700' : 'bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border-b border-blue-300'}`}>
       <div className="max-w-6xl mx-auto">
         {/* Single inline row */}
         <div className="flex items-center gap-1.5 md:gap-4 justify-between">
           <div className="flex items-center gap-1 md:gap-4 flex-nowrap overflow-x-auto scrollbar-hide">
             {/* Label - very compact on mobile */}
-            <span className={`text-xs md:text-base lg:text-lg font-bold transition-colors duration-500 goal-label-animated text-blue-700 whitespace-nowrap`} style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <span className={`text-xs md:text-base lg:text-lg font-bold transition-colors duration-500 goal-label-animated whitespace-nowrap ${isDarkTheme ? 'text-cyan-400' : 'text-blue-700'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
               {TIMEFRAME_LABELS[timeframe].replace("'s", "")}:
             </span>
 
@@ -184,13 +188,13 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
                   value={tempGoal}
                   onChange={(e) => setTempGoal(e.target.value)}
                   placeholder="Goal"
-                  className="px-2 py-1 border-2 border-blue-400 rounded text-xs md:text-base w-16 md:w-28 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium"
+                  className={`px-2 py-1 border-2 rounded text-xs md:text-base w-16 md:w-28 focus:outline-none focus:ring-2 transition-all font-medium ${isDarkTheme ? 'bg-slate-700 border-cyan-500 text-cyan-300 focus:ring-cyan-500 focus:border-cyan-500' : 'bg-white border-blue-400 text-gray-800 focus:ring-blue-500 focus:border-blue-500'}`}
                   autoFocus
                 />
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-2 py-1 md:px-3 md:py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-bold rounded hover:from-blue-700 hover:to-blue-600 disabled:bg-gray-400 transition-all"
+                  className={`px-2 py-1 md:px-3 md:py-2 text-white text-xs font-bold rounded hover:scale-105 disabled:bg-gray-400 transition-all ${isDarkTheme ? 'bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600' : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600'}`}
                 >
                   {isSaving ? '...' : 'OK'}
                 </button>
@@ -203,12 +207,12 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
               </div>
             ) : (
               <div className="flex items-center gap-1 md:gap-2 whitespace-nowrap">
-                <span className={`text-xl md:text-3xl lg:text-4xl font-black transition-colors duration-500 text-blue-600`} style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <span className={`text-xl md:text-3xl lg:text-4xl font-black transition-colors duration-500 ${isDarkTheme ? 'text-cyan-400' : 'text-blue-600'}`} style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   ${goalAmount}
                 </span>
                 <button
                   onClick={handleEditClick}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-bold transition-all"
+                  className={`text-xs font-bold transition-all ${isDarkTheme ? 'text-cyan-400 hover:text-cyan-300' : 'text-blue-600 hover:text-blue-800'}`}
                   title="Edit goal"
                 >
                   edit
@@ -217,14 +221,14 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
             )}
 
             {/* Separator */}
-            <span className="text-gray-400 hidden md:inline text-lg">•</span>
+            <span className={`hidden md:inline text-lg ${isDarkTheme ? 'text-slate-600' : 'text-gray-400'}`}>•</span>
 
             {/* Progress Info - very compact on mobile */}
-            <span className={`text-xs md:text-base lg:text-lg font-bold transition-colors duration-500 flex items-center gap-0.5 md:gap-2 whitespace-nowrap ${isGoalReached ? 'text-blue-700' : 'text-gray-700'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <span className={`text-xs md:text-base lg:text-lg font-bold transition-colors duration-500 flex items-center gap-0.5 md:gap-2 whitespace-nowrap ${isGoalReached ? (isDarkTheme ? 'text-cyan-400' : 'text-blue-700') : (isDarkTheme ? 'text-slate-300' : 'text-gray-700')}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
               <span className="hidden md:inline">${currentProfit.toFixed(2)}</span>
-              <span className="hidden md:inline text-gray-500">/</span>
+              <span className={`hidden md:inline ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>/</span>
               <span>${goalAmount}</span>
-              <span key={percentageKey} className={`font-black text-xs md:text-lg lg:text-xl percentage-display inline-block text-blue-600`} style={{ fontFamily: "'Outfit', sans-serif" }}>
+              <span key={percentageKey} className={`font-black text-xs md:text-lg lg:text-xl percentage-display inline-block ${isDarkTheme ? 'text-cyan-400' : 'text-blue-600'}`} style={{ fontFamily: "'Outfit', sans-serif" }}>
                 {Math.round(goalProgress)}%
               </span>
             </span>
@@ -233,7 +237,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
           {/* Close button */}
           <button
             onClick={onToggle}
-            className="p-1 text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
+            className={`p-1 transition-colors flex-shrink-0 ${isDarkTheme ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700'}`}
             title="Hide goal banner"
           >
             <svg className="w-4 h-4 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,9 +247,9 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
         </div>
 
         {/* Progress bar - bigger */}
-        <div className={`w-full bg-gray-300 rounded-full h-2.5 md:h-4 overflow-hidden shadow-inner transition-all duration-500 progress-section shadow-blue-300 mt-2 md:mt-2.5`}>
+        <div className={`w-full rounded-full h-2.5 md:h-4 overflow-hidden shadow-inner transition-all duration-500 progress-section mt-2 md:mt-2.5 ${isDarkTheme ? 'bg-slate-700 shadow-cyan-900/30' : 'bg-gray-300 shadow-blue-300'}`}>
           <div
-            className={`${progressColor} h-2.5 md:h-4 rounded-full transition-all duration-500 ease-out progress-bar-fill ${goalProgress > 50 ? 'shimmer-effect' : ''} ${isGoalReached ? 'goal-pulse shadow-lg' : ''}`}
+            className={`h-2.5 md:h-4 rounded-full transition-all duration-500 ease-out progress-bar-fill ${goalProgress > 50 ? 'shimmer-effect' : ''} ${isGoalReached ? 'goal-pulse shadow-lg' : ''} ${isDarkTheme ? 'bg-gradient-to-r from-cyan-500 to-cyan-400 shadow-cyan-500/50' : 'bg-blue-500'}`}
             style={{ width: `${displayProgress}%` }}
           />
         </div>
