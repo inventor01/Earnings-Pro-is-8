@@ -197,12 +197,22 @@ export function FeatureTour() {
   };
 
   const handleNext = () => {
+    // Close calculator when leaving calculator step
+    if (TOUR_STEPS[currentStep].id === 'calculator') {
+      window.dispatchEvent(new CustomEvent('tour-calculator-close'));
+    }
+    
     if (currentStep < TOUR_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrev = () => {
+    // Close calculator when leaving calculator step
+    if (TOUR_STEPS[currentStep].id === 'calculator') {
+      window.dispatchEvent(new CustomEvent('tour-calculator-close'));
+    }
+    
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }

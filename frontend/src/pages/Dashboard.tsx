@@ -129,15 +129,21 @@ export function Dashboard() {
     localStorage.setItem('lastVisitDate', today);
   }, []);
 
-  // Listen for tour events to expand calculator when tour reaches that step
+  // Listen for tour events to expand/close calculator
   useEffect(() => {
     const handleTourCalculatorStep = () => {
       setCalcExpanded(true);
     };
     
+    const handleTourCalculatorClose = () => {
+      setCalcExpanded(false);
+    };
+    
     window.addEventListener('tour-calculator-step', handleTourCalculatorStep);
+    window.addEventListener('tour-calculator-close', handleTourCalculatorClose);
     return () => {
       window.removeEventListener('tour-calculator-step', handleTourCalculatorStep);
+      window.removeEventListener('tour-calculator-close', handleTourCalculatorClose);
     };
   }, []);
 
