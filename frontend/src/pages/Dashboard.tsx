@@ -439,8 +439,16 @@ export function Dashboard() {
 
   const handleModeChange = (newMode: CalcMode) => {
     setMode(newMode);
-    // When switching to subtract, automatically change type to EXPENSE
-    if (newMode === 'subtract') {
+    // Auto-select entry type based on mode
+    if (newMode === 'add') {
+      // Revenue selected - pre-select ORDER
+      setFormData(prev => ({
+        ...prev,
+        type: 'ORDER',
+      }));
+      setEntryType('ORDER');
+    } else if (newMode === 'subtract') {
+      // Expense selected - pre-select EXPENSE
       setFormData(prev => ({
         ...prev,
         type: 'EXPENSE',
