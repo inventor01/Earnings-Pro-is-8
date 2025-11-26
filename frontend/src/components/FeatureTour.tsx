@@ -83,6 +83,11 @@ export function FeatureTour() {
       window.dispatchEvent(new CustomEvent('tour-calculator-step'));
     }
     
+    // Dispatch event to open settings when reaching that step
+    if (step.id === 'settings') {
+      window.dispatchEvent(new CustomEvent('tour-settings-open'));
+    }
+    
     if (step.selector) {
       const element = document.querySelector(step.selector);
       if (element) {
@@ -277,6 +282,11 @@ export function FeatureTour() {
       window.dispatchEvent(new CustomEvent('tour-calculator-close'));
     }
     
+    // Close settings when leaving settings step
+    if (TOUR_STEPS[currentStep].id === 'settings') {
+      window.dispatchEvent(new CustomEvent('tour-settings-close'));
+    }
+    
     if (currentStep < TOUR_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     }
@@ -286,6 +296,11 @@ export function FeatureTour() {
     // Close calculator when leaving calculator step
     if (TOUR_STEPS[currentStep].id === 'calculator') {
       window.dispatchEvent(new CustomEvent('tour-calculator-close'));
+    }
+    
+    // Close settings when leaving settings step
+    if (TOUR_STEPS[currentStep].id === 'settings') {
+      window.dispatchEvent(new CustomEvent('tour-settings-close'));
     }
     
     if (currentStep > 0) {
