@@ -382,12 +382,12 @@ export function PotOfGoldTracker() {
       }}>
         <button
           onClick={() => setIsHidden(true)}
-          className={`w-full py-2.5 rounded-lg font-semibold transition-all duration-200 ${
+          className={`px-3 py-1 text-xs rounded font-semibold transition-all duration-200 ${
             themeConfig.name === 'dark-neon'
-              ? 'bg-gradient-to-r from-slate-700/60 to-slate-600/60 hover:from-slate-600/80 hover:to-slate-500/80 border border-slate-500/40 hover:border-slate-400/60 shadow-lg hover:shadow-slate-600/30'
+              ? 'bg-gradient-to-r from-slate-700/60 to-slate-600/60 hover:from-slate-600/80 hover:to-slate-500/80 border border-slate-500/40 hover:border-slate-400/60'
               : themeConfig.name === 'simple-light'
-              ? 'bg-gradient-to-r from-purple-200 to-purple-200 hover:from-purple-300 hover:to-purple-300 shadow-md'
-              : 'bg-gradient-to-r from-slate-700/60 to-slate-600/60 hover:from-slate-600/80 hover:to-slate-500/80 border border-slate-500/40 hover:border-slate-400/60 shadow-lg hover:shadow-slate-600/30'
+              ? 'bg-gradient-to-r from-purple-200 to-purple-200 hover:from-purple-300 hover:to-purple-300'
+              : 'bg-gradient-to-r from-slate-700/60 to-slate-600/60 hover:from-slate-600/80 hover:to-slate-500/80 border border-slate-500/40 hover:border-slate-400/60'
           }`}
           style={{
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
@@ -397,7 +397,7 @@ export function PotOfGoldTracker() {
             color: 'transparent'
           }}
         >
-          Hide Tracker
+          Hide
         </button>
       </div>
     </div>
