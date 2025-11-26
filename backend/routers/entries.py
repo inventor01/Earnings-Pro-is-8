@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.db import get_db
-from backend.models import Entry, EntryType
+from backend.models import Entry, EntryType, AuthUser
 from backend.schemas import EntryCreate, EntryUpdate, EntryResponse
+from backend.auth import get_current_user
 from typing import List, Optional
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -10,7 +11,7 @@ from decimal import Decimal
 router = APIRouter()
 
 @router.post("/entries", response_model=EntryResponse)
-async def create_entry(entry: EntryCreate, db: Session = Depends(get_db)):
+async def create_entry(entry: EntryCreate, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
     from pytz import timezone as pytz_timezone
     
     amount = entry.amount
@@ -37,6 +38,7 @@ async def create_entry(entry: EntryCreate, db: Session = Depends(get_db)):
         timestamp = entry.timestamp or datetime.utcnow()
     
     db_entry = Entry(
+        user_id=current_user.id,
         timestamp=timestamp,
         type=entry.type,
         app=entry.app,
@@ -61,14 +63,15 @@ async def get_entries(
     to_date: Optional[str] = None,
     limit: int = 100,
     cursor: Optional[int] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user)
 ):
     from backend.services.period import (
         get_today, get_yesterday, get_this_week, get_last_7_days,
         get_this_month, get_last_month, get_day_offset
     )
     
-    query = db.query(Entry)
+    query = db.query(Entry).filter(Entry.user_id == current_user.id)
     
     # Use timeframe if provided (new approach - avoids timezone issues)
     if timeframe:
@@ -110,10 +113,10 @@ async def get_entries(
     return entries
 
 @router.put("/entries/{entry_id}", response_model=EntryResponse)
-async def update_entry(entry_id: int, entry_update: EntryUpdate, db: Session = Depends(get_db)):
+async def update_entry(entry_id: int, entry_update: EntryUpdate, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
     from pytz import timezone as pytz_timezone
     
-    db_entry = db.query(Entry).filter(Entry.id == entry_id).first()
+    db_entry = db.query(Entry).filter(Entry.id == entry_id, Entry.user_id == current_user.id).first()
     if not db_entry:
         raise HTTPException(status_code=404, detail="Entry not found")
     
@@ -162,8 +165,8 @@ async def update_entry(entry_id: int, entry_update: EntryUpdate, db: Session = D
     return db_entry
 
 @router.delete("/entries/{entry_id}")
-async def delete_entry(entry_id: int, db: Session = Depends(get_db)):
-    db_entry = db.query(Entry).filter(Entry.id == entry_id).first()
+async def delete_entry(entry_id: int, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
+    db_entry = db.query(Entry).filter(Entry.id == entry_id, Entry.user_id == current_user.id).first()
     if not db_entry:
         raise HTTPException(status_code=404, detail="Entry not found")
     
@@ -172,7 +175,7 @@ async def delete_entry(entry_id: int, db: Session = Depends(get_db)):
     return {"message": "Entry deleted successfully"}
 
 @router.delete("/entries")
-async def delete_all_entries(db: Session = Depends(get_db)):
-    db.query(Entry).delete()
+async def delete_all_entries(db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
+    db.query(Entry).filter(Entry.user_id == current_user.id).delete()
     db.commit()
     return {"message": "All entries deleted successfully"}

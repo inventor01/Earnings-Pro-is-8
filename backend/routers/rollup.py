@@ -7,6 +7,8 @@ from backend.services.period import (
     get_today, get_yesterday, get_this_week, get_last_7_days,
     get_this_month, get_last_month, get_day_offset
 )
+from backend.models import AuthUser
+from backend.auth import get_current_user
 from typing import Optional
 
 router = APIRouter()
@@ -15,7 +17,8 @@ router = APIRouter()
 async def get_rollup(
     timeframe: Optional[str] = None,
     day_offset: int = 0,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user)
 ):
     from_dt = None
     to_dt = None
@@ -41,5 +44,5 @@ async def get_rollup(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid timeframe: {str(e)}")
     
-    rollup = calculate_rollup(db, from_dt, to_dt, timeframe)
+    rollup = calculate_rollup(db, from_dt, to_dt, timeframe, current_user.id)
     return rollup

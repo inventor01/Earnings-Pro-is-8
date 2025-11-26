@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points
+from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes
 from backend.db import engine, Base
 from backend.services.background_jobs import start_background_jobs, stop_background_jobs
 
@@ -26,6 +26,7 @@ app.add_middleware(
 )
 
 app.include_router(health.router, prefix="/api", tags=["health"])
+app.include_router(auth_routes.router, prefix="/api", tags=["auth"])
 app.include_router(settings.router, prefix="/api", tags=["settings"])
 app.include_router(entries.router, prefix="/api", tags=["entries"])
 app.include_router(rollup.router, prefix="/api", tags=["rollup"])

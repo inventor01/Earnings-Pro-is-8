@@ -5,9 +5,11 @@ from decimal import Decimal
 from datetime import datetime
 from typing import Optional
 
-def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None, timeframe: Optional[str] = None):
+def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None, timeframe: Optional[str] = None, user_id: Optional[str] = None):
     query = db.query(Entry)
     
+    if user_id:
+        query = query.filter(Entry.user_id == user_id)
     if from_date:
         query = query.filter(Entry.timestamp >= from_date)
     if to_date:
@@ -15,7 +17,7 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
     
     entries = query.all()
     
-    settings = db.query(Settings).first()
+    settings = db.query(Settings).filter(Settings.user_id == user_id).first() if user_id else db.query(Settings).first()
     cost_per_mile = settings.cost_per_mile if settings else Decimal("0")
     
     total_amount = Decimal("0")
