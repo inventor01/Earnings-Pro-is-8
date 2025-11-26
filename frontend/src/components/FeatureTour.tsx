@@ -180,6 +180,33 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
             }
           }, 50);
           return;
+        } else if (step.id === 'performance') {
+          // For performance overview, highlight and position tooltip below on mobile
+          element.scrollIntoView({ behavior: 'auto', block: 'start' });
+          setTimeout(() => {
+            const rect = element.getBoundingClientRect();
+            setIsHighlighting(true);
+            setHighlightBox(rect);
+            
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const isMobile = viewportWidth < 768;
+            
+            if (isMobile) {
+              // On mobile, position tooltip BELOW the performance card
+              const centerX = Math.max(8, (viewportWidth - 280) / 2);
+              setTooltipStyle({
+                top: `${Math.min(rect.bottom + 16, viewportHeight - 300)}px`,
+                left: `${centerX}px`,
+                position: 'fixed',
+                maxHeight: `${viewportHeight - Math.min(rect.bottom + 16, viewportHeight - 300) - 50}px`,
+                overflow: 'auto',
+              });
+            } else {
+              calculateTooltipPosition(rect);
+            }
+          }, 50);
+          return;
         } else {
           const rect = element.getBoundingClientRect();
           setHighlightBox(rect);
