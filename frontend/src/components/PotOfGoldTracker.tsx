@@ -235,7 +235,7 @@ export function PotOfGoldTracker() {
             backgroundClip: 'text',
             color: 'transparent'
           }}>
-            Monthly Pot of Gold
+            Monthly Profit Goal
           </h3>
           <p className={`text-sm md:text-base font-semibold ${
             themeConfig.name === 'simple-light' ? 'text-purple-700' : 'text-cyan-400'
