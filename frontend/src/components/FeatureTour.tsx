@@ -181,10 +181,15 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
           }, 50);
           return;
         } else if (step.id === 'export') {
-          // For export button inside settings drawer, wait for drawer to open and find the export section
+          // For export button inside settings drawer, wait for drawer to open and scroll to show it
           setTimeout(() => {
             const exportElement = document.querySelector('[data-tour="export"]');
-            if (exportElement) {
+            const settingsDrawer = document.querySelector('[class*="fixed right-0 top-0"]');
+            
+            if (exportElement && settingsDrawer) {
+              // Scroll the settings drawer to show the export section
+              settingsDrawer.scrollTop = exportElement.offsetTop - 100;
+              
               setIsHighlighting(true);
               const rect = exportElement.getBoundingClientRect();
               setHighlightBox(rect);
@@ -194,19 +199,19 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
               const isMobile = viewportWidth < 768;
               
               if (isMobile) {
-                const centerX = Math.max(8, (viewportWidth - 280) / 2);
+                const centerX = 8;
                 setTooltipStyle({
-                  top: `${Math.min(rect.bottom + 16, viewportHeight - 300)}px`,
+                  top: `${Math.min(rect.bottom + 16, viewportHeight - 250)}px`,
                   left: `${centerX}px`,
+                  right: `${centerX}px`,
                   position: 'fixed',
-                  maxHeight: `${viewportHeight - Math.min(rect.bottom + 16, viewportHeight - 300) - 50}px`,
-                  overflow: 'auto',
+                  maxHeight: `${viewportHeight - 120}px`,
                 });
               } else {
                 calculateTooltipPosition(rect);
               }
             }
-          }, 100);
+          }, 150);
           return;
         } else if (step.id === 'performance') {
           // For performance overview, highlight and position tooltip below on mobile
@@ -425,7 +430,7 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
 
       {/* Tooltip - Always mobile-optimized */}
       <div
-        className={`fixed rounded-lg shadow-2xl overflow-y-auto ${
+        className={`fixed rounded-lg shadow-2xl ${
           themeConfig.name === 'dark-neon'
             ? 'bg-slate-900 border border-cyan-400 text-white'
             : themeConfig.name === 'simple-light'
@@ -440,10 +445,10 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
           maxWidth: window.innerWidth < 480 ? 'calc(100vw - 1rem)' : '360px',
           maxHeight: window.innerWidth < 480 ? 'calc(100vh - 120px)' : 'calc(100vh - 80px)',
           padding: '1rem',
-          overflowY: 'auto' as const,
+          overflowY: 'auto',
           top: tooltipStyle.top ? Math.max(8, parseInt(tooltipStyle.top as string)) : undefined,
           left: tooltipStyle.left ? Math.max(8, Math.min(parseInt(tooltipStyle.left as string), window.innerWidth - 320)) : undefined,
-          right: window.innerWidth < 480 ? '8px' : 'auto',
+          right: window.innerWidth < 480 ? '8px' : (tooltipStyle.right ? tooltipStyle.right : 'auto'),
         }}
       >
         <h3 className={`font-bold mb-1 line-clamp-2 ${
