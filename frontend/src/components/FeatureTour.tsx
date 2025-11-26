@@ -397,7 +397,13 @@ export function FeatureTour() {
         }`}>
           <button
             onClick={handleSkip}
-            className={`rounded bg-slate-700 hover:bg-slate-600 transition-colors w-full md:w-auto whitespace-nowrap text-gray-100 font-bold ${
+            className={`rounded transition-colors w-full md:w-auto whitespace-nowrap font-bold ${
+              themeConfig.name === 'dark-neon'
+                ? 'bg-slate-700 hover:bg-slate-600 text-gray-100'
+                : themeConfig.name === 'simple-light'
+                ? 'bg-gray-300 hover:bg-gray-400 text-gray-800'
+                : 'bg-gray-700 hover:bg-gray-600 text-white'
+            } ${
               window.innerWidth < 360 ? 'px-1.5 py-1 text-[8px]' : 
               window.innerWidth < 480 ? 'px-2 py-1 text-[9px]' : 
               'md:py-1 px-3 text-xs md:text-sm'
@@ -411,8 +417,14 @@ export function FeatureTour() {
               disabled={currentStep === 0}
               className={`rounded transition-colors flex-1 md:flex-none whitespace-nowrap font-bold ${
                 currentStep === 0
-                  ? 'bg-slate-700 opacity-40 cursor-not-allowed text-gray-400'
-                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                  ? themeConfig.name === 'simple-light'
+                    ? 'bg-gray-200 opacity-40 cursor-not-allowed text-gray-500'
+                    : 'bg-slate-700 opacity-40 cursor-not-allowed text-gray-400'
+                  : themeConfig.name === 'dark-neon'
+                  ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                  : themeConfig.name === 'simple-light'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-gray-600 hover:bg-gray-500 text-white border border-white'
               } ${
                 window.innerWidth < 360 ? 'px-1 py-1 text-[8px]' : 
                 window.innerWidth < 480 ? 'px-1.5 py-1 text-[9px]' : 
@@ -423,7 +435,13 @@ export function FeatureTour() {
             </button>
             <button
               onClick={handleNext}
-              className={`flex-1 md:flex-none rounded bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 transition-all text-black whitespace-nowrap shadow-lg hover:shadow-cyan-500/50 font-bold ${
+              className={`flex-1 md:flex-none rounded transition-all whitespace-nowrap shadow-lg font-bold ${
+                themeConfig.name === 'dark-neon'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-black hover:shadow-cyan-500/50'
+                  : themeConfig.name === 'simple-light'
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white hover:shadow-blue-300/50'
+                  : 'bg-gradient-to-r from-cyan-400 to-white hover:from-cyan-300 hover:to-gray-100 text-black border border-cyan-400 hover:shadow-cyan-400/50'
+              } ${
                 window.innerWidth < 360 ? 'px-1 py-1 text-[8px]' : 
                 window.innerWidth < 480 ? 'px-1.5 py-1 text-[9px]' : 
                 'md:py-1 px-2 md:px-3 text-xs md:text-sm'
