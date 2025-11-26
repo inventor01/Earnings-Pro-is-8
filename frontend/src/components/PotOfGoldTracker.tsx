@@ -176,7 +176,7 @@ export function PotOfGoldTracker() {
         themeConfig.name === 'dark-neon'
           ? 'bg-gradient-to-br from-purple-900/60 via-slate-900/50 to-blue-900/40 border-cyan-400/60 hover:border-cyan-300/80 hover:from-purple-900/80 hover:via-slate-900/70 hover:to-blue-900/60 shadow-2xl hover:shadow-cyan-400/40'
           : themeConfig.name === 'simple-light'
-          ? 'bg-gradient-to-br from-blue-100 via-purple-50 to-yellow-100 border-purple-300 hover:border-purple-400'
+          ? 'bg-gradient-to-br from-blue-50 via-blue-50 to-cyan-50 border-blue-300 hover:border-blue-400'
           : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-cyan-500/60 hover:border-cyan-300'
       }`}
       style={{
