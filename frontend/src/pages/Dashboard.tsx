@@ -826,20 +826,22 @@ export function Dashboard() {
                 />
 
                 {/* Profit Calendar Toggle and Display */}
-                <div className="flex items-center justify-center">
+                <div className="w-full px-2 md:px-0">
                   <button
                     onClick={() => setShowCalendar(!showCalendar)}
-                    className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center gap-2 ${
+                    className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl ${
                       isDarkTheme
                         ? showCalendar
-                          ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-400'
-                          : 'bg-slate-800 text-slate-400 border border-slate-700 hover:border-cyan-400'
+                          ? 'bg-gradient-to-r from-cyan-500 to-cyan-400 text-white border-2 border-cyan-300 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50'
+                          : 'bg-gradient-to-r from-slate-700 to-slate-800 text-cyan-300 border-2 border-cyan-500/50 hover:from-slate-600 hover:to-slate-700 hover:text-cyan-200 hover:border-cyan-400'
                         : showCalendar
-                        ? 'bg-blue-500 text-white border border-blue-600'
-                        : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-400 hover:from-blue-600 hover:to-blue-700'
+                        : 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white border-2 border-blue-300 hover:from-blue-500 hover:to-indigo-600 hover:border-blue-400'
                     }`}
                   >
-                    📅 {showCalendar ? 'Hide' : 'Show'} Calendar
+                    <span className="text-2xl md:text-3xl">{showCalendar ? '📆' : '📅'}</span>
+                    <span>{showCalendar ? 'Hide Calendar' : 'Show Calendar'}</span>
+                    <span className={`ml-2 transition-transform ${showCalendar ? 'rotate-180' : ''}`}>↓</span>
                   </button>
                 </div>
 
