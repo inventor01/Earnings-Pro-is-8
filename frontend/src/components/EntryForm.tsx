@@ -160,6 +160,42 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
                   </select>
                 </div>
               )}
+
+              {/* Date and Time Fields - shown in more options for ORDER */}
+              <div className="grid grid-cols-2 gap-2 md:gap-3">
+                <div>
+                  <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📅 Date</label>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    min={minDate}
+                    max={maxDate}
+                    onChange={(e) => onFormDataChange({ ...formData, date: e.target.value })}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🕐 Time</label>
+                  <input
+                    type="time"
+                    value={formData.time}
+                    onChange={(e) => onFormDataChange({ ...formData, time: e.target.value })}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                  />
+                </div>
+              </div>
+
+              {/* Note field - shown in more options for ORDER */}
+              <div>
+                <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📝 Note (optional)</label>
+                <textarea
+                  value={formData.note}
+                  onChange={(e) => onFormDataChange({ ...formData, note: e.target.value })}
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                  rows={2}
+                  placeholder="Add a note..."
+                />
+              </div>
             </>
           )}
 
@@ -218,32 +254,32 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
                   </select>
                 </div>
               )}
+
+              {/* Date and Time Fields - shown normally for non-revenue */}
+              <div className="grid grid-cols-2 gap-2 md:gap-3">
+                <div>
+                  <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📅 Date</label>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    min={minDate}
+                    max={maxDate}
+                    onChange={(e) => onFormDataChange({ ...formData, date: e.target.value })}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🕐 Time</label>
+                  <input
+                    type="time"
+                    value={formData.time}
+                    onChange={(e) => onFormDataChange({ ...formData, time: e.target.value })}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                  />
+                </div>
+              </div>
             </>
           )}
-
-          {/* Date and Time Fields - Always shown */}
-          <div className="grid grid-cols-2 gap-2 md:gap-3">
-            <div>
-              <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📅 Date</label>
-              <input
-                type="date"
-                value={formData.date}
-                min={minDate}
-                max={maxDate}
-                onChange={(e) => onFormDataChange({ ...formData, date: e.target.value })}
-                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-              />
-            </div>
-            <div>
-              <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🕐 Time</label>
-              <input
-                type="time"
-                value={formData.time}
-                onChange={(e) => onFormDataChange({ ...formData, time: e.target.value })}
-                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-              />
-            </div>
-          </div>
         </>
       )}
 
