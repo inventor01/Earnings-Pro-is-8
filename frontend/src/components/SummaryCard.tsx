@@ -127,12 +127,12 @@ export function SummaryCard({
         
         @keyframes subtle-glow {
           0%, 100% {
-            filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.3));
-            text-shadow: 0 0 8px rgba(34, 211, 238, 0.2);
+            filter: drop-shadow(0 0 2px rgba(34, 211, 238, 0.15));
+            text-shadow: 0 0 4px rgba(34, 211, 238, 0.1);
           }
           50% {
-            filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.5));
-            text-shadow: 0 0 12px rgba(34, 211, 238, 0.3);
+            filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.25));
+            text-shadow: 0 0 6px rgba(34, 211, 238, 0.15);
           }
         }
       `}</style>
