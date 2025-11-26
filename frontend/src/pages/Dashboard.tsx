@@ -18,6 +18,7 @@ import { FeatureTour } from '../components/FeatureTour';
 import { ShareCard } from '../components/ShareCard';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { Achievements } from '../components/Achievements';
+import { AchievementsModal } from '../components/AchievementsModal';
 import { useTheme } from '../lib/themeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
@@ -93,6 +94,7 @@ export function Dashboard() {
   });
   
   const [showNegativeAlert, setShowNegativeAlert] = useState(true);
+  const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   
   const [metricVisibility, setMetricVisibility] = useState<Partial<MetricVisibility>>(() => {
     const saved = localStorage.getItem('metricVisibility');
@@ -612,6 +614,22 @@ export function Dashboard() {
           </div>
           <div className="flex gap-1 md:gap-2">
             <button
+              onClick={() => setShowAchievementsModal(true)}
+              className={`relative p-2 md:p-2.5 rounded-lg transition-all ${
+                isDarkTheme
+                  ? 'hover:bg-cyan-500/20 text-cyan-400'
+                  : 'hover:bg-blue-100 text-blue-600'
+              }`}
+              title="View achievements"
+            >
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+              <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                🏆
+              </span>
+            </button>
+            <button
               onClick={() => setResetConfirm(true)}
               className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
                 isDarkTheme
@@ -787,9 +805,18 @@ export function Dashboard() {
               />
             </div>
 
-            <Achievements entries={entries} rollup={rollup} monthlyGoal={monthlyGoal} />
           </div>
         </div>
+
+        {/* Achievements Modal */}
+        {showAchievementsModal && (
+          <AchievementsModal 
+            entries={entries} 
+            rollup={rollup} 
+            monthlyGoal={monthlyGoal}
+            onClose={() => setShowAchievementsModal(false)}
+          />
+        )}
 
         <div>
           {/* Calculate date range for AI suggestions based on current period */}
