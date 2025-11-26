@@ -91,28 +91,30 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
       {/* Main Form Fields - All shown when showExtraInfo is true */}
       {showExtraInfo && (
         <>
-          {/* Type field - Always visible */}
-          <div>
-            <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📝 Type</label>
-            <select
-              value={formData.type}
-              onChange={(e) => {
-                const newType = e.target.value as EntryType;
-                const updatedData = { ...formData, type: newType };
-                if (newType === 'EXPENSE') {
-                  updatedData.app = 'OTHER';
-                }
-                onFormDataChange(updatedData);
-                onTypeChange(newType);
-              }}
-              className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-            >
-              <option value="ORDER">Order</option>
-              <option value="BONUS">Bonus</option>
-              <option value="EXPENSE">Expense</option>
-              <option value="CANCELLATION">Cancellation</option>
-            </select>
-          </div>
+          {/* Type field - Hidden in More Options for revenue, always visible for others */}
+          {!isRevenueEntry && (
+            <div>
+              <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📝 Type</label>
+              <select
+                value={formData.type}
+                onChange={(e) => {
+                  const newType = e.target.value as EntryType;
+                  const updatedData = { ...formData, type: newType };
+                  if (newType === 'EXPENSE') {
+                    updatedData.app = 'OTHER';
+                  }
+                  onFormDataChange(updatedData);
+                  onTypeChange(newType);
+                }}
+                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+              >
+                <option value="ORDER">Order</option>
+                <option value="BONUS">Bonus</option>
+                <option value="EXPENSE">Expense</option>
+                <option value="CANCELLATION">Cancellation</option>
+              </select>
+            </div>
+          )}
 
           {/* For ORDER entries - show miles prominently */}
           {isRevenueEntry && (
@@ -143,6 +145,29 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
           {/* Conditionally show more options for ORDER */}
           {isRevenueEntry && showMoreOptions && (
             <>
+              {/* Type field - shown in more options for ORDER */}
+              <div>
+                <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📝 Type</label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => {
+                    const newType = e.target.value as EntryType;
+                    const updatedData = { ...formData, type: newType };
+                    if (newType === 'EXPENSE') {
+                      updatedData.app = 'OTHER';
+                    }
+                    onFormDataChange(updatedData);
+                    onTypeChange(newType);
+                  }}
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                >
+                  <option value="ORDER">Order</option>
+                  <option value="BONUS">Bonus</option>
+                  <option value="EXPENSE">Expense</option>
+                  <option value="CANCELLATION">Cancellation</option>
+                </select>
+              </div>
+
               {!isExpense && (
                 <div>
                   <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🚗 App</label>
