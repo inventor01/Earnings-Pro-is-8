@@ -853,7 +853,7 @@ export function Dashboard() {
         </button>
         
         <div className="max-w-6xl mx-auto p-4 max-h-[70vh] overflow-y-auto">
-          {/* Step 0: Calculator + Type Selection */}
+          {/* Step 0: Calculator Only */}
           {entryFormStep === 0 && (
             <>
               <div className="mb-4">
@@ -864,8 +864,18 @@ export function Dashboard() {
                   onModeChange={handleModeChange}
                 />
               </div>
-              
-              {/* Type Selection Buttons */}
+              <button
+                onClick={() => setEntryFormStep(1)}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-lg text-lg font-bold mb-6"
+              >
+                Next Step →
+              </button>
+            </>
+          )}
+
+          {/* Step 1: Type Selection */}
+          {entryFormStep === 1 && !typeSelected && (
+            <>
               <div className="mb-6">
                 <label className="block text-sm md:text-base font-bold text-gray-700 mb-3">Select Entry Type:</label>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-2">
@@ -873,7 +883,6 @@ export function Dashboard() {
                     onClick={() => {
                       setFormData({ ...formData, type: 'ORDER', app: 'UBEREATS' });
                       setTypeSelected(true);
-                      setEntryFormStep(1);
                     }}
                     className="bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg font-bold text-sm md:text-base transition-colors"
                   >
@@ -883,7 +892,6 @@ export function Dashboard() {
                     onClick={() => {
                       setFormData({ ...formData, type: 'EXPENSE', app: 'OTHER' });
                       setTypeSelected(true);
-                      setEntryFormStep(1);
                     }}
                     className="bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg font-bold text-sm md:text-base transition-colors"
                   >
@@ -893,7 +901,6 @@ export function Dashboard() {
                     onClick={() => {
                       setFormData({ ...formData, type: 'BONUS', app: 'UBEREATS' });
                       setTypeSelected(true);
-                      setEntryFormStep(1);
                     }}
                     className="bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg font-bold text-sm md:text-base transition-colors"
                   >
@@ -903,7 +910,6 @@ export function Dashboard() {
                     onClick={() => {
                       setFormData({ ...formData, type: 'CANCELLATION', app: 'UBEREATS' });
                       setTypeSelected(true);
-                      setEntryFormStep(1);
                     }}
                     className="bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-bold text-sm md:text-base transition-colors"
                   >
@@ -911,10 +917,16 @@ export function Dashboard() {
                   </button>
                 </div>
               </div>
+              <button
+                onClick={() => setEntryFormStep(0)}
+                className="w-full bg-gray-400 hover:bg-gray-500 text-white py-4 rounded-lg text-lg font-bold mb-6"
+              >
+                ← Back
+              </button>
             </>
           )}
 
-          {/* Step 1: All Form Fields */}
+          {/* Step 2: All Form Fields */}
           {entryFormStep === 1 && typeSelected && (
             <>
               <EntryForm 
@@ -929,7 +941,6 @@ export function Dashboard() {
               <div className="flex gap-3 mt-4 mb-6">
                 <button
                   onClick={() => {
-                    setEntryFormStep(0);
                     setTypeSelected(false);
                   }}
                   className="flex-1 bg-gray-400 hover:bg-gray-500 text-white py-4 rounded-lg text-lg font-bold"
