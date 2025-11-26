@@ -111,164 +111,197 @@ export function SummaryCard({
     }
   };
 
+  const MetricCard = ({ icon, label, value, color, secondary, subtext }: any) => (
+    <div className={`relative p-6 rounded-xl transition-all duration-300 group/card ${
+      themeConfig.name === 'dark-neon'
+        ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/40 border border-slate-700/50 hover:border-slate-600/80 hover:from-slate-800/80 hover:to-slate-900/60 hover:shadow-lg hover:shadow-slate-900/50'
+        : themeConfig.name === 'simple-light'
+        ? 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md hover:shadow-gray-200/50'
+        : 'bg-slate-800/60 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg'
+    }`}>
+      {/* Top accent line */}
+      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r rounded-t-xl opacity-50 ${color}`} />
+      
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className={`text-3xl`}>{icon}</div>
+          <div className={`text-xs font-bold uppercase tracking-wider opacity-70 ${
+            themeConfig.name === 'simple-light' ? 'text-gray-600' : 'text-slate-400'
+          }`}>{label}</div>
+        </div>
+        
+        <div className="space-y-1">
+          <div className={`text-3xl md:text-4xl font-black font-mono transition-all duration-300 group-hover/card:scale-105 cursor-pointer ${secondary}`}>
+            <CountUpNumber value={value} />
+          </div>
+          
+          {subtext && (
+            <div className={`text-xs font-medium ${
+              themeConfig.name === 'simple-light' ? 'text-gray-500' : 'text-slate-400'
+            }`}>
+              {subtext}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div 
-      className={`w-full relative p-6 md:p-8 rounded-2xl overflow-hidden group mb-6 transition-opacity ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}
+      className={`w-full relative transition-opacity mb-8 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       style={{ cursor: showDayNav ? 'grab' : 'default' }}
     >
-      {/* Background with dark dashboard effect */}
-      <div className={`absolute inset-0 ${colorConfig.bg} border-2 ${colorConfig.border} rounded-2xl`} />
-      <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.glow} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`} />
-      
-      {/* Gauge arc effect */}
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorConfig.glow} rounded-full opacity-60`} />
-      
-      {/* Content */}
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-6">
-          <div className={`text-sm font-bold uppercase tracking-widest ${colorConfig.accent} opacity-80 font-mono`}>
-            Performance Overview
-          </div>
-          
-          {/* Date/Period Display with Navigation */}
-          <div className="flex items-center gap-2">
-            {(showDayNav || periodLabel) && (
-              <div className="flex items-center gap-2">
-                {showDayNav && onDayChange && getDateLabel && (
-                  <>
-                    <button
-                      onClick={() => onDayChange(dayOffset - 1)}
-                      className={`p-1.5 md:p-2 rounded-lg transition-all ${
-                        isDarkTheme
-                          ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                      } font-bold text-sm md:text-base`}
-                      title="Previous day"
-                    >
-                      ←
-                    </button>
-                    <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6 px-2">
+        <div className={`text-sm font-bold uppercase tracking-widest ${
+          themeConfig.name === 'simple-light' ? 'text-gray-700' : 'text-slate-400'
+        } opacity-80 font-mono`}>
+          Performance Overview
+        </div>
+        
+        {/* Date/Period Display with Navigation */}
+        <div className="flex items-center gap-2">
+          {(showDayNav || periodLabel) && (
+            <div className="flex items-center gap-2">
+              {showDayNav && onDayChange && getDateLabel && (
+                <>
+                  <button
+                    onClick={() => onDayChange(dayOffset - 1)}
+                    className={`p-1.5 md:p-2 rounded-lg transition-all ${
                       isDarkTheme
-                        ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 border border-cyan-500/30'
-                        : 'bg-gray-100 text-gray-800 border border-gray-300'
-                    }`}>
-                      {getDateLabel(dayOffset)}
-                    </div>
-                    <button
-                      onClick={() => onDayChange(dayOffset + 1)}
-                      className={`p-1.5 md:p-2 rounded-lg transition-all ${
-                        isDarkTheme
-                          ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                      } font-bold text-sm md:text-base`}
-                      title="Next day"
-                    >
-                      →
-                    </button>
-                  </>
-                )}
-                {!showDayNav && periodLabel && (
+                        ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    } font-bold text-sm md:text-base`}
+                    title="Previous day"
+                  >
+                    ←
+                  </button>
                   <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
                     isDarkTheme
                       ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 border border-cyan-500/30'
                       : 'bg-gray-100 text-gray-800 border border-gray-300'
                   }`}>
-                    {periodLabel}
+                    {getDateLabel(dayOffset)}
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3 lg:gap-2">
-          {/* Revenue */}
-          {visibility.revenue && (
-            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
-              <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>💰 Revenue</div>
-              <div className={`text-3xl md:text-4xl lg:text-5xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
-                <CountUpNumber value={revenue} />
-              </div>
-            </div>
-          )}
-
-          {/* Expenses */}
-          {visibility.expenses && (
-            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
-              <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['red'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>💸 Expenses</div>
-              <div className={`text-3xl md:text-4xl lg:text-5xl font-black ${themeConfig.kpiColors['red'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
-                <CountUpNumber value={expenses} />
-              </div>
-            </div>
-          )}
-
-          {/* Profit */}
-          {visibility.profit && (
-            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
-              <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>🎯 Profit</div>
-              <div className={`text-3xl md:text-4xl lg:text-5xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
-                <CountUpNumber value={profit} />
-              </div>
-              <div className={`text-xs ${themeConfig.kpiColors['green'].accent}`}>Margin: {margin}</div>
-            </div>
-          )}
-
-          {/* Miles */}
-          {visibility.miles && (
-            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
-              <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['purple'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>🛣️ Miles</div>
-              <div className={`text-3xl md:text-4xl lg:text-5xl font-black ${themeConfig.kpiColors['purple'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
-                <CountUpNumber value={miles} />
-              </div>
-            </div>
-          )}
-
-          {/* Orders */}
-          {visibility.orders && (
-            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
-              <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${themeConfig.kpiColors['green'].accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>📦 Orders</div>
-              <div className={`text-3xl md:text-4xl lg:text-5xl font-black ${themeConfig.kpiColors['green'].accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
-                <CountUpNumber value={orders} />
-              </div>
-            </div>
-          )}
-
-          {/* Avg Order */}
-          {visibility.avgOrder && avgOrder && (
-            <div className="space-y-0.5 p-1 md:p-2 rounded-lg transition-all duration-300 hover:bg-white/5">
-              <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${colorConfig.accent}`} style={{ fontFamily: "'Poppins', sans-serif" }}>📊 Avg Order</div>
-              <div className={`text-3xl md:text-4xl lg:text-5xl font-black ${colorConfig.accent} font-mono transition-all duration-300 hover:scale-110 cursor-pointer leading-tight`}>
-                <CountUpNumber value={avgOrder} />
-              </div>
+                  <button
+                    onClick={() => onDayChange(dayOffset + 1)}
+                    className={`p-1.5 md:p-2 rounded-lg transition-all ${
+                      isDarkTheme
+                        ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    } font-bold text-sm md:text-base`}
+                    title="Next day"
+                  >
+                    →
+                  </button>
+                </>
+              )}
+              {!showDayNav && periodLabel && (
+                <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
+                  isDarkTheme
+                    ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 border border-cyan-500/30'
+                    : 'bg-gray-100 text-gray-800 border border-gray-300'
+                }`}>
+                  {periodLabel}
+                </div>
+              )}
             </div>
           )}
         </div>
-        
-        {/* Bottom accent line */}
-        <div className={`h-0.5 bg-gradient-to-r ${colorConfig.glow} opacity-50 mt-6 rounded-full`} />
-        
-        {/* Share Button at Bottom */}
-        {onShare && (
-          <div className="mt-6 flex justify-center">
-            <button
-              onClick={onShare}
-              className={`px-2 py-1 rounded transition-all text-xs md:text-sm opacity-70 hover:opacity-100 ${
-                themeConfig.name === 'dark-neon'
-                  ? 'text-cyan-400 hover:text-cyan-300'
-                  : themeConfig.name === 'simple-light'
-                  ? 'text-blue-600 hover:text-blue-700'
-                  : 'text-gray-600 hover:text-black'
-              }`}
-              title="Share performance"
-            >
-              🔗 Share
-            </button>
-          </div>
+      </div>
+
+      {/* Metrics Grid - Shopify Style */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+        {/* Revenue */}
+        {visibility.revenue && (
+          <MetricCard
+            icon="💰"
+            label="Revenue"
+            value={revenue}
+            color="from-blue-500 to-blue-400"
+            secondary={colorConfig.accent}
+          />
+        )}
+
+        {/* Expenses */}
+        {visibility.expenses && (
+          <MetricCard
+            icon="💸"
+            label="Expenses"
+            value={expenses}
+            color="from-red-500 to-red-400"
+            secondary={themeConfig.kpiColors['red'].accent}
+          />
+        )}
+
+        {/* Profit */}
+        {visibility.profit && (
+          <MetricCard
+            icon="🎯"
+            label="Profit"
+            value={profit}
+            color="from-green-500 to-green-400"
+            secondary={themeConfig.kpiColors['green'].accent}
+            subtext={`Margin: ${margin}`}
+          />
+        )}
+
+        {/* Miles */}
+        {visibility.miles && (
+          <MetricCard
+            icon="🛣️"
+            label="Miles"
+            value={miles}
+            color="from-purple-500 to-purple-400"
+            secondary={themeConfig.kpiColors['purple'].accent}
+          />
+        )}
+
+        {/* Orders */}
+        {visibility.orders && (
+          <MetricCard
+            icon="📦"
+            label="Orders"
+            value={orders.toString()}
+            color="from-cyan-500 to-cyan-400"
+            secondary={themeConfig.kpiColors['green'].accent}
+          />
+        )}
+
+        {/* Avg Order */}
+        {visibility.avgOrder && avgOrder && (
+          <MetricCard
+            icon="📊"
+            label="Avg Order"
+            value={avgOrder}
+            color="from-orange-500 to-orange-400"
+            secondary={colorConfig.accent}
+          />
         )}
       </div>
+      
+      {/* Share Button */}
+      {onShare && (
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={onShare}
+            className={`px-4 py-2 rounded-lg transition-all text-sm font-medium opacity-70 hover:opacity-100 ${
+              themeConfig.name === 'dark-neon'
+                ? 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-400/10'
+                : themeConfig.name === 'simple-light'
+                ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                : 'text-gray-600 hover:text-black hover:bg-gray-100'
+            }`}
+            title="Share performance"
+          >
+            🔗 Share
+          </button>
+        </div>
+      )}
     </div>
   );
 }
