@@ -10,6 +10,7 @@ export function PotOfGoldTracker() {
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [floatingCoins, setFloatingCoins] = useState<number[]>([]);
+  const [isHidden, setIsHidden] = useState(false);
 
   const { data: monthlyGoal, refetch: refetchGoal } = useQuery({
     queryKey: ['goal', 'THIS_MONTH'],
@@ -70,6 +71,31 @@ export function PotOfGoldTracker() {
       setFloatingCoins([]);
     }, 2000);
   };
+
+  if (isHidden) {
+    return (
+      <div className={`rounded-2xl p-4 border-2 transition-all ${
+        themeConfig.name === 'dark-neon'
+          ? 'bg-gradient-to-br from-purple-900/60 via-slate-900/50 to-blue-900/40 border-cyan-400/60'
+          : themeConfig.name === 'simple-light'
+          ? 'bg-gradient-to-br from-blue-100 via-purple-50 to-yellow-100 border-purple-300'
+          : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-cyan-500/60'
+      }`}>
+        <button
+          onClick={() => setIsHidden(false)}
+          className={`w-full py-2 rounded-xl font-bold transition-all ${
+            themeConfig.name === 'dark-neon'
+              ? 'bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-200 border border-cyan-400/50'
+              : themeConfig.name === 'simple-light'
+              ? 'bg-purple-200 hover:bg-purple-300 text-purple-900'
+              : 'bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-300 border border-cyan-400/30'
+          }`}
+        >
+          Show Monthly Goal
+        </button>
+      </div>
+    );
+  }
 
   if (isEditing) {
     return (
@@ -210,15 +236,29 @@ export function PotOfGoldTracker() {
             {Math.round(progressPercent)}% to your monthly treasure
           </p>
         </div>
-        <div 
-          onClick={triggerCoins}
-          className="text-7xl md:text-8xl cursor-pointer hover:scale-125 transition-transform"
-          style={{
-            animation: 'pulse-gold 1.5s ease-in-out infinite',
-            filter: 'drop-shadow(0 0 10px rgba(34, 211, 238, 0.8))'
-          }}
-        >
-          🪙
+        <div className="flex flex-col items-end gap-3">
+          <div 
+            onClick={triggerCoins}
+            className="text-7xl md:text-8xl cursor-pointer hover:scale-125 transition-transform"
+            style={{
+              animation: 'pulse-gold 1.5s ease-in-out infinite',
+              filter: 'drop-shadow(0 0 10px rgba(34, 211, 238, 0.8))'
+            }}
+          >
+            🪙
+          </div>
+          <button
+            onClick={() => setIsHidden(true)}
+            className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
+              themeConfig.name === 'dark-neon'
+                ? 'bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 border border-cyan-400/30'
+                : themeConfig.name === 'simple-light'
+                ? 'bg-purple-200 hover:bg-purple-300 text-purple-900'
+                : 'bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 border border-cyan-400/30'
+            }`}
+          >
+            Hide
+          </button>
         </div>
       </div>
 
