@@ -114,7 +114,8 @@ export function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFeatureTour] = useState(() => {
     const hasCompletedTour = localStorage.getItem('hasCompletedFeatureTour');
-    return !hasCompletedTour;
+    // Disable tour by default - users can enable it manually
+    return false;
   });
 
   const handleMetricVisibilityChange = (visibility: Partial<MetricVisibility>) => {
