@@ -10,11 +10,12 @@ interface SettingsDrawerProps {
   onSave: (settings: Settings) => void;
   onResetAll?: () => void;
   onExport?: () => void;
+  onRestartTour?: () => void;
   metricVisibility?: Partial<MetricVisibility>;
   onMetricVisibilityChange?: (visibility: Partial<MetricVisibility>) => void;
 }
 
-export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
+export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
   const { theme, setTheme, config } = useTheme();
 
   if (!isOpen) return null;
@@ -115,6 +116,26 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, metricVi
         </div>
 
         <div className={`border-t ${isDark ? 'border-slate-700' : 'border-gray-200'} p-6 flex-shrink-0 space-y-4`}>
+          <div>
+            <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Help & Tutorial</h3>
+            <button
+              onClick={() => {
+                onRestartTour?.();
+                onClose();
+              }}
+              className={`w-full py-3 rounded-lg font-medium transition-all ${
+                isDark
+                  ? 'bg-indigo-900/30 hover:bg-indigo-900/50 border border-indigo-500 text-indigo-400'
+                  : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+              }`}
+            >
+              🎓 Restart Tour
+            </button>
+            <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+              See the interactive tour again to learn all features.
+            </p>
+          </div>
+
           <div>
             <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Export</h3>
             <button
