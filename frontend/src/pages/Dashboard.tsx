@@ -354,11 +354,6 @@ export function Dashboard() {
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum === 0) {
       setToast({ message: 'Please enter a valid amount', type: 'error' });
-      // Reset from mileage calculator when user exits with 0 amount
-      setFormData(prev => ({
-        ...prev,
-        distance_miles: '',
-      }));
       setMode('add');
       return;
     }
