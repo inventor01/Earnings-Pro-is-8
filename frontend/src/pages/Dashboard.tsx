@@ -15,6 +15,7 @@ import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { FeatureTour } from '../components/FeatureTour';
+import { PointsCard } from '../components/PointsCard';
 import { ShareCard } from '../components/ShareCard';
 import { useTheme } from '../lib/themeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
@@ -713,6 +714,11 @@ export function Dashboard() {
             visibilityConfig={metricVisibility}
             onShare={() => setShowShareCard(true)}
           />
+        </div>
+
+        {/* Points & Rewards Card */}
+        <div className="mb-4 md:mb-6">
+          <PointsCard />
         </div>
 
         <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth" data-tour="kpis">
