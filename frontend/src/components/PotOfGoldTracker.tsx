@@ -236,29 +236,15 @@ export function PotOfGoldTracker() {
             {Math.round(progressPercent)}% to your monthly treasure
           </p>
         </div>
-        <div className="flex flex-col items-end gap-3">
-          <div 
-            onClick={triggerCoins}
-            className="text-7xl md:text-8xl cursor-pointer hover:scale-125 transition-transform"
-            style={{
-              animation: 'pulse-gold 1.5s ease-in-out infinite',
-              filter: 'drop-shadow(0 0 10px rgba(34, 211, 238, 0.8))'
-            }}
-          >
-            🪙
-          </div>
-          <button
-            onClick={() => setIsHidden(true)}
-            className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
-              themeConfig.name === 'dark-neon'
-                ? 'bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 border border-cyan-400/30'
-                : themeConfig.name === 'simple-light'
-                ? 'bg-purple-200 hover:bg-purple-300 text-purple-900'
-                : 'bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 border border-cyan-400/30'
-            }`}
-          >
-            Hide
-          </button>
+        <div 
+          onClick={triggerCoins}
+          className="text-7xl md:text-8xl cursor-pointer hover:scale-125 transition-transform"
+          style={{
+            animation: 'pulse-gold 1.5s ease-in-out infinite',
+            filter: 'drop-shadow(0 0 10px rgba(34, 211, 238, 0.8))'
+          }}
+        >
+          🪙
         </div>
       </div>
 
@@ -352,6 +338,24 @@ export function PotOfGoldTracker() {
         themeConfig.name === 'simple-light' ? 'text-purple-700' : 'text-cyan-300'
       }`}>
         Click the coin to celebrate • Click to edit your goal
+      </div>
+
+      {/* Hide button */}
+      <div className="relative z-10 mt-8 pt-6 border-t border-opacity-30" style={{
+        borderColor: themeConfig.name === 'simple-light' ? 'rgb(192, 132, 250)' : 'rgba(34, 211, 238, 0.2)'
+      }}>
+        <button
+          onClick={() => setIsHidden(true)}
+          className={`w-full py-2.5 rounded-lg font-semibold transition-all duration-200 ${
+            themeConfig.name === 'dark-neon'
+              ? 'bg-gradient-to-r from-slate-700/60 to-slate-600/60 hover:from-slate-600/80 hover:to-slate-500/80 text-cyan-200 border border-slate-500/40 hover:border-slate-400/60 shadow-lg hover:shadow-slate-600/30'
+              : themeConfig.name === 'simple-light'
+              ? 'bg-gradient-to-r from-purple-200 to-purple-200 hover:from-purple-300 hover:to-purple-300 text-purple-900 shadow-md'
+              : 'bg-gradient-to-r from-slate-700/60 to-slate-600/60 hover:from-slate-600/80 hover:to-slate-500/80 text-cyan-200 border border-slate-500/40 hover:border-slate-400/60 shadow-lg hover:shadow-slate-600/30'
+          }`}
+        >
+          Hide Tracker
+        </button>
       </div>
     </div>
   );
