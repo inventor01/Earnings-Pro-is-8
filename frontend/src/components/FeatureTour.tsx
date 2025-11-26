@@ -192,16 +192,36 @@ export function FeatureTour() {
         <>
           <div className="fixed inset-0 bg-black/50 pointer-events-none z-40" />
           {highlightBox && (
-            <div
-              className="fixed border-2 border-cyan-400 rounded-lg pointer-events-none z-41"
-              style={{
-                top: `${highlightBox.top - 4}px`,
-                left: `${highlightBox.left - 4}px`,
-                width: `${highlightBox.width + 8}px`,
-                height: `${highlightBox.height + 8}px`,
-                boxShadow: '0 0 20px rgba(34, 211, 238, 0.6)',
-              }}
-            />
+            <>
+              {/* Inner highlight - bright glow inside the element */}
+              <div
+                className="fixed border-2 border-cyan-400 rounded-lg pointer-events-none z-41"
+                style={{
+                  top: `${highlightBox.top - 4}px`,
+                  left: `${highlightBox.left - 4}px`,
+                  width: `${highlightBox.width + 8}px`,
+                  height: `${highlightBox.height + 8}px`,
+                  boxShadow: `
+                    0 0 15px rgba(34, 211, 238, 0.8),
+                    0 0 30px rgba(34, 211, 238, 0.6),
+                    0 0 45px rgba(6, 182, 212, 0.4),
+                    inset 0 0 15px rgba(34, 211, 238, 0.2)
+                  `,
+                  background: 'rgba(34, 211, 238, 0.05)',
+                }}
+              />
+              {/* Bright spotlight effect under the highlighted element */}
+              <div
+                className="fixed rounded-lg pointer-events-none z-40"
+                style={{
+                  top: `${highlightBox.top - 8}px`,
+                  left: `${highlightBox.left - 8}px`,
+                  width: `${highlightBox.width + 16}px`,
+                  height: `${highlightBox.height + 16}px`,
+                  boxShadow: `0 0 60px rgba(34, 211, 238, 0.3), 0 0 100px rgba(6, 182, 212, 0.15)`,
+                }}
+              />
+            </>
           )}
         </>
       )}
