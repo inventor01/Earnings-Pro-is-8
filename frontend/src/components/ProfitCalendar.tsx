@@ -21,45 +21,61 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
 
+    // Build aggregated daily data
     const dailyData: { [key: string]: { profit: number; revenue: number; expenses: number } } = {};
     
     entries.forEach(entry => {
-      // Convert created_at to EST date string format (YYYY-MM-DD)
+      if (!entry || typeof entry !== 'object') return;
+      
+      // Get date from entry
       let dateStr = '';
-      if (entry.created_at) {
-        dateStr = getESTDateString(entry.created_at);
-      } else if (entry.date) {
-        dateStr = entry.date;
+      if (entry.created_at && typeof entry.created_at === 'string') {
+        try {
+          dateStr = getESTDateString(entry.created_at);
+        } catch (e) {
+          console.error('Failed to parse date:', entry.created_at, e);
+          return;
+        }
       }
       
       if (!dateStr) return;
       
-      const amount = entry.amount || 0;
+      // Parse amount - ensure it's a number
+      const amount = typeof entry.amount === 'number' ? entry.amount : parseFloat(entry.amount) || 0;
+      
+      // Initialize day data if needed
       if (!dailyData[dateStr]) {
         dailyData[dateStr] = { profit: 0, revenue: 0, expenses: 0 };
       }
-      if (entry.type === 'ORDER') {
+      
+      // Aggregate by type
+      const entryType = entry.type ? String(entry.type).toUpperCase() : '';
+      
+      if (entryType === 'ORDER' || entryType === 'BONUS') {
         dailyData[dateStr].revenue += amount;
         dailyData[dateStr].profit += amount;
-      } else if (entry.type === 'EXPENSE') {
+      } else if (entryType === 'EXPENSE') {
         dailyData[dateStr].expenses += amount;
         dailyData[dateStr].profit -= amount;
       }
     });
 
+    // Build calendar grid
     const days = [];
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
+    
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const data = dailyData[dateStr];
+      
       days.push({
         day,
         dateStr,
-        profit: data?.profit || 0,
-        revenue: data?.revenue || 0,
-        expenses: data?.expenses || 0,
+        profit: data ? Number(data.profit) : 0,
+        revenue: data ? Number(data.revenue) : 0,
+        expenses: data ? Number(data.expenses) : 0,
         hasData: !!data
       });
     }
@@ -71,41 +87,54 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
     'July', 'August', 'September', 'October', 'November', 'December'];
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const getValue = (dayData: any) => {
-    if (metricView === 'profit') return dayData?.profit ?? 0;
-    if (metricView === 'revenue') return dayData?.revenue ?? 0;
-    return dayData?.expenses ?? 0;
+  const getValue = (dayData: any): number => {
+    if (!dayData) return 0;
+    
+    let val = 0;
+    if (metricView === 'profit') {
+      val = typeof dayData.profit === 'number' ? dayData.profit : 0;
+    } else if (metricView === 'revenue') {
+      val = typeof dayData.revenue === 'number' ? dayData.revenue : 0;
+    } else if (metricView === 'expenses') {
+      val = typeof dayData.expenses === 'number' ? dayData.expenses : 0;
+    }
+    
+    return Number(val);
   };
 
-  const getColor = (value: number) => {
+  const getColor = (value: number): string => {
+    const numValue = Number(value) || 0;
+    
     // For expenses: lower is better (green), higher is worse (red)
     if (metricView === 'expenses') {
-      if (value === 0) return isDarkTheme ? 'bg-slate-700' : 'bg-gray-200';
-      if (value > 0) {
-        if (value > 100) return isDarkTheme ? 'bg-red-700/60' : 'bg-red-200';
-        if (value > 50) return isDarkTheme ? 'bg-red-600/50' : 'bg-red-100';
+      if (numValue === 0) return isDarkTheme ? 'bg-slate-700' : 'bg-gray-200';
+      if (numValue > 0) {
+        if (numValue > 100) return isDarkTheme ? 'bg-red-700/60' : 'bg-red-200';
+        if (numValue > 50) return isDarkTheme ? 'bg-red-600/50' : 'bg-red-100';
         return isDarkTheme ? 'bg-red-700/30' : 'bg-red-50';
       }
       return isDarkTheme ? 'bg-slate-700' : 'bg-gray-200';
     }
     
     // For profit and revenue: higher is better (green), lower is worse (red)
-    if (value === 0) return isDarkTheme ? 'bg-slate-700' : 'bg-gray-200';
-    if (value > 0) {
-      if (value > 100) return isDarkTheme ? 'bg-green-700/60' : 'bg-green-200';
-      if (value > 50) return isDarkTheme ? 'bg-green-600/50' : 'bg-green-100';
+    if (numValue === 0) return isDarkTheme ? 'bg-slate-700' : 'bg-gray-200';
+    if (numValue > 0) {
+      if (numValue > 100) return isDarkTheme ? 'bg-green-700/60' : 'bg-green-200';
+      if (numValue > 50) return isDarkTheme ? 'bg-green-600/50' : 'bg-green-100';
       return isDarkTheme ? 'bg-green-700/30' : 'bg-green-50';
-    } else {
-      if (value < -50) return isDarkTheme ? 'bg-red-700/60' : 'bg-red-200';
-      return isDarkTheme ? 'bg-red-700/30' : 'bg-red-50';
     }
+    
+    if (numValue < -50) return isDarkTheme ? 'bg-red-700/60' : 'bg-red-200';
+    return isDarkTheme ? 'bg-red-700/30' : 'bg-red-50';
   };
 
-  const getTextColor = (value: number) => {
+  const getTextColor = (value: number): string => {
+    const numValue = Number(value) || 0;
+    
     if (metricView === 'expenses') {
-      return value > 0 ? (isDarkTheme ? 'text-red-300' : 'text-red-700') : (isDarkTheme ? 'text-slate-300' : 'text-gray-700');
+      return numValue > 0 ? (isDarkTheme ? 'text-red-300' : 'text-red-700') : (isDarkTheme ? 'text-slate-300' : 'text-gray-700');
     }
-    return value > 0 ? (isDarkTheme ? 'text-green-300' : 'text-green-700') : (isDarkTheme ? 'text-red-300' : 'text-red-700');
+    return numValue > 0 ? (isDarkTheme ? 'text-green-300' : 'text-green-700') : (isDarkTheme ? 'text-red-300' : 'text-red-700');
   };
 
   return (
@@ -177,16 +206,19 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
       <div className="grid grid-cols-7 gap-2">
         {calendarData.days.map((dayData, idx) => {
           const value = dayData ? getValue(dayData) : 0;
-          const numValue = typeof value === 'number' ? value : 0;
+          const numericValue = Number(value) || 0;
+          const color = getColor(numericValue);
+          const textColor = getTextColor(numericValue);
+          
           return (
             <div
               key={idx}
               className={`aspect-square rounded-lg flex items-center justify-center text-sm font-bold transition-all ${
                 dayData === null
                   ? ''
-                  : `${getColor(numValue)} ${isDarkTheme ? 'border border-slate-600' : 'border border-gray-300'} hover:scale-105 cursor-pointer`
+                  : `${color} ${isDarkTheme ? 'border border-slate-600' : 'border border-gray-300'} hover:scale-105 cursor-pointer`
               }`}
-              title={dayData ? `${dayData.day}: $${numValue.toFixed(2)}` : ''}
+              title={dayData ? `${dayData.day}: $${numericValue.toFixed(2)}` : ''}
             >
               {dayData && (
                 <div className="text-center">
@@ -194,8 +226,8 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
                     {dayData.day}
                   </div>
                   {dayData.hasData && (
-                    <div className={`text-xs font-black ${getTextColor(numValue)}`}>
-                      ${numValue < 0 ? '-' : ''}${Math.abs(numValue).toFixed(0)}
+                    <div className={`text-xs font-black ${textColor}`}>
+                      ${numericValue < 0 ? '-' : ''}${Math.abs(numericValue).toFixed(0)}
                     </div>
                   )}
                 </div>
