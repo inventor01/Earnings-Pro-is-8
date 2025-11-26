@@ -640,10 +640,11 @@ export function Dashboard() {
               <h1 
                 className="text-lg md:text-5xl font-black whitespace-nowrap"
                 style={{
-                  backgroundImage: isDarkTheme ? 'linear-gradient(to right, white, #d1d5db)' : 'none',
+                  backgroundImage: isDarkTheme ? 'linear-gradient(to right, rgba(34, 211, 238, 0.95), rgba(99, 102, 241, 0.95))' : 'none',
                   WebkitBackgroundClip: isDarkTheme ? 'text' : 'unset',
                   backgroundClip: isDarkTheme ? 'text' : 'unset',
                   WebkitTextFillColor: isDarkTheme ? 'transparent' : 'inherit',
+                  textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.6), 0 0 40px rgba(99, 102, 241, 0.4)' : 'none',
                   color: isDarkTheme ? 'transparent' : '#000',
                   WebkitTextStroke: !isDarkTheme ? '1.5px #000' : 'none',
                   textStroke: !isDarkTheme ? '1.5px #000' : 'none'
