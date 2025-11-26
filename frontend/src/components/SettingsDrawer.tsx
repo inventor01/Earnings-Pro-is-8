@@ -136,7 +136,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             </p>
           </div>
 
-          <div>
+          <div data-tour="export">
             <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Export</h3>
             <button
               onClick={onExport}

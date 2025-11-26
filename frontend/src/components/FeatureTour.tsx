@@ -150,8 +150,8 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
             element.scrollIntoView({ behavior: 'auto', block: 'start' });
             calculateTooltipPosition(rect);
           }
-        } else if (step.id === 'settings' || step.id === 'export') {
-          // For settings/export buttons at top, scroll to top and highlight
+        } else if (step.id === 'settings') {
+          // For settings button at top, scroll to top and highlight
           window.scrollTo({ top: 0, behavior: 'auto' });
           // Add delay to ensure scroll completes before calculating position
           setTimeout(() => {
@@ -179,6 +179,34 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
               calculateTooltipPosition(rect);
             }
           }, 50);
+          return;
+        } else if (step.id === 'export') {
+          // For export button inside settings drawer, wait for drawer to open and find the export section
+          setTimeout(() => {
+            const exportElement = document.querySelector('[data-tour="export"]');
+            if (exportElement) {
+              setIsHighlighting(true);
+              const rect = exportElement.getBoundingClientRect();
+              setHighlightBox(rect);
+              
+              const viewportWidth = window.innerWidth;
+              const viewportHeight = window.innerHeight;
+              const isMobile = viewportWidth < 768;
+              
+              if (isMobile) {
+                const centerX = Math.max(8, (viewportWidth - 280) / 2);
+                setTooltipStyle({
+                  top: `${Math.min(rect.bottom + 16, viewportHeight - 300)}px`,
+                  left: `${centerX}px`,
+                  position: 'fixed',
+                  maxHeight: `${viewportHeight - Math.min(rect.bottom + 16, viewportHeight - 300) - 50}px`,
+                  overflow: 'auto',
+                });
+              } else {
+                calculateTooltipPosition(rect);
+              }
+            }
+          }, 100);
           return;
         } else if (step.id === 'performance') {
           // For performance overview, highlight and position tooltip below on mobile
