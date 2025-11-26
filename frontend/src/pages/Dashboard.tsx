@@ -70,6 +70,7 @@ export function Dashboard() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [calcExpanded, setCalcExpanded] = useState(false);
+  const [entryFormStep, setEntryFormStep] = useState(0); // 0 = main form, 1 = extra info
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [viewingEntry, setViewingEntry] = useState<Entry | null>(null);
   const [editingFormData, setEditingFormData] = useState<EntryFormData>({
