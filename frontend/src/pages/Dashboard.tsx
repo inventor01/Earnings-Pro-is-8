@@ -91,6 +91,8 @@ export function Dashboard() {
     return saved === null ? true : saved === 'true';
   });
   
+  const [showNegativeAlert, setShowNegativeAlert] = useState(true);
+  
   const [metricVisibility, setMetricVisibility] = useState<Partial<MetricVisibility>>(() => {
     const saved = localStorage.getItem('metricVisibility');
     if (saved) {
@@ -699,7 +701,7 @@ export function Dashboard() {
         </div>
 
         {/* Negative Profit Alert */}
-        {rollup && rollup.profit < 0 && (
+        {rollup && rollup.profit < 0 && showNegativeAlert && (
           <div className={`mb-4 md:mb-6 p-4 md:p-5 rounded-xl border-2 transition-all ${
             isDarkTheme
               ? 'bg-gradient-to-r from-red-900/40 to-red-800/30 border-red-600/60 shadow-lg shadow-red-900/30'
@@ -715,6 +717,19 @@ export function Dashboard() {
                   You need to make <span className="font-black text-lg md:text-2xl">${Math.abs(rollup.profit).toFixed(2)}</span> to get back into profit today
                 </p>
               </div>
+              <button
+                onClick={() => setShowNegativeAlert(false)}
+                className={`flex-shrink-0 p-2 rounded-lg transition-all ${
+                  isDarkTheme
+                    ? 'hover:bg-red-600/30 text-red-300 hover:text-red-200'
+                    : 'hover:bg-red-200 text-red-700 hover:text-red-900'
+                }`}
+                title="Dismiss alert"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
         )}
