@@ -262,28 +262,36 @@ export function PotOfGoldTracker() {
       {/* Header section */}
       <div className="relative z-10 flex items-start justify-between mb-10 gap-6">
         <div className="cursor-pointer" onClick={handleEditClick}>
-          <h3 className={`font-black text-2xl md:text-3xl mb-3 ${
-            themeConfig.name === 'simple-light' ? 'text-blue-700' : 'text-cyan-300'
-          }`}
-          style={themeConfig.name !== 'simple-light' ? {
+          <h3 className={`font-black text-2xl md:text-3xl mb-3`}
+          style={themeConfig.name === 'simple-light' ? {
+            backgroundImage: 'linear-gradient(to right, rgb(29, 78, 216), rgb(37, 99, 235))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            color: 'transparent'
+          } : {
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             color: 'transparent'
-          } : {}}>
+          }}>
             Monthly Profit Goal
           </h3>
-          <p className={`text-sm md:text-base font-semibold ${
-            themeConfig.name === 'simple-light' ? 'text-blue-600' : 'text-cyan-400'
-          }`}
-          style={themeConfig.name !== 'simple-light' ? {
+          <p className={`text-sm md:text-base font-semibold`}
+          style={themeConfig.name === 'simple-light' ? {
+            backgroundImage: 'linear-gradient(to right, rgb(37, 99, 235), rgb(59, 130, 246))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            color: 'transparent'
+          } : {
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             color: 'transparent'
-          } : {}}>
+          }}>
             {Math.round(progressPercent)}% to your monthly treasure
           </p>
         </div>
@@ -353,31 +361,38 @@ export function PotOfGoldTracker() {
       {/* Stats section */}
       <div className="relative z-10 flex items-center justify-between mb-6 gap-4">
         <div className="flex items-baseline gap-3">
-          <span className={`text-4xl font-black ${
-            themeConfig.name === 'simple-light' ? 'text-emerald-700' : 'text-yellow-300'
-          }`}
-          style={themeConfig.name !== 'simple-light' ? {
+          <span className={`text-4xl font-black`}
+          style={themeConfig.name === 'simple-light' ? {
+            animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none',
+            backgroundImage: 'linear-gradient(to right, rgb(5, 150, 105), rgb(16, 185, 129))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            color: 'transparent'
+          } : {
             animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none',
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             color: 'transparent'
-          } : {
-            animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none'
           }}>
             ${currentProfit.toFixed(0)}
           </span>
-          <span className={`text-base font-bold ${
-            themeConfig.name === 'simple-light' ? 'text-emerald-600' : 'text-yellow-400'
-          }`}
-          style={themeConfig.name !== 'simple-light' ? {
+          <span className={`text-base font-bold`}
+          style={themeConfig.name === 'simple-light' ? {
+            backgroundImage: 'linear-gradient(to right, rgb(16, 185, 129), rgb(52, 211, 153))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            color: 'transparent'
+          } : {
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             color: 'transparent'
-          } : {}}>
+          }}>
             / ${goalAmount.toFixed(0)}
           </span>
         </div>
@@ -389,18 +404,22 @@ export function PotOfGoldTracker() {
       {isGoalReached && (
         <div className={`relative z-10 p-4 rounded-2xl text-center text-base font-bold animate-pulse ${
           themeConfig.name === 'dark-neon'
-            ? 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-cyan-200 border-2 border-cyan-400/50 shadow-lg shadow-cyan-400/30'
+            ? 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border-2 border-cyan-400/50 shadow-lg shadow-cyan-400/30'
             : themeConfig.name === 'simple-light'
-            ? 'bg-emerald-200 text-emerald-900'
-            : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-cyan-300 border-2 border-cyan-400/50'
+            ? 'bg-gradient-to-r from-emerald-200 to-teal-200'
+            : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border-2 border-cyan-400/50'
         }`}
-        style={themeConfig.name !== 'simple-light' ? {
-          backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+        style={{
+          backgroundImage: themeConfig.name === 'simple-light' 
+            ? 'linear-gradient(to right, rgb(5, 150, 105), rgb(20, 184, 166))'
+            : themeConfig.name !== 'dark-neon'
+            ? 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))'
+            : 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
           color: 'transparent'
-        } : {}}>
+        }}>
           You found your pot of gold!
         </div>
       )}
