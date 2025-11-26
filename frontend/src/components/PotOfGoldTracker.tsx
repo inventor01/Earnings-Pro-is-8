@@ -224,25 +224,25 @@ export function PotOfGoldTracker() {
           <h3 className={`font-black text-2xl md:text-3xl mb-3 ${
             themeConfig.name === 'simple-light' ? 'text-purple-900' : 'text-cyan-300'
           }`}
-          style={{
+          style={themeConfig.name !== 'simple-light' ? {
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             color: 'transparent'
-          }}>
+          } : {}}>
             Monthly Profit Goal
           </h3>
           <p className={`text-sm md:text-base font-semibold ${
             themeConfig.name === 'simple-light' ? 'text-purple-700' : 'text-cyan-400'
           }`}
-          style={{
+          style={themeConfig.name !== 'simple-light' ? {
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             color: 'transparent'
-          }}>
+          } : {}}>
             {Math.round(progressPercent)}% to your monthly treasure
           </p>
         </div>
@@ -315,26 +315,28 @@ export function PotOfGoldTracker() {
           <span className={`text-4xl font-black ${
             themeConfig.name === 'simple-light' ? 'text-yellow-900' : 'text-yellow-300'
           }`}
-          style={{
+          style={themeConfig.name !== 'simple-light' ? {
             animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none',
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             color: 'transparent'
+          } : {
+            animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none'
           }}>
             ${currentProfit.toFixed(0)}
           </span>
           <span className={`text-base font-bold ${
             themeConfig.name === 'simple-light' ? 'text-yellow-700' : 'text-yellow-400'
           }`}
-          style={{
+          style={themeConfig.name !== 'simple-light' ? {
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             color: 'transparent'
-          }}>
+          } : {}}>
             / ${goalAmount.toFixed(0)}
           </span>
         </div>
@@ -351,13 +353,13 @@ export function PotOfGoldTracker() {
             ? 'bg-purple-300 text-purple-900'
             : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-cyan-300 border-2 border-cyan-400/50'
         }`}
-        style={{
+        style={themeConfig.name !== 'simple-light' ? {
           backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
           color: 'transparent'
-        }}>
+        } : {}}>
           You found your pot of gold!
         </div>
       )}
@@ -366,13 +368,13 @@ export function PotOfGoldTracker() {
       <div className={`relative z-10 text-sm text-center mt-6 opacity-70 transition-all group-hover:opacity-100 ${
         themeConfig.name === 'simple-light' ? 'text-purple-700' : 'text-cyan-300'
       }`}
-      style={{
+      style={themeConfig.name !== 'simple-light' ? {
         backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
         backgroundClip: 'text',
         color: 'transparent'
-      }}>
+      } : {}}>
         Click the coin to celebrate • Click to edit your goal
       </div>
 
@@ -380,8 +382,10 @@ export function PotOfGoldTracker() {
       <div className="absolute bottom-4 right-4 z-20">
         <button
           onClick={() => setIsHidden(true)}
-          className="text-xl font-bold hover:opacity-60 transition-opacity"
-          style={{
+          className={`text-xl font-bold hover:opacity-60 transition-opacity ${
+            themeConfig.name === 'simple-light' ? 'text-purple-600' : ''
+          }`}
+          style={themeConfig.name !== 'simple-light' ? {
             background: 'none',
             border: 'none',
             cursor: 'pointer',
@@ -391,6 +395,11 @@ export function PotOfGoldTracker() {
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             color: 'transparent'
+          } : {
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '0'
           }}
         >
           −
