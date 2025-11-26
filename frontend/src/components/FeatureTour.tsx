@@ -368,7 +368,7 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
 
       {/* Tooltip - Always mobile-optimized */}
       <div
-        className={`fixed z-50 rounded-lg shadow-2xl ${
+        className={`fixed z-50 rounded-lg shadow-2xl overflow-auto ${
           themeConfig.name === 'dark-neon'
             ? 'bg-slate-900 border border-cyan-400 text-white'
             : themeConfig.name === 'simple-light'
@@ -380,8 +380,11 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
           width: window.innerWidth < 360 ? 'calc(100vw - 1rem)' : 
                  window.innerWidth < 480 ? 'calc(100vw - 2rem)' : 
                  'auto',
-          maxWidth: window.innerWidth < 480 ? '280px' : '320px',
+          maxWidth: window.innerWidth < 480 ? 'calc(100vw - 1rem)' : '320px',
+          maxHeight: 'calc(100vh - 100px)',
           padding: window.innerWidth < 360 ? '0.625rem' : window.innerWidth < 480 ? '0.75rem' : '1rem',
+          top: tooltipStyle.top ? Math.max(8, parseInt(tooltipStyle.top as string)) : 0,
+          left: tooltipStyle.left ? Math.max(8, Math.min(parseInt(tooltipStyle.left as string), window.innerWidth - 288)) : 0,
         }}
       >
         <h3 className={`font-bold mb-1 line-clamp-2 ${
