@@ -596,10 +596,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     : 'min-h-screen bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950 flex flex-col';
 
   const contentClass = config.name === 'simple-light'
-    ? 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-gray-50 via-gray-100 to-white'
+    ? 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-2 md:py-3 pb-24 w-full bg-gradient-to-b from-gray-50 via-gray-100 to-white'
     : config.name === 'bw-neon'
-    ? 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-black via-gray-900 to-black'
-    : 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950';
+    ? 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-2 md:py-3 pb-24 w-full bg-gradient-to-b from-black via-gray-900 to-black'
+    : 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-2 md:py-3 pb-24 w-full bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950';
 
   return (
     <div className={dashboardClass}>
@@ -729,11 +729,11 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         </div>
 
-        <div className="mb-3 md:mb-6 overflow-x-auto" data-tour="periods">
+        <div className="mb-2 md:mb-3 overflow-x-auto" data-tour="periods">
           <PeriodChips selected={period} onSelect={setPeriod} />
         </div>
 
-        <div className="mb-4 md:mb-6" data-tour="search">
+        <div className="mb-3 md:mb-4" data-tour="search">
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
             isDarkTheme
               ? 'bg-slate-800 border-slate-700 focus-within:border-cyan-400'
@@ -795,7 +795,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         )}
 
         {/* Dashboard Grid - Everything in One View */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5 mb-2 md:mb-4">
           {/* Left Column - Performance Overview */}
           <div className="lg:col-span-2 space-y-4 md:space-y-6 scroll-smooth" data-tour="performance">
             {/* Performance Overview Header with Toggle */}
