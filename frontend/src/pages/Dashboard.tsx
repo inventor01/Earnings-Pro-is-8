@@ -110,7 +110,7 @@ export function Dashboard() {
     return !hasCompletedOnboarding;
   });
   const [onboardingStep, setOnboardingStep] = useState(0);
-  const [showFeatureTour, setShowFeatureTour] = useState(() => {
+  const [showFeatureTour] = useState(() => {
     const hasCompletedTour = localStorage.getItem('hasCompletedFeatureTour');
     return !hasCompletedTour;
   });
@@ -120,15 +120,6 @@ export function Dashboard() {
     setOnboardingStep(0);
     localStorage.setItem('hasCompletedOnboarding', 'true');
   };
-
-  const _handleOnboardingStepChange = (step: number) => {
-    setOnboardingStep(step);
-  };
-
-  // During onboarding: hide goal banner, show calculator at step 6, show form from step 7
-  const _isOnboardingCalculatorStep = showOnboarding && onboardingStep === 6;
-  const _isOnboardingFormStep = showOnboarding && onboardingStep >= 7;
-  const _isOnboardingActive = showOnboarding && onboardingStep < 6;
 
   const handleMetricVisibilityChange = (visibility: Partial<MetricVisibility>) => {
     setMetricVisibility(visibility);

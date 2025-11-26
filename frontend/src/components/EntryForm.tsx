@@ -26,7 +26,7 @@ export interface EntryFormData {
   time: string;
 }
 
-export function EntryForm({ onTypeChange, formData, onFormDataChange, period = 'today', dayOffset = 0, _isEditing = false, showExtraInfo = true }: EntryFormProps) {
+export function EntryForm({ onTypeChange, formData, onFormDataChange, period = 'today', dayOffset = 0, isEditing = false, showExtraInfo = true }: EntryFormProps) {
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const isExpense = formData.type === 'EXPENSE';
   const isOrder = formData.type === 'ORDER' || formData.type === 'CANCELLATION';
