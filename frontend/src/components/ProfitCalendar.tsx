@@ -30,7 +30,16 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
       // Try to get date from entry - check multiple possible fields
       let dateStr = '';
       
-      if (entry.created_at && typeof entry.created_at === 'string') {
+      if (entry.timestamp && typeof entry.timestamp === 'string') {
+        try {
+          dateStr = getESTDateString(entry.timestamp);
+        } catch (e) {
+          console.error('Failed to parse timestamp:', entry.timestamp, e);
+        }
+      }
+      
+      // Try created_at as fallback
+      if (!dateStr && entry.created_at && typeof entry.created_at === 'string') {
         try {
           dateStr = getESTDateString(entry.created_at);
         } catch (e) {
@@ -38,7 +47,7 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
         }
       }
       
-      // Try date field as fallback
+      // Try date field as last fallback
       if (!dateStr && entry.date && typeof entry.date === 'string') {
         // Assume date is already in YYYY-MM-DD format or similar
         dateStr = entry.date.substring(0, 10);
@@ -46,12 +55,12 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
       
       if (!dateStr) return;
       
-      // Parse amount - ensure it's a number
+      // Parse amount - ensure it's a number and properly rounded
       let amount = 0;
       if (typeof entry.amount === 'number') {
-        amount = entry.amount;
+        amount = Math.round(entry.amount * 100) / 100; // Round to 2 decimals
       } else if (typeof entry.amount === 'string') {
-        amount = parseFloat(entry.amount) || 0;
+        amount = Math.round(parseFloat(entry.amount) * 100) / 100 || 0;
       }
       
       // Initialize day data if needed
@@ -62,13 +71,13 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
       // Backend stores expenses as negative amounts
       // Match backend logic: profit = total_amount, revenue = positive amounts, expenses = abs(negative amounts)
       if (amount > 0) {
-        dailyData[dateStr].revenue += amount;
+        dailyData[dateStr].revenue = Math.round((dailyData[dateStr].revenue + amount) * 100) / 100;
       } else if (amount < 0) {
-        dailyData[dateStr].expenses += Math.abs(amount);
+        dailyData[dateStr].expenses = Math.round((dailyData[dateStr].expenses + Math.abs(amount)) * 100) / 100;
       }
       
       // Profit is the sum of all amounts (positive revenue + negative expenses)
-      dailyData[dateStr].profit += amount;
+      dailyData[dateStr].profit = Math.round((dailyData[dateStr].profit + amount) * 100) / 100;
     });
 
     // Build calendar grid
