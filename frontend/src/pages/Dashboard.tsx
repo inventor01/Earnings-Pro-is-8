@@ -342,6 +342,12 @@ export function Dashboard() {
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum === 0) {
       setToast({ message: 'Please enter a valid amount', type: 'error' });
+      // Reset from mileage calculator when user exits with 0 amount
+      setFormData(prev => ({
+        ...prev,
+        distance_miles: '',
+      }));
+      setMode('add');
       return;
     }
 
@@ -498,6 +504,12 @@ export function Dashboard() {
   const handleCancelEdit = () => {
     setEditingEntry(null);
     setAmount('0');
+    // Reset from mileage calculator to expense/revenue calculator
+    setFormData(prev => ({
+      ...prev,
+      distance_miles: '',
+    }));
+    setMode('add');
   };
 
   const handleToggleGoalBanner = () => {
