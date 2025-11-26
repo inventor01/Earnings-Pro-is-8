@@ -84,6 +84,15 @@ export function FeatureTour() {
         setIsHighlighting(true);
         const rect = element.getBoundingClientRect();
         setHighlightBox(rect);
+        
+        // For KPI container, scroll the first child into view to show the cards
+        if (step.id === 'kpis') {
+          const firstChild = element.querySelector('[class*="flex-shrink"]') as HTMLElement;
+          if (firstChild) {
+            firstChild.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'start' });
+          }
+        }
+        
         element.scrollIntoView({ behavior: 'auto', block: 'center' });
         
         // Calculate tooltip position with viewport awareness

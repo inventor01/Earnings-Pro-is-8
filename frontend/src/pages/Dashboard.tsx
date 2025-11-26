@@ -13,7 +13,6 @@ import { Toast } from '../components/Toast';
 import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
 import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
-import { OnboardingTour } from '../components/OnboardingTour';
 import { FeatureTour } from '../components/FeatureTour';
 import { PointsCard } from '../components/PointsCard';
 import { ShareCard } from '../components/ShareCard';
@@ -105,21 +104,10 @@ export function Dashboard() {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding');
-    return !hasCompletedOnboarding;
-  });
-  const [onboardingStep, setOnboardingStep] = useState(0);
   const [showFeatureTour] = useState(() => {
     const hasCompletedTour = localStorage.getItem('hasCompletedFeatureTour');
     return !hasCompletedTour;
   });
-
-  const handleCompleteOnboarding = () => {
-    setShowOnboarding(false);
-    setOnboardingStep(0);
-    localStorage.setItem('hasCompletedOnboarding', 'true');
-  };
 
   const handleMetricVisibilityChange = (visibility: Partial<MetricVisibility>) => {
     setMetricVisibility(visibility);
@@ -1060,14 +1048,8 @@ export function Dashboard() {
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* Onboarding Tour for First-Time Users */}
-      <OnboardingTour 
-        isOpen={showOnboarding} 
-        onComplete={handleCompleteOnboarding}
-      />
-
-      {/* Feature Tour - Shows after onboarding */}
-      {showFeatureTour && !showOnboarding && <FeatureTour />}
+      {/* Feature Tour - Interactive tour guide */}
+      {showFeatureTour && <FeatureTour />}
     </div>
   );
 }
