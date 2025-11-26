@@ -148,10 +148,10 @@ export function PotOfGoldTracker() {
     <div 
       className={`rounded-3xl p-8 md:p-10 border-2 transition-all cursor-pointer group relative overflow-hidden ${
         themeConfig.name === 'dark-neon'
-          ? 'bg-gradient-to-br from-yellow-900/40 via-orange-900/30 to-yellow-900/20 border-yellow-500/50 hover:border-yellow-400/80 hover:from-yellow-900/60 hover:via-orange-900/50 hover:to-yellow-900/40 shadow-lg hover:shadow-yellow-400/30'
+          ? 'bg-gradient-to-br from-slate-900 via-blue-900/40 to-purple-900/30 border-blue-400/50 hover:border-blue-300/80 hover:from-slate-800 hover:via-blue-900/60 hover:to-purple-900/50 shadow-lg hover:shadow-blue-400/40'
           : themeConfig.name === 'simple-light'
-          ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 border-yellow-300 hover:border-yellow-400'
-          : 'bg-gradient-to-br from-black via-gray-900 to-black border-yellow-500/60 hover:border-yellow-400'
+          ? 'bg-gradient-to-br from-blue-100 via-purple-50 to-blue-100 border-blue-300 hover:border-blue-400'
+          : 'bg-gradient-to-br from-slate-950 via-blue-900 to-purple-900 border-blue-400/60 hover:border-blue-300'
       }`}
       onClick={() => {
         handleEditClick();
@@ -161,6 +161,23 @@ export function PotOfGoldTracker() {
         animation: themeConfig.name === 'dark-neon' ? 'pot-glow 3s ease-in-out infinite' : 'none'
       }}
     >
+      {/* Starfield background */}
+      <div className="absolute inset-0 pointer-events-none">
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={`star-${i}`}
+            className="absolute bg-white rounded-full opacity-40"
+            style={{
+              width: Math.random() * 1.5 + 0.5 + 'px',
+              height: Math.random() * 1.5 + 0.5 + 'px',
+              left: Math.random() * 100 + '%',
+              top: Math.random() * 100 + '%',
+              animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+            }}
+          />
+        ))}
+      </div>
+
       {/* Floating coins animation */}
       <div className="absolute inset-0 pointer-events-none">
         {floatingCoins.map((coinId, idx) => (
@@ -183,24 +200,25 @@ export function PotOfGoldTracker() {
       <div className="relative z-10 flex items-start justify-between mb-6 gap-4">
         <div>
           <h3 className={`font-black text-xl md:text-2xl mb-2 ${
-            themeConfig.name === 'simple-light' ? 'text-yellow-900' : 'text-yellow-300'
+            themeConfig.name === 'simple-light' ? 'text-blue-900' : 'text-blue-200'
           }`}>
-            🍀 Monthly Pot of Gold
+            🌙 Lunar Gold Quest
           </h3>
           <p className={`text-sm font-semibold ${
-            themeConfig.name === 'simple-light' ? 'text-yellow-700' : 'text-yellow-400'
+            themeConfig.name === 'simple-light' ? 'text-blue-700' : 'text-blue-300'
           }`}>
-            {Math.round(progressPercent)}% to your monthly treasure
+            {Math.round(progressPercent)}% to starlight treasure
           </p>
         </div>
         <div 
           onClick={triggerCoins}
           className="text-5xl cursor-pointer hover:scale-110 transition-transform"
           style={{
-            animation: 'pulse-gold 1.5s ease-in-out infinite'
+            animation: 'pulse-gold 1.5s ease-in-out infinite',
+            filter: 'drop-shadow(0 0 8px rgba(96, 165, 250, 0.6))'
           }}
         >
-          🪙
+          🌙
         </div>
       </div>
 
@@ -233,16 +251,16 @@ export function PotOfGoldTracker() {
       {/* Progress bar with glow */}
       <div className={`relative z-10 h-4 rounded-full overflow-hidden mb-5 border border-opacity-50 ${
         themeConfig.name === 'dark-neon'
-          ? 'bg-yellow-900/60 border-yellow-500/30'
+          ? 'bg-slate-800/60 border-blue-400/40'
           : themeConfig.name === 'simple-light'
-          ? 'bg-yellow-200 border-yellow-300'
-          : 'bg-gray-800 border-yellow-500/30'
+          ? 'bg-blue-200 border-blue-300'
+          : 'bg-slate-900/60 border-blue-400/40'
       }`}>
         <div
           className={`h-full transition-all duration-700 rounded-full ${
             themeConfig.name === 'dark-neon'
-              ? 'bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 shadow-lg shadow-yellow-400/60'
-              : 'bg-gradient-to-r from-yellow-400 via-orange-400 to-orange-500'
+              ? 'bg-gradient-to-r from-blue-300 via-cyan-400 to-blue-500 shadow-lg shadow-blue-400/60'
+              : 'bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-400'
           }`}
           style={{ 
             width: `${progressPercent}%`,
@@ -255,7 +273,7 @@ export function PotOfGoldTracker() {
       <div className="relative z-10 flex items-center justify-between mb-4 gap-2">
         <div className="flex items-baseline gap-3">
           <span className={`text-4xl font-black ${
-            themeConfig.name === 'simple-light' ? 'text-yellow-900' : 'text-yellow-300'
+            themeConfig.name === 'simple-light' ? 'text-blue-900' : 'text-blue-200'
           }`}
           style={{
             animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none'
@@ -263,7 +281,7 @@ export function PotOfGoldTracker() {
             ${currentProfit.toFixed(0)}
           </span>
           <span className={`text-base font-bold ${
-            themeConfig.name === 'simple-light' ? 'text-yellow-700' : 'text-yellow-400'
+            themeConfig.name === 'simple-light' ? 'text-blue-700' : 'text-blue-300'
           }`}>
             / ${goalAmount.toFixed(0)}
           </span>
@@ -282,20 +300,20 @@ export function PotOfGoldTracker() {
       {isGoalReached && (
         <div className={`relative z-10 p-3 rounded-2xl text-center text-sm font-bold animate-pulse ${
           themeConfig.name === 'dark-neon'
-            ? 'bg-gradient-to-r from-yellow-500/30 to-orange-500/30 text-yellow-200 border border-yellow-400/50'
+            ? 'bg-gradient-to-r from-blue-500/30 to-cyan-500/30 text-blue-200 border border-blue-400/50 shadow-lg shadow-blue-400/20'
             : themeConfig.name === 'simple-light'
-            ? 'bg-yellow-300 text-yellow-900'
-            : 'bg-gradient-to-r from-yellow-500/30 to-orange-500/30 text-yellow-300 border border-yellow-400/50'
+            ? 'bg-blue-300 text-blue-900'
+            : 'bg-gradient-to-r from-blue-500/30 to-cyan-500/30 text-blue-200 border border-blue-400/50'
         }`}>
-          ✨ You found your pot of gold! 🍀 ✨
+          ✨ Lunar treasure unlocked! 🌙 ✨
         </div>
       )}
 
       {/* Hint text */}
       <div className={`relative z-10 text-xs text-center mt-3 opacity-60 transition-all group-hover:opacity-100 ${
-        themeConfig.name === 'simple-light' ? 'text-yellow-700' : 'text-yellow-400'
+        themeConfig.name === 'simple-light' ? 'text-blue-700' : 'text-blue-300'
       }`}>
-        Click to set or edit your goal
+        Click the moon to celebrate • Click to edit your goal
       </div>
     </div>
   );
