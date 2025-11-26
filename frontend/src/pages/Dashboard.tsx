@@ -19,6 +19,7 @@ import { ShareCard } from '../components/ShareCard';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { Achievements } from '../components/Achievements';
 import { AchievementsModal } from '../components/AchievementsModal';
+import { ProfitCalendar } from '../components/ProfitCalendar';
 import { useTheme } from '../lib/themeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
@@ -95,6 +96,7 @@ export function Dashboard() {
   
   const [showNegativeAlert, setShowNegativeAlert] = useState(true);
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   
   const [metricVisibility, setMetricVisibility] = useState<Partial<MetricVisibility>>(() => {
     const saved = localStorage.getItem('metricVisibility');
@@ -801,6 +803,30 @@ export function Dashboard() {
             monthlyGoal={monthlyGoal}
             onClose={() => setShowAchievementsModal(false)}
           />
+        )}
+
+        {/* Profit Calendar Toggle */}
+        <div className="mb-6 flex items-center justify-center">
+          <button
+            onClick={() => setShowCalendar(!showCalendar)}
+            className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center gap-2 ${
+              isDarkTheme
+                ? showCalendar
+                  ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-400'
+                  : 'bg-slate-800 text-slate-400 border border-slate-700 hover:border-cyan-400'
+                : showCalendar
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300'
+            }`}
+          >
+            📅 {showCalendar ? 'Hide' : 'Show'} Calendar
+          </button>
+        </div>
+
+        {showCalendar && (
+          <div className="mb-8 max-w-md mx-auto">
+            <ProfitCalendar entries={entries} />
+          </div>
         )}
 
         <div>
