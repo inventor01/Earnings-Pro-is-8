@@ -13,12 +13,17 @@ client = OpenAI(
 def get_ai_suggestions(
     db: Session,
     from_date: Optional[datetime] = None,
-    to_date: Optional[datetime] = None
+    to_date: Optional[datetime] = None,
+    user_id: Optional[str] = None
 ) -> dict:
     """Generate AI suggestions for earning optimization based on recent data"""
     
-    # Fetch recent entries
-    query = db.query(Entry)
+    # Fetch recent entries - use default user if no user_id provided
+    from backend.auth import DEFAULT_USER_ID
+    if not user_id:
+        user_id = DEFAULT_USER_ID
+    
+    query = db.query(Entry).filter(Entry.user_id == user_id)
     if from_date:
         query = query.filter(Entry.timestamp >= from_date)
     if to_date:
