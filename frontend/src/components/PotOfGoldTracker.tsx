@@ -24,8 +24,8 @@ export function PotOfGoldTracker() {
     },
   });
 
-  const currentProfit = Math.max(0, parseFloat(monthlyData?.profit) || 0);
-  const goalAmount = parseFloat(monthlyGoal?.target_profit) || 0;
+  const currentProfit = Math.max(0, parseFloat(monthlyData?.profit as string) || 0);
+  const goalAmount = parseFloat(monthlyGoal?.target_profit as string) || 0;
   
   if (goalAmount === 0) return null;
   
@@ -109,7 +109,7 @@ export function PotOfGoldTracker() {
             <p className={`text-sm font-medium animate-pulse ${
               themeConfig.name === 'simple-light' ? 'text-red-600' : 'text-red-400'
             }`}>
-              ⚠️ {error}
+              {error}
             </p>
           )}
           <div className="flex gap-2 pt-2">
@@ -124,7 +124,7 @@ export function PotOfGoldTracker() {
                   : 'bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black disabled:opacity-50 shadow-lg'
               }`}
             >
-              {isSaving ? '💾 Saving...' : '✨ Save Goal'}
+              {isSaving ? 'Saving...' : 'Save Goal'}
             </button>
             <button
               onClick={handleCancel}
@@ -202,7 +202,7 @@ export function PotOfGoldTracker() {
           <h3 className={`font-black text-2xl md:text-3xl mb-3 ${
             themeConfig.name === 'simple-light' ? 'text-purple-900' : 'text-cyan-300'
           }`}>
-            🍀 Monthly Pot of Gold
+            Monthly Pot of Gold
           </h3>
           <p className={`text-sm md:text-base font-semibold ${
             themeConfig.name === 'simple-light' ? 'text-purple-700' : 'text-cyan-400'
@@ -224,9 +224,6 @@ export function PotOfGoldTracker() {
 
       {/* Cosmic decorations */}
       <div className="relative z-10 flex justify-between items-center mb-8 opacity-80">
-        <span className="text-3xl">✨</span>
-        <span className="text-3xl">🌟</span>
-        <span className="text-3xl">✨</span>
       </div>
 
       {/* Rainbow bridge effect */}
@@ -294,9 +291,6 @@ export function PotOfGoldTracker() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {isGoalReached && (
-            <div className="text-3xl animate-bounce">🏆</div>
-          )}
         </div>
       </div>
 
@@ -309,7 +303,7 @@ export function PotOfGoldTracker() {
             ? 'bg-purple-300 text-purple-900'
             : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-cyan-300 border-2 border-cyan-400/50'
         }`}>
-          You found your pot of gold! 🍀
+          You found your pot of gold!
         </div>
       )}
 
