@@ -39,40 +39,47 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
 
     // Allow any date for new entries and editing - no constraints
     // This ensures entries can be saved to any date regardless of current period view
+    // For new entries, always default to today (never respect dayOffset)
     let defaultDate;
 
-    switch (period) {
-      case 'today': {
-        const date = new Date();
-        date.setDate(date.getDate() + dayOffset);
-        defaultDate = formatDate(date);
-        break;
+    if (isEditing) {
+      // When editing, use the period/dayOffset logic
+      switch (period) {
+        case 'today': {
+          const date = new Date();
+          date.setDate(date.getDate() + dayOffset);
+          defaultDate = formatDate(date);
+          break;
+        }
+        case 'yesterday': {
+          const date = new Date();
+          date.setDate(date.getDate() - 1);
+          defaultDate = formatDate(date);
+          break;
+        }
+        case 'week': {
+          defaultDate = formatDate(now);
+          break;
+        }
+        case 'last7': {
+          defaultDate = formatDate(now);
+          break;
+        }
+        case 'month': {
+          defaultDate = formatDate(now);
+          break;
+        }
+        case 'lastMonth': {
+          const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+          defaultDate = formatDate(lastMonthEnd);
+          break;
+        }
+        default:
+          defaultDate = formatDate(now);
       }
-      case 'yesterday': {
-        const date = new Date();
-        date.setDate(date.getDate() - 1);
-        defaultDate = formatDate(date);
-        break;
-      }
-      case 'week': {
-        defaultDate = formatDate(now);
-        break;
-      }
-      case 'last7': {
-        defaultDate = formatDate(now);
-        break;
-      }
-      case 'month': {
-        defaultDate = formatDate(now);
-        break;
-      }
-      case 'lastMonth': {
-        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-        defaultDate = formatDate(lastMonthEnd);
-        break;
-      }
-      default:
-        defaultDate = formatDate(now);
+    } else {
+      // For new entries, always use today's date
+      defaultDate = formatDate(now);
     }
 
     return { minDate: '', maxDate: '', defaultDate };
