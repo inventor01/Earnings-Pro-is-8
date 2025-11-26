@@ -795,17 +795,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Achievements Modal */}
-        {showAchievementsModal && (
-          <AchievementsModal 
-            entries={entries} 
-            rollup={rollup} 
-            monthlyGoal={monthlyGoal}
-            onClose={() => setShowAchievementsModal(false)}
-          />
-        )}
-
-        {/* Profit Calendar Toggle */}
+        {/* Profit Calendar Toggle and Display */}
         <div className="mb-6 flex items-center justify-center">
           <button
             onClick={() => setShowCalendar(!showCalendar)}
@@ -824,9 +814,19 @@ export function Dashboard() {
         </div>
 
         {showCalendar && (
-          <div className="mb-8 max-w-md mx-auto">
+          <div className="mb-8 max-w-2xl mx-auto">
             <ProfitCalendar entries={entries} />
           </div>
+        )}
+
+        {/* Achievements Modal */}
+        {showAchievementsModal && (
+          <AchievementsModal 
+            entries={entries} 
+            rollup={rollup} 
+            monthlyGoal={monthlyGoal}
+            onClose={() => setShowAchievementsModal(false)}
+          />
         )}
 
         <div>
