@@ -256,9 +256,11 @@ export function SummaryCard({
             <button
               onClick={onShare}
               className={`px-6 py-2.5 rounded-lg transition-all font-bold text-sm md:text-base ${
-                isDarkTheme
-                  ? 'bg-gradient-to-r from-purple-900 to-purple-800 text-purple-300 hover:from-purple-800 hover:to-purple-700 hover:shadow-lg hover:shadow-purple-500/30'
-                  : 'bg-purple-500 text-white hover:bg-purple-600'
+                themeConfig.name === 'dark-neon'
+                  ? 'bg-gradient-to-r from-cyan-900 to-blue-900 text-cyan-300 hover:from-cyan-800 hover:to-blue-800 hover:shadow-lg hover:shadow-cyan-500/30 border border-cyan-500/30'
+                  : themeConfig.name === 'simple-light'
+                  ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 hover:from-blue-200 hover:to-blue-100 border border-blue-200 shadow-sm hover:shadow-md'
+                  : 'bg-gradient-to-r from-white to-gray-100 text-black border-2 border-white hover:from-gray-50 hover:to-gray-100 hover:shadow-lg hover:shadow-white/50'
               }`}
               title="Share performance"
             >
