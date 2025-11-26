@@ -144,7 +144,7 @@ export function SummaryCard({
           </div>
           
           <div className="space-y-1">
-            <div className={`text-2xl md:text-3xl font-black font-mono transition-all duration-300 group-hover/card:scale-105 cursor-pointer leading-tight ${
+            <div className={`text-4xl md:text-6xl font-black font-mono transition-all duration-300 group-hover/card:scale-105 cursor-pointer leading-tight ${
               isNegative ? 'text-red-500' : secondary
             }`}
             style={isNegative ? {
