@@ -82,21 +82,35 @@ export function FeatureTour() {
       const element = document.querySelector(step.selector);
       if (element) {
         setIsHighlighting(true);
-        const rect = element.getBoundingClientRect();
-        setHighlightBox(rect);
         
-        // For KPI container, scroll the first child into view to show the cards
+        // For KPI container, highlight only the first card on mobile
         if (step.id === 'kpis') {
-          const firstChild = element.querySelector('[class*="flex-shrink"]') as HTMLElement;
-          if (firstChild) {
-            firstChild.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'start' });
+          const container = element.querySelector('.flex') as HTMLElement;
+          const firstCard = element.querySelector('[class*="flex-shrink"]') as HTMLElement;
+          
+          if (container && firstCard) {
+            // Scroll the first card into view
+            container.scrollLeft = 0;
+            
+            // Get the first card's position
+            const rect = firstCard.getBoundingClientRect();
+            setHighlightBox(rect);
+            
+            // Scroll the container into view
+            element.scrollIntoView({ behavior: 'auto', block: 'center' });
+            calculateTooltipPosition(rect);
+          } else {
+            const rect = element.getBoundingClientRect();
+            setHighlightBox(rect);
+            element.scrollIntoView({ behavior: 'auto', block: 'center' });
+            calculateTooltipPosition(rect);
           }
+        } else {
+          const rect = element.getBoundingClientRect();
+          setHighlightBox(rect);
+          element.scrollIntoView({ behavior: 'auto', block: 'center' });
+          calculateTooltipPosition(rect);
         }
-        
-        element.scrollIntoView({ behavior: 'auto', block: 'center' });
-        
-        // Calculate tooltip position with viewport awareness
-        calculateTooltipPosition(rect);
       }
     } else {
       setIsHighlighting(false);
