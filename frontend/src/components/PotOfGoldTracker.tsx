@@ -194,7 +194,8 @@ export function PotOfGoldTracker() {
           </p>
         </div>
         <div 
-          className="text-5xl animate-pulse"
+          onClick={triggerCoins}
+          className="text-5xl animate-pulse cursor-pointer hover:scale-110 transition-transform"
           style={{
             animation: 'pulse-gold 1.5s ease-in-out infinite'
           }}
