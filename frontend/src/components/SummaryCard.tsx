@@ -255,16 +255,16 @@ export function SummaryCard({
           <div className="mt-6 flex justify-center">
             <button
               onClick={onShare}
-              className={`px-6 py-2.5 rounded-lg transition-all font-bold text-sm md:text-base ${
+              className={`px-2 py-1 rounded transition-all text-xs md:text-sm opacity-70 hover:opacity-100 ${
                 themeConfig.name === 'dark-neon'
-                  ? 'bg-gradient-to-r from-cyan-900 to-blue-900 text-cyan-300 hover:from-cyan-800 hover:to-blue-800 hover:shadow-lg hover:shadow-cyan-500/30 border border-cyan-500/30'
+                  ? 'text-cyan-400 hover:text-cyan-300'
                   : themeConfig.name === 'simple-light'
-                  ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 hover:from-blue-200 hover:to-blue-100 border border-blue-200 shadow-sm hover:shadow-md'
-                  : 'bg-gradient-to-r from-white to-gray-100 text-black border-2 border-white hover:from-gray-50 hover:to-gray-100 hover:shadow-lg hover:shadow-white/50'
+                  ? 'text-blue-600 hover:text-blue-700'
+                  : 'text-gray-600 hover:text-black'
               }`}
               title="Share performance"
             >
-              🔗 Share Performance
+              🔗 Share
             </button>
           </div>
         )}
