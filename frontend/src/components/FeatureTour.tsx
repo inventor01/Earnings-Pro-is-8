@@ -377,14 +377,15 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
         }`}
         style={{
           ...tooltipStyle,
-          width: window.innerWidth < 360 ? 'calc(100vw - 1rem)' : 
-                 window.innerWidth < 480 ? 'calc(100vw - 2rem)' : 
+          width: window.innerWidth < 360 ? 'calc(100vw - 0.5rem)' : 
+                 window.innerWidth < 480 ? 'calc(100vw - 1rem)' : 
                  'auto',
-          maxWidth: window.innerWidth < 480 ? 'calc(100vw - 1rem)' : '320px',
-          maxHeight: 'calc(100vh - 100px)',
-          padding: window.innerWidth < 360 ? '0.625rem' : window.innerWidth < 480 ? '0.75rem' : '1rem',
-          top: tooltipStyle.top ? Math.max(8, parseInt(tooltipStyle.top as string)) : 0,
-          left: tooltipStyle.left ? Math.max(8, Math.min(parseInt(tooltipStyle.left as string), window.innerWidth - 288)) : 0,
+          maxWidth: window.innerWidth < 360 ? 'calc(100vw - 0.5rem)' :
+                   window.innerWidth < 480 ? 'calc(100vw - 1rem)' : '360px',
+          maxHeight: window.innerWidth < 768 ? 'calc(100vh - 80px)' : 'calc(100vh - 100px)',
+          padding: window.innerWidth < 360 ? '1rem' : window.innerWidth < 480 ? '1rem' : '1.25rem',
+          top: tooltipStyle.top ? Math.max(12, parseInt(tooltipStyle.top as string)) : 12,
+          left: tooltipStyle.left ? Math.max(4, Math.min(parseInt(tooltipStyle.left as string), window.innerWidth - (window.innerWidth < 360 ? 100 : window.innerWidth < 480 ? 140 : 200))) : 4,
         }}
       >
         <h3 className={`font-bold mb-1 line-clamp-2 ${
