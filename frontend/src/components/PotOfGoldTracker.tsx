@@ -377,9 +377,7 @@ export function PotOfGoldTracker() {
       </div>
 
       {/* Hide button */}
-      <div className="relative z-10 mt-8 pt-6 border-t border-opacity-30" style={{
-        borderColor: themeConfig.name === 'simple-light' ? 'rgb(192, 132, 250)' : 'rgba(34, 211, 238, 0.2)'
-      }}>
+      <div className="relative z-10 mt-8 flex justify-center">
         <button
           onClick={() => setIsHidden(true)}
           className={`px-3 py-1 text-xs rounded font-semibold transition-all duration-200 ${
