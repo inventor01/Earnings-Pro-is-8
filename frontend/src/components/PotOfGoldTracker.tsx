@@ -172,7 +172,7 @@ export function PotOfGoldTracker() {
 
   return (
     <div 
-      className={`rounded-3xl p-8 md:p-12 border-2 transition-all group relative min-h-96 md:min-h-[28rem] ${
+      className={`rounded-2xl p-4 md:p-6 border-2 transition-all group relative min-h-auto ${
         themeConfig.name === 'dark-neon'
           ? 'bg-gradient-to-br from-purple-900/60 via-slate-900/50 to-blue-900/40 border-cyan-400/60 hover:border-cyan-300/80 hover:from-purple-900/80 hover:via-slate-900/70 hover:to-blue-900/60 shadow-2xl hover:shadow-cyan-400/40'
           : themeConfig.name === 'simple-light'
@@ -270,9 +270,9 @@ export function PotOfGoldTracker() {
       `}</style>
 
       {/* Header section */}
-      <div className="relative z-10 flex items-start justify-between mb-10 gap-6">
+      <div className="relative z-10 flex items-start justify-between mb-3 gap-3">
         <div className="cursor-pointer" onClick={handleEditClick}>
-          <h3 className={`font-black text-2xl md:text-3xl mb-3`}
+          <h3 className={`font-black text-lg md:text-xl mb-1`}
           style={themeConfig.name === 'simple-light' ? {
             backgroundImage: 'linear-gradient(to right, rgb(29, 78, 216), rgb(37, 99, 235))',
             WebkitBackgroundClip: 'text',
@@ -288,7 +288,7 @@ export function PotOfGoldTracker() {
           }}>
             Monthly Profit Goal
           </h3>
-          <p className={`text-sm md:text-base font-semibold`}
+          <p className={`text-xs md:text-sm font-semibold`}
           style={themeConfig.name === 'simple-light' ? {
             backgroundImage: 'linear-gradient(to right, rgb(37, 99, 235), rgb(59, 130, 246))',
             WebkitBackgroundClip: 'text',
@@ -307,7 +307,7 @@ export function PotOfGoldTracker() {
         </div>
         <div 
           onClick={triggerCoins}
-          className="text-7xl md:text-8xl cursor-pointer hover:scale-125 transition-transform"
+          className="text-5xl md:text-6xl cursor-pointer hover:scale-125 transition-transform"
           style={{
             animation: 'pulse-gold 1.5s ease-in-out infinite',
             filter: 'drop-shadow(0 0 10px rgba(34, 211, 238, 0.8))'
@@ -322,7 +322,7 @@ export function PotOfGoldTracker() {
       </div>
 
       {/* Rainbow bridge effect */}
-      <div className="relative z-10 mb-8 h-20 group/rainbow">
+      <div className="relative z-10 mb-3 h-12 group/rainbow">
         <div className="absolute inset-0 flex items-end justify-between gap-1.5 px-2">
           {[...Array(5)].map((_, i) => {
             const barFillPercent = (i + 1) / 5;
@@ -353,7 +353,7 @@ export function PotOfGoldTracker() {
       </div>
 
       {/* Progress bar with glow */}
-      <div className={`relative z-10 h-6 rounded-full overflow-hidden mb-8 border-2 border-opacity-50 ${
+      <div className={`relative z-10 h-4 rounded-full overflow-hidden mb-3 border-2 border-opacity-50 ${
         themeConfig.name === 'dark-neon'
           ? 'bg-slate-800/60 border-cyan-400/50'
           : themeConfig.name === 'simple-light'
@@ -376,7 +376,7 @@ export function PotOfGoldTracker() {
       </div>
 
       {/* Stats section */}
-      <div className="relative z-10 flex items-center justify-between mb-6 gap-4">
+      <div className="relative z-10 flex items-center justify-between mb-2 gap-2">
         <div className="flex items-baseline gap-3">
           <span className={`text-4xl font-black`}
           style={currentProfit < 0 ? {
