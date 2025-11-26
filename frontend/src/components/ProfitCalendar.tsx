@@ -241,7 +241,7 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
                   </div>
                   {dayData.hasData && (
                     <div className={`text-xs font-black ${textColor}`}>
-                      ${numericValue < 0 ? '-' : ''}${Math.abs(numericValue).toFixed(0)}
+                      {'$' + (numericValue < 0 ? '-' : '') + Math.abs(numericValue).toFixed(0)}
                     </div>
                   )}
                 </div>
