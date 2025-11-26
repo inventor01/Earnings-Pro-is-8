@@ -222,6 +222,11 @@ export function Dashboard() {
     ),
   });
 
+  const { data: monthlyEntries = [] } = useQuery({
+    queryKey: ['entries', 'THIS_MONTH'],
+    queryFn: () => api.getEntries('THIS_MONTH'),
+  });
+
   const { data: monthlyGoal } = useQuery({
     queryKey: ['goal', 'THIS_MONTH'],
     queryFn: () => api.getGoal('THIS_MONTH'),
@@ -819,7 +824,7 @@ export function Dashboard() {
 
                 {showCalendar && (
                   <div>
-                    <ProfitCalendar entries={entries} />
+                    <ProfitCalendar entries={monthlyEntries} />
                   </div>
                 )}
               </>

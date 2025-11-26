@@ -72,9 +72,9 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const getValue = (dayData: any) => {
-    if (metricView === 'profit') return dayData.profit;
-    if (metricView === 'revenue') return dayData.revenue;
-    return dayData.expenses;
+    if (metricView === 'profit') return dayData?.profit ?? 0;
+    if (metricView === 'revenue') return dayData?.revenue ?? 0;
+    return dayData?.expenses ?? 0;
   };
 
   const getColor = (value: number) => {
@@ -177,15 +177,16 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
       <div className="grid grid-cols-7 gap-2">
         {calendarData.days.map((dayData, idx) => {
           const value = dayData ? getValue(dayData) : 0;
+          const numValue = typeof value === 'number' ? value : 0;
           return (
             <div
               key={idx}
               className={`aspect-square rounded-lg flex items-center justify-center text-sm font-bold transition-all ${
                 dayData === null
                   ? ''
-                  : `${getColor(value)} ${isDarkTheme ? 'border border-slate-600' : 'border border-gray-300'} hover:scale-105 cursor-pointer`
+                  : `${getColor(numValue)} ${isDarkTheme ? 'border border-slate-600' : 'border border-gray-300'} hover:scale-105 cursor-pointer`
               }`}
-              title={dayData ? `${dayData.day}: $${value.toFixed(2)}` : ''}
+              title={dayData ? `${dayData.day}: $${numValue.toFixed(2)}` : ''}
             >
               {dayData && (
                 <div className="text-center">
@@ -193,8 +194,8 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
                     {dayData.day}
                   </div>
                   {dayData.hasData && (
-                    <div className={`text-xs font-black ${getTextColor(value)}`}>
-                      ${Math.abs(value).toFixed(0)}
+                    <div className={`text-xs font-black ${getTextColor(numValue)}`}>
+                      ${numValue < 0 ? '-' : ''}${Math.abs(numValue).toFixed(0)}
                     </div>
                   )}
                 </div>
