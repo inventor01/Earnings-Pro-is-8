@@ -25,7 +25,7 @@ export interface EntryFormData {
   time: string;
 }
 
-export function EntryForm({ onTypeChange, formData, onFormDataChange, period = 'today', dayOffset = 0, isEditing = false, showExtraInfo = true }: EntryFormProps) {
+export function EntryForm({ onTypeChange, formData, onFormDataChange, period = 'today', dayOffset = 0, _isEditing = false, showExtraInfo = true }: EntryFormProps) {
   const isExpense = formData.type === 'EXPENSE';
   const isOrder = formData.type === 'ORDER' || formData.type === 'CANCELLATION';
 
@@ -33,18 +33,6 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
   const getDateConstraints = () => {
     const now = new Date();
     const formatDate = (date: Date) => date.toISOString().split('T')[0];
-
-    const startOfDay = (date: Date) => {
-      const d = new Date(date);
-      d.setHours(0, 0, 0, 0);
-      return d;
-    };
-
-    const endOfDay = (date: Date) => {
-      const d = new Date(date);
-      d.setHours(23, 59, 59, 999);
-      return d;
-    };
 
     // Allow any date for new entries and editing - no constraints
     // This ensures entries can be saved to any date regardless of current period view
