@@ -12,10 +12,6 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
     setDisplay(value || '0');
   }, [value]);
 
-  useEffect(() => {
-    onValueChange(display);
-  }, [display, onValueChange]);
-
   const handleNumber = (num: string) => {
     setDisplay((prev) => {
       if (prev === '0') return num;
@@ -40,6 +36,11 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
     if (!display.includes('.')) {
       setDisplay((prev) => prev + '.');
     }
+  };
+
+  const handleSubmit = () => {
+    const num = parseFloat(display) || 0;
+    onValueChange(num.toString());
   };
 
   return (
