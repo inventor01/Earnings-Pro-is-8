@@ -88,34 +88,30 @@ export function ShareCard({
           <p className="text-gray-400 text-xs">{periodLabel} Performance</p>
         </div>
 
-        {/* Metrics Grid - Split Down Middle */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          {/* Left Column */}
-          <div className="space-y-2">
-            {/* Revenue */}
-            <div className="bg-gradient-to-br from-green-900/30 to-green-800/10 rounded-lg p-2 border border-green-500/30">
-              <p className="text-green-400 text-xs font-semibold mb-0.5">📈 REVENUE</p>
-              <p className="text-green-300 text-lg font-bold break-words">${revenue}</p>
-            </div>
-            {/* Profit */}
-            <div className="bg-gradient-to-br from-cyan-900/30 to-blue-800/10 rounded-lg p-2 border border-cyan-500/30">
-              <p className="text-cyan-400 text-xs font-semibold mb-0.5">💰 PROFIT</p>
-              <p className="text-cyan-300 text-lg font-bold break-words">${profit}</p>
-            </div>
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* Revenue */}
+          <div className="bg-gradient-to-br from-green-900/30 to-green-800/10 rounded-lg p-2 border border-green-500/30">
+            <p className="text-green-400 text-xs font-semibold mb-0.5">📈 REVENUE</p>
+            <p className="text-green-300 text-lg font-bold break-words">${revenue}</p>
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-2">
-            {/* Expenses */}
-            <div className="bg-gradient-to-br from-red-900/30 to-red-800/10 rounded-lg p-2 border border-red-500/30">
-              <p className="text-red-400 text-xs font-semibold mb-0.5">💸 EXPENSES</p>
-              <p className="text-red-300 text-lg font-bold break-words">${expenses}</p>
-            </div>
-            {/* Miles */}
-            <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/10 rounded-lg p-2 border border-orange-500/30">
-              <p className="text-orange-400 text-xs font-semibold mb-0.5">🛣️ MILES</p>
-              <p className="text-orange-300 text-lg font-bold break-words">{miles}</p>
-            </div>
+          {/* Expenses */}
+          <div className="bg-gradient-to-br from-red-900/30 to-red-800/10 rounded-lg p-2 border border-red-500/30">
+            <p className="text-red-400 text-xs font-semibold mb-0.5">💸 EXPENSES</p>
+            <p className="text-red-300 text-lg font-bold break-words">${expenses}</p>
+          </div>
+
+          {/* Profit */}
+          <div className="bg-gradient-to-br from-cyan-900/30 to-blue-800/10 rounded-lg p-2 border border-cyan-500/30">
+            <p className="text-cyan-400 text-xs font-semibold mb-0.5">💰 PROFIT</p>
+            <p className="text-cyan-300 text-lg font-bold break-words">${profit}</p>
+          </div>
+
+          {/* Miles */}
+          <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/10 rounded-lg p-2 border border-orange-500/30">
+            <p className="text-orange-400 text-xs font-semibold mb-0.5">🛣️ MILES</p>
+            <p className="text-orange-300 text-lg font-bold break-words">{miles}</p>
           </div>
         </div>
 
