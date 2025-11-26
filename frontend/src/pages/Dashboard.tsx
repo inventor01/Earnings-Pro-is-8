@@ -220,6 +220,9 @@ export function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
+      // Force immediate refetch to ensure entries appear
+      refetchEntries();
+      refetchRollup();
       setAmount('0');
       setToast({ message: 'Entry added successfully!', type: 'success' });
     },
