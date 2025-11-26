@@ -38,10 +38,10 @@ export function PointsCard() {
   return (
     <div className={`rounded-xl p-4 border-2 transition-all ${
       themeConfig.name === 'dark-neon'
-        ? 'bg-gradient-to-br from-purple-900/30 to-blue-900/20 border-purple-500/30'
+        ? 'bg-gradient-to-br from-cyan-900/30 to-blue-900/20 border-cyan-500/30'
         : themeConfig.name === 'simple-light'
-        ? 'bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200'
-        : 'bg-black border-white'
+        ? 'bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200'
+        : 'bg-black border-cyan-400'
     }`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -75,9 +75,21 @@ export function PointsCard() {
               {pointsData.total_points}/{pointsData.next_reward_points}
             </span>
           </div>
-          <div className={`h-2 rounded-full overflow-hidden ${themeConfig.name === 'simple-light' ? 'bg-purple-200' : 'bg-purple-900/50'}`}>
+          <div className={`h-2 rounded-full overflow-hidden ${
+            themeConfig.name === 'dark-neon'
+              ? 'bg-cyan-900/50'
+              : themeConfig.name === 'simple-light'
+              ? 'bg-blue-200'
+              : 'bg-gray-700'
+          }`}>
             <div 
-              className={`h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300`}
+              className={`h-full transition-all duration-300 ${
+                themeConfig.name === 'dark-neon'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-500'
+                  : themeConfig.name === 'simple-light'
+                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                  : 'bg-gradient-to-r from-cyan-400 to-white'
+              }`}
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -89,10 +101,10 @@ export function PointsCard() {
         disabled={checkInMutation.isPending}
         className={`w-full py-2 px-3 rounded-lg font-bold text-sm transition-all ${
           themeConfig.name === 'dark-neon'
-            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50'
+            ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50'
             : themeConfig.name === 'simple-light'
-            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50'
-            : 'bg-white text-black border border-white hover:bg-gray-100 disabled:opacity-50'
+            ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50'
+            : 'bg-gradient-to-r from-cyan-400 to-white text-black border border-cyan-400 hover:from-cyan-300 hover:to-gray-100 disabled:opacity-50'
         }`}
       >
         {checkInMutation.isPending ? 'Checking in...' : 'Daily Check-in'}
@@ -109,19 +121,33 @@ export function PointsCard() {
       )}
 
       {pointsData.unlocked_rewards.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-purple-500/30">
+        <div className={`mt-4 pt-3 border-t ${
+          themeConfig.name === 'dark-neon'
+            ? 'border-cyan-500/30'
+            : themeConfig.name === 'simple-light'
+            ? 'border-blue-200'
+            : 'border-cyan-400'
+        }`}>
           <div className={`text-xs font-semibold mb-2 ${themeConfig.name === 'simple-light' ? 'text-gray-600' : 'text-gray-400'}`}>
             Unlocked Rewards
           </div>
           <div className="grid grid-cols-3 gap-2">
             {pointsData.unlocked_rewards.slice(0, 3).map((reward: any) => (
               <div key={reward.name} className={`p-2 rounded text-center ${
-                themeConfig.name === 'simple-light'
-                  ? 'bg-purple-100'
-                  : 'bg-purple-900/30'
+                themeConfig.name === 'dark-neon'
+                  ? 'bg-cyan-900/30'
+                  : themeConfig.name === 'simple-light'
+                  ? 'bg-blue-100'
+                  : 'bg-cyan-900/30 border border-cyan-400'
               }`}>
                 <div className="text-lg mb-0.5">{reward.emoji}</div>
-                <div className={`text-xs font-bold ${themeConfig.name === 'simple-light' ? 'text-purple-900' : 'text-purple-300'}`}>
+                <div className={`text-xs font-bold ${
+                  themeConfig.name === 'dark-neon'
+                    ? 'text-cyan-300'
+                    : themeConfig.name === 'simple-light'
+                    ? 'text-blue-900'
+                    : 'text-cyan-300'
+                }`}>
                   {reward.name}
                 </div>
               </div>
