@@ -30,13 +30,12 @@ export function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const getDefaultDate = () => {
     const now = new Date();
-    return now.toISOString().split('T')[0];
+    return getESTDateString(now.toISOString());
   };
 
   const getDefaultTime = () => {
     const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const { hours, minutes } = getESTTimeComponents(now.toISOString());
     return `${hours}:${minutes}`;
   };
 

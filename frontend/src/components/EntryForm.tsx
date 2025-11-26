@@ -3,6 +3,7 @@ import { CalcMode } from './CalcPad';
 import { DistanceCalc } from './DistanceCalc';
 import { Period } from './PeriodChips';
 import { useEffect, useState } from 'react';
+import { getESTDateString } from '../lib/dateUtils';
 
 interface EntryFormProps {
   mode: CalcMode;
@@ -35,7 +36,7 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
   // Calculate date constraints based on timeframe (disabled when creating new entries)
   const getDateConstraints = () => {
     const now = new Date();
-    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+    const formatDate = (date: Date) => getESTDateString(date.toISOString());
 
     // Allow any date for new entries and editing - no constraints
     // This ensures entries can be saved to any date regardless of current period view
