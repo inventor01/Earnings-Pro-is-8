@@ -184,18 +184,6 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
                   />
                 </div>
               </div>
-
-              {/* Note field - shown in more options for ORDER */}
-              <div>
-                <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📝 Note (optional)</label>
-                <textarea
-                  value={formData.note}
-                  onChange={(e) => onFormDataChange({ ...formData, note: e.target.value })}
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-                  rows={2}
-                  placeholder="Add a note..."
-                />
-              </div>
             </>
           )}
 
