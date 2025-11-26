@@ -38,7 +38,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose} />
-      <div className={`fixed right-0 top-0 h-full w-80 shadow-xl z-50 flex flex-col ${
+      <div className={`fixed right-0 top-0 h-full w-full md:w-80 shadow-xl z-50 flex flex-col ${
         isDark 
           ? 'bg-slate-900 text-slate-100 border-l border-slate-700' 
           : 'bg-white text-gray-900 border-l border-gray-200'
