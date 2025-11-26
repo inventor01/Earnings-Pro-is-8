@@ -14,6 +14,7 @@ import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
 import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
 import { OnboardingTour } from '../components/OnboardingTour';
+import { FeatureTour } from '../components/FeatureTour';
 import { ShareCard } from '../components/ShareCard';
 import { useTheme } from '../lib/themeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
@@ -108,6 +109,10 @@ export function Dashboard() {
     return !hasCompletedOnboarding;
   });
   const [onboardingStep, setOnboardingStep] = useState(0);
+  const [showFeatureTour, setShowFeatureTour] = useState(() => {
+    const hasCompletedTour = localStorage.getItem('hasCompletedFeatureTour');
+    return !hasCompletedTour;
+  });
 
   const handleCompleteOnboarding = () => {
     setShowOnboarding(false);
@@ -683,7 +688,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div data-tour="performance">
+        <div data-tour="performance" className="scroll-smooth">
           <SummaryCard
             revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
             expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
@@ -1063,6 +1068,9 @@ export function Dashboard() {
         isOpen={showOnboarding} 
         onComplete={handleCompleteOnboarding}
       />
+
+      {/* Feature Tour - Shows after onboarding */}
+      {showFeatureTour && !showOnboarding && <FeatureTour />}
     </div>
   );
 }
