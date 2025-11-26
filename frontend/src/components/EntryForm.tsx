@@ -1,5 +1,6 @@
 import { AppType, EntryType, ExpenseCategory } from '../lib/api';
 import { CalcMode } from './CalcPad';
+import { DistanceCalc } from './DistanceCalc';
 import { Period } from './PeriodChips';
 import { useEffect, useState } from 'react';
 
@@ -116,19 +117,12 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
             </div>
           )}
 
-          {/* For ORDER entries - show miles prominently */}
+          {/* For ORDER entries - show miles calculator */}
           {isRevenueEntry && (
-            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-lg md:rounded-xl p-3 md:p-4">
-              <label className="block text-sm md:text-base font-bold text-blue-900 mb-1 md:mb-2">🛣️ Distance (miles)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={formData.distance_miles}
-                onChange={(e) => onFormDataChange({ ...formData, distance_miles: e.target.value })}
-                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-blue-400 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-sm md:text-base font-semibold bg-white"
-                placeholder="5.5"
-              />
-            </div>
+            <DistanceCalc
+              value={formData.distance_miles}
+              onValueChange={(value) => onFormDataChange({ ...formData, distance_miles: value })}
+            />
           )}
 
           {/* Hidden options section - toggleable */}
