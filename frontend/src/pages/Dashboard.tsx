@@ -743,7 +743,7 @@ export function Dashboard() {
                   You're in the Negative!
                 </h3>
                 <p className={`text-sm md:text-base ${isDarkTheme ? 'text-red-200/90' : 'text-red-600/90'}`}>
-                  You need to make <span className="font-black text-lg md:text-2xl">${Math.abs(rollup.profit).toFixed(2)}</span> to get back into profit today
+                  You need to make <span className="font-black text-lg md:text-2xl">${Math.abs(rollup.profit).toFixed(2)}</span> to get back into profit {period === 'today' ? 'today' : period === 'yesterday' ? 'yesterday' : period === 'week' ? 'this week' : period === 'last7' ? 'in the last 7 days' : period === 'month' ? 'this month' : period === 'lastMonth' ? 'last month' : 'this period'}
                 </p>
               </div>
               <button
