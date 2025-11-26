@@ -590,10 +590,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const isDarkTheme = config.name !== 'simple-light';
 
   const dashboardClass = config.name === 'simple-light' 
-    ? 'min-h-screen bg-gradient-to-b from-gray-50 via-gray-100 to-white flex flex-col'
+    ? 'min-h-screen overflow-x-hidden bg-gradient-to-b from-gray-50 via-gray-100 to-white flex flex-col'
     : config.name === 'dark-neon'
-    ? 'min-h-screen bg-gradient-to-b from-black via-gray-900 to-black flex flex-col'
-    : 'min-h-screen bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950 flex flex-col';
+    ? 'min-h-screen overflow-x-hidden bg-gradient-to-b from-black via-gray-900 to-black flex flex-col'
+    : 'min-h-screen overflow-x-hidden bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950 flex flex-col';
 
   const contentClass = config.name === 'simple-light'
     ? 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-2 md:py-3 pb-24 w-full bg-gradient-to-b from-gray-50 via-gray-100 to-white'
@@ -652,7 +652,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               > PRO</h1>
             </div>
           </div>
-          <div className="flex gap-2 md:gap-4 items-center pr-8 md:pr-12">
+          <div className="flex gap-2 md:gap-4 items-center pr-3 md:pr-8">
             <button
               onClick={logout}
               className={`px-4 md:px-5 py-2 md:py-2.5 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
