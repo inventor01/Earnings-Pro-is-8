@@ -120,24 +120,32 @@ export function SummaryCard({
       style={{ cursor: showDayNav ? 'grab' : 'default' }}
     >
       {/* Background with dark dashboard effect */}
-      <div className={`absolute inset-0 ${colorConfig.bg} border-2 ${colorConfig.border} rounded-2xl ${themeConfig.name === 'dark-neon' ? 'animate-pulse' : ''}`} style={themeConfig.name === 'dark-neon' ? { animation: 'neon-border-glow 4s ease-in-out infinite' } : {}} />
+      <div className={`absolute inset-0 ${colorConfig.bg} border-2 ${colorConfig.border} rounded-2xl`} />
       <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.glow} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`} />
       
-      {/* Neon scan line effect for dark-neon theme */}
+      {/* Glowing stars background for dark-neon theme */}
       {themeConfig.name === 'dark-neon' && (
         <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-          <div 
-            className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
-            style={{
-              animation: 'neon-scan 3s ease-in-out infinite',
-              top: '50%'
-            }}
-          />
+          {[...Array(15)].map((_, i) => (
+            <div
+              key={`star-${i}`}
+              className="absolute rounded-full bg-cyan-300"
+              style={{
+                width: Math.random() * 3 + 1 + 'px',
+                height: Math.random() * 3 + 1 + 'px',
+                left: Math.random() * 100 + '%',
+                top: Math.random() * 100 + '%',
+                opacity: Math.random() * 0.6 + 0.3,
+                boxShadow: `0 0 ${Math.random() * 8 + 4}px rgba(34, 211, 238, 0.8)`,
+                animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+              }}
+            />
+          ))}
         </div>
       )}
       
       {/* Gauge arc effect */}
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorConfig.glow} rounded-full ${themeConfig.name === 'dark-neon' ? 'opacity-100' : 'opacity-60'}`} style={themeConfig.name === 'dark-neon' ? { animation: 'neon-glow-pulse 3s ease-in-out infinite' } : {}} />
+      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorConfig.glow} rounded-full opacity-60`} />
       
       {/* Content */}
       <div className="relative z-10">
