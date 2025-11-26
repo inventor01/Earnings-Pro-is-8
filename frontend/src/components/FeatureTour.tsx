@@ -368,7 +368,7 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
 
       {/* Tooltip - Always mobile-optimized */}
       <div
-        className={`fixed z-50 rounded-lg shadow-2xl overflow-auto ${
+        className={`fixed z-50 rounded-lg shadow-2xl overflow-y-auto ${
           themeConfig.name === 'dark-neon'
             ? 'bg-slate-900 border border-cyan-400 text-white'
             : themeConfig.name === 'simple-light'
@@ -376,16 +376,17 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
             : 'bg-black border border-white text-white'
         }`}
         style={{
-          ...tooltipStyle,
-          width: window.innerWidth < 360 ? 'calc(100vw - 0.5rem)' : 
-                 window.innerWidth < 480 ? 'calc(100vw - 1rem)' : 
-                 'auto',
-          maxWidth: window.innerWidth < 360 ? 'calc(100vw - 0.5rem)' :
-                   window.innerWidth < 480 ? 'calc(100vw - 1rem)' : '360px',
-          maxHeight: window.innerWidth < 768 ? 'calc(100vh - 80px)' : 'calc(100vh - 100px)',
-          padding: window.innerWidth < 360 ? '1rem' : window.innerWidth < 480 ? '1rem' : '1.25rem',
-          top: tooltipStyle.top ? Math.max(12, parseInt(tooltipStyle.top as string)) : 12,
-          left: tooltipStyle.left ? Math.max(4, Math.min(parseInt(tooltipStyle.left as string), window.innerWidth - (window.innerWidth < 360 ? 100 : window.innerWidth < 480 ? 140 : 200))) : 4,
+          position: 'fixed',
+          zIndex: 50,
+          width: 'calc(100vw - 1rem)',
+          maxWidth: '90vw',
+          maxHeight: 'calc(100vh - 3rem)',
+          padding: '1rem',
+          top: '1.5rem',
+          left: '0.5rem',
+          right: '0.5rem',
+          margin: '0 auto',
+          borderRadius: '0.5rem',
         }}
       >
         <h3 className={`font-bold mb-1 line-clamp-2 ${
