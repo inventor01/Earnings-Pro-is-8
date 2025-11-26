@@ -9,11 +9,12 @@ interface SettingsDrawerProps {
   settings: Settings;
   onSave: (settings: Settings) => void;
   onResetAll?: () => void;
+  onExport?: () => void;
   metricVisibility?: Partial<MetricVisibility>;
   onMetricVisibilityChange?: (visibility: Partial<MetricVisibility>) => void;
 }
 
-export function SettingsDrawer({ isOpen, onClose, onResetAll, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
+export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
   const { theme, setTheme, config } = useTheme();
 
   if (!isOpen) return null;
@@ -113,21 +114,40 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, metricVisibility =
           </div>
         </div>
 
-        <div className={`border-t ${isDark ? 'border-slate-700' : 'border-gray-200'} p-6 flex-shrink-0`}>
-          <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Danger Zone</h3>
-          <button
-            onClick={handleResetAll}
-            className={`w-full py-3 rounded-lg font-medium transition-all ${
-              isDark
-                ? 'bg-red-900/30 hover:bg-red-900/50 border border-red-500 text-red-400'
-                : 'bg-red-500 hover:bg-red-600 text-white'
-            }`}
-          >
-            🗑️ Reset All Data
-          </button>
-          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-            Permanently delete all entries. This action cannot be undone.
-          </p>
+        <div className={`border-t ${isDark ? 'border-slate-700' : 'border-gray-200'} p-6 flex-shrink-0 space-y-4`}>
+          <div>
+            <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Export</h3>
+            <button
+              onClick={onExport}
+              className={`w-full py-3 rounded-lg font-medium transition-all ${
+                isDark
+                  ? 'bg-cyan-900/30 hover:bg-cyan-900/50 border border-cyan-500 text-cyan-400'
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
+            >
+              📥 Export to CSV
+            </button>
+            <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+              Download all entries as a CSV file.
+            </p>
+          </div>
+
+          <div>
+            <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Danger Zone</h3>
+            <button
+              onClick={handleResetAll}
+              className={`w-full py-3 rounded-lg font-medium transition-all ${
+                isDark
+                  ? 'bg-red-900/30 hover:bg-red-900/50 border border-red-500 text-red-400'
+                  : 'bg-red-500 hover:bg-red-600 text-white'
+              }`}
+            >
+              🗑️ Reset All Data
+            </button>
+            <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+              Permanently delete all entries. This action cannot be undone.
+            </p>
+          </div>
         </div>
       </div>
     </>

@@ -661,21 +661,6 @@ export function Dashboard() {
               </svg>
             </button>
             <button
-              onClick={handleExport}
-              className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
-              title="Export to CSV"
-              data-tour="export"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33A3 3 0 0116.5 19.5H6.75z"
-                />
-              </svg>
-            </button>
-            <button
               onClick={() => setShowSettings(true)}
               className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
               data-tour="settings"
