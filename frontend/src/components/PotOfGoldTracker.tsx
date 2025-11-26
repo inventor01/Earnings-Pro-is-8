@@ -9,7 +9,7 @@ export function PotOfGoldTracker() {
   const [tempGoal, setTempGoal] = useState('');
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [floatingCoins, setFloatingCoins] = useState<Array<{id: number; originX: number; originY: number; generation: number}>>([]);
+  const [floatingCoins, setFloatingCoins] = useState<number[]>([]);
   const [isHidden, setIsHidden] = useState(false);
 
   const { data: monthlyGoal, refetch: refetchGoal } = useQuery({
@@ -64,28 +64,12 @@ export function PotOfGoldTracker() {
     setError('');
   };
 
-  const triggerCoins = (originX = 50, originY = 20, generation = 0) => {
-    const newCoins = Array.from({ length: 12 }, (_, i) => ({
-      id: Date.now() + i * 5 + Math.random(),
-      originX,
-      originY,
-      generation
-    }));
+  const triggerCoins = () => {
+    const newCoins = Array.from({ length: 12 }, (_, i) => Date.now() + i * 30);
     setFloatingCoins(prev => [...prev, ...newCoins]);
-    
-    // Chain reaction: each coin can generate 2-4 more coins at higher generations
-    if (generation < 2) {
-      newCoins.forEach((coin, idx) => {
-        const delay = 800 + idx * 50;
-        setTimeout(() => {
-          const angle = (idx / 12) * Math.PI * 2;
-          const velocity = 120 + Math.random() * 80;
-          const newOriginX = originX + Math.cos(angle) * velocity / 2;
-          const newOriginY = originY + Math.sin(angle) * velocity / 2;
-          triggerCoins(newOriginX, newOriginY, generation + 1);
-        }, delay);
-      });
-    }
+    setTimeout(() => {
+      setFloatingCoins([]);
+    }, 2800);
   };
 
   if (isHidden) {
@@ -218,18 +202,18 @@ export function PotOfGoldTracker() {
 
       {/* Floating coins animation */}
       <div className="absolute inset-0 pointer-events-none overflow-visible">
-        {floatingCoins.map((coin, idx) => {
+        {floatingCoins.map((coinId, idx) => {
           const angle = (idx / floatingCoins.length) * Math.PI * 2;
           const velocity = 100 + Math.random() * 80;
           const randomX = Math.cos(angle) * velocity;
           const randomY = Math.sin(angle) * velocity;
           return (
             <div
-              key={coin.id}
+              key={coinId}
               className="absolute text-4xl"
               style={{
-                left: `${coin.originX}%`,
-                top: `${coin.originY}%`,
+                left: '50%',
+                top: '50%',
                 marginLeft: '-1rem',
                 marginTop: '-1rem',
                 animation: `burst-coin 2.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
