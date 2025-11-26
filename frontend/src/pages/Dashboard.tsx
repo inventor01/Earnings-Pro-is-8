@@ -1100,6 +1100,8 @@ export function Dashboard() {
           settings={settings}
           onSave={(s) => updateSettingsMutation.mutate(s)}
           onResetAll={() => setResetAllConfirm(true)}
+          onExport={() => handleExportCSV()}
+          onRestartTour={handleRestartTour}
           metricVisibility={metricVisibility}
           onMetricVisibilityChange={handleMetricVisibilityChange}
         />
