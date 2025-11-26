@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Entry } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
 import { formatDateEST } from '../lib/dateUtils';
@@ -9,10 +10,17 @@ interface EntriesTableProps {
   onView?: (entry: Entry) => void;
   selectedIds?: number[];
   onSelectChange?: (ids: number[]) => void;
+  period?: string; // 'today', 'yesterday', 'week', 'last7', 'month', etc.
 }
 
-export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = [], onSelectChange }: EntriesTableProps) {
+type SortField = 'date' | 'time' | 'amount' | 'type';
+type SortOrder = 'asc' | 'desc';
+
+export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = [], onSelectChange, period }: EntriesTableProps) {
   const { config } = useTheme();
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
   const allSelected = entries.length > 0 && selectedIds.length === entries.length;
   const someSelected = selectedIds.length > 0 && selectedIds.length < entries.length;
 
@@ -31,6 +39,59 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
       onSelectChange?.([...selectedIds, id]);
     }
   };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const getSortedEntries = () => {
+    const sorted = [...entries];
+
+    if (!sortField) {
+      // Default sort: by date descending (newest first)
+      return sorted.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    }
+
+    sorted.sort((a, b) => {
+      let aVal, bVal;
+
+      switch (sortField) {
+        case 'date':
+        case 'time':
+          aVal = new Date(a.timestamp).getTime();
+          bVal = new Date(b.timestamp).getTime();
+          break;
+        case 'amount':
+          aVal = a.amount;
+          bVal = b.amount;
+          break;
+        case 'type':
+          aVal = a.type;
+          bVal = b.type;
+          break;
+        default:
+          return 0;
+      }
+
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+
+      if (sortOrder === 'asc') {
+        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      } else {
+        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+      }
+    });
+
+    return sorted;
+  };
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'ORDER':
@@ -117,6 +178,20 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
     }
   };
 
+  const SortHeader = ({ field, label }: { field: SortField; label: string }) => {
+    const isActive = sortField === field;
+    const arrow = isActive ? (sortOrder === 'asc' ? ' ↑' : ' ↓') : ' ↕';
+    
+    return (
+      <button
+        onClick={() => handleSort(field)}
+        className={`px-4 py-3 text-left text-xs font-medium uppercase hover:opacity-80 transition-opacity w-full text-left ${config.tableHeaderText}`}
+        title={`Sort by ${label}`}
+      >
+        {label}{isActive && arrow}
+      </button>
+    );
+  };
 
   if (entries.length === 0) {
     const isDarkTheme = config.name !== 'simple-light';
@@ -126,6 +201,8 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
       </div>
     );
   }
+
+  const sortedEntries = getSortedEntries();
 
   return (
     <div className={`rounded-lg shadow overflow-hidden ${config.tableBg}`}>
@@ -148,15 +225,19 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
               </th>
               <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>Type</th>
               <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>App / Category</th>
-              <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>Time</th>
-              <th className={`px-4 py-3 text-right text-xs font-medium uppercase ${config.tableHeaderText}`}>Amount</th>
+              <th className="px-0 py-0">
+                <SortHeader field="time" label="Date / Time" />
+              </th>
+              <th className="px-0 py-0">
+                <SortHeader field="amount" label="Amount" />
+              </th>
               <th className={`px-4 py-3 text-right text-xs font-medium uppercase ${config.tableHeaderText}`}>Miles</th>
               <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>Note</th>
               <th className={`px-4 py-3 text-right text-xs font-medium uppercase ${config.tableHeaderText}`}>Actions</th>
             </tr>
           </thead>
           <tbody className={`divide-y ${config.name === 'simple-light' ? 'divide-gray-200' : 'divide-slate-700'}`}>
-            {entries.map((entry) => (
+            {sortedEntries.map((entry) => (
               <tr key={entry.id} className={`${config.tableRowHover} transition-colors ${selectedIds.includes(entry.id) ? config.tableRowSelected : ''}`}>
                 <td className="px-4 py-3">
                   <input
