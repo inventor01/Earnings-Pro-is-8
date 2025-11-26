@@ -306,60 +306,93 @@ export function FeatureTour() {
 
       {/* Tooltip - Always mobile-optimized */}
       <div
-        className={`fixed z-50 w-[calc(100%-2rem)] md:w-auto max-w-xs md:max-w-sm rounded-lg shadow-2xl p-2.5 md:p-4 ${
+        className={`fixed z-50 rounded-lg shadow-2xl ${
           themeConfig.name === 'dark-neon'
             ? 'bg-slate-900 border border-cyan-400 text-white'
             : themeConfig.name === 'simple-light'
             ? 'bg-white border border-blue-300 text-gray-900'
             : 'bg-black border border-white text-white'
         }`}
-        style={tooltipStyle}
+        style={{
+          ...tooltipStyle,
+          width: window.innerWidth < 360 ? 'calc(100vw - 1rem)' : 
+                 window.innerWidth < 480 ? 'calc(100vw - 2rem)' : 
+                 'auto',
+          maxWidth: window.innerWidth < 480 ? '280px' : '320px',
+          padding: window.innerWidth < 360 ? '0.625rem' : window.innerWidth < 480 ? '0.75rem' : '1rem',
+        }}
       >
-        <h3 className="font-bold text-sm md:text-lg mb-1.5 md:mb-2 line-clamp-2">{step.title}</h3>
-        <p className="text-xs md:text-sm mb-2.5 md:mb-4 opacity-90 line-clamp-3">{step.description}</p>
+        <h3 className={`font-bold mb-1 line-clamp-2 ${
+          window.innerWidth < 360 ? 'text-xs' : 
+          window.innerWidth < 480 ? 'text-sm' : 
+          'md:text-lg text-sm'
+        }`}>{step.title}</h3>
+        <p className={`mb-2 opacity-90 line-clamp-3 ${
+          window.innerWidth < 360 ? 'text-[10px]' : 
+          window.innerWidth < 480 ? 'text-xs' : 
+          'md:text-sm text-xs'
+        }`}>{step.description}</p>
 
-        <div className="flex items-center justify-between gap-1.5 md:gap-2 mb-2.5 md:mb-4">
-          <div className="flex gap-0.5 md:gap-1 flex-wrap">
+        <div className="flex items-center justify-between gap-1 mb-2">
+          <div className="flex gap-0.5 flex-wrap">
             {TOUR_STEPS.map((_, idx) => (
               <div
                 key={idx}
-                className={`h-0.5 md:h-1 transition-all ${
+                className={`h-0.5 transition-all ${
                   idx === currentStep
-                    ? 'w-3 md:w-6 bg-cyan-400'
+                    ? 'w-2 md:w-6 bg-cyan-400'
                     : idx < currentStep
-                    ? 'w-1.5 md:w-2 bg-cyan-400/50'
-                    : 'w-1.5 md:w-2 bg-gray-500'
+                    ? 'w-1 md:w-2 bg-cyan-400/50'
+                    : 'w-1 md:w-2 bg-gray-500'
                 }`}
               />
             ))}
           </div>
-          <span className="text-[10px] md:text-xs font-semibold text-gray-400 whitespace-nowrap ml-1">
+          <span className={`font-semibold text-gray-400 whitespace-nowrap ml-1 ${
+            window.innerWidth < 360 ? 'text-[8px]' : 
+            window.innerWidth < 480 ? 'text-[9px]' : 
+            'text-xs'
+          }`}>
             {currentStep + 1}/{TOUR_STEPS.length}
           </span>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-1.5 md:gap-2 w-full">
+        <div className={`flex flex-col md:flex-row gap-1 w-full ${
+          window.innerWidth < 480 ? 'gap-0.5' : 'md:gap-2'
+        }`}>
           <button
             onClick={handleSkip}
-            className="px-2 md:px-3 py-1.5 md:py-1 text-[10px] md:text-xs font-bold rounded bg-slate-700 hover:bg-slate-600 transition-colors w-full md:w-auto whitespace-nowrap text-gray-100"
+            className={`rounded bg-slate-700 hover:bg-slate-600 transition-colors w-full md:w-auto whitespace-nowrap text-gray-100 font-bold ${
+              window.innerWidth < 360 ? 'px-1.5 py-1 text-[8px]' : 
+              window.innerWidth < 480 ? 'px-2 py-1 text-[9px]' : 
+              'md:py-1 px-3 text-xs md:text-sm'
+            }`}
           >
             Skip
           </button>
-          <div className="flex gap-1.5 md:gap-2 w-full md:w-auto flex-1">
+          <div className="flex gap-1 w-full md:w-auto flex-1 md:gap-2">
             <button
               onClick={handlePrev}
               disabled={currentStep === 0}
-              className={`px-1.5 md:px-3 py-1.5 md:py-1 text-[10px] md:text-xs font-bold rounded transition-colors flex-1 md:flex-none whitespace-nowrap ${
+              className={`rounded transition-colors flex-1 md:flex-none whitespace-nowrap font-bold ${
                 currentStep === 0
                   ? 'bg-slate-700 opacity-40 cursor-not-allowed text-gray-400'
                   : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+              } ${
+                window.innerWidth < 360 ? 'px-1 py-1 text-[8px]' : 
+                window.innerWidth < 480 ? 'px-1.5 py-1 text-[9px]' : 
+                'md:py-1 px-2 md:px-3 text-xs md:text-sm'
               }`}
             >
               ← Back
             </button>
             <button
               onClick={handleNext}
-              className="flex-1 md:flex-none px-1.5 md:px-3 py-1.5 md:py-1 text-[10px] md:text-xs font-bold rounded bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 transition-all text-black whitespace-nowrap shadow-lg hover:shadow-cyan-500/50"
+              className={`flex-1 md:flex-none rounded bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 transition-all text-black whitespace-nowrap shadow-lg hover:shadow-cyan-500/50 font-bold ${
+                window.innerWidth < 360 ? 'px-1 py-1 text-[8px]' : 
+                window.innerWidth < 480 ? 'px-1.5 py-1 text-[9px]' : 
+                'md:py-1 px-2 md:px-3 text-xs md:text-sm'
+              }`}
             >
               {currentStep === TOUR_STEPS.length - 1 ? 'Done ✓' : 'Next →'}
             </button>
