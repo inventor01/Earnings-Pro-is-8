@@ -97,3 +97,22 @@ class SyncedOrder(Base):
     raw_data = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+class User(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True, default=1)
+    total_points = Column(Integer, default=0, nullable=False)
+    daily_streak = Column(Integer, default=0, nullable=False)
+    last_used_date = Column(String, nullable=True)
+    signup_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+class DailyUsage(Base):
+    __tablename__ = "daily_usage"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    usage_date = Column(String, unique=True, nullable=False, index=True)
+    points_earned = Column(Integer, default=10, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
