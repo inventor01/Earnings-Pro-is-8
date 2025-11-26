@@ -203,8 +203,8 @@ export function PotOfGoldTracker() {
       {/* Floating coins animation */}
       <div className="absolute inset-0 pointer-events-none overflow-visible">
         {floatingCoins.map((coinId, idx) => {
-          const angle = (idx / floatingCoins.length) * Math.PI * 2;
-          const velocity = 100 + Math.random() * 80;
+          const angle = Math.random() * Math.PI * 2;
+          const velocity = 80 + Math.random() * 100;
           const randomX = Math.cos(angle) * velocity;
           const randomY = Math.sin(angle) * velocity;
           return (
