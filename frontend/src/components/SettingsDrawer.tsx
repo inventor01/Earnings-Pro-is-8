@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Settings } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
 import { getAllThemes, ThemeName } from '../lib/themes';
@@ -16,6 +17,16 @@ interface SettingsDrawerProps {
 
 export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
   const { theme, setTheme, config } = useTheme();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboardData] = useState([
+    { rank: 1, name: 'Alex Johnson', earnings: '$2,845.50', avatar: '👤' },
+    { rank: 2, name: 'Sam Martinez', earnings: '$2,620.75', avatar: '👤' },
+    { rank: 3, name: 'Jordan Lee', earnings: '$2,490.25', avatar: '👤' },
+    { rank: 4, name: 'Casey Wilson', earnings: '$2,145.00', avatar: '👤' },
+    { rank: 5, name: 'Taylor Brown', earnings: '$1,995.50', avatar: '👤' },
+  ]);
 
   if (!isOpen) return null;
 
@@ -52,6 +63,79 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, metricVi
         </div>
 
         <div className="flex-1 overflow-y-auto px-6">
+          {/* Account & Leaderboard Section */}
+          <div className={`mb-6 p-4 rounded-lg ${isDark ? 'bg-slate-800/50 border border-slate-700' : 'bg-gray-100 border border-gray-200'}`}>
+            {!isLoggedIn ? (
+              <>
+                <h3 className={`text-sm font-bold mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>👤 Account</h3>
+                <button
+                  onClick={() => {
+                    setIsLoggedIn(true);
+                    setUsername('Driver ' + Math.floor(Math.random() * 10000));
+                  }}
+                  className={`w-full py-2 px-3 rounded-lg font-medium text-sm transition-all mb-2 ${
+                    isDark
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  🔓 Sign Up / Log In
+                </button>
+                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                  Create an account to save your earnings and compete on the leaderboard!
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className={`text-sm font-bold mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>👤 Account</h3>
+                <div className={`p-3 rounded mb-3 ${isDark ? 'bg-slate-700/50' : 'bg-white'}`}>
+                  <p className={`text-sm font-bold ${isDark ? 'text-cyan-300' : 'text-blue-600'}`}>{username}</p>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Total Earnings: $2,845.50</p>
+                </div>
+                <button
+                  onClick={() => setShowLeaderboard(!showLeaderboard)}
+                  className={`w-full py-2 px-3 rounded-lg font-medium text-sm transition-all mb-2 ${
+                    isDark
+                      ? 'bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500 text-cyan-300'
+                      : 'bg-blue-100 hover:bg-blue-200 border border-blue-500 text-blue-700'
+                  }`}
+                >
+                  {showLeaderboard ? '▼ Hide Leaderboard' : '▶ View Leaderboard'}
+                </button>
+                {showLeaderboard && (
+                  <div className={`mt-3 p-3 rounded max-h-64 overflow-y-auto ${isDark ? 'bg-slate-700/50' : 'bg-white'}`}>
+                    <p className={`text-xs font-bold mb-2 ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>🏆 Top Earners</p>
+                    <div className="space-y-2">
+                      {leaderboardData.map((entry) => (
+                        <div key={entry.rank} className={`flex items-center justify-between text-xs p-2 rounded ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
+                          <div className="flex items-center gap-2">
+                            <span>{entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : '  '}</span>
+                            <span className={isDark ? 'text-slate-300' : 'text-gray-700'}>{entry.name}</span>
+                          </div>
+                          <span className={`font-bold ${isDark ? 'text-cyan-300' : 'text-blue-600'}`}>{entry.earnings}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    setIsLoggedIn(false);
+                    setUsername('');
+                    setShowLeaderboard(false);
+                  }}
+                  className={`w-full py-2 px-3 rounded-lg font-medium text-sm transition-all ${
+                    isDark
+                      ? 'bg-red-600/30 hover:bg-red-600/50 border border-red-500 text-red-400'
+                      : 'bg-red-100 hover:bg-red-200 border border-red-500 text-red-700'
+                  }`}
+                >
+                  🔐 Log Out
+                </button>
+              </>
+            )}
+          </div>
+
           <div className="mb-6">
             <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
               Theme
