@@ -649,7 +649,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="mb-3 md:mb-6 overflow-x-auto" data-tour="timeframe">
+        <div className="mb-3 md:mb-6 overflow-x-auto" data-tour="periods">
           <PeriodChips selected={period} onSelect={setPeriod} />
         </div>
 
