@@ -25,6 +25,8 @@ export interface EntryFormData {
   receipt_url?: string;
   date: string;
   time: string;
+  is_business_expense?: boolean;
+  during_business_hours?: boolean;
 }
 
 export function EntryForm({ onTypeChange, formData, onFormDataChange, period = 'today', dayOffset = 0, isEditing = false, showExtraInfo = true }: EntryFormProps) {
@@ -300,6 +302,28 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
 
       {showExtraInfo && (
         <>
+          {/* Business Expense and Business Hours Toggles */}
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
+            <label className="flex items-center gap-2 md:gap-3 cursor-pointer p-3 rounded-lg border-2 border-gray-300 hover:bg-blue-50 transition-colors">
+              <input
+                type="checkbox"
+                checked={formData.is_business_expense ?? false}
+                onChange={(e) => onFormDataChange({ ...formData, is_business_expense: e.target.checked })}
+                className="w-5 h-5 rounded accent-blue-600"
+              />
+              <span className="text-sm md:text-base font-bold text-gray-800">💼 Business Expense</span>
+            </label>
+            <label className="flex items-center gap-2 md:gap-3 cursor-pointer p-3 rounded-lg border-2 border-gray-300 hover:bg-blue-50 transition-colors">
+              <input
+                type="checkbox"
+                checked={formData.during_business_hours ?? false}
+                onChange={(e) => onFormDataChange({ ...formData, during_business_hours: e.target.checked })}
+                className="w-5 h-5 rounded accent-blue-600"
+              />
+              <span className="text-sm md:text-base font-bold text-gray-800">⏰ Business Hours</span>
+            </label>
+          </div>
+
           {isExpense && (
             <div>
               <label className="block text-base font-bold text-gray-800 mb-3">📸 Receipt (optional)</label>

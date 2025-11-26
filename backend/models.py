@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Numeric, DateTime, Text, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Float, Numeric, DateTime, Text, Enum as SQLEnum, Boolean
 from datetime import datetime
 from decimal import Decimal
 import enum
@@ -43,6 +43,8 @@ class Entry(Base):
     category = Column(SQLEnum(ExpenseCategory), nullable=True)
     note = Column(Text, nullable=True)
     receipt_url = Column(String, nullable=True)
+    is_business_expense = Column(Boolean, default=False, nullable=True)
+    during_business_hours = Column(Boolean, default=False, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
