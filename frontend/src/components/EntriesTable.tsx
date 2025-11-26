@@ -188,15 +188,17 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
 
   const SortHeader = ({ field, label }: { field: SortField; label: string }) => {
     const isActive = sortField === field;
-    const arrow = isActive ? (sortOrder === 'asc' ? ' ↑' : ' ↓') : ' ↕';
     
     return (
       <button
         onClick={() => handleSort(field)}
-        className={`px-4 py-3 text-left text-xs font-medium uppercase hover:opacity-80 transition-opacity w-full text-left ${config.tableHeaderText}`}
+        className={`px-4 py-3 text-left text-xs font-medium uppercase hover:opacity-80 transition-all w-full text-left flex items-center gap-2 ${config.tableHeaderText} ${isActive ? 'opacity-100' : 'opacity-75'}`}
         title={`Sort by ${label}`}
       >
-        {label}{isActive && arrow}
+        {label}
+        <span className={`inline-flex transition-transform ${isActive && sortOrder === 'desc' ? 'rotate-180' : ''}`}>
+          {isActive ? (sortOrder === 'asc' ? '🔼' : '🔽') : '⇅'}
+        </span>
       </button>
     );
   };
