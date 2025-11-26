@@ -86,104 +86,109 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg md:rounded-2xl shadow-lg p-4 md:p-6 space-y-3 md:space-y-4">
-      <div>
-        <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📝 Type</label>
-        <select
-          value={formData.type}
-          onChange={(e) => {
-            const newType = e.target.value as EntryType;
-            const updatedData = { ...formData, type: newType };
-            // Set app to 'OTHER' when switching to EXPENSE (since app field is hidden for expenses)
-            if (newType === 'EXPENSE') {
-              updatedData.app = 'OTHER';
-            }
-            onFormDataChange(updatedData);
-            onTypeChange(newType);
-          }}
-          className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-        >
-          <option value="ORDER">Order</option>
-          <option value="BONUS">Bonus</option>
-          <option value="EXPENSE">Expense</option>
-          <option value="CANCELLATION">Cancellation</option>
-        </select>
-      </div>
+      {/* Step 0: Main Form Fields (Type, App, Distance, Date, Time, Category) */}
+      {!showExtraInfo && (
+        <>
+          <div>
+            <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📝 Type</label>
+            <select
+              value={formData.type}
+              onChange={(e) => {
+                const newType = e.target.value as EntryType;
+                const updatedData = { ...formData, type: newType };
+                // Set app to 'OTHER' when switching to EXPENSE (since app field is hidden for expenses)
+                if (newType === 'EXPENSE') {
+                  updatedData.app = 'OTHER';
+                }
+                onFormDataChange(updatedData);
+                onTypeChange(newType);
+              }}
+              className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+            >
+              <option value="ORDER">Order</option>
+              <option value="BONUS">Bonus</option>
+              <option value="EXPENSE">Expense</option>
+              <option value="CANCELLATION">Cancellation</option>
+            </select>
+          </div>
 
-      {!isExpense && (
-        <div>
-          <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🚗 App</label>
-          <select
-            value={formData.app}
-            onChange={(e) => onFormDataChange({ ...formData, app: e.target.value as AppType })}
-            className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-          >
-            <option value="UBEREATS">UberEats</option>
-            <option value="DOORDASH">DoorDash</option>
-            <option value="INSTACART">Instacart</option>
-            <option value="GRUBHUB">GrubHub</option>
-            <option value="SHIPT">Shipt</option>
-            <option value="OTHER">Other</option>
-          </select>
-        </div>
-      )}
+          {!isExpense && (
+            <div>
+              <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🚗 App</label>
+              <select
+                value={formData.app}
+                onChange={(e) => onFormDataChange({ ...formData, app: e.target.value as AppType })}
+                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+              >
+                <option value="UBEREATS">UberEats</option>
+                <option value="DOORDASH">DoorDash</option>
+                <option value="INSTACART">Instacart</option>
+                <option value="GRUBHUB">GrubHub</option>
+                <option value="SHIPT">Shipt</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+          )}
 
-      {isOrder && (
-        <div>
-          <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🛣️ Distance (miles)</label>
-          <input
-            type="number"
-            step="0.1"
-            value={formData.distance_miles}
-            onChange={(e) => onFormDataChange({ ...formData, distance_miles: e.target.value })}
-            className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-            placeholder="5.5"
-          />
-        </div>
-      )}
+          {isOrder && (
+            <div>
+              <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🛣️ Distance (miles)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={formData.distance_miles}
+                onChange={(e) => onFormDataChange({ ...formData, distance_miles: e.target.value })}
+                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                placeholder="5.5"
+              />
+            </div>
+          )}
 
-      {/* Date and Time Fields */}
-      <div className="grid grid-cols-2 gap-2 md:gap-3">
-        <div>
-          <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📅 Date</label>
-          <input
-            type="date"
-            value={formData.date}
-            min={minDate}
-            max={maxDate}
-            onChange={(e) => onFormDataChange({ ...formData, date: e.target.value })}
-            className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-          />
-        </div>
-        <div>
-          <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🕐 Time</label>
-          <input
-            type="time"
-            value={formData.time}
-            onChange={(e) => onFormDataChange({ ...formData, time: e.target.value })}
-            className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-          />
-        </div>
-      </div>
+          {/* Date and Time Fields */}
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
+            <div>
+              <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📅 Date</label>
+              <input
+                type="date"
+                value={formData.date}
+                min={minDate}
+                max={maxDate}
+                onChange={(e) => onFormDataChange({ ...formData, date: e.target.value })}
+                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+              />
+            </div>
+            <div>
+              <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🕐 Time</label>
+              <input
+                type="time"
+                value={formData.time}
+                onChange={(e) => onFormDataChange({ ...formData, time: e.target.value })}
+                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+              />
+            </div>
+          </div>
 
-      {isExpense && (
-        <div>
-          <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🏷️ Category</label>
-          <select
-            value={formData.category}
-            onChange={(e) => onFormDataChange({ ...formData, category: e.target.value as ExpenseCategory })}
-            className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-          >
-            <option value="GAS">⛽ Gas</option>
-            <option value="PARKING">🅿️ Parking</option>
-            <option value="TOLLS">🛣️ Tolls</option>
-            <option value="MAINTENANCE">🔧 Maintenance</option>
-            <option value="PHONE">📱 Phone</option>
-            <option value="SUBSCRIPTION">📦 Subscription</option>
-            <option value="FOOD">🍔 Food</option>
-            <option value="LEISURE">🎮 Leisure</option>
-            <option value="OTHER">📋 Other</option>
-          </select>
-        </div>
+          {isExpense && (
+            <div>
+              <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🏷️ Category</label>
+              <select
+                value={formData.category}
+                onChange={(e) => onFormDataChange({ ...formData, category: e.target.value as ExpenseCategory })}
+                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+              >
+                <option value="GAS">⛽ Gas</option>
+                <option value="PARKING">🅿️ Parking</option>
+                <option value="TOLLS">🛣️ Tolls</option>
+                <option value="MAINTENANCE">🔧 Maintenance</option>
+                <option value="PHONE">📱 Phone</option>
+                <option value="SUBSCRIPTION">📦 Subscription</option>
+                <option value="FOOD">🍔 Food</option>
+                <option value="LEISURE">🎮 Leisure</option>
+                <option value="OTHER">📋 Other</option>
+              </select>
+            </div>
+          )}
+        </>
       )}
 
       {showExtraInfo && (
