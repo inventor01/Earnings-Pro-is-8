@@ -111,41 +111,64 @@ export function SummaryCard({
     }
   };
 
-  const MetricCard = ({ icon, label, value, color, secondary, subtext }: any) => (
-    <div className={`relative p-6 rounded-xl transition-all duration-300 group/card ${
-      themeConfig.name === 'dark-neon'
-        ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/40 border border-slate-700/50 hover:border-slate-600/80 hover:from-slate-800/80 hover:to-slate-900/60 hover:shadow-lg hover:shadow-slate-900/50'
-        : themeConfig.name === 'simple-light'
-        ? 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md hover:shadow-gray-200/50'
-        : 'bg-slate-800/60 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg'
-    }`}>
-      {/* Top accent line */}
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r rounded-t-xl opacity-50 ${color}`} />
-      
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className={`text-3xl`}>{icon}</div>
-          <div className={`text-xs font-bold uppercase tracking-wider opacity-70 ${
-            themeConfig.name === 'simple-light' ? 'text-gray-600' : 'text-slate-400'
-          }`}>{label}</div>
-        </div>
+  const MetricCard = ({ icon, label, value, color, secondary, subtext, isNegative }: any) => (
+    <>
+      <style>{`
+        @keyframes blink-red {
+          0%, 100% {
+            filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+            opacity: 1;
+          }
+          50% {
+            filter: drop-shadow(0 0 16px rgba(239, 68, 68, 1));
+            opacity: 0.7;
+          }
+        }
+      `}</style>
+      <div className={`relative p-6 rounded-xl transition-all duration-300 group/card ${
+        themeConfig.name === 'dark-neon'
+          ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/40 border border-slate-700/50 hover:border-slate-600/80 hover:from-slate-800/80 hover:to-slate-900/60 hover:shadow-lg hover:shadow-slate-900/50'
+          : themeConfig.name === 'simple-light'
+          ? 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md hover:shadow-gray-200/50'
+          : 'bg-slate-800/60 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg'
+      }`}>
+        {/* Top accent line */}
+        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r rounded-t-xl opacity-50 ${color}`} />
         
-        <div className="space-y-1">
-          <div className={`text-3xl md:text-4xl font-black font-mono transition-all duration-300 group-hover/card:scale-105 cursor-pointer ${secondary}`}>
-            <CountUpNumber value={value} />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className={`text-3xl`}>{icon}</div>
+            <div className={`text-xs font-bold uppercase tracking-wider opacity-70 ${
+              themeConfig.name === 'simple-light' ? 'text-gray-600' : 'text-slate-400'
+            }`}>{label}</div>
           </div>
           
-          {subtext && (
-            <div className={`text-xs font-medium ${
-              themeConfig.name === 'simple-light' ? 'text-gray-500' : 'text-slate-400'
-            }`}>
-              {subtext}
+          <div className="space-y-1">
+            <div className={`text-3xl md:text-4xl font-black font-mono transition-all duration-300 group-hover/card:scale-105 cursor-pointer ${
+              isNegative ? 'text-red-500' : secondary
+            }`}
+            style={isNegative ? {
+              animation: 'blink-red 0.8s ease-in-out infinite'
+            } : {}}>
+              <CountUpNumber value={value} />
             </div>
-          )}
+            
+            {subtext && (
+              <div className={`text-xs font-medium ${
+                themeConfig.name === 'simple-light' ? 'text-gray-500' : 'text-slate-400'
+              }`}>
+                {subtext}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
+
+  // Parse profit to check if negative
+  const profitValue = parseFloat(profit.replace('$', '').replace(',', ''));
+  const isProfitNegative = profitValue < 0;
 
   return (
     <div 
@@ -247,6 +270,7 @@ export function SummaryCard({
             color="from-green-500 to-green-400"
             secondary={themeConfig.kpiColors['green'].accent}
             subtext={`Margin: ${margin}`}
+            isNegative={isProfitNegative}
           />
         )}
 
