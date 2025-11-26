@@ -349,6 +349,8 @@ export function PotOfGoldTracker() {
           className={`h-full transition-all duration-700 rounded-full ${
             themeConfig.name === 'dark-neon'
               ? 'bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 shadow-lg shadow-yellow-400/60'
+              : themeConfig.name === 'simple-light'
+              ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400'
               : 'bg-gradient-to-r from-yellow-400 via-orange-400 to-orange-500'
           }`}
           style={{ 
