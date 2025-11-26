@@ -112,11 +112,21 @@ export function Dashboard() {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showFeatureTour] = useState(() => {
+  const [showFeatureTour, setShowFeatureTour] = useState(() => {
     const hasCompletedTour = localStorage.getItem('hasCompletedFeatureTour');
-    // Disable tour by default - users can enable it manually
-    return false;
+    // Show tour on first load only - when hasCompletedTour is not set
+    return hasCompletedTour === null;
   });
+  
+  const handleCloseTour = () => {
+    localStorage.setItem('hasCompletedFeatureTour', 'true');
+    setShowFeatureTour(false);
+  };
+  
+  const handleRestartTour = () => {
+    localStorage.removeItem('hasCompletedFeatureTour');
+    setShowFeatureTour(true);
+  };
 
   const handleMetricVisibilityChange = (visibility: Partial<MetricVisibility>) => {
     setMetricVisibility(visibility);
@@ -1175,7 +1185,7 @@ export function Dashboard() {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Feature Tour - Interactive tour guide */}
-      {showFeatureTour && <FeatureTour />}
+      {showFeatureTour && <FeatureTour onClose={handleCloseTour} />}
     </div>
   );
 }

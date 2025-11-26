@@ -69,7 +69,11 @@ const TOUR_STEPS: TourStep[] = [
   },
 ];
 
-export function FeatureTour() {
+interface FeatureTourProps {
+  onClose?: () => void;
+}
+
+export function FeatureTour({ onClose }: FeatureTourProps) {
   const { config: themeConfig } = useTheme();
   const [currentStep, setCurrentStep] = useState(0);
   const [isHighlighting, setIsHighlighting] = useState(false);
@@ -313,7 +317,12 @@ export function FeatureTour() {
 
   const handleSkip = () => {
     localStorage.setItem('hasCompletedFeatureTour', 'true');
-    window.location.reload();
+    onClose?.();
+  };
+  
+  const handleComplete = () => {
+    localStorage.setItem('hasCompletedFeatureTour', 'true');
+    onClose?.();
   };
 
   return (
@@ -452,7 +461,7 @@ export function FeatureTour() {
               ← Back
             </button>
             <button
-              onClick={handleNext}
+              onClick={currentStep === TOUR_STEPS.length - 1 ? handleComplete : handleNext}
               className={`flex-1 md:flex-none rounded transition-all whitespace-nowrap shadow-lg font-bold ${
                 themeConfig.name === 'dark-neon'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-black hover:shadow-cyan-500/50'
