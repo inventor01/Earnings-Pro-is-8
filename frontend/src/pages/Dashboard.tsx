@@ -1063,6 +1063,17 @@ export function Dashboard() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">📝 Notes (optional)</label>
+                <textarea
+                  value={editingFormData.note}
+                  onChange={(e) => setEditingFormData({ ...editingFormData, note: e.target.value })}
+                  placeholder="Add notes about this entry..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  rows={3}
+                />
+              </div>
+
               <EntryForm
                 mode={editingFormData.type === 'EXPENSE' ? 'subtract' : 'add'}
                 onTypeChange={(type) => setEditingFormData({ ...editingFormData, type })}
