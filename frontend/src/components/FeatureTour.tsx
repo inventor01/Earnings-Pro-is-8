@@ -234,7 +234,7 @@ export function FeatureTour() {
         <div className="flex flex-col md:flex-row gap-2 w-full">
           <button
             onClick={handleSkip}
-            className="px-3 py-2 md:py-1 text-xs md:text-sm font-bold rounded bg-gray-700 hover:bg-gray-600 transition-colors w-full md:w-auto whitespace-nowrap"
+            className="px-3 py-2 md:py-1 text-xs md:text-sm font-bold rounded bg-slate-700 hover:bg-slate-600 transition-colors w-full md:w-auto whitespace-nowrap text-gray-100"
           >
             Skip
           </button>
@@ -244,15 +244,15 @@ export function FeatureTour() {
               disabled={currentStep === 0}
               className={`px-2 md:px-3 py-2 md:py-1 text-xs md:text-sm font-bold rounded transition-colors flex-1 md:flex-none whitespace-nowrap ${
                 currentStep === 0
-                  ? 'bg-gray-700 opacity-50 cursor-not-allowed'
-                  : 'bg-gray-700 hover:bg-gray-600'
+                  ? 'bg-slate-700 opacity-40 cursor-not-allowed text-gray-400'
+                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
               }`}
             >
               ← Back
             </button>
             <button
               onClick={handleNext}
-              className="flex-1 md:flex-none px-2 md:px-3 py-2 md:py-1 text-xs md:text-sm font-bold rounded bg-cyan-500 hover:bg-cyan-600 transition-colors text-black whitespace-nowrap"
+              className="flex-1 md:flex-none px-2 md:px-3 py-2 md:py-1 text-xs md:text-sm font-bold rounded bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 transition-all text-black whitespace-nowrap shadow-lg hover:shadow-cyan-500/50"
             >
               {currentStep === TOUR_STEPS.length - 1 ? 'Done ✓' : 'Next →'}
             </button>
