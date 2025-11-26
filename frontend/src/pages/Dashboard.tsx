@@ -220,6 +220,7 @@ export function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
       // Force immediate refetch to ensure entries appear
       refetchEntries();
       refetchRollup();
@@ -236,6 +237,7 @@ export function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
       setToast({ message: 'Entry deleted successfully!', type: 'success' });
     },
     onError: () => {
@@ -250,6 +252,7 @@ export function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
       setSelectedIds([]);
       setToast({ message: `${selectedIds.length} entries deleted successfully!`, type: 'success' });
     },
@@ -280,6 +283,7 @@ export function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
       setResetConfirm(false);
       setToast({ message: "Today's data has been reset!", type: 'success' });
     },
@@ -293,6 +297,7 @@ export function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
       setResetAllConfirm(false);
       setToast({ message: 'All data has been reset!', type: 'success' });
     },
@@ -307,6 +312,7 @@ export function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
       setEditingEntry(null);
       setToast({ message: 'Entry updated successfully!', type: 'success' });
     },
