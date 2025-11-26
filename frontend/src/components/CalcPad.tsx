@@ -65,37 +65,72 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadP
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
-        {['7', '8', '9', '4', '5', '6', '1', '2', '3'].map((num) => (
+      <div className="space-y-2 md:space-y-3">
+        {/* Row 1: 7 8 9 */}
+        <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
+          {['7', '8', '9'].map((num) => (
+            <button
+              key={num}
+              onClick={() => handleNumber(num)}
+              className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+            >
+              {num}
+            </button>
+          ))}
+        </div>
+
+        {/* Row 2: 4 5 6 */}
+        <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
+          {['4', '5', '6'].map((num) => (
+            <button
+              key={num}
+              onClick={() => handleNumber(num)}
+              className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+            >
+              {num}
+            </button>
+          ))}
+        </div>
+
+        {/* Row 3: 1 2 3 */}
+        <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
+          {['1', '2', '3'].map((num) => (
+            <button
+              key={num}
+              onClick={() => handleNumber(num)}
+              className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+            >
+              {num}
+            </button>
+          ))}
+        </div>
+
+        {/* Row 4: C 0 . (period inline) */}
+        <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
           <button
-            key={num}
-            onClick={() => handleNumber(num)}
+            onClick={handleClear}
+            className="w-full bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+          >
+            C
+          </button>
+          <button
+            onClick={() => handleNumber('0')}
             className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
           >
-            {num}
+            0
           </button>
-        ))}
-        <button
-          onClick={handleClear}
-          className="w-full bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
-        >
-          C
-        </button>
-        <button
-          onClick={() => handleNumber('0')}
-          className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
-        >
-          0
-        </button>
-        <button
-          onClick={handleDecimal}
-          className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
-        >
-          .
-        </button>
+          <button
+            onClick={handleDecimal}
+            className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+          >
+            .
+          </button>
+        </div>
+
+        {/* Row 5: Backspace */}
         <button
           onClick={handleBackspace}
-          className="col-span-3 w-full bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 p-4 md:p-6 rounded-lg md:rounded-xl text-base md:text-xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+          className="w-full bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 p-4 md:p-6 rounded-lg md:rounded-xl text-base md:text-xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
         >
           ⌫ Backspace
         </button>
