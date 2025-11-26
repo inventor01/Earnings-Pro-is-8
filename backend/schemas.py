@@ -9,7 +9,7 @@ class EntryCreate(BaseModel):
     date: Optional[str] = None
     time: Optional[str] = None
     type: EntryType
-    app: AppType
+    app: Optional[AppType] = AppType.OTHER
     order_id: Optional[str] = None
     amount: Decimal
     distance_miles: Optional[float] = 0.0

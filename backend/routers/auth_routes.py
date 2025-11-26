@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from backend.db import get_db
-from backend.models import AuthUser
+from backend.models import AuthUser, Settings
 from backend.auth import get_current_user
 import jwt
 import os
@@ -10,6 +10,7 @@ from pydantic import BaseModel
 import hashlib
 import hmac
 import uuid
+from decimal import Decimal
 
 router = APIRouter()
 
@@ -67,6 +68,11 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
         last_name=""
     )
     db.add(user)
+    db.flush()
+    
+    # Auto-create settings for new user
+    settings = Settings(user_id=user_id, cost_per_mile=Decimal("0.00"))
+    db.add(settings)
     db.commit()
     db.refresh(user)
     
