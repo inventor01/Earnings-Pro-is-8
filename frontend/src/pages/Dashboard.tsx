@@ -146,10 +146,15 @@ export function Dashboard() {
 
   useEffect(() => {
     setSelectedIds([]);
-    // Only reset day offset for major period changes, not for today/yesterday transitions
-    if (period !== 'today' && period !== 'yesterday') {
+    // Reset day offset when period changes
+    if (period === 'yesterday') {
+      // For 'yesterday' period, ensure dayOffset stays at 0 to show yesterday's data
+      setDayOffset(0);
+    } else if (period !== 'today') {
+      // For other periods (week, month, etc), reset dayOffset
       setDayOffset(0);
     }
+    // For 'today', keep the existing dayOffset as user might be navigating between days
   }, [period]);
 
   const { data: settings } = useQuery({
@@ -698,7 +703,7 @@ export function Dashboard() {
             }}
             getDateLabel={getDateLabel}
             isDarkTheme={isDarkTheme}
-            showDayNav={period === 'today' || period === 'yesterday'}
+            showDayNav={period === 'today'}
             periodLabel={getPeriodLabel()}
             visibilityConfig={metricVisibility}
             onShare={() => setShowShareCard(true)}
