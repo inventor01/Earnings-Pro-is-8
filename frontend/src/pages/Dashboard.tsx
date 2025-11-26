@@ -97,6 +97,7 @@ export function Dashboard() {
   const [showNegativeAlert, setShowNegativeAlert] = useState(true);
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showPerformanceOverview, setShowPerformanceOverview] = useState(true);
   
   const [metricVisibility, setMetricVisibility] = useState<Partial<MetricVisibility>>(() => {
     const saved = localStorage.getItem('metricVisibility');
@@ -749,51 +750,79 @@ export function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
           {/* Left Column - Performance Overview */}
           <div className="lg:col-span-2 space-y-4 md:space-y-6 scroll-smooth" data-tour="performance">
-            <SummaryCard
-              revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
-              expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
-              profit={`$${rollup?.profit.toFixed(2) || '0.00'}`}
-              miles={rollup?.miles.toFixed(1) || '0.0'}
-              orders={entries.filter(e => e.type === 'ORDER').length}
-              margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
-              avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
-              dayOffset={dayOffset}
-              onDayChange={(offset) => {
-                setDayOffset(offset);
-                if (period !== 'today') {
-                  setPeriod('today');
-                }
-              }}
-              getDateLabel={getDateLabel}
-              isDarkTheme={isDarkTheme}
-              showDayNav={period === 'today'}
-              periodLabel={getPeriodLabel()}
-              visibilityConfig={metricVisibility}
-              onShare={() => setShowShareCard(true)}
-            />
-
-            {/* Profit Calendar Toggle and Display */}
-            <div className="flex items-center justify-center">
+            {/* Performance Overview Header with Toggle */}
+            <div className="flex items-center justify-between">
+              <h2 className={`text-lg font-bold ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>
+                Performance Overview
+              </h2>
               <button
-                onClick={() => setShowCalendar(!showCalendar)}
-                className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center gap-2 ${
+                onClick={() => setShowPerformanceOverview(!showPerformanceOverview)}
+                className={`p-2 rounded-lg transition-all ${
                   isDarkTheme
-                    ? showCalendar
-                      ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-400'
-                      : 'bg-slate-800 text-slate-400 border border-slate-700 hover:border-cyan-400'
-                    : showCalendar
-                    ? 'bg-blue-500 text-white border border-blue-600'
-                    : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300'
+                    ? 'text-slate-400 hover:text-cyan-300 hover:bg-slate-700/50'
+                    : 'text-gray-600 hover:text-blue-600 hover:bg-gray-200'
                 }`}
+                title={showPerformanceOverview ? 'Collapse' : 'Expand'}
               >
-                📅 {showCalendar ? 'Hide' : 'Show'} Calendar
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {showPerformanceOverview ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  )}
+                </svg>
               </button>
             </div>
 
-            {showCalendar && (
-              <div>
-                <ProfitCalendar entries={entries} />
-              </div>
+            {showPerformanceOverview && (
+              <>
+                <SummaryCard
+                  revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
+                  expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
+                  profit={`$${rollup?.profit.toFixed(2) || '0.00'}`}
+                  miles={rollup?.miles.toFixed(1) || '0.0'}
+                  orders={entries.filter(e => e.type === 'ORDER').length}
+                  margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
+                  avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
+                  dayOffset={dayOffset}
+                  onDayChange={(offset) => {
+                    setDayOffset(offset);
+                    if (period !== 'today') {
+                      setPeriod('today');
+                    }
+                  }}
+                  getDateLabel={getDateLabel}
+                  isDarkTheme={isDarkTheme}
+                  showDayNav={period === 'today'}
+                  periodLabel={getPeriodLabel()}
+                  visibilityConfig={metricVisibility}
+                  onShare={() => setShowShareCard(true)}
+                />
+
+                {/* Profit Calendar Toggle and Display */}
+                <div className="flex items-center justify-center">
+                  <button
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center gap-2 ${
+                      isDarkTheme
+                        ? showCalendar
+                          ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-400'
+                          : 'bg-slate-800 text-slate-400 border border-slate-700 hover:border-cyan-400'
+                        : showCalendar
+                        ? 'bg-blue-500 text-white border border-blue-600'
+                        : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300'
+                    }`}
+                  >
+                    📅 {showCalendar ? 'Hide' : 'Show'} Calendar
+                  </button>
+                </div>
+
+                {showCalendar && (
+                  <div>
+                    <ProfitCalendar entries={entries} />
+                  </div>
+                )}
+              </>
             )}
           </div>
 
