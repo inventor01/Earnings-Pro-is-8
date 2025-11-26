@@ -172,7 +172,7 @@ export function PotOfGoldTracker() {
 
   return (
     <div 
-      className={`rounded-3xl p-8 md:p-12 border-2 transition-all group relative overflow-hidden min-h-96 md:min-h-[28rem] ${
+      className={`rounded-3xl p-8 md:p-12 border-2 transition-all group relative min-h-96 md:min-h-[28rem] ${
         themeConfig.name === 'dark-neon'
           ? 'bg-gradient-to-br from-purple-900/60 via-slate-900/50 to-blue-900/40 border-cyan-400/60 hover:border-cyan-300/80 hover:from-purple-900/80 hover:via-slate-900/70 hover:to-blue-900/60 shadow-2xl hover:shadow-cyan-400/40'
           : themeConfig.name === 'simple-light'
