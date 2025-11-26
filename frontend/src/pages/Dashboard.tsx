@@ -14,7 +14,7 @@ import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
 import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
 import { FeatureTour } from '../components/FeatureTour';
-import { PointsCard } from '../components/PointsCard';
+// import { PointsCard } from '../components/PointsCard';
 import { ShareCard } from '../components/ShareCard';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { useTheme } from '../lib/themeContext';
@@ -714,10 +714,10 @@ export function Dashboard() {
           />
         </div>
 
-        {/* Points & Rewards Card */}
-        <div className="mb-4 md:mb-6">
+        {/* Points & Rewards Card - Hidden for now */}
+        {/* <div className="mb-4 md:mb-6">
           <PointsCard />
-        </div>
+        </div> */}
 
         {/* Monthly Pot of Gold Tracker */}
         <div className="mb-4 md:mb-6">
