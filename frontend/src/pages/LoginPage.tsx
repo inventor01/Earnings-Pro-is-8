@@ -3,7 +3,7 @@ import { useAuth } from '../lib/authContext';
 import { useTheme } from '../lib/themeContext';
 
 export function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [credential, setCredential] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,8 +20,8 @@ export function LoginPage() {
     try {
       const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/signup';
       const body = mode === 'login' 
-        ? { email, password }
-        : { email, password, username };
+        ? { credential, password }
+        : { email: credential, password, username };
       
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -94,13 +94,13 @@ export function LoginPage() {
             <label className={`block text-sm font-medium mb-2 ${
               isDarkTheme ? 'text-slate-300' : 'text-gray-700'
             }`}>
-              Email
+              {mode === 'login' ? 'Email or Username' : 'Email'}
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              type={mode === 'login' ? 'text' : 'email'}
+              value={credential}
+              onChange={(e) => setCredential(e.target.value)}
+              placeholder={mode === 'login' ? 'you@example.com or deliverydriver99' : 'you@example.com'}
               className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
                 isDarkTheme
                   ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-cyan-400'

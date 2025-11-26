@@ -16,7 +16,7 @@ router = APIRouter()
 SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "your-secret-key-change-in-production")
 
 class LoginRequest(BaseModel):
-    email: str
+    credential: str
     password: str
 
 class SignupRequest(BaseModel):
@@ -80,16 +80,20 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
 
 @router.post("/auth/login", response_model=AuthResponse)
 async def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """Login user"""
-    if not request.email or not request.password:
-        raise HTTPException(status_code=400, detail="Email and password are required")
+    """Login user - accepts email or username"""
+    if not request.credential or not request.password:
+        raise HTTPException(status_code=400, detail="Email/username and password are required")
     
-    user = db.query(AuthUser).filter(AuthUser.email == request.email).first()
+    # Try to find user by email OR username (username is stored in first_name)
+    user = db.query(AuthUser).filter(
+        (AuthUser.email == request.credential) | (AuthUser.first_name == request.credential)
+    ).first()
+    
     if not user or not user.password_hash:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise HTTPException(status_code=401, detail="Invalid email, username, or password")
     
     if not verify_password(request.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise HTTPException(status_code=401, detail="Invalid email, username, or password")
     
     token = create_access_token(user.id, user.email)
     return {
