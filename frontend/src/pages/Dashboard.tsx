@@ -243,11 +243,6 @@ export function Dashboard() {
     queryFn: () => api.getGoal('THIS_MONTH'),
   });
 
-  const { data: monthlyRollup } = useQuery({
-    queryKey: ['rollup', 'THIS_MONTH'],
-    queryFn: () => api.getRollup('THIS_MONTH'),
-  });
-
   const createMutation = useMutation({
     mutationFn: api.createEntry,
     onSuccess: () => {
@@ -870,78 +865,9 @@ export function Dashboard() {
             )}
           </div>
 
-          {/* Right Column - Monthly Goal, Quick Stats & Achievements */}
+          {/* Right Column - Quick Stats & Achievements */}
           <div className="space-y-4 md:space-y-6">
             <PotOfGoldTracker />
-            
-            {/* Monthly Goal Progress */}
-            {monthlyGoal && monthlyRollup && (
-              <div className={`p-4 md:p-6 rounded-xl md:rounded-2xl border-2 transition-all ${
-                isDarkTheme
-                  ? 'bg-gradient-to-br from-purple-900/40 to-indigo-900/40 border-purple-500/50'
-                  : 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-300'
-              }`}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className={`font-bold text-lg ${isDarkTheme ? 'text-purple-300' : 'text-purple-700'}`}>
-                    📊 Monthly Goal
-                  </h3>
-                  <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
-                    isDarkTheme
-                      ? 'bg-purple-500/30 text-purple-200'
-                      : 'bg-purple-200 text-purple-800'
-                  }`}>
-                    {((monthlyRollup.profit / parseFloat(monthlyGoal.target_profit)) * 100).toFixed(0)}%
-                  </span>
-                </div>
-                
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className={`text-sm font-semibold ${isDarkTheme ? 'text-purple-200' : 'text-purple-700'}`}>
-                        Progress
-                      </span>
-                      <span className={`font-bold ${
-                        monthlyRollup.profit >= parseFloat(monthlyGoal.target_profit)
-                          ? isDarkTheme ? 'text-green-400' : 'text-green-600'
-                          : isDarkTheme ? 'text-purple-300' : 'text-purple-600'
-                      }`}>
-                        ${monthlyRollup.profit.toFixed(2)} / ${monthlyGoal.target_profit}
-                      </span>
-                    </div>
-                    
-                    <div className={`w-full h-3 rounded-full overflow-hidden ${
-                      isDarkTheme ? 'bg-slate-700' : 'bg-purple-200'
-                    }`}>
-                      <div
-                        className={`h-full transition-all duration-500 ${
-                          monthlyRollup.profit >= parseFloat(monthlyGoal.target_profit)
-                            ? 'bg-gradient-to-r from-green-500 to-emerald-500'
-                            : 'bg-gradient-to-r from-purple-500 to-indigo-500'
-                        }`}
-                        style={{
-                          width: `${Math.min(
-                            (monthlyRollup.profit / parseFloat(monthlyGoal.target_profit)) * 100,
-                            100
-                          )}%`
-                        }}
-                      />
-                    </div>
-                  </div>
-                  
-                  {monthlyRollup.profit < parseFloat(monthlyGoal.target_profit) && (
-                    <div className={`text-sm font-semibold ${isDarkTheme ? 'text-amber-300' : 'text-amber-700'}`}>
-                      💰 ${(parseFloat(monthlyGoal.target_profit) - monthlyRollup.profit).toFixed(2)} remaining
-                    </div>
-                  )}
-                  
-                  {monthlyRollup.profit >= parseFloat(monthlyGoal.target_profit) && (
-                    <div className={`text-sm font-bold ${isDarkTheme ? 'text-green-400' : 'text-green-600'}`}>
-                      🎉 Goal Reached! +${(monthlyRollup.profit - parseFloat(monthlyGoal.target_profit)).toFixed(2)} over target
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
             
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
