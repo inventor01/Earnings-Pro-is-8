@@ -126,21 +126,41 @@ export function SummaryCard({
       {/* Glowing stars background for dark-neon theme */}
       {themeConfig.name === 'dark-neon' && (
         <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-          {[...Array(15)].map((_, i) => (
-            <div
-              key={`star-${i}`}
-              className="absolute rounded-full bg-cyan-300"
-              style={{
-                width: Math.random() * 3 + 1 + 'px',
-                height: Math.random() * 3 + 1 + 'px',
-                left: Math.random() * 100 + '%',
-                top: Math.random() * 100 + '%',
-                opacity: Math.random() * 0.6 + 0.3,
-                boxShadow: `0 0 ${Math.random() * 8 + 4}px rgba(34, 211, 238, 0.8)`,
-                animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
-              }}
-            />
-          ))}
+          {[...Array(15)].map((_, i) => {
+            const positions = [
+              { left: '5%', top: '10%' },
+              { left: '15%', top: '25%' },
+              { left: '8%', top: '50%' },
+              { left: '12%', top: '75%' },
+              { left: '25%', top: '15%' },
+              { left: '35%', top: '80%' },
+              { left: '50%', top: '5%' },
+              { left: '65%', top: '85%' },
+              { left: '75%', top: '20%' },
+              { left: '85%', top: '45%' },
+              { left: '92%', top: '70%' },
+              { left: '88%', top: '15%' },
+              { left: '20%', top: '60%' },
+              { left: '60%', top: '35%' },
+              { left: '78%', top: '65%' },
+            ];
+            const pos = positions[i % positions.length];
+            return (
+              <div
+                key={`star-${i}`}
+                className="absolute rounded-full bg-cyan-300"
+                style={{
+                  width: Math.random() * 3 + 1 + 'px',
+                  height: Math.random() * 3 + 1 + 'px',
+                  left: pos.left,
+                  top: pos.top,
+                  opacity: Math.random() * 0.6 + 0.3,
+                  boxShadow: `0 0 ${Math.random() * 8 + 4}px rgba(34, 211, 238, 0.8)`,
+                  animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+                }}
+              />
+            );
+          })}
         </div>
       )}
       
