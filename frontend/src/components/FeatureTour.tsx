@@ -156,7 +156,7 @@ export function FeatureTour() {
           <div className="fixed inset-0 bg-black/50 pointer-events-none z-40 transition-opacity duration-300" />
           {highlightBox && (
             <div
-              className="fixed border-2 border-cyan-400 rounded-lg pointer-events-none z-41 transition-all duration-300 animate-pulse"
+              className="fixed border-2 border-cyan-400 rounded-lg pointer-events-none z-41"
               style={{
                 top: `${highlightBox.top - 4}px`,
                 left: `${highlightBox.left - 4}px`,
@@ -171,7 +171,7 @@ export function FeatureTour() {
 
       {/* Tooltip */}
       <div
-        className={`fixed z-50 max-w-xs p-4 rounded-lg shadow-2xl transition-all duration-300 animate-bounce ${
+        className={`fixed z-50 max-w-sm md:max-w-xs w-11/12 md:w-auto p-3 md:p-4 rounded-lg shadow-2xl ${
           themeConfig.name === 'dark-neon'
             ? 'bg-slate-900 border border-cyan-400 text-white'
             : themeConfig.name === 'simple-light'
@@ -180,10 +180,10 @@ export function FeatureTour() {
         }`}
         style={getTooltipPosition()}
       >
-        <h3 className="font-bold text-lg mb-2">{step.title}</h3>
-        <p className="text-sm mb-4 opacity-90">{step.description}</p>
+        <h3 className="font-bold text-base md:text-lg mb-2">{step.title}</h3>
+        <p className="text-xs md:text-sm mb-3 md:mb-4 opacity-90">{step.description}</p>
 
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 mb-3 md:mb-4">
           <div className="flex gap-1">
             {TOUR_STEPS.map((_, idx) => (
               <div
@@ -203,10 +203,10 @@ export function FeatureTour() {
           </span>
         </div>
 
-        <div className="flex gap-2 mt-4">
+        <div className="flex flex-col md:flex-row gap-2">
           <button
             onClick={handleSkip}
-            className="px-3 py-1 text-xs font-bold rounded bg-gray-700 hover:bg-gray-600 transition-colors"
+            className="px-3 py-2 md:py-1 text-xs font-bold rounded bg-gray-700 hover:bg-gray-600 transition-colors w-full md:w-auto"
           >
             Skip Tour
           </button>
@@ -214,7 +214,7 @@ export function FeatureTour() {
             <button
               onClick={handlePrev}
               disabled={currentStep === 0}
-              className={`px-2 py-1 text-xs font-bold rounded transition-colors ${
+              className={`px-2 py-2 md:py-1 text-xs font-bold rounded transition-colors flex-1 md:flex-none ${
                 currentStep === 0
                   ? 'bg-gray-700 opacity-50 cursor-not-allowed'
                   : 'bg-gray-700 hover:bg-gray-600'
@@ -224,7 +224,7 @@ export function FeatureTour() {
             </button>
             <button
               onClick={handleNext}
-              className="flex-1 px-2 py-1 text-xs font-bold rounded bg-cyan-500 hover:bg-cyan-600 transition-colors text-black"
+              className="flex-1 px-2 py-2 md:py-1 text-xs font-bold rounded bg-cyan-500 hover:bg-cyan-600 transition-colors text-black"
             >
               {currentStep === TOUR_STEPS.length - 1 ? 'Done ✓' : 'Next →'}
             </button>
