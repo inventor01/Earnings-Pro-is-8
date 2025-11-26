@@ -11,3 +11,7 @@ httpx==0.25.1
 openai
 apscheduler
 httpx
+flask-dance
+flask-login
+oauthlib
+pyjwt
