@@ -698,6 +698,27 @@ export function Dashboard() {
           </div>
         </div>
 
+        {/* Negative Profit Alert */}
+        {rollup && rollup.profit < 0 && (
+          <div className={`mb-4 md:mb-6 p-4 md:p-5 rounded-xl border-2 transition-all ${
+            isDarkTheme
+              ? 'bg-gradient-to-r from-red-900/40 to-red-800/30 border-red-600/60 shadow-lg shadow-red-900/30'
+              : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-300 shadow-md shadow-red-200/50'
+          }`}>
+            <div className="flex items-center gap-4">
+              <div className="text-4xl md:text-5xl flex-shrink-0 animate-pulse">⚠️</div>
+              <div className="flex-1 min-w-0">
+                <h3 className={`text-lg md:text-xl font-bold mb-1 ${isDarkTheme ? 'text-red-300' : 'text-red-700'}`}>
+                  You're in the Negative!
+                </h3>
+                <p className={`text-sm md:text-base ${isDarkTheme ? 'text-red-200/90' : 'text-red-600/90'}`}>
+                  You need to make <span className="font-black text-lg md:text-2xl">${Math.abs(rollup.profit).toFixed(2)}</span> to get back into profit today
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Dashboard Grid - Everything in One View */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
           {/* Left Column - Performance Overview */}
