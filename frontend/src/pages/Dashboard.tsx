@@ -16,6 +16,7 @@ import { EntryViewer } from '../components/EntryViewer';
 import { FeatureTour } from '../components/FeatureTour';
 import { PointsCard } from '../components/PointsCard';
 import { ShareCard } from '../components/ShareCard';
+import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { useTheme } from '../lib/themeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
@@ -716,6 +717,11 @@ export function Dashboard() {
         {/* Points & Rewards Card */}
         <div className="mb-4 md:mb-6">
           <PointsCard />
+        </div>
+
+        {/* Monthly Pot of Gold Tracker */}
+        <div className="mb-4 md:mb-6">
+          <PotOfGoldTracker />
         </div>
 
         <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth" data-tour="kpis">
