@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Numeric, DateTime, Text, Enum as SQLEnum, Boolean
+from sqlalchemy import Column, Integer, String, Float, Numeric, DateTime, Text, Enum as SQLEnum, Boolean, ForeignKey
 from datetime import datetime
 from decimal import Decimal
 import enum
@@ -29,10 +29,22 @@ class ExpenseCategory(str, enum.Enum):
     LEISURE = "LEISURE"
     OTHER = "OTHER"
 
+class AuthUser(Base):
+    __tablename__ = "auth_users"
+    
+    id = Column(String, primary_key=True)
+    email = Column(String, nullable=True)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    profile_image_url = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
 class Entry(Base):
     __tablename__ = "entries"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     type = Column(SQLEnum(EntryType), nullable=False)
     app = Column(SQLEnum(AppType), nullable=False)
@@ -51,7 +63,8 @@ class Entry(Base):
 class Settings(Base):
     __tablename__ = "settings"
     
-    id = Column(Integer, primary_key=True, default=1)
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, unique=True, index=True)
     cost_per_mile = Column(Numeric(10, 2), default=Decimal("0"), nullable=False)
 
 class TimeframeType(str, enum.Enum):
@@ -66,10 +79,15 @@ class Goal(Base):
     __tablename__ = "goals"
     
     id = Column(Integer, primary_key=True, index=True)
-    timeframe = Column(SQLEnum(TimeframeType), unique=True, nullable=False)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    timeframe = Column(SQLEnum(TimeframeType), nullable=False)
     target_profit = Column(Numeric(10, 2), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    __table_args__ = (
+        __import__('sqlalchemy').UniqueConstraint('user_id', 'timeframe', name='uq_user_timeframe'),
+    )
 
 class PlatformIntegration(str, enum.Enum):
     UBER = "UBER"

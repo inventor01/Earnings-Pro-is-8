@@ -1,0 +1,41 @@
+import os
+import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthCredentialBearer
+from sqlalchemy.orm import Session
+from backend.db import get_db
+from backend.models import AuthUser
+
+security = HTTPBearer()
+
+def get_current_user(credentials = Depends(security), db: Session = Depends(get_db)) -> AuthUser:
+    """Get current authenticated user from JWT token"""
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, options={"verify_signature": False})
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )
+    except jwt.DecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+    
+    user = db.query(AuthUser).filter(AuthUser.id == user_id).first()
+    if not user:
+        user = AuthUser(
+            id=user_id,
+            email=payload.get("email"),
+            first_name=payload.get("first_name"),
+            last_name=payload.get("last_name"),
+            profile_image_url=payload.get("profile_image_url")
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    
+    return user
