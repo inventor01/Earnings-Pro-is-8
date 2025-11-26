@@ -17,6 +17,7 @@ import { FeatureTour } from '../components/FeatureTour';
 // import { PointsCard } from '../components/PointsCard';
 import { ShareCard } from '../components/ShareCard';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
+import { Achievements } from '../components/Achievements';
 import { useTheme } from '../lib/themeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
@@ -214,6 +215,11 @@ export function Dashboard() {
       rollupTimeframe,
       period === 'today' ? dayOffset : undefined
     ),
+  });
+
+  const { data: monthlyGoal } = useQuery({
+    queryKey: ['goal', 'THIS_MONTH'],
+    queryFn: () => api.getGoal('THIS_MONTH'),
   });
 
   const createMutation = useMutation({
@@ -762,7 +768,7 @@ export function Dashboard() {
             />
           </div>
 
-          {/* Right Column - Monthly Goal & Quick Stats */}
+          {/* Right Column - Monthly Goal, Quick Stats & Achievements */}
           <div className="space-y-4 md:space-y-6">
             <PotOfGoldTracker />
             
@@ -780,6 +786,8 @@ export function Dashboard() {
                 color="gray"
               />
             </div>
+
+            <Achievements entries={entries} rollup={rollup} monthlyGoal={monthlyGoal} />
           </div>
         </div>
 
