@@ -591,10 +591,13 @@ export function Dashboard() {
               <h1 
                 className="text-lg md:text-5xl font-black whitespace-nowrap"
                 style={{
-                  background: isDarkTheme ? 'linear-gradient(to right, white, #d1d5db)' : 'none',
+                  backgroundImage: isDarkTheme ? 'linear-gradient(to right, white, #d1d5db)' : 'none',
                   WebkitBackgroundClip: isDarkTheme ? 'text' : 'unset',
-                  WebkitTextFillColor: isDarkTheme ? 'transparent' : '#000',
-                  WebkitTextStroke: !isDarkTheme ? '1.5px #000' : 'none'
+                  backgroundClip: isDarkTheme ? 'text' : 'unset',
+                  WebkitTextFillColor: isDarkTheme ? 'transparent' : 'inherit',
+                  color: isDarkTheme ? 'transparent' : '#000',
+                  WebkitTextStroke: !isDarkTheme ? '1.5px #000' : 'none',
+                  textStroke: !isDarkTheme ? '1.5px #000' : 'none'
                 } as any}
               > PRO</h1>
             </div>
