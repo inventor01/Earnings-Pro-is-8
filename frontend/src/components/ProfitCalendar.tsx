@@ -66,8 +66,11 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
         dailyData[dateStr].revenue += amount;
         dailyData[dateStr].profit += amount;
       } else if (entryType === 'EXPENSE') {
-        dailyData[dateStr].expenses += amount;
-        dailyData[dateStr].profit -= amount;
+        // Expenses should always be stored as positive values
+        const expenseAmount = Math.abs(amount);
+        dailyData[dateStr].expenses += expenseAmount;
+        // Subtract expense from profit (use the positive value)
+        dailyData[dateStr].profit -= expenseAmount;
       }
     });
 
