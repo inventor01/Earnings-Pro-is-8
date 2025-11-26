@@ -149,24 +149,24 @@ export function FeatureTour() {
             const rect = element.getBoundingClientRect();
             setHighlightBox(rect);
             
-            // Explicitly position tooltip below the button on mobile
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
             const isMobile = viewportWidth < 768;
             
             if (isMobile) {
-              const centerX = Math.max(16, Math.min(viewportWidth - 16 - 280, viewportWidth / 2 - 140));
+              // On mobile, position tooltip at top-center for guaranteed visibility
+              const centerX = Math.max(8, (viewportWidth - 280) / 2);
               setTooltipStyle({
-                top: `${rect.bottom + 16}px`,
+                top: '16px',
                 left: `${centerX}px`,
                 position: 'fixed',
-                maxHeight: `${viewportHeight - rect.bottom - 16 - 16 - 50}px`,
+                maxHeight: `${viewportHeight - 70 - 50}px`,
                 overflow: 'auto',
               });
             } else {
               calculateTooltipPosition(rect);
             }
-          }, 100);
+          }, 50);
           return;
         } else {
           const rect = element.getBoundingClientRect();
