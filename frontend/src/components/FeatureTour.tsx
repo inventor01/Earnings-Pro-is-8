@@ -152,6 +152,7 @@ export function FeatureTour() {
           // Add delay to ensure scroll completes before calculating position
           setTimeout(() => {
             const rect = element.getBoundingClientRect();
+            setIsHighlighting(true);
             setHighlightBox(rect);
             
             const viewportWidth = window.innerWidth;
