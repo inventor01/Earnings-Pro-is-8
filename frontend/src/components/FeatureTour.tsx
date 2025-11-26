@@ -376,17 +376,16 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
             : 'bg-black border border-white text-white'
         }`}
         style={{
+          ...tooltipStyle,
           position: 'fixed',
           zIndex: 50,
-          width: 'calc(100vw - 1rem)',
-          maxWidth: '90vw',
-          maxHeight: 'calc(100vh - 3rem)',
+          width: window.innerWidth < 480 ? 'calc(100vw - 1rem)' : 'auto',
+          maxWidth: window.innerWidth < 480 ? 'calc(100vw - 1rem)' : '360px',
+          maxHeight: 'calc(100vh - 80px)',
           padding: '1rem',
-          top: '1.5rem',
-          left: '0.5rem',
-          right: '0.5rem',
-          margin: '0 auto',
-          borderRadius: '0.5rem',
+          overflowY: 'auto' as const,
+          top: tooltipStyle.top ? Math.max(8, parseInt(tooltipStyle.top as string)) : undefined,
+          left: tooltipStyle.left ? Math.max(4, Math.min(parseInt(tooltipStyle.left as string), window.innerWidth - 320)) : undefined,
         }}
       >
         <h3 className={`font-bold mb-1 line-clamp-2 ${
