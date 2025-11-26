@@ -295,7 +295,7 @@ export function FeatureTour() {
 
       {/* Tooltip - Always mobile-optimized */}
       <div
-        className={`fixed z-50 w-screen md:w-auto max-w-sm md:max-w-xs mx-4 md:mx-0 rounded-lg shadow-2xl p-4 ${
+        className={`fixed z-50 w-[calc(100%-2rem)] md:w-auto max-w-xs md:max-w-sm rounded-lg shadow-2xl p-2.5 md:p-4 ${
           themeConfig.name === 'dark-neon'
             ? 'bg-slate-900 border border-cyan-400 text-white'
             : themeConfig.name === 'simple-light'
@@ -304,41 +304,41 @@ export function FeatureTour() {
         }`}
         style={tooltipStyle}
       >
-        <h3 className="font-bold text-lg mb-2 line-clamp-2">{step.title}</h3>
-        <p className="text-sm mb-4 opacity-90 line-clamp-3">{step.description}</p>
+        <h3 className="font-bold text-sm md:text-lg mb-1.5 md:mb-2 line-clamp-2">{step.title}</h3>
+        <p className="text-xs md:text-sm mb-2.5 md:mb-4 opacity-90 line-clamp-3">{step.description}</p>
 
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex gap-1 flex-wrap">
+        <div className="flex items-center justify-between gap-1.5 md:gap-2 mb-2.5 md:mb-4">
+          <div className="flex gap-0.5 md:gap-1 flex-wrap">
             {TOUR_STEPS.map((_, idx) => (
               <div
                 key={idx}
-                className={`h-1 transition-all ${
+                className={`h-0.5 md:h-1 transition-all ${
                   idx === currentStep
-                    ? 'w-4 md:w-6 bg-cyan-400'
+                    ? 'w-3 md:w-6 bg-cyan-400'
                     : idx < currentStep
-                    ? 'w-2 bg-cyan-400/50'
-                    : 'w-2 bg-gray-500'
+                    ? 'w-1.5 md:w-2 bg-cyan-400/50'
+                    : 'w-1.5 md:w-2 bg-gray-500'
                 }`}
               />
             ))}
           </div>
-          <span className="text-xs font-semibold text-gray-400 whitespace-nowrap ml-2">
+          <span className="text-[10px] md:text-xs font-semibold text-gray-400 whitespace-nowrap ml-1">
             {currentStep + 1}/{TOUR_STEPS.length}
           </span>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-2 w-full">
+        <div className="flex flex-col md:flex-row gap-1.5 md:gap-2 w-full">
           <button
             onClick={handleSkip}
-            className="px-3 py-2 md:py-1 text-xs md:text-sm font-bold rounded bg-slate-700 hover:bg-slate-600 transition-colors w-full md:w-auto whitespace-nowrap text-gray-100"
+            className="px-2 md:px-3 py-1.5 md:py-1 text-[10px] md:text-xs font-bold rounded bg-slate-700 hover:bg-slate-600 transition-colors w-full md:w-auto whitespace-nowrap text-gray-100"
           >
             Skip
           </button>
-          <div className="flex gap-2 w-full md:w-auto flex-1">
+          <div className="flex gap-1.5 md:gap-2 w-full md:w-auto flex-1">
             <button
               onClick={handlePrev}
               disabled={currentStep === 0}
-              className={`px-2 md:px-3 py-2 md:py-1 text-xs md:text-sm font-bold rounded transition-colors flex-1 md:flex-none whitespace-nowrap ${
+              className={`px-1.5 md:px-3 py-1.5 md:py-1 text-[10px] md:text-xs font-bold rounded transition-colors flex-1 md:flex-none whitespace-nowrap ${
                 currentStep === 0
                   ? 'bg-slate-700 opacity-40 cursor-not-allowed text-gray-400'
                   : 'bg-indigo-600 hover:bg-indigo-500 text-white'
@@ -348,7 +348,7 @@ export function FeatureTour() {
             </button>
             <button
               onClick={handleNext}
-              className="flex-1 md:flex-none px-2 md:px-3 py-2 md:py-1 text-xs md:text-sm font-bold rounded bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 transition-all text-black whitespace-nowrap shadow-lg hover:shadow-cyan-500/50"
+              className="flex-1 md:flex-none px-1.5 md:px-3 py-1.5 md:py-1 text-[10px] md:text-xs font-bold rounded bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 transition-all text-black whitespace-nowrap shadow-lg hover:shadow-cyan-500/50"
             >
               {currentStep === TOUR_STEPS.length - 1 ? 'Done ✓' : 'Next →'}
             </button>
