@@ -65,11 +65,11 @@ export function PotOfGoldTracker() {
   };
 
   const triggerCoins = () => {
-    const newCoins = Array.from({ length: 5 }, (_, i) => Date.now() + i * 100);
+    const newCoins = Array.from({ length: 12 }, (_, i) => Date.now() + i * 30);
     setFloatingCoins(prev => [...prev, ...newCoins]);
     setTimeout(() => {
       setFloatingCoins([]);
-    }, 2000);
+    }, 2800);
   };
 
   if (isHidden) {
@@ -201,22 +201,63 @@ export function PotOfGoldTracker() {
       </div>
 
       {/* Floating coins animation */}
-      <div className="absolute inset-0 pointer-events-none">
-        {floatingCoins.map((coinId, idx) => (
-          <div
-            key={coinId}
-            className="absolute text-3xl"
-            style={{
-              left: `${20 + (idx % 5) * 15}%`,
-              bottom: '10%',
-              animation: `floating-coin 2s ease-out forwards`,
-              animationDelay: `${idx * 0.15}s`,
-            }}
-          >
-            🪙
-          </div>
-        ))}
+      <div className="absolute inset-0 pointer-events-none overflow-visible">
+        {floatingCoins.map((coinId, idx) => {
+          const angle = (idx / floatingCoins.length) * Math.PI * 2;
+          const velocity = 100 + Math.random() * 80;
+          const randomX = Math.cos(angle) * velocity;
+          const randomY = Math.sin(angle) * velocity;
+          return (
+            <div
+              key={coinId}
+              className="absolute text-4xl"
+              style={{
+                left: '50%',
+                top: '50%',
+                marginLeft: '-1rem',
+                marginTop: '-1rem',
+                animation: `burst-coin 2.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
+                animationDelay: `${idx * 0.02}s`,
+                '--tx': `${randomX}px`,
+                '--ty': `${randomY}px`,
+                filter: 'drop-shadow(0 0 12px rgba(250, 204, 21, 0.8)) drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))',
+              } as React.CSSProperties & {
+                '--tx': string;
+                '--ty': string;
+              }}
+            >
+              <div style={{
+                position: 'relative',
+                animation: 'spin-coin 1.2s linear forwards',
+              }}>
+                🪙
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Add keyframes to document if not already present */}
+      <style>{`
+        @keyframes burst-coin {
+          0% {
+            opacity: 1;
+            transform: translate(0, 0) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(var(--tx), var(--ty)) scale(0.3);
+          }
+        }
+        @keyframes spin-coin {
+          0% {
+            transform: rotateY(0deg) rotateZ(0deg);
+          }
+          100% {
+            transform: rotateY(720deg) rotateZ(180deg);
+          }
+        }
+      `}</style>
 
       {/* Header section */}
       <div className="relative z-10 flex items-start justify-between mb-10 gap-6">
