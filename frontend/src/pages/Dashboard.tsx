@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, Entry, EntryCreate, EntryType, TimeframeType } from '../lib/api';
+import { useAuth } from '../lib/authContext';
 import { PeriodChips, Period } from '../components/PeriodChips';
 import { KpiCard } from '../components/KpiCard';
 import { SummaryCard, MetricVisibility } from '../components/SummaryCard';
@@ -652,6 +653,20 @@ export function Dashboard() {
             </div>
           </div>
           <div className="flex gap-1 md:gap-2">
+            <button
+              onClick={() => {
+                const { logout } = useAuth();
+                logout();
+              }}
+              className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
+                isDarkTheme
+                  ? 'bg-gradient-to-r from-slate-700 to-slate-600 text-white hover:from-slate-600 hover:to-slate-500'
+                  : 'bg-gray-400 text-white hover:bg-gray-500'
+              }`}
+              title="Sign out"
+            >
+              Sign Out
+            </button>
             <button
               onClick={() => setShowAchievementsModal(true)}
               className={`relative p-2 md:p-2.5 rounded-lg transition-all ${
