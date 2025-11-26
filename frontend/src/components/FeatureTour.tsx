@@ -159,13 +159,15 @@ export function FeatureTour() {
             const isMobile = viewportWidth < 768;
             
             if (isMobile) {
-              // On mobile, position tooltip at top-center for guaranteed visibility
+              // On mobile, position tooltip BELOW the button bar so buttons remain visible
+              // Button bar is typically ~50-60px, add spacing and position tooltip below it
               const centerX = Math.max(8, (viewportWidth - 280) / 2);
+              const buttonBarHeight = 60; // Approximate height of top button row
               setTooltipStyle({
-                top: '16px',
+                top: `${buttonBarHeight + 12}px`,
                 left: `${centerX}px`,
                 position: 'fixed',
-                maxHeight: `${viewportHeight - 70 - 50}px`,
+                maxHeight: `${viewportHeight - buttonBarHeight - 12 - 50}px`,
                 overflow: 'auto',
               });
             } else {
