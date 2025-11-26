@@ -21,27 +21,38 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
 
-    // Build aggregated daily data
+    // Build aggregated daily data - use map for all possible date formats
     const dailyData: { [key: string]: { profit: number; revenue: number; expenses: number } } = {};
     
     entries.forEach(entry => {
       if (!entry || typeof entry !== 'object') return;
       
-      // Get date from entry
+      // Try to get date from entry - check multiple possible fields
       let dateStr = '';
+      
       if (entry.created_at && typeof entry.created_at === 'string') {
         try {
           dateStr = getESTDateString(entry.created_at);
         } catch (e) {
-          console.error('Failed to parse date:', entry.created_at, e);
-          return;
+          console.error('Failed to parse created_at date:', entry.created_at, e);
         }
+      }
+      
+      // Try date field as fallback
+      if (!dateStr && entry.date && typeof entry.date === 'string') {
+        // Assume date is already in YYYY-MM-DD format or similar
+        dateStr = entry.date.substring(0, 10);
       }
       
       if (!dateStr) return;
       
       // Parse amount - ensure it's a number
-      const amount = typeof entry.amount === 'number' ? entry.amount : parseFloat(entry.amount) || 0;
+      let amount = 0;
+      if (typeof entry.amount === 'number') {
+        amount = entry.amount;
+      } else if (typeof entry.amount === 'string') {
+        amount = parseFloat(entry.amount) || 0;
+      }
       
       // Initialize day data if needed
       if (!dailyData[dateStr]) {
@@ -49,7 +60,7 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
       }
       
       // Aggregate by type
-      const entryType = entry.type ? String(entry.type).toUpperCase() : '';
+      const entryType = entry.type ? String(entry.type).toUpperCase().trim() : '';
       
       if (entryType === 'ORDER' || entryType === 'BONUS') {
         dailyData[dateStr].revenue += amount;
@@ -73,9 +84,9 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
       days.push({
         day,
         dateStr,
-        profit: data ? Number(data.profit) : 0,
-        revenue: data ? Number(data.revenue) : 0,
-        expenses: data ? Number(data.expenses) : 0,
+        profit: data ? Number(data.profit) || 0 : 0,
+        revenue: data ? Number(data.revenue) || 0 : 0,
+        expenses: data ? Number(data.expenses) || 0 : 0,
         hasData: !!data
       });
     }
