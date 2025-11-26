@@ -252,24 +252,43 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
               )}
 
               {isExpense && (
-                <div>
-                  <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🏷️ Category</label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => onFormDataChange({ ...formData, category: e.target.value as ExpenseCategory })}
-                    className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-                  >
-                    <option value="GAS">⛽ Gas</option>
-                    <option value="PARKING">🅿️ Parking</option>
-                    <option value="TOLLS">🛣️ Tolls</option>
-                    <option value="MAINTENANCE">🔧 Maintenance</option>
-                    <option value="PHONE">📱 Phone</option>
-                    <option value="SUBSCRIPTION">📦 Subscription</option>
-                    <option value="FOOD">🍔 Food</option>
-                    <option value="LEISURE">🎮 Leisure</option>
-                    <option value="OTHER">📋 Other</option>
-                  </select>
-                </div>
+                <>
+                  <div>
+                    <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🏷️ Category</label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => onFormDataChange({ ...formData, category: e.target.value as ExpenseCategory })}
+                      className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                    >
+                      <option value="GAS">⛽ Gas</option>
+                      <option value="PARKING">🅿️ Parking</option>
+                      <option value="TOLLS">🛣️ Tolls</option>
+                      <option value="MAINTENANCE">🔧 Maintenance</option>
+                      <option value="PHONE">📱 Phone</option>
+                      <option value="SUBSCRIPTION">📦 Subscription</option>
+                      <option value="FOOD">🍔 Food</option>
+                      <option value="LEISURE">🎮 Leisure</option>
+                      <option value="OTHER">📋 Other</option>
+                    </select>
+                  </div>
+                  
+                  {/* Business Expense Toggle */}
+                  <label className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:from-blue-100 hover:to-cyan-100 transition-all duration-200 cursor-pointer group">
+                    <span className="flex items-center gap-2 md:gap-3">
+                      <span className="text-lg">💼</span>
+                      <span className="text-sm md:text-base font-bold text-gray-800">Business Expense</span>
+                    </span>
+                    <div className="relative inline-block w-12 h-6 transition-colors duration-300 rounded-full" style={{ backgroundColor: formData.is_business_expense ? '#3b82f6' : '#d1d5db' }}>
+                      <input
+                        type="checkbox"
+                        checked={formData.is_business_expense ?? false}
+                        onChange={(e) => onFormDataChange({ ...formData, is_business_expense: e.target.checked })}
+                        className="hidden"
+                      />
+                      <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${formData.is_business_expense ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </div>
+                  </label>
+                </>
               )}
 
               {/* Date and Time Fields - shown normally for non-revenue */}
@@ -302,16 +321,24 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
 
       {showExtraInfo && (
         <>
-          {/* Business Expense Toggle */}
-          <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg border border-gray-300 hover:bg-blue-50 transition-colors w-fit">
-            <input
-              type="checkbox"
-              checked={formData.is_business_expense ?? false}
-              onChange={(e) => onFormDataChange({ ...formData, is_business_expense: e.target.checked })}
-              className="w-4 h-4 rounded accent-blue-600"
-            />
-            <span className="text-xs md:text-sm font-bold text-gray-800">💼 Business</span>
-          </label>
+          {/* Business Expense Toggle for Non-Expenses */}
+          {!isExpense && (
+            <label className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:from-blue-100 hover:to-cyan-100 transition-all duration-200 cursor-pointer group">
+              <span className="flex items-center gap-2 md:gap-3">
+                <span className="text-lg">💼</span>
+                <span className="text-sm md:text-base font-bold text-gray-800">Business Expense</span>
+              </span>
+              <div className="relative inline-block w-12 h-6 transition-colors duration-300 rounded-full" style={{ backgroundColor: formData.is_business_expense ? '#3b82f6' : '#d1d5db' }}>
+                <input
+                  type="checkbox"
+                  checked={formData.is_business_expense ?? false}
+                  onChange={(e) => onFormDataChange({ ...formData, is_business_expense: e.target.checked })}
+                  className="hidden"
+                />
+                <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${formData.is_business_expense ? 'translate-x-6' : 'translate-x-0'}`} />
+              </div>
+            </label>
+          )}
 
           {isExpense && (
             <div>
