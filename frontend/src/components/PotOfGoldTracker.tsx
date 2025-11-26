@@ -84,7 +84,7 @@ export function PotOfGoldTracker() {
           <label className={`block text-sm font-bold ${
             themeConfig.name === 'simple-light' ? 'text-yellow-900' : 'text-yellow-300'
           }`}>
-            🎯 Monthly Pot of Gold Goal
+            Monthly Pot of Gold Goal
           </label>
           <div className={`flex gap-2 p-3 rounded-xl border-2 transition-all ${
             themeConfig.name === 'dark-neon'
@@ -224,11 +224,9 @@ export function PotOfGoldTracker() {
 
       {/* Cosmic decorations */}
       <div className="relative z-10 flex justify-between items-center mb-8 opacity-80">
+        <span className="text-3xl">✨</span>
         <span className="text-3xl">🌟</span>
-        <span className="text-2xl">✨</span>
-        <span className="text-3xl">🌌</span>
-        <span className="text-2xl">✨</span>
-        <span className="text-3xl">🌟</span>
+        <span className="text-3xl">✨</span>
       </div>
 
       {/* Rainbow bridge effect */}
@@ -299,9 +297,6 @@ export function PotOfGoldTracker() {
           {isGoalReached && (
             <div className="text-3xl animate-bounce">🏆</div>
           )}
-          <div className={`text-2xl transition-all ${themeConfig.name === 'dark-neon' ? 'group-hover:scale-125' : ''}`}>
-            ✨
-          </div>
         </div>
       </div>
 
@@ -314,7 +309,7 @@ export function PotOfGoldTracker() {
             ? 'bg-purple-300 text-purple-900'
             : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-cyan-300 border-2 border-cyan-400/50'
         }`}>
-          ✨ You found your pot of gold! 🍀 ✨
+          You found your pot of gold! 🍀
         </div>
       )}
 
