@@ -227,12 +227,26 @@ export function PotOfGoldTracker() {
         <div>
           <h3 className={`font-black text-2xl md:text-3xl mb-3 ${
             themeConfig.name === 'simple-light' ? 'text-purple-900' : 'text-cyan-300'
-          }`}>
+          }`}
+          style={{
+            backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            color: 'transparent'
+          }}>
             Monthly Pot of Gold
           </h3>
           <p className={`text-sm md:text-base font-semibold ${
             themeConfig.name === 'simple-light' ? 'text-purple-700' : 'text-cyan-400'
-          }`}>
+          }`}
+          style={{
+            backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            color: 'transparent'
+          }}>
             {Math.round(progressPercent)}% to your monthly treasure
           </p>
         </div>
@@ -306,13 +320,25 @@ export function PotOfGoldTracker() {
             themeConfig.name === 'simple-light' ? 'text-yellow-900' : 'text-yellow-300'
           }`}
           style={{
-            animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none'
+            animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none',
+            backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            color: 'transparent'
           }}>
             ${currentProfit.toFixed(0)}
           </span>
           <span className={`text-base font-bold ${
             themeConfig.name === 'simple-light' ? 'text-yellow-700' : 'text-yellow-400'
-          }`}>
+          }`}
+          style={{
+            backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            color: 'transparent'
+          }}>
             / ${goalAmount.toFixed(0)}
           </span>
         </div>
@@ -328,7 +354,14 @@ export function PotOfGoldTracker() {
             : themeConfig.name === 'simple-light'
             ? 'bg-purple-300 text-purple-900'
             : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-cyan-300 border-2 border-cyan-400/50'
-        }`}>
+        }`}
+        style={{
+          backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          color: 'transparent'
+        }}>
           You found your pot of gold!
         </div>
       )}
@@ -336,7 +369,14 @@ export function PotOfGoldTracker() {
       {/* Hint text */}
       <div className={`relative z-10 text-sm text-center mt-6 opacity-70 transition-all group-hover:opacity-100 ${
         themeConfig.name === 'simple-light' ? 'text-purple-700' : 'text-cyan-300'
-      }`}>
+      }`}
+      style={{
+        backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+        color: 'transparent'
+      }}>
         Click the coin to celebrate • Click to edit your goal
       </div>
 
