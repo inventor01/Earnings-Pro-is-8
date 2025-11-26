@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../lib/authContext';
+import { useState } from 'react';
 import { useTheme } from '../lib/themeContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -20,8 +19,11 @@ interface Achievement {
   icon: string;
 }
 
-export function LeaderboardPage() {
-  const { logout } = useAuth();
+interface LeaderboardPageProps {
+  onBack?: () => void;
+}
+
+export function LeaderboardPage({ onBack }: LeaderboardPageProps) {
   const { config } = useTheme();
   const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState('');
@@ -89,7 +91,7 @@ export function LeaderboardPage() {
   const friends = leaderboardData?.friends || [];
   const achievements = leaderboardData?.achievements || [];
 
-  const renderLeaderboardItem = (user: LeaderboardUser, index: number, isFriendView: boolean = false) => (
+  const renderLeaderboardItem = (user: LeaderboardUser, index: number, isFriendView: boolean = false): JSX.Element => (
     <div
       key={user.id}
       className={`flex items-center justify-between p-4 rounded-lg border ${
@@ -151,7 +153,7 @@ export function LeaderboardPage() {
       {/* Header */}
       <div className={`p-6 border-b ${isDarkTheme ? 'border-slate-700' : 'border-gray-200'}`}>
         <button
-          onClick={() => window.history.back()}
+          onClick={onBack || (() => window.history.back())}
           className={`mb-4 text-sm font-medium ${isDarkTheme ? 'text-cyan-400' : 'text-blue-600'}`}
         >
           ← Back

@@ -7,7 +7,7 @@ from backend.auth import get_current_user
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 
 router = APIRouter()
 
@@ -19,7 +19,7 @@ class UserLeaderboardItem(BaseModel):
     daily_streak: int
     total_earnings: float
     is_friend: bool = False
-    profile_image_url: str | None = None
+    profile_image_url: Optional[str] = None
 
 class AddFriendRequest(BaseModel):
     friend_email_or_username: str
@@ -36,8 +36,8 @@ class LeaderboardResponse(BaseModel):
 def calculate_user_points(db: Session, user_id: str) -> int:
     """Calculate points based on earnings and streak"""
     entries = db.query(Entry).filter(Entry.user_id == user_id).all()
-    total_earnings = sum(float(e.amount) for e in entries if e.amount > 0)
-    points = int(total_earnings) + (entries.__len__() * 10)
+    total_earnings = sum(float(e.amount) for e in entries if float(e.amount) > 0)
+    points = int(total_earnings) + (len(entries) * 10)
     return points
 
 def calculate_total_earnings(db: Session, user_id: str) -> float:
@@ -46,7 +46,7 @@ def calculate_total_earnings(db: Session, user_id: str) -> float:
         Entry.user_id == user_id,
         Entry.type == EntryType.ORDER
     ).all()
-    return float(sum(e.amount for e in entries))
+    return float(sum(float(e.amount) for e in entries))
 
 @router.get("/leaderboard")
 async def get_leaderboard(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -71,14 +71,15 @@ async def get_leaderboard(current_user: AuthUser = Depends(get_current_user), db
             Friend.status == "accepted"
         ).first()
         
+        username = user.first_name if user.first_name else user.email
         leaderboard_items.append(UserLeaderboardItem(
             id=user.id,
-            username=user.first_name or user.email,
-            email=user.email,
+            username=username,
+            email=user.email or "",
             points=points,
             daily_streak=0,
             total_earnings=earnings,
-            is_friend=bool(friend),
+            is_friend=friend is not None,
             profile_image_url=user.profile_image_url
         ))
     

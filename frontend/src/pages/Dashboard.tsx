@@ -24,7 +24,11 @@ import { useTheme } from '../lib/themeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
 
-export function Dashboard() {
+interface DashboardProps {
+  onNavigateToLeaderboard?: () => void;
+}
+
+export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const { logout } = useAuth();
   const [period, setPeriod] = useState<Period>('today');
   const [amount, setAmount] = useState('0');
@@ -661,13 +665,13 @@ export function Dashboard() {
               Sign Out
             </button>
             <button
-              onClick={() => setShowAchievementsModal(true)}
+              onClick={() => onNavigateToLeaderboard?.()}
               className={`relative p-2 md:p-2.5 rounded-lg transition-all ${
                 isDarkTheme
                   ? 'hover:bg-cyan-500/20 text-cyan-400'
                   : 'hover:bg-blue-100 text-blue-600'
               }`}
-              title="View achievements"
+              title="View leaderboard"
             >
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />

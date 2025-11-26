@@ -3,6 +3,8 @@ import { ThemeProvider } from './lib/themeContext';
 import { AuthProvider, useAuth } from './lib/authContext';
 import { Dashboard } from './pages/Dashboard';
 import { LoginPage } from './pages/LoginPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
+import { useState } from 'react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,6 +17,7 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'leaderboard'>('dashboard');
 
   if (isLoading) {
     return (
@@ -27,7 +30,11 @@ function AppContent() {
     );
   }
 
-  return isAuthenticated ? <Dashboard /> : <LoginPage />;
+  if (!isAuthenticated) return <LoginPage />;
+
+  return currentPage === 'leaderboard' 
+    ? <LeaderboardPage onBack={() => setCurrentPage('dashboard')} />
+    : <Dashboard onNavigateToLeaderboard={() => setCurrentPage('leaderboard')} />;
 }
 
 function App() {
