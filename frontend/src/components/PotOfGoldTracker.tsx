@@ -172,17 +172,13 @@ export function PotOfGoldTracker() {
 
   return (
     <div 
-      className={`rounded-3xl p-8 md:p-12 border-2 transition-all cursor-pointer group relative overflow-hidden min-h-96 md:min-h-[28rem] ${
+      className={`rounded-3xl p-8 md:p-12 border-2 transition-all group relative overflow-hidden min-h-96 md:min-h-[28rem] ${
         themeConfig.name === 'dark-neon'
           ? 'bg-gradient-to-br from-purple-900/60 via-slate-900/50 to-blue-900/40 border-cyan-400/60 hover:border-cyan-300/80 hover:from-purple-900/80 hover:via-slate-900/70 hover:to-blue-900/60 shadow-2xl hover:shadow-cyan-400/40'
           : themeConfig.name === 'simple-light'
           ? 'bg-gradient-to-br from-blue-100 via-purple-50 to-yellow-100 border-purple-300 hover:border-purple-400'
           : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-cyan-500/60 hover:border-cyan-300'
       }`}
-      onClick={() => {
-        handleEditClick();
-        triggerCoins();
-      }}
       style={{
         animation: themeConfig.name === 'dark-neon' ? 'pot-glow 3s ease-in-out infinite' : 'none'
       }}
@@ -224,7 +220,7 @@ export function PotOfGoldTracker() {
 
       {/* Header section */}
       <div className="relative z-10 flex items-start justify-between mb-10 gap-6">
-        <div>
+        <div className="cursor-pointer" onClick={handleEditClick}>
           <h3 className={`font-black text-2xl md:text-3xl mb-3 ${
             themeConfig.name === 'simple-light' ? 'text-purple-900' : 'text-cyan-300'
           }`}
