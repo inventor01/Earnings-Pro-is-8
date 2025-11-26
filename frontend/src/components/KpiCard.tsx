@@ -35,13 +35,17 @@ export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color
     'pulse-glow';
 
   return (
-    <div className={`relative p-4 md:p-6 rounded-2xl overflow-hidden group min-h-max ${glowClass}`}>
+    <div className={`relative p-4 md:p-6 rounded-2xl overflow-hidden group min-h-max ${themeConfig.name !== 'simple-light' ? glowClass : ''}`}>
       {/* Background with dark dashboard effect */}
       <div className={`absolute inset-0 ${colorConfig.bg} border-2 ${colorConfig.border} rounded-2xl`} />
-      <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.glow} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`} />
+      {themeConfig.name !== 'simple-light' && (
+        <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.glow} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`} />
+      )}
       
       {/* Gauge arc effect */}
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorConfig.glow} rounded-full opacity-60`} />
+      {themeConfig.name !== 'simple-light' && (
+        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorConfig.glow} rounded-full opacity-60`} />
+      )}
       
       {/* Content */}
       <div className="relative z-10 space-y-3">
@@ -88,7 +92,9 @@ export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color
         )}
         
         {/* Bottom accent line */}
-        <div className={`h-0.5 bg-gradient-to-r ${colorConfig.glow} opacity-50 mt-3 rounded-full`} />
+        {themeConfig.name !== 'simple-light' && (
+          <div className={`h-0.5 bg-gradient-to-r ${colorConfig.glow} opacity-50 mt-3 rounded-full`} />
+        )}
       </div>
     </div>
   );
