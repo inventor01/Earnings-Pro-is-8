@@ -626,7 +626,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
       )}
       <div className={contentClass}>
-        <div className="flex justify-between items-center mb-3 md:mb-6 gap-2">
+        <div className="flex justify-between items-center mb-3 md:mb-6 gap-4">
           <div className="flex items-center gap-1 md:gap-3">
             <span className="text-4xl md:text-6xl drop-shadow-lg" style={{
               textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)' : 'none',
@@ -652,10 +652,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               > PRO</h1>
             </div>
           </div>
-          <div className="flex gap-1 md:gap-2">
+          <div className="flex gap-2 md:gap-4 items-center">
             <button
               onClick={logout}
-              className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
+              className={`px-4 md:px-5 py-2 md:py-2.5 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
                 isDarkTheme
                   ? 'bg-gradient-to-r from-slate-700 to-slate-600 text-white hover:from-slate-600 hover:to-slate-500'
                   : 'bg-gray-400 text-white hover:bg-gray-500'
@@ -666,7 +666,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             </button>
             <button
               onClick={() => onNavigateToLeaderboard?.()}
-              className={`relative p-2 md:p-2.5 rounded-lg transition-all ${
+              className={`relative p-3 md:p-3 rounded-lg transition-all ${
                 isDarkTheme
                   ? 'hover:bg-cyan-500/20 text-cyan-400'
                   : 'hover:bg-blue-100 text-blue-600'
@@ -682,7 +682,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             </button>
             <button
               onClick={() => setResetConfirm(true)}
-              className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
+              className={`px-4 md:px-5 py-2 md:py-2.5 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
                 isDarkTheme
                   ? 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-700 hover:to-red-600 hover:shadow-red-500/50'
                   : 'bg-red-500 text-white hover:bg-red-600'
@@ -694,7 +694,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className={`p-2 md:p-2.5 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : config.textPrimary + ' hover:opacity-80'}`}
+              className={`p-3 md:p-3 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : config.textPrimary + ' hover:opacity-80'}`}
               title="Refresh data"
             >
               <svg 
@@ -713,7 +713,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             </button>
             <button
               onClick={() => setShowSettings(true)}
-              className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
+              className={`p-3 md:p-3 transition-colors ${config.textPrimary} hover:opacity-80`}
               data-tour="settings"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
