@@ -144,9 +144,30 @@ export function FeatureTour() {
         } else if (step.id === 'settings' || step.id === 'export') {
           // For settings/export buttons at top, scroll to top and highlight
           window.scrollTo({ top: 0, behavior: 'auto' });
-          const rect = element.getBoundingClientRect();
-          setHighlightBox(rect);
-          calculateTooltipPosition(rect);
+          // Add delay to ensure scroll completes before calculating position
+          setTimeout(() => {
+            const rect = element.getBoundingClientRect();
+            setHighlightBox(rect);
+            
+            // Explicitly position tooltip below the button on mobile
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const isMobile = viewportWidth < 768;
+            
+            if (isMobile) {
+              const centerX = Math.max(16, Math.min(viewportWidth - 16 - 280, viewportWidth / 2 - 140));
+              setTooltipStyle({
+                top: `${rect.bottom + 16}px`,
+                left: `${centerX}px`,
+                position: 'fixed',
+                maxHeight: `${viewportHeight - rect.bottom - 16 - 16 - 50}px`,
+                overflow: 'auto',
+              });
+            } else {
+              calculateTooltipPosition(rect);
+            }
+          }, 100);
+          return;
         } else {
           const rect = element.getBoundingClientRect();
           setHighlightBox(rect);
