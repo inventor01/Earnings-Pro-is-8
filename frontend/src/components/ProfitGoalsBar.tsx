@@ -97,7 +97,9 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
   };
 
   const progressColor = 'bg-blue-500';
-  const displayProgress = Math.max(0, Math.min(goalProgress, 100));
+  // Round to avoid floating point issues - if progress is 99.5% or higher, show 100%
+  const displayProgress = goalProgress >= 99.5 ? 100 : Math.max(0, Math.min(goalProgress, 100));
+  const displayPercentage = displayProgress === 100 ? 100 : Math.round(goalProgress);
 
   if (!goalAmount) {
     // Show edit form if editing, otherwise show "Set Goal" button
@@ -229,7 +231,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
               <span className={`hidden md:inline ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>/</span>
               <span>${goalAmount}</span>
               <span key={percentageKey} className={`font-black text-xs md:text-lg lg:text-xl percentage-display inline-block ${isDarkTheme ? 'text-cyan-400' : 'text-blue-600'}`} style={{ fontFamily: "'Outfit', sans-serif" }}>
-                {Math.round(goalProgress)}%
+                {displayPercentage}%
               </span>
             </span>
           </div>
