@@ -17,7 +17,6 @@ import { FeatureTour } from '../components/FeatureTour';
 // import { PointsCard } from '../components/PointsCard';
 import { ShareCard } from '../components/ShareCard';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
-import { Achievements } from '../components/Achievements';
 import { AchievementsModal } from '../components/AchievementsModal';
 import { ProfitCalendar } from '../components/ProfitCalendar';
 import { useTheme } from '../lib/themeContext';
@@ -591,7 +590,7 @@ export function Dashboard() {
 
   const dashboardClass = config.name === 'simple-light' 
     ? 'min-h-screen bg-gradient-to-b from-gray-50 via-gray-100 to-white flex flex-col'
-    : config.name === 'bw-neon'
+    : config.name === 'dark-neon'
     ? 'min-h-screen bg-gradient-to-b from-black via-gray-900 to-black flex flex-col'
     : 'min-h-screen bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950 flex flex-col';
 
@@ -1112,7 +1111,7 @@ export function Dashboard() {
           settings={settings}
           onSave={(s) => updateSettingsMutation.mutate(s)}
           onResetAll={() => setResetAllConfirm(true)}
-          onExport={() => handleExportCSV()}
+          onExport={() => handleExport()}
           onRestartTour={handleRestartTour}
           metricVisibility={metricVisibility}
           onMetricVisibilityChange={handleMetricVisibilityChange}
