@@ -377,10 +377,10 @@ export function PotOfGoldTracker() {
       </div>
 
       {/* Hide button */}
-      <div className="relative z-10 mt-8 flex justify-center">
+      <div className="absolute bottom-4 right-4 z-20">
         <button
           onClick={() => setIsHidden(true)}
-          className="text-xs font-semibold hover:opacity-80 transition-opacity"
+          className="text-xl font-bold hover:opacity-60 transition-opacity"
           style={{
             background: 'none',
             border: 'none',
@@ -393,7 +393,7 @@ export function PotOfGoldTracker() {
             color: 'transparent'
           }}
         >
-          Hide
+          −
         </button>
       </div>
     </div>
