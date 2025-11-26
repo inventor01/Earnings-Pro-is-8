@@ -89,26 +89,28 @@ export function FeatureTour() {
           const firstCard = element.querySelector('[class*="flex-shrink"]') as HTMLElement;
           
           if (container && firstCard) {
-            // Scroll the first card into view
+            // Scroll the first card into view at the top
             container.scrollLeft = 0;
             
-            // Get the first card's position
-            const rect = firstCard.getBoundingClientRect();
-            setHighlightBox(rect);
+            // Scroll the container to top of viewport for better space
+            element.scrollIntoView({ behavior: 'auto', block: 'start' });
             
-            // Scroll the container into view
-            element.scrollIntoView({ behavior: 'auto', block: 'center' });
-            calculateTooltipPosition(rect);
+            // Small delay to ensure scroll completes before getting rect
+            setTimeout(() => {
+              const rect = firstCard.getBoundingClientRect();
+              setHighlightBox(rect);
+              calculateTooltipPosition(rect);
+            }, 50);
           } else {
             const rect = element.getBoundingClientRect();
             setHighlightBox(rect);
-            element.scrollIntoView({ behavior: 'auto', block: 'center' });
+            element.scrollIntoView({ behavior: 'auto', block: 'start' });
             calculateTooltipPosition(rect);
           }
         } else {
           const rect = element.getBoundingClientRect();
           setHighlightBox(rect);
-          element.scrollIntoView({ behavior: 'auto', block: 'center' });
+          element.scrollIntoView({ behavior: 'auto', block: 'start' });
           calculateTooltipPosition(rect);
         }
       }
@@ -132,27 +134,34 @@ export function FeatureTour() {
     if (isMobile) {
       // Mobile: position below or above the element, centered horizontally
       const centerX = Math.max(margin, Math.min(viewportWidth - margin - tooltipWidth, viewportWidth / 2 - tooltipWidth / 2));
+      const buttonHeight = 60; // Approximate height for buttons
       
-      // Try to place below first
-      if (rect.bottom + spacing + tooltipHeight < viewportHeight - margin) {
+      // Try to place below first with extra space for buttons
+      if (rect.bottom + spacing + tooltipHeight + buttonHeight < viewportHeight - margin) {
         setTooltipStyle({
           top: `${rect.bottom + spacing}px`,
           left: `${centerX}px`,
           position: 'fixed',
+          maxHeight: `${viewportHeight - rect.bottom - spacing - margin - 60}px`,
+          overflow: 'auto',
         });
-      } else if (rect.top - spacing - tooltipHeight > margin) {
+      } else if (rect.top - spacing - tooltipHeight - buttonHeight > margin) {
         // Place above if below doesn't fit
         setTooltipStyle({
           top: `${rect.top - spacing - tooltipHeight}px`,
           left: `${centerX}px`,
           position: 'fixed',
+          maxHeight: `${rect.top - spacing - margin - 60}px`,
+          overflow: 'auto',
         });
       } else {
-        // Fallback: center on screen
+        // Fallback: position at top of screen with scroll if needed
         setTooltipStyle({
-          top: `${Math.max(margin, viewportHeight / 2 - tooltipHeight / 2)}px`,
+          top: `${margin}px`,
           left: `${centerX}px`,
           position: 'fixed',
+          maxHeight: `${viewportHeight - margin * 2 - 80}px`,
+          overflow: 'auto',
         });
       }
     } else {
