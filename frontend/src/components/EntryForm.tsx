@@ -86,8 +86,8 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg md:rounded-2xl shadow-lg p-4 md:p-6 space-y-3 md:space-y-4">
-      {/* Step 0: Main Form Fields (Type, App, Distance, Date, Time, Category) */}
-      {!showExtraInfo && (
+      {/* Main Form Fields - All shown when showExtraInfo is true */}
+      {showExtraInfo && (
         <>
           <div>
             <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📝 Type</label>

@@ -852,24 +852,15 @@ export function Dashboard() {
         </button>
         
         <div className="max-w-6xl mx-auto p-4 max-h-[70vh] overflow-y-auto">
-          {/* Step 0: Calculator + Main Form */}
+          {/* Step 0: Calculator Only */}
           {entryFormStep === 0 && (
             <>
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
+              <div className="mb-4">
                 <CalcPad
                   amount={amount}
                   mode={mode}
                   onAmountChange={setAmount}
                   onModeChange={handleModeChange}
-                />
-                <EntryForm 
-                  mode={mode} 
-                  onTypeChange={setEntryType} 
-                  formData={formData}
-                  onFormDataChange={setFormData}
-                  period={period}
-                  dayOffset={dayOffset}
-                  showExtraInfo={false}
                 />
               </div>
               <button
@@ -881,7 +872,7 @@ export function Dashboard() {
             </>
           )}
 
-          {/* Step 1: Extra Info Form */}
+          {/* Step 1: All Form Fields */}
           {entryFormStep === 1 && (
             <>
               <EntryForm 
