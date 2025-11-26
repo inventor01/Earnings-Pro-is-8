@@ -79,8 +79,8 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
               <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>👤 Account Information</h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>Name</p>
-                  <p className={`font-semibold ${isDark ? 'text-slate-200' : 'text-gray-900'}`}>{userInfo.first_name} {userInfo.last_name}</p>
+                  <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>Username</p>
+                  <p className={`font-semibold ${isDark ? 'text-slate-200' : 'text-gray-900'}`}>{userInfo.first_name}</p>
                 </div>
                 <div>
                   <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>Email</p>

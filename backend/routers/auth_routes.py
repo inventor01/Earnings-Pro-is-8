@@ -5,7 +5,7 @@ from backend.models import AuthUser
 from backend.auth import get_current_user
 import jwt
 import os
-from typing import Dict
+from typing import Dict, Optional
 from pydantic import BaseModel
 import hashlib
 import hmac
@@ -22,8 +22,7 @@ class LoginRequest(BaseModel):
 class SignupRequest(BaseModel):
     email: str
     password: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    username: Optional[str] = None
 
 class AuthResponse(BaseModel):
     access_token: str
@@ -64,8 +63,8 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
         id=user_id,
         email=request.email,
         password_hash=hash_password(request.password),
-        first_name=request.first_name or "",
-        last_name=request.last_name or ""
+        first_name=request.username or "",
+        last_name=""
     )
     db.add(user)
     db.commit()
