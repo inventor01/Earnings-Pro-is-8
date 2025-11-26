@@ -59,19 +59,16 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
         dailyData[dateStr] = { profit: 0, revenue: 0, expenses: 0 };
       }
       
-      // Aggregate by type
-      const entryType = entry.type ? String(entry.type).toUpperCase().trim() : '';
-      
-      if (entryType === 'ORDER' || entryType === 'BONUS') {
+      // Backend stores expenses as negative amounts
+      // Match backend logic: profit = total_amount, revenue = positive amounts, expenses = abs(negative amounts)
+      if (amount > 0) {
         dailyData[dateStr].revenue += amount;
-        dailyData[dateStr].profit += amount;
-      } else if (entryType === 'EXPENSE') {
-        // Expenses should always be stored as positive values
-        const expenseAmount = Math.abs(amount);
-        dailyData[dateStr].expenses += expenseAmount;
-        // Subtract expense from profit (use the positive value)
-        dailyData[dateStr].profit -= expenseAmount;
+      } else if (amount < 0) {
+        dailyData[dateStr].expenses += Math.abs(amount);
       }
+      
+      // Profit is the sum of all amounts (positive revenue + negative expenses)
+      dailyData[dateStr].profit += amount;
     });
 
     // Build calendar grid
