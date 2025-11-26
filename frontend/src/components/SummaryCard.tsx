@@ -125,7 +125,7 @@ export function SummaryCard({
           }
         }
       `}</style>
-      <div className={`relative p-6 rounded-xl transition-all duration-300 group/card ${
+      <div className={`relative p-3 md:p-4 rounded-xl transition-all duration-300 group/card ${
         themeConfig.name === 'dark-neon'
           ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/40 border border-slate-700/50 hover:border-slate-600/80 hover:from-slate-800/80 hover:to-slate-900/60 hover:shadow-lg hover:shadow-slate-900/50'
           : themeConfig.name === 'simple-light'
@@ -135,16 +135,16 @@ export function SummaryCard({
         {/* Top accent line */}
         <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r rounded-t-xl opacity-50 ${color}`} />
         
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className={`text-3xl`}>{icon}</div>
-            <div className={`text-xs font-bold uppercase tracking-wider opacity-70 ${
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className={`text-2xl md:text-3xl`}>{icon}</div>
+            <div className={`text-xs font-bold uppercase tracking-wider opacity-70 leading-none ${
               themeConfig.name === 'simple-light' ? 'text-gray-600' : 'text-slate-400'
             }`}>{label}</div>
           </div>
           
           <div className="space-y-1">
-            <div className={`text-3xl md:text-4xl font-black font-mono transition-all duration-300 group-hover/card:scale-105 cursor-pointer ${
+            <div className={`text-2xl md:text-3xl font-black font-mono transition-all duration-300 group-hover/card:scale-105 cursor-pointer leading-tight ${
               isNegative ? 'text-red-500' : secondary
             }`}
             style={isNegative ? {
@@ -154,7 +154,7 @@ export function SummaryCard({
             </div>
             
             {subtext && (
-              <div className={`text-xs font-medium ${
+              <div className={`text-xs font-medium opacity-75 ${
                 themeConfig.name === 'simple-light' ? 'text-gray-500' : 'text-slate-400'
               }`}>
                 {subtext}
@@ -179,8 +179,8 @@ export function SummaryCard({
       style={{ cursor: showDayNav ? 'grab' : 'default' }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 px-2">
-        <div className={`text-sm font-bold uppercase tracking-widest ${
+      <div className="flex items-center justify-between mb-3 md:mb-4 px-2">
+        <div className={`text-xs md:text-sm font-bold uppercase tracking-widest ${
           themeConfig.name === 'simple-light' ? 'text-gray-700' : 'text-slate-400'
         } opacity-80 font-mono`}>
           Performance Overview
@@ -238,7 +238,7 @@ export function SummaryCard({
       </div>
 
       {/* Metrics Grid - Shopify Style */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 md:gap-3">
         {/* Revenue */}
         {visibility.revenue && (
           <MetricCard
@@ -310,10 +310,10 @@ export function SummaryCard({
       
       {/* Share Button */}
       {onShare && (
-        <div className="mt-8 flex justify-center">
+        <div className="mt-3 md:mt-4 flex justify-center">
           <button
             onClick={onShare}
-            className={`px-4 py-2 rounded-lg transition-all text-sm font-medium opacity-70 hover:opacity-100 ${
+            className={`px-3 py-1 rounded-lg transition-all text-xs md:text-sm font-medium opacity-70 hover:opacity-100 ${
               themeConfig.name === 'dark-neon'
                 ? 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-400/10'
                 : themeConfig.name === 'simple-light'

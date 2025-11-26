@@ -695,99 +695,50 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div data-tour="performance" className="scroll-smooth">
-          <SummaryCard
-            revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
-            expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
-            profit={`$${rollup?.profit.toFixed(2) || '0.00'}`}
-            miles={rollup?.miles.toFixed(1) || '0.0'}
-            orders={entries.filter(e => e.type === 'ORDER').length}
-            margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
-            avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
-            dayOffset={dayOffset}
-            onDayChange={(offset) => {
-              setDayOffset(offset);
-              // Keep period as 'today' to always show day navigation
-              // The backend handles different dates via dayOffset parameter
-              if (period !== 'today') {
-                setPeriod('today');
-              }
-            }}
-            getDateLabel={getDateLabel}
-            isDarkTheme={isDarkTheme}
-            showDayNav={period === 'today'}
-            periodLabel={getPeriodLabel()}
-            visibilityConfig={metricVisibility}
-            onShare={() => setShowShareCard(true)}
-          />
-        </div>
+        {/* Dashboard Grid - Everything in One View */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
+          {/* Left Column - Performance Overview */}
+          <div className="lg:col-span-2" data-tour="performance" className="scroll-smooth">
+            <SummaryCard
+              revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
+              expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
+              profit={`$${rollup?.profit.toFixed(2) || '0.00'}`}
+              miles={rollup?.miles.toFixed(1) || '0.0'}
+              orders={entries.filter(e => e.type === 'ORDER').length}
+              margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
+              avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
+              dayOffset={dayOffset}
+              onDayChange={(offset) => {
+                setDayOffset(offset);
+                if (period !== 'today') {
+                  setPeriod('today');
+                }
+              }}
+              getDateLabel={getDateLabel}
+              isDarkTheme={isDarkTheme}
+              showDayNav={period === 'today'}
+              periodLabel={getPeriodLabel()}
+              visibilityConfig={metricVisibility}
+              onShare={() => setShowShareCard(true)}
+            />
+          </div>
 
-        {/* Points & Rewards Card - Hidden for now */}
-        {/* <div className="mb-4 md:mb-6">
-          <PointsCard />
-        </div> */}
-
-        {/* Monthly Pot of Gold Tracker */}
-        <div className="mb-4 md:mb-6">
-          <PotOfGoldTracker />
-        </div>
-
-        <div className="mb-4 md:mb-6 overflow-x-auto scroll-smooth" data-tour="kpis">
-          <div className="flex gap-3 md:gap-4 pb-2 min-w-max">
-            <div className="flex-shrink-0 w-80">
+          {/* Right Column - Monthly Goal & Quick Stats */}
+          <div className="space-y-4 md:space-y-6">
+            <PotOfGoldTracker />
+            
+            <div className="grid grid-cols-2 gap-3">
               <KpiCard
                 title="$/Mile"
                 value={`$${rollup?.dollars_per_mile.toFixed(2) || '0.00'}`}
-                detail1={{ label: 'Efficiency', value: rollup?.miles ? `${(rollup.revenue / rollup.miles).toFixed(2)}/mile` : '-' }}
+                detail1={{ label: 'Efficiency', value: rollup?.miles ? `${(rollup.revenue / rollup.miles).toFixed(2)}/mi` : '-' }}
                 color="orange"
               />
-            </div>
-            <div className="flex-shrink-0 w-80">
               <KpiCard
                 title="$/Hour"
                 value={`$${rollup?.dollars_per_hour.toFixed(2) || '0.00'}`}
                 detail1={{ label: 'Hours', value: rollup ? `${(rollup.by_type?.total_minutes / 60 || 0).toFixed(1)}h` : '-' }}
                 color="gray"
-              />
-            </div>
-            <div className="flex-shrink-0 w-80">
-              <KpiCard
-                title="Revenue"
-                value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
-                detail1={{ label: 'Orders', value: entries.filter(e => e.type === 'ORDER').length }}
-                color="green"
-              />
-            </div>
-            <div className="flex-shrink-0 w-80">
-              <KpiCard
-                title="Expenses"
-                value={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
-                detail1={{ label: 'Count', value: entries.filter(e => e.type === 'EXPENSE').length }}
-                color="red"
-              />
-            </div>
-            <div className="flex-shrink-0 w-80">
-              <KpiCard
-                title="Profit"
-                value={`$${rollup?.profit.toFixed(2) || '0.00'}`}
-                detail1={{ label: 'Margin', value: rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-' }}
-                color="green"
-              />
-            </div>
-            <div className="flex-shrink-0 w-80">
-              <KpiCard
-                title="Miles"
-                value={rollup?.miles.toFixed(1) || '0.0'}
-                detail1={{ label: 'Trips', value: entries.filter(e => e.distance_miles > 0).length }}
-                color="purple"
-              />
-            </div>
-            <div className="flex-shrink-0 w-80">
-              <KpiCard
-                title="Avg Order"
-                value={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
-                detail1={{ label: 'Orders', value: entries.filter(e => e.type === 'ORDER').length }}
-                color="blue"
               />
             </div>
           </div>
