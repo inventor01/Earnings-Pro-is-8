@@ -129,6 +129,18 @@ export function Dashboard() {
     localStorage.setItem('lastVisitDate', today);
   }, []);
 
+  // Listen for tour events to expand calculator when tour reaches that step
+  useEffect(() => {
+    const handleTourCalculatorStep = () => {
+      setCalcExpanded(true);
+    };
+    
+    window.addEventListener('tour-calculator-step', handleTourCalculatorStep);
+    return () => {
+      window.removeEventListener('tour-calculator-step', handleTourCalculatorStep);
+    };
+  }, []);
+
   useEffect(() => {
     setSelectedIds([]);
     // Reset day offset when period changes

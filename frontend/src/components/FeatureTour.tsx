@@ -78,6 +78,11 @@ export function FeatureTour() {
   const step = TOUR_STEPS[currentStep];
 
   useEffect(() => {
+    // Dispatch event to expand calculator when reaching that step
+    if (step.id === 'calculator') {
+      window.dispatchEvent(new CustomEvent('tour-calculator-step'));
+    }
+    
     if (step.selector) {
       const element = document.querySelector(step.selector);
       if (element) {
