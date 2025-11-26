@@ -33,7 +33,8 @@ class AuthUser(Base):
     __tablename__ = "auth_users"
     
     id = Column(String, primary_key=True)
-    email = Column(String, nullable=True)
+    email = Column(String, nullable=True, unique=True, index=True)
+    password_hash = Column(String, nullable=True)
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     profile_image_url = Column(String, nullable=True)

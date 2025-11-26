@@ -25,6 +25,7 @@ import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
 
 export function Dashboard() {
+  const { logout } = useAuth();
   const [period, setPeriod] = useState<Period>('today');
   const [amount, setAmount] = useState('0');
   const [mode, setMode] = useState<CalcMode>('add');
@@ -654,10 +655,7 @@ export function Dashboard() {
           </div>
           <div className="flex gap-1 md:gap-2">
             <button
-              onClick={() => {
-                const { logout } = useAuth();
-                logout();
-              }}
+              onClick={logout}
               className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
                 isDarkTheme
                   ? 'bg-gradient-to-r from-slate-700 to-slate-600 text-white hover:from-slate-600 hover:to-slate-500'
