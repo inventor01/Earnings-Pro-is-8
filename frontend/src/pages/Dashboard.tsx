@@ -748,7 +748,7 @@ export function Dashboard() {
         {/* Dashboard Grid - Everything in One View */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
           {/* Left Column - Performance Overview */}
-          <div className="lg:col-span-2" data-tour="performance" className="scroll-smooth">
+          <div className="lg:col-span-2 space-y-4 md:space-y-6" data-tour="performance" className="scroll-smooth">
             <SummaryCard
               revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
               expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
@@ -771,6 +771,30 @@ export function Dashboard() {
               visibilityConfig={metricVisibility}
               onShare={() => setShowShareCard(true)}
             />
+
+            {/* Profit Calendar Toggle and Display */}
+            <div className="flex items-center justify-center">
+              <button
+                onClick={() => setShowCalendar(!showCalendar)}
+                className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center gap-2 ${
+                  isDarkTheme
+                    ? showCalendar
+                      ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-400'
+                      : 'bg-slate-800 text-slate-400 border border-slate-700 hover:border-cyan-400'
+                    : showCalendar
+                    ? 'bg-blue-500 text-white border border-blue-600'
+                    : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300'
+                }`}
+              >
+                📅 {showCalendar ? 'Hide' : 'Show'} Calendar
+              </button>
+            </div>
+
+            {showCalendar && (
+              <div>
+                <ProfitCalendar entries={entries} />
+              </div>
+            )}
           </div>
 
           {/* Right Column - Monthly Goal, Quick Stats & Achievements */}
@@ -795,29 +819,6 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Profit Calendar Toggle and Display */}
-        <div className="mb-6 flex items-center justify-center">
-          <button
-            onClick={() => setShowCalendar(!showCalendar)}
-            className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center gap-2 ${
-              isDarkTheme
-                ? showCalendar
-                  ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-400'
-                  : 'bg-slate-800 text-slate-400 border border-slate-700 hover:border-cyan-400'
-                : showCalendar
-                ? 'bg-blue-500 text-white border border-blue-600'
-                : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300'
-            }`}
-          >
-            📅 {showCalendar ? 'Hide' : 'Show'} Calendar
-          </button>
-        </div>
-
-        {showCalendar && (
-          <div className="mb-8 max-w-2xl mx-auto">
-            <ProfitCalendar entries={entries} />
-          </div>
-        )}
 
         {/* Achievements Modal */}
         {showAchievementsModal && (
