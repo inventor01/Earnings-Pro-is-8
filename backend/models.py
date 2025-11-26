@@ -137,3 +137,33 @@ class DailyUsage(Base):
     usage_date = Column(String, unique=True, nullable=False, index=True)
     points_earned = Column(Integer, default=10, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+class Friend(Base):
+    __tablename__ = "friends"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    friend_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    status = Column(String, default="pending", nullable=False)  # pending, accepted, blocked
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+class Achievement(Base):
+    __tablename__ = "achievements"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    icon = Column(String, nullable=True)
+    unlocked_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+class Congratulation(Base):
+    __tablename__ = "congratulations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    from_user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    to_user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    message = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
