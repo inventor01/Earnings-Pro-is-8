@@ -630,13 +630,6 @@ export function Dashboard() {
               </svg>
             </button>
             <button
-              onClick={() => setShowShareCard(true)}
-              className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
-              title="Share performance card"
-            >
-              🔗
-            </button>
-            <button
               onClick={() => setShowSettings(true)}
               className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
               data-tour="settings"
@@ -708,6 +701,7 @@ export function Dashboard() {
             showDayNav={period === 'today' || period === 'yesterday'}
             periodLabel={getPeriodLabel()}
             visibilityConfig={metricVisibility}
+            onShare={() => setShowShareCard(true)}
           />
         </div>
 

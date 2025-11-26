@@ -26,6 +26,7 @@ interface SummaryCardProps {
   showDayNav?: boolean;
   periodLabel?: string;
   visibilityConfig?: Partial<MetricVisibility>;
+  onShare?: () => void;
 }
 
 export function SummaryCard({ 
@@ -36,7 +37,8 @@ export function SummaryCard({
   isDarkTheme = true,
   showDayNav = false,
   periodLabel,
-  visibilityConfig = {}
+  visibilityConfig = {},
+  onShare
 }: SummaryCardProps) {
   const { config: themeConfig } = useTheme();
   const colorConfig = themeConfig.kpiColors['blue'];
@@ -131,53 +133,68 @@ export function SummaryCard({
             Performance Overview
           </div>
           
-          {/* Date/Period Display with Navigation */}
-          {(showDayNav || periodLabel) && (
-            <div className="flex items-center gap-2">
-              {showDayNav && onDayChange && getDateLabel && (
-                <>
-                  <button
-                    onClick={() => onDayChange(dayOffset - 1)}
-                    className={`p-1.5 md:p-2 rounded-lg transition-all ${
+          {/* Date/Period Display with Navigation and Share Button */}
+          <div className="flex items-center gap-2">
+            {(showDayNav || periodLabel) && (
+              <div className="flex items-center gap-2">
+                {showDayNav && onDayChange && getDateLabel && (
+                  <>
+                    <button
+                      onClick={() => onDayChange(dayOffset - 1)}
+                      className={`p-1.5 md:p-2 rounded-lg transition-all ${
+                        isDarkTheme
+                          ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                      } font-bold text-sm md:text-base`}
+                      title="Previous day"
+                    >
+                      ←
+                    </button>
+                    <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
                       isDarkTheme
-                        ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
-                    } font-bold text-sm md:text-base`}
-                    title="Previous day"
-                  >
-                    ←
-                  </button>
+                        ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 border border-cyan-500/30'
+                        : 'bg-gray-100 text-gray-800 border border-gray-300'
+                    }`}>
+                      {getDateLabel(dayOffset)}
+                    </div>
+                    <button
+                      onClick={() => onDayChange(dayOffset + 1)}
+                      className={`p-1.5 md:p-2 rounded-lg transition-all ${
+                        isDarkTheme
+                          ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                      } font-bold text-sm md:text-base`}
+                      title="Next day"
+                    >
+                      →
+                    </button>
+                  </>
+                )}
+                {!showDayNav && periodLabel && (
                   <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
                     isDarkTheme
                       ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 border border-cyan-500/30'
                       : 'bg-gray-100 text-gray-800 border border-gray-300'
                   }`}>
-                    {getDateLabel(dayOffset)}
+                    {periodLabel}
                   </div>
-                  <button
-                    onClick={() => onDayChange(dayOffset + 1)}
-                    className={`p-1.5 md:p-2 rounded-lg transition-all ${
-                      isDarkTheme
-                        ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
-                    } font-bold text-sm md:text-base`}
-                    title="Next day"
-                  >
-                    →
-                  </button>
-                </>
-              )}
-              {!showDayNav && periodLabel && (
-                <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
+                )}
+              </div>
+            )}
+            {onShare && (
+              <button
+                onClick={onShare}
+                className={`p-1.5 md:p-2 rounded-lg transition-all ${
                   isDarkTheme
-                    ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 border border-cyan-500/30'
-                    : 'bg-gray-100 text-gray-800 border border-gray-300'
-                }`}>
-                  {periodLabel}
-                </div>
-              )}
-            </div>
-          )}
+                    ? 'bg-gradient-to-r from-purple-900 to-purple-800 text-purple-300 hover:from-purple-800 hover:to-purple-700 hover:shadow-lg hover:shadow-purple-500/20'
+                    : 'bg-purple-500 text-white hover:bg-purple-600'
+                } font-bold text-sm md:text-base`}
+                title="Share performance"
+              >
+                🔗
+              </button>
+            )}
+          </div>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3 lg:gap-2">
