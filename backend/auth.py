@@ -4,6 +4,9 @@ from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from backend.db import get_db
 from backend.models import AuthUser
+import logging
+
+logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
 DEFAULT_USER_ID = "default-user"
