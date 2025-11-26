@@ -168,15 +168,26 @@ export function FeatureTour() {
     if (isMobile) {
       // Mobile: position below or above the element, centered horizontally
       const centerX = Math.max(margin, Math.min(viewportWidth - margin - tooltipWidth, viewportWidth / 2 - tooltipWidth / 2));
-      const buttonHeight = 60; // Approximate height for buttons
+      const buttonHeight = 50; // Approximate height for buttons at bottom
+      const topElementThreshold = 80; // If element is near top of screen, use below positioning
       
-      // Try to place below first with extra space for buttons
-      if (rect.bottom + spacing + tooltipHeight + buttonHeight < viewportHeight - margin) {
+      // If element is at the top of screen (like settings/export buttons), place below it
+      if (rect.top < topElementThreshold) {
         setTooltipStyle({
           top: `${rect.bottom + spacing}px`,
           left: `${centerX}px`,
           position: 'fixed',
-          maxHeight: `${viewportHeight - rect.bottom - spacing - margin - 60}px`,
+          maxHeight: `${viewportHeight - rect.bottom - spacing - margin - buttonHeight}px`,
+          overflow: 'auto',
+        });
+      }
+      // Try to place below first with extra space for buttons
+      else if (rect.bottom + spacing + tooltipHeight + buttonHeight < viewportHeight - margin) {
+        setTooltipStyle({
+          top: `${rect.bottom + spacing}px`,
+          left: `${centerX}px`,
+          position: 'fixed',
+          maxHeight: `${viewportHeight - rect.bottom - spacing - margin - buttonHeight}px`,
           overflow: 'auto',
         });
       } else if (rect.top - spacing - tooltipHeight - buttonHeight > margin) {
@@ -185,16 +196,16 @@ export function FeatureTour() {
           top: `${rect.top - spacing - tooltipHeight}px`,
           left: `${centerX}px`,
           position: 'fixed',
-          maxHeight: `${rect.top - spacing - margin - 60}px`,
+          maxHeight: `${rect.top - spacing - margin - 20}px`,
           overflow: 'auto',
         });
       } else {
-        // Fallback: position at top of screen with scroll if needed
+        // Fallback: position below even if tight, to show tooltip
         setTooltipStyle({
-          top: `${margin}px`,
+          top: `${Math.min(rect.bottom + spacing, viewportHeight - tooltipHeight - margin)}px`,
           left: `${centerX}px`,
           position: 'fixed',
-          maxHeight: `${viewportHeight - margin * 2 - 80}px`,
+          maxHeight: `${viewportHeight - margin * 2 - buttonHeight}px`,
           overflow: 'auto',
         });
       }
