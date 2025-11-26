@@ -124,6 +124,17 @@ export function SummaryCard({
             opacity: 0.7;
           }
         }
+        
+        @keyframes subtle-glow {
+          0%, 100% {
+            filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.3));
+            text-shadow: 0 0 8px rgba(34, 211, 238, 0.2);
+          }
+          50% {
+            filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.5));
+            text-shadow: 0 0 12px rgba(34, 211, 238, 0.3);
+          }
+        }
       `}</style>
       <div className={`relative p-3 md:p-4 rounded-xl transition-all duration-300 group/card ${
         themeConfig.name === 'dark-neon'
@@ -149,7 +160,9 @@ export function SummaryCard({
             }`}
             style={isNegative ? {
               animation: 'blink-red 0.8s ease-in-out infinite'
-            } : {}}>
+            } : {
+              animation: 'subtle-glow 2s ease-in-out infinite'
+            }}>
               <CountUpNumber value={value} />
             </div>
             
