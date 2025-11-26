@@ -263,7 +263,7 @@ export function PotOfGoldTracker() {
       <div className="relative z-10 flex items-start justify-between mb-10 gap-6">
         <div className="cursor-pointer" onClick={handleEditClick}>
           <h3 className={`font-black text-2xl md:text-3xl mb-3 ${
-            themeConfig.name === 'simple-light' ? 'text-purple-900' : 'text-cyan-300'
+            themeConfig.name === 'simple-light' ? 'text-blue-700' : 'text-cyan-300'
           }`}
           style={themeConfig.name !== 'simple-light' ? {
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
@@ -275,7 +275,7 @@ export function PotOfGoldTracker() {
             Monthly Profit Goal
           </h3>
           <p className={`text-sm md:text-base font-semibold ${
-            themeConfig.name === 'simple-light' ? 'text-purple-700' : 'text-cyan-400'
+            themeConfig.name === 'simple-light' ? 'text-blue-600' : 'text-cyan-400'
           }`}
           style={themeConfig.name !== 'simple-light' ? {
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
@@ -354,7 +354,7 @@ export function PotOfGoldTracker() {
       <div className="relative z-10 flex items-center justify-between mb-6 gap-4">
         <div className="flex items-baseline gap-3">
           <span className={`text-4xl font-black ${
-            themeConfig.name === 'simple-light' ? 'text-yellow-900' : 'text-yellow-300'
+            themeConfig.name === 'simple-light' ? 'text-emerald-700' : 'text-yellow-300'
           }`}
           style={themeConfig.name !== 'simple-light' ? {
             animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none',
@@ -369,7 +369,7 @@ export function PotOfGoldTracker() {
             ${currentProfit.toFixed(0)}
           </span>
           <span className={`text-base font-bold ${
-            themeConfig.name === 'simple-light' ? 'text-yellow-700' : 'text-yellow-400'
+            themeConfig.name === 'simple-light' ? 'text-emerald-600' : 'text-yellow-400'
           }`}
           style={themeConfig.name !== 'simple-light' ? {
             backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
@@ -391,7 +391,7 @@ export function PotOfGoldTracker() {
           themeConfig.name === 'dark-neon'
             ? 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-cyan-200 border-2 border-cyan-400/50 shadow-lg shadow-cyan-400/30'
             : themeConfig.name === 'simple-light'
-            ? 'bg-purple-300 text-purple-900'
+            ? 'bg-emerald-200 text-emerald-900'
             : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-cyan-300 border-2 border-cyan-400/50'
         }`}
         style={themeConfig.name !== 'simple-light' ? {
