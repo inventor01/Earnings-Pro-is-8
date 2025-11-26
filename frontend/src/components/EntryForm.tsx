@@ -1,7 +1,7 @@
 import { AppType, EntryType, ExpenseCategory } from '../lib/api';
 import { CalcMode } from './CalcPad';
 import { Period } from './PeriodChips';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface EntryFormProps {
   mode: CalcMode;
@@ -26,8 +26,10 @@ export interface EntryFormData {
 }
 
 export function EntryForm({ onTypeChange, formData, onFormDataChange, period = 'today', dayOffset = 0, _isEditing = false, showExtraInfo = true }: EntryFormProps) {
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
   const isExpense = formData.type === 'EXPENSE';
   const isOrder = formData.type === 'ORDER' || formData.type === 'CANCELLATION';
+  const isRevenueEntry = formData.type === 'ORDER';
 
   // Calculate date constraints based on timeframe (disabled when creating new entries)
   const getDateConstraints = () => {
@@ -89,6 +91,7 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
       {/* Main Form Fields - All shown when showExtraInfo is true */}
       {showExtraInfo && (
         <>
+          {/* Type field - Always visible */}
           <div>
             <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📝 Type</label>
             <select
@@ -96,7 +99,6 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
               onChange={(e) => {
                 const newType = e.target.value as EntryType;
                 const updatedData = { ...formData, type: newType };
-                // Set app to 'OTHER' when switching to EXPENSE (since app field is hidden for expenses)
                 if (newType === 'EXPENSE') {
                   updatedData.app = 'OTHER';
                 }
@@ -112,39 +114,114 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
             </select>
           </div>
 
-          {!isExpense && (
-            <div>
-              <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🚗 App</label>
-              <select
-                value={formData.app}
-                onChange={(e) => onFormDataChange({ ...formData, app: e.target.value as AppType })}
-                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-              >
-                <option value="UBEREATS">UberEats</option>
-                <option value="DOORDASH">DoorDash</option>
-                <option value="INSTACART">Instacart</option>
-                <option value="GRUBHUB">GrubHub</option>
-                <option value="SHIPT">Shipt</option>
-                <option value="OTHER">Other</option>
-              </select>
-            </div>
-          )}
-
-          {isOrder && (
-            <div>
-              <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🛣️ Distance (miles)</label>
+          {/* For ORDER entries - show miles prominently */}
+          {isRevenueEntry && (
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-lg md:rounded-xl p-3 md:p-4">
+              <label className="block text-sm md:text-base font-bold text-blue-900 mb-1 md:mb-2">🛣️ Distance (miles)</label>
               <input
                 type="number"
                 step="0.1"
                 value={formData.distance_miles}
                 onChange={(e) => onFormDataChange({ ...formData, distance_miles: e.target.value })}
-                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-blue-400 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-sm md:text-base font-semibold bg-white"
                 placeholder="5.5"
               />
             </div>
           )}
 
-          {/* Date and Time Fields */}
+          {/* Hidden options section - toggleable */}
+          {isRevenueEntry && (
+            <button
+              type="button"
+              onClick={() => setShowMoreOptions(!showMoreOptions)}
+              className="w-full py-2 px-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold text-sm text-gray-700 transition-colors"
+            >
+              {showMoreOptions ? '▼ Hide More Options' : '▶ More Options'}
+            </button>
+          )}
+
+          {/* Conditionally show more options for ORDER */}
+          {isRevenueEntry && showMoreOptions && (
+            <>
+              {!isExpense && (
+                <div>
+                  <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🚗 App</label>
+                  <select
+                    value={formData.app}
+                    onChange={(e) => onFormDataChange({ ...formData, app: e.target.value as AppType })}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                  >
+                    <option value="UBEREATS">UberEats</option>
+                    <option value="DOORDASH">DoorDash</option>
+                    <option value="INSTACART">Instacart</option>
+                    <option value="GRUBHUB">GrubHub</option>
+                    <option value="SHIPT">Shipt</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* For non-revenue entries - show all fields normally */}
+          {!isRevenueEntry && (
+            <>
+              {!isExpense && (
+                <div>
+                  <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🚗 App</label>
+                  <select
+                    value={formData.app}
+                    onChange={(e) => onFormDataChange({ ...formData, app: e.target.value as AppType })}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                  >
+                    <option value="UBEREATS">UberEats</option>
+                    <option value="DOORDASH">DoorDash</option>
+                    <option value="INSTACART">Instacart</option>
+                    <option value="GRUBHUB">GrubHub</option>
+                    <option value="SHIPT">Shipt</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+              )}
+
+              {isOrder && (
+                <div>
+                  <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🛣️ Distance (miles)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={formData.distance_miles}
+                    onChange={(e) => onFormDataChange({ ...formData, distance_miles: e.target.value })}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                    placeholder="5.5"
+                  />
+                </div>
+              )}
+
+              {isExpense && (
+                <div>
+                  <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🏷️ Category</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => onFormDataChange({ ...formData, category: e.target.value as ExpenseCategory })}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
+                  >
+                    <option value="GAS">⛽ Gas</option>
+                    <option value="PARKING">🅿️ Parking</option>
+                    <option value="TOLLS">🛣️ Tolls</option>
+                    <option value="MAINTENANCE">🔧 Maintenance</option>
+                    <option value="PHONE">📱 Phone</option>
+                    <option value="SUBSCRIPTION">📦 Subscription</option>
+                    <option value="FOOD">🍔 Food</option>
+                    <option value="LEISURE">🎮 Leisure</option>
+                    <option value="OTHER">📋 Other</option>
+                  </select>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Date and Time Fields - Always shown */}
           <div className="grid grid-cols-2 gap-2 md:gap-3">
             <div>
               <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📅 Date</label>
@@ -167,27 +244,6 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
               />
             </div>
           </div>
-
-          {isExpense && (
-            <div>
-              <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">🏷️ Category</label>
-              <select
-                value={formData.category}
-                onChange={(e) => onFormDataChange({ ...formData, category: e.target.value as ExpenseCategory })}
-                className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold"
-              >
-                <option value="GAS">⛽ Gas</option>
-                <option value="PARKING">🅿️ Parking</option>
-                <option value="TOLLS">🛣️ Tolls</option>
-                <option value="MAINTENANCE">🔧 Maintenance</option>
-                <option value="PHONE">📱 Phone</option>
-                <option value="SUBSCRIPTION">📦 Subscription</option>
-                <option value="FOOD">🍔 Food</option>
-                <option value="LEISURE">🎮 Leisure</option>
-                <option value="OTHER">📋 Other</option>
-              </select>
-            </div>
-          )}
         </>
       )}
 
