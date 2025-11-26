@@ -362,7 +362,7 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
             <>
               {/* Inner highlight - bright glow inside the element */}
               <div
-                className="fixed border-2 border-cyan-400 rounded-lg pointer-events-none z-41"
+                className="fixed border-2 border-cyan-400 rounded-lg pointer-events-none"
                 style={{
                   top: `${highlightBox.top - 4}px`,
                   left: `${highlightBox.left - 4}px`,
@@ -375,17 +375,19 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
                     inset 0 0 15px rgba(34, 211, 238, 0.2)
                   `,
                   background: 'rgba(34, 211, 238, 0.05)',
+                  zIndex: 41,
                 }}
               />
               {/* Bright spotlight effect under the highlighted element */}
               <div
-                className="fixed rounded-lg pointer-events-none z-40"
+                className="fixed rounded-lg pointer-events-none"
                 style={{
                   top: `${highlightBox.top - 8}px`,
                   left: `${highlightBox.left - 8}px`,
                   width: `${highlightBox.width + 16}px`,
                   height: `${highlightBox.height + 16}px`,
                   boxShadow: `0 0 60px rgba(34, 211, 238, 0.3), 0 0 100px rgba(6, 182, 212, 0.15)`,
+                  zIndex: 40,
                 }}
               />
             </>
@@ -395,7 +397,7 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
 
       {/* Tooltip - Always mobile-optimized */}
       <div
-        className={`fixed z-50 rounded-lg shadow-2xl overflow-y-auto ${
+        className={`fixed rounded-lg shadow-2xl overflow-y-auto ${
           themeConfig.name === 'dark-neon'
             ? 'bg-slate-900 border border-cyan-400 text-white'
             : themeConfig.name === 'simple-light'
@@ -408,11 +410,12 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
           zIndex: 50,
           width: window.innerWidth < 480 ? 'calc(100vw - 1rem)' : 'auto',
           maxWidth: window.innerWidth < 480 ? 'calc(100vw - 1rem)' : '360px',
-          maxHeight: 'calc(100vh - 80px)',
+          maxHeight: window.innerWidth < 480 ? 'calc(100vh - 120px)' : 'calc(100vh - 80px)',
           padding: '1rem',
           overflowY: 'auto' as const,
           top: tooltipStyle.top ? Math.max(8, parseInt(tooltipStyle.top as string)) : undefined,
-          left: tooltipStyle.left ? Math.max(4, Math.min(parseInt(tooltipStyle.left as string), window.innerWidth - 320)) : undefined,
+          left: tooltipStyle.left ? Math.max(8, Math.min(parseInt(tooltipStyle.left as string), window.innerWidth - 320)) : undefined,
+          right: window.innerWidth < 480 ? '8px' : 'auto',
         }}
       >
         <h3 className={`font-bold mb-1 line-clamp-2 ${
