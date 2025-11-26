@@ -133,7 +133,7 @@ export function SummaryCard({
             Performance Overview
           </div>
           
-          {/* Date/Period Display with Navigation and Share Button */}
+          {/* Date/Period Display with Navigation */}
           <div className="flex items-center gap-2">
             {(showDayNav || periodLabel) && (
               <div className="flex items-center gap-2">
@@ -180,19 +180,6 @@ export function SummaryCard({
                   </div>
                 )}
               </div>
-            )}
-            {onShare && (
-              <button
-                onClick={onShare}
-                className={`p-1.5 md:p-2 rounded-lg transition-all ${
-                  isDarkTheme
-                    ? 'bg-gradient-to-r from-purple-900 to-purple-800 text-purple-300 hover:from-purple-800 hover:to-purple-700 hover:shadow-lg hover:shadow-purple-500/20'
-                    : 'bg-purple-500 text-white hover:bg-purple-600'
-                } font-bold text-sm md:text-base`}
-                title="Share performance"
-              >
-                🔗
-              </button>
             )}
           </div>
         </div>
@@ -262,6 +249,23 @@ export function SummaryCard({
         
         {/* Bottom accent line */}
         <div className={`h-0.5 bg-gradient-to-r ${colorConfig.glow} opacity-50 mt-6 rounded-full`} />
+        
+        {/* Share Button at Bottom */}
+        {onShare && (
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={onShare}
+              className={`px-6 py-2.5 rounded-lg transition-all font-bold text-sm md:text-base ${
+                isDarkTheme
+                  ? 'bg-gradient-to-r from-purple-900 to-purple-800 text-purple-300 hover:from-purple-800 hover:to-purple-700 hover:shadow-lg hover:shadow-purple-500/30'
+                  : 'bg-purple-500 text-white hover:bg-purple-600'
+              }`}
+              title="Share performance"
+            >
+              🔗 Share Performance
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
