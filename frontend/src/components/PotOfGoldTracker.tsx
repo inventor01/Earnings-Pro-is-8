@@ -20,8 +20,12 @@ export function PotOfGoldTracker() {
 
   if (!monthlyGoal || !monthlyData) return null;
 
-  const currentProfit = monthlyData.profit || 0;
-  const goalAmount = monthlyGoal.target_profit || 0;
+  const currentProfit = parseFloat(monthlyData?.profit) || 0;
+  const goalAmount = parseFloat(monthlyGoal?.target_profit) || 0;
+  
+  // Don't show if no goal is set or goal is 0
+  if (goalAmount === 0) return null;
+  
   const progressPercent = Math.min((currentProfit / goalAmount) * 100, 100);
   const isGoalReached = currentProfit >= goalAmount;
 
