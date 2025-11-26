@@ -13,7 +13,7 @@ interface EntriesTableProps {
   period?: string; // 'today', 'yesterday', 'week', 'last7', 'month', etc.
 }
 
-type SortField = 'date' | 'time' | 'amount' | 'type';
+type SortField = 'date' | 'time' | 'amount' | 'type' | 'app' | 'miles';
 type SortOrder = 'asc' | 'desc';
 
 export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = [], onSelectChange, period }: EntriesTableProps) {
@@ -73,6 +73,14 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
         case 'type':
           aVal = a.type;
           bVal = b.type;
+          break;
+        case 'app':
+          aVal = a.type === 'EXPENSE' ? (a.category || 'OTHER') : a.app;
+          bVal = b.type === 'EXPENSE' ? (b.category || 'OTHER') : b.app;
+          break;
+        case 'miles':
+          aVal = a.distance_miles;
+          bVal = b.distance_miles;
           break;
         default:
           return 0;
@@ -223,15 +231,21 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                   className={`w-4 h-4 rounded cursor-pointer ${config.name === 'bw-neon' ? 'border-white text-white' : config.name === 'simple-light' ? 'border-blue-500 text-blue-600' : 'border-cyan-500 text-cyan-400'}`}
                 />
               </th>
-              <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>Type</th>
-              <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>App / Category</th>
+              <th className="px-0 py-0">
+                <SortHeader field="type" label="Type" />
+              </th>
+              <th className="px-0 py-0">
+                <SortHeader field="app" label="App / Category" />
+              </th>
               <th className="px-0 py-0">
                 <SortHeader field="time" label="Date / Time" />
               </th>
               <th className="px-0 py-0">
                 <SortHeader field="amount" label="Amount" />
               </th>
-              <th className={`px-4 py-3 text-right text-xs font-medium uppercase ${config.tableHeaderText}`}>Miles</th>
+              <th className="px-0 py-0">
+                <SortHeader field="miles" label="Miles" />
+              </th>
               <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>Note</th>
               <th className={`px-4 py-3 text-right text-xs font-medium uppercase ${config.tableHeaderText}`}>Actions</th>
             </tr>
