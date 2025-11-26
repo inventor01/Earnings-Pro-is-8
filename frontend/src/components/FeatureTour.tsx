@@ -141,6 +141,12 @@ export function FeatureTour() {
             element.scrollIntoView({ behavior: 'auto', block: 'start' });
             calculateTooltipPosition(rect);
           }
+        } else if (step.id === 'settings' || step.id === 'export') {
+          // For settings/export buttons at top, scroll to top and highlight
+          window.scrollTo({ top: 0, behavior: 'auto' });
+          const rect = element.getBoundingClientRect();
+          setHighlightBox(rect);
+          calculateTooltipPosition(rect);
         } else {
           const rect = element.getBoundingClientRect();
           setHighlightBox(rect);
@@ -149,8 +155,16 @@ export function FeatureTour() {
         }
       }
     } else {
+      // For steps without selectors (like completion), show centered
       setIsHighlighting(false);
-      setTooltipStyle({ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' });
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      const centerX = (window.innerWidth - 320) / 2;
+      const centerY = (window.innerHeight - 240) / 2;
+      setTooltipStyle({ 
+        top: `${Math.max(16, centerY)}px`, 
+        left: `${Math.max(16, centerX)}px`, 
+        position: 'fixed',
+      });
     }
   }, [currentStep, step.selector]);
 
