@@ -5,6 +5,8 @@ import { useTheme } from '../lib/themeContext';
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -18,10 +20,14 @@ export function LoginPage() {
 
     try {
       const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/signup';
+      const body = mode === 'login' 
+        ? { email, password }
+        : { email, password, first_name: firstName, last_name: lastName };
+      
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
@@ -64,6 +70,49 @@ export function LoginPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'signup' && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDarkTheme ? 'text-slate-300' : 'text-gray-700'
+                  }`}>
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="John"
+                    className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
+                      isDarkTheme
+                        ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-cyan-400'
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
+                    }`}
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDarkTheme ? 'text-slate-300' : 'text-gray-700'
+                  }`}>
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Doe"
+                    className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
+                      isDarkTheme
+                        ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-cyan-400'
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
+                    }`}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+          
           <div>
             <label className={`block text-sm font-medium mb-2 ${
               isDarkTheme ? 'text-slate-300' : 'text-gray-700'

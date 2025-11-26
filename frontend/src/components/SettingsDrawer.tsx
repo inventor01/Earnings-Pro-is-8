@@ -2,6 +2,15 @@ import { Settings } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
 import { getAllThemes, ThemeName } from '../lib/themes';
 import { MetricVisibility } from './SummaryCard';
+import { useQuery } from '@tanstack/react-query';
+
+interface UserInfo {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  profile_image_url?: string;
+}
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -17,6 +26,18 @@ interface SettingsDrawerProps {
 
 export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
   const { theme, setTheme, config } = useTheme();
+  const { data: userInfo } = useQuery<UserInfo>({
+    queryKey: ['userInfo'],
+    queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      if (!token || token === 'guest-token') return null;
+      const res = await fetch(`/api/auth/me`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
 
   if (!isOpen) return null;
 
@@ -53,6 +74,22 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
         </div>
 
         <div className="flex-1 overflow-y-auto px-6">
+          {userInfo && (
+            <div className={`mb-6 p-4 rounded-lg ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-100 border border-gray-200'}`}>
+              <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>👤 Account Information</h3>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>Name</p>
+                  <p className={`font-semibold ${isDark ? 'text-slate-200' : 'text-gray-900'}`}>{userInfo.first_name} {userInfo.last_name}</p>
+                </div>
+                <div>
+                  <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>Email</p>
+                  <p className={`font-semibold break-all ${isDark ? 'text-slate-200' : 'text-gray-900'}`}>{userInfo.email}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="mb-6">
             <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
               Theme

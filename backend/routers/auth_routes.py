@@ -22,6 +22,8 @@ class LoginRequest(BaseModel):
 class SignupRequest(BaseModel):
     email: str
     password: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 class AuthResponse(BaseModel):
     access_token: str
@@ -62,8 +64,8 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
         id=user_id,
         email=request.email,
         password_hash=hash_password(request.password),
-        first_name="",
-        last_name=""
+        first_name=request.first_name or "",
+        last_name=request.last_name or ""
     )
     db.add(user)
     db.commit()
