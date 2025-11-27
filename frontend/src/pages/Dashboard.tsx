@@ -691,152 +691,55 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         )}
 
-        {/* Simplified Dashboard Grid */}
+        {/* Dashboard Cards Section */}
         <div className="space-y-6 mb-6" data-tour="performance">
           {/* Top 3 Cards - Revenue, Profit, Expenses */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <SummaryCard
-                  revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
-                  expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
-                  profit={`$${rollup?.profit.toFixed(2) || '0.00'}`}
-                  miles={rollup?.miles.toFixed(1) || '0.0'}
-                  orders={entries.filter(e => e.type === 'ORDER').length}
-                  margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
-                  avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
-                  dayOffset={dayOffset}
-                  onDayChange={(offset) => {
-                    setDayOffset(offset);
-                    if (period !== 'today') {
-                      setPeriod('today');
-                    }
-                  }}
-                  getDateLabel={getDateLabel}
-                  isDarkTheme={isDarkTheme}
-                  showDayNav={period === 'today'}
-                  periodLabel={getPeriodLabel()}
-                  visibilityConfig={metricVisibility}
-                  onShare={() => setShowShareCard(true)}
-                />
-
-                {/* Profit Calendar Toggle and Display */}
-                {!isSimple && (
-                  <>
-                    <div className="w-full px-2 md:px-0">
-                      <button
-                        onClick={() => setShowCalendar(!showCalendar)}
-                        className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl ${
-                          isDarkTheme
-                            ? showCalendar
-                              ? 'bg-gradient-to-r from-cyan-500 to-cyan-400 text-white border-2 border-cyan-300 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50'
-                              : 'bg-gradient-to-r from-slate-700 to-slate-800 text-cyan-300 border-2 border-cyan-500/50 hover:from-slate-600 hover:to-slate-700 hover:text-cyan-200 hover:border-cyan-400'
-                            : showCalendar
-                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-400 hover:from-blue-600 hover:to-blue-700'
-                            : 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white border-2 border-blue-300 hover:from-blue-500 hover:to-indigo-600 hover:border-blue-400'
-                        }`}
-                      >
-                        <span className="text-2xl md:text-3xl">{showCalendar ? '📆' : '📅'}</span>
-                        <span>{showCalendar ? 'Hide Calendar' : 'Show Calendar'}</span>
-                        <span className={`ml-2 transition-transform ${showCalendar ? 'rotate-180' : ''}`}>↓</span>
-                      </button>
-                    </div>
-
-                    {showCalendar && (
-                      <div>
-                        <ProfitCalendar entries={monthlyEntries} />
-                      </div>
-                    )}
-                  </>
-                )}
-              </>
-            )}
+            <KpiCard
+              title="Revenue"
+              value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
+              color="blue"
+            />
+            <KpiCard
+              title="Profit"
+              value={`$${rollup?.profit.toFixed(2) || '0.00'}`}
+              color="green"
+            />
+            <KpiCard
+              title="Expenses"
+              value={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
+              color="red"
+            />
           </div>
 
-          {/* Right Column - Quick Stats & Achievements */}
-          <div className="lg:col-span-1 space-y-4 md:space-y-6">
-            <PotOfGoldTracker />
-            
-            <div className="grid grid-cols-2 gap-3">
-              <KpiCard
-                title="$/Mile"
-                value={`$${rollup?.dollars_per_mile.toFixed(2) || '0.00'}`}
-                detail1={{ label: 'Efficiency', value: rollup?.miles ? `${(rollup.revenue / rollup.miles).toFixed(2)}/mi` : '-' }}
-                color="orange"
-              />
-              <KpiCard
-                title="$/Hour"
-                value={`$${rollup?.dollars_per_hour.toFixed(2) || '0.00'}`}
-                detail1={{ label: 'Hours', value: rollup ? `${(rollup.by_type?.total_minutes / 60 || 0).toFixed(1)}h` : '-' }}
-                color="gray"
-              />
-            </div>
-
+          {/* Bottom 4 Cards - KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <KpiCard
+              title="Miles"
+              value={rollup?.miles.toFixed(1) || '0.0'}
+              subtitle="Distance"
+              color="purple"
+            />
+            <KpiCard
+              title="Orders"
+              value={entries.filter(e => e.type === 'ORDER').length}
+              subtitle="Deliveries"
+              color="blue"
+            />
+            <KpiCard
+              title="Avg Order"
+              value={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
+              subtitle="Per Order"
+              color="green"
+            />
+            <KpiCard
+              title="Margin"
+              value={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
+              subtitle="Efficiency"
+              color="orange"
+            />
           </div>
         </div>
-
-
-        {/* Achievements Modal */}
-        {!isSimple && showAchievementsModal && (
-          <AchievementsModal 
-            entries={entries} 
-            rollup={rollup} 
-            monthlyGoal={monthlyGoal}
-            onClose={() => setShowAchievementsModal(false)}
-          />
-        )}
-
-        {!isSimple && (
-          <div>
-            {/* Calculate date range for AI suggestions based on current period */}
-            {(() => {
-              let fromDate = '';
-              let toDate = '';
-              
-              const now = new Date();
-              const startOfDay = (date: Date) => {
-                const d = new Date(date);
-                d.setHours(0, 0, 0, 0);
-                return d;
-              };
-              const endOfDay = (date: Date) => {
-                const d = new Date(date);
-                d.setHours(23, 59, 59, 999);
-                return d;
-              };
-              
-              if (period === 'today' || period === 'yesterday') {
-                const offset = period === 'today' ? dayOffset : -1;
-                const targetDay = new Date(now);
-                targetDay.setDate(targetDay.getDate() + offset);
-                fromDate = startOfDay(targetDay).toISOString();
-                toDate = endOfDay(targetDay).toISOString();
-              } else if (period === 'week') {
-                const weekStart = new Date(now);
-                weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-                fromDate = startOfDay(weekStart).toISOString();
-                toDate = endOfDay(now).toISOString();
-              } else if (period === 'last7') {
-                const last7 = new Date(now);
-                last7.setDate(last7.getDate() - 6);
-                fromDate = startOfDay(last7).toISOString();
-                toDate = endOfDay(now).toISOString();
-              } else if (period === 'month') {
-                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-                fromDate = startOfDay(monthStart).toISOString();
-                toDate = endOfDay(now).toISOString();
-              } else if (period === 'lastMonth') {
-                const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-                fromDate = startOfDay(lastMonthStart).toISOString();
-                toDate = endOfDay(lastMonthEnd).toISOString();
-              } else {
-                fromDate = startOfDay(now).toISOString();
-                toDate = endOfDay(now).toISOString();
-              }
-              
-              return <AISuggestions fromDate={fromDate} toDate={toDate} />;
-            })()}
-          </div>
-        )}
 
         {selectedIds.length > 0 && (
           <div className="mb-4 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -853,6 +756,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         )}
 
+        {/* Entries Table */}
         <div className="mb-6" data-tour="entries">
           <EntriesTable 
             entries={filteredEntries} 
