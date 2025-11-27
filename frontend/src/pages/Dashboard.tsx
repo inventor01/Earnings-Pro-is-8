@@ -592,7 +592,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
   const contentClass = config.name === 'simple-light'
     ? 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-gray-50 via-gray-100 to-white'
-    : config.name === 'bw-neon'
+    : config.name === 'dark-neon'
     ? 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-black via-gray-900 to-black'
     : 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950';
 

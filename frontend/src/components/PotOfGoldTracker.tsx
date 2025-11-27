@@ -25,10 +25,10 @@ export function PotOfGoldTracker() {
     },
   });
 
-  const currentProfit = Math.max(0, parseFloat(monthlyData?.profit as string) || 0);
-  const goalAmount = parseFloat(monthlyGoal?.target_profit as string) || 0;
+  const currentProfit = Math.max(0, parseFloat(String(monthlyData?.profit)) || 0);
+  const goalAmount = parseFloat(String(monthlyGoal?.target_profit)) || 0;
   
-  const progressPercent = goalAmount > 0 ? Math.min(Math.max(0, (currentProfit / goalAmount) * 100), 100) : 0;
+  const progressPercent = goalAmount > 0 ? Math.round(Math.min(Math.max(0, (currentProfit / goalAmount) * 100), 100) * 100) / 100 : 0;
   const isGoalReached = currentProfit >= goalAmount;
 
   const handleEditClick = () => {
@@ -350,7 +350,7 @@ export function PotOfGoldTracker() {
             backgroundClip: 'text',
             color: 'transparent'
           }}>
-            {Math.round(progressPercent)}% to your monthly treasure
+            {Math.min(100, Math.round(progressPercent))}% to your monthly treasure
           </p>
         </div>
         <div 
