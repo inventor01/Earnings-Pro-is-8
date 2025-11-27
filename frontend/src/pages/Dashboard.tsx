@@ -621,48 +621,146 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
       )}
       <div className={contentClass}>
-        {/* Compact Header */}
-        <div className="flex justify-end items-center mb-3 gap-1.5">
-          <button
-            onClick={() => setShowSettings(true)}
-            className={`p-1.5 transition-colors ${config.textPrimary} hover:opacity-70`}
-            data-tour="settings"
-            title="Settings"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-              />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
-          <button
-            onClick={logout}
-            className={`px-2.5 py-1 text-xs rounded-lg font-semibold whitespace-nowrap shadow-md transition-all ${
-              isDarkTheme
-                ? 'bg-gradient-to-r from-slate-700 to-slate-600 text-white hover:from-slate-600 hover:to-slate-500'
-                : 'bg-gray-400 text-white hover:bg-gray-500'
-            }`}
-            title="Sign out"
-          >
-            Sign Out
-          </button>
+        <div className="flex justify-between items-center mb-3 md:mb-6 gap-2">
+          <div className="flex items-center gap-1 md:gap-3">
+            <span className="text-4xl md:text-6xl drop-shadow-lg" style={{
+              textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)' : 'none',
+              filter: isDarkTheme ? 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))' : 'none',
+              animation: 'car-drive 2s ease-in-out infinite'
+            }}>
+              🚗
+            </span>
+            <div className="flex items-center gap-0">
+              <h1 className={`text-lg md:text-5xl font-black ${config.titleColor}`}>EARNINGS</h1>
+              <h1 
+                className="text-lg md:text-5xl font-black whitespace-nowrap"
+                style={{
+                  backgroundImage: isDarkTheme ? 'linear-gradient(to right, rgba(34, 211, 238, 0.95), rgba(99, 102, 241, 0.95))' : 'none',
+                  WebkitBackgroundClip: isDarkTheme ? 'text' : 'unset',
+                  backgroundClip: isDarkTheme ? 'text' : 'unset',
+                  WebkitTextFillColor: isDarkTheme ? 'transparent' : 'inherit',
+                  textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.6), 0 0 40px rgba(99, 102, 241, 0.4)' : 'none',
+                  color: isDarkTheme ? 'transparent' : '#000',
+                  WebkitTextStroke: !isDarkTheme ? '1.5px #000' : 'none',
+                  textStroke: !isDarkTheme ? '1.5px #000' : 'none'
+                } as any}
+              > PRO</h1>
+            </div>
+          </div>
+          <div className="flex gap-1 md:gap-2">
+            <button
+              onClick={logout}
+              className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
+                isDarkTheme
+                  ? 'bg-gradient-to-r from-slate-700 to-slate-600 text-white hover:from-slate-600 hover:to-slate-500'
+                  : 'bg-gray-400 text-white hover:bg-gray-500'
+              }`}
+              title="Sign out"
+            >
+              Sign Out
+            </button>
+            <button
+              onClick={() => onNavigateToLeaderboard?.()}
+              className={`relative p-2 md:p-2.5 rounded-lg transition-all ${
+                isDarkTheme
+                  ? 'hover:bg-cyan-500/20 text-cyan-400'
+                  : 'hover:bg-blue-100 text-blue-600'
+              }`}
+              title="View leaderboard"
+            >
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+              <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                🏆
+              </span>
+            </button>
+            <button
+              onClick={() => setResetConfirm(true)}
+              className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
+                isDarkTheme
+                  ? 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-700 hover:to-red-600 hover:shadow-red-500/50'
+                  : 'bg-red-500 text-white hover:bg-red-600'
+              }`}
+              title="Reset today's data"
+            >
+              Reset
+            </button>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={`p-2 md:p-2.5 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : config.textPrimary + ' hover:opacity-80'}`}
+              title="Refresh data"
+            >
+              <svg 
+                className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={() => setShowSettings(true)}
+              className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
+              data-tour="settings"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* Period Selector */}
-        <div className="mb-4 overflow-x-auto" data-tour="periods">
+        <div className="mb-3 md:mb-6 overflow-x-auto" data-tour="periods">
           <PeriodChips selected={period} onSelect={setPeriod} />
+        </div>
+
+        <div className="mb-4 md:mb-6" data-tour="search">
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+            isDarkTheme
+              ? 'bg-slate-800 border-slate-700 focus-within:border-cyan-400'
+              : 'bg-white border-gray-300 focus-within:border-blue-500'
+          }`}>
+            <svg className={`w-5 h-5 ${isDarkTheme ? 'text-slate-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`flex-1 bg-transparent outline-none text-sm ${isDarkTheme ? 'text-white placeholder-slate-400' : 'text-gray-900 placeholder-gray-400'}`}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className={`text-sm font-medium ${isDarkTheme ? 'text-slate-400 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Negative Profit Alert */}
         {rollup && rollup.profit < 0 && showNegativeAlert && (
-          <div className={`mb-3 p-3 rounded-lg border transition-all ${
+          <div className={`mb-4 md:mb-6 p-4 md:p-5 rounded-xl border-2 transition-all ${
             isDarkTheme
-              ? 'bg-gradient-to-r from-red-900/40 to-red-800/30 border-red-600/60 shadow-md'
-              : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-300 shadow-sm'
+              ? 'bg-gradient-to-r from-red-900/40 to-red-800/30 border-red-600/60 shadow-lg shadow-red-900/30'
+              : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-300 shadow-md shadow-red-200/50'
           }`}>
             <div className="flex items-center gap-4">
               <div className="text-4xl md:text-5xl flex-shrink-0 animate-pulse">⚠️</div>
@@ -691,95 +789,195 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         )}
 
-        {/* Daily Summary Badge */}
-        {period === 'today' && rollup && (
-          <div className={`mb-4 p-3 rounded-lg border flex items-center justify-between ${
-            isDarkTheme
-              ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-cyan-500/50'
-              : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300'
-          }`}>
-            <div>
-              <span className={`text-sm font-semibold ${isDarkTheme ? 'text-cyan-300' : 'text-blue-700'}`}>
-                📊 Today's Summary
-              </span>
+        {/* Dashboard Grid - Everything in One View */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-6">
+          {/* Left Column - Performance Overview */}
+          <div className="lg:col-span-3 space-y-4 md:space-y-6 scroll-smooth" data-tour="performance">
+            {/* Performance Overview Header with Toggle */}
+            <div className="flex items-center justify-between">
+              <h2 className={`text-lg font-bold ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>
+                Performance Overview
+              </h2>
+              <button
+                onClick={() => setShowPerformanceOverview(!showPerformanceOverview)}
+                className={`p-2 rounded-lg transition-all ${
+                  isDarkTheme
+                    ? 'text-slate-400 hover:text-cyan-300 hover:bg-slate-700/50'
+                    : 'text-gray-600 hover:text-blue-600 hover:bg-gray-200'
+                }`}
+                title={showPerformanceOverview ? 'Collapse' : 'Expand'}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {showPerformanceOverview ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  )}
+                </svg>
+              </button>
             </div>
-            <div className={`text-right ${isDarkTheme ? 'text-cyan-200' : 'text-blue-600'}`}>
-              <span className="text-xs font-mono">{entries.filter(e => e.type === 'ORDER').length} orders • {rollup.miles.toFixed(1)} mi</span>
+
+            {showPerformanceOverview && (
+              <>
+                <SummaryCard
+                  revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
+                  expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
+                  profit={`$${rollup?.profit.toFixed(2) || '0.00'}`}
+                  miles={rollup?.miles.toFixed(1) || '0.0'}
+                  orders={entries.filter(e => e.type === 'ORDER').length}
+                  margin={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
+                  avgOrder={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
+                  dayOffset={dayOffset}
+                  onDayChange={(offset) => {
+                    setDayOffset(offset);
+                    if (period !== 'today') {
+                      setPeriod('today');
+                    }
+                  }}
+                  getDateLabel={getDateLabel}
+                  isDarkTheme={isDarkTheme}
+                  showDayNav={period === 'today'}
+                  periodLabel={getPeriodLabel()}
+                  visibilityConfig={metricVisibility}
+                  onShare={() => setShowShareCard(true)}
+                />
+
+                {/* Profit Calendar Toggle and Display */}
+                {!isSimple && (
+                  <>
+                    <div className="w-full px-2 md:px-0">
+                      <button
+                        onClick={() => setShowCalendar(!showCalendar)}
+                        className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl ${
+                          isDarkTheme
+                            ? showCalendar
+                              ? 'bg-gradient-to-r from-cyan-500 to-cyan-400 text-white border-2 border-cyan-300 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50'
+                              : 'bg-gradient-to-r from-slate-700 to-slate-800 text-cyan-300 border-2 border-cyan-500/50 hover:from-slate-600 hover:to-slate-700 hover:text-cyan-200 hover:border-cyan-400'
+                            : showCalendar
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-400 hover:from-blue-600 hover:to-blue-700'
+                            : 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white border-2 border-blue-300 hover:from-blue-500 hover:to-indigo-600 hover:border-blue-400'
+                        }`}
+                      >
+                        <span className="text-2xl md:text-3xl">{showCalendar ? '📆' : '📅'}</span>
+                        <span>{showCalendar ? 'Hide Calendar' : 'Show Calendar'}</span>
+                        <span className={`ml-2 transition-transform ${showCalendar ? 'rotate-180' : ''}`}>↓</span>
+                      </button>
+                    </div>
+
+                    {showCalendar && (
+                      <div>
+                        <ProfitCalendar entries={monthlyEntries} />
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Right Column - Quick Stats & Achievements */}
+          <div className="lg:col-span-1 space-y-4 md:space-y-6">
+            <PotOfGoldTracker />
+            
+            <div className="grid grid-cols-2 gap-3">
+              <KpiCard
+                title="$/Mile"
+                value={`$${rollup?.dollars_per_mile.toFixed(2) || '0.00'}`}
+                detail1={{ label: 'Efficiency', value: rollup?.miles ? `${(rollup.revenue / rollup.miles).toFixed(2)}/mi` : '-' }}
+                color="orange"
+              />
+              <KpiCard
+                title="$/Hour"
+                value={`$${rollup?.dollars_per_hour.toFixed(2) || '0.00'}`}
+                detail1={{ label: 'Hours', value: rollup ? `${(rollup.by_type?.total_minutes / 60 || 0).toFixed(1)}h` : '-' }}
+                color="gray"
+              />
             </div>
-          </div>
-        )}
 
-        {/* Dashboard Cards Section - Sleek & Compact */}
-        <div className="space-y-3 mb-4" data-tour="performance">
-          {/* Top Cards - Profit emphasized, Revenue & Expenses side by side */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <KpiCard
-              title="Profit"
-              value={`$${rollup?.profit.toFixed(2) || '0.00'}`}
-              color="green"
-              isPrimary={true}
-              comparison={{ value: Math.round(((rollup?.profit || 0) / (rollup?.revenue || 1)) * 100), label: 'Margin' }}
-            />
-            <KpiCard
-              title="Revenue"
-              value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
-              color="blue"
-              comparison={undefined}
-            />
-            <KpiCard
-              title="Expenses"
-              value={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
-              color="red"
-              comparison={undefined}
-            />
-          </div>
-
-          {/* Bottom 4 Cards - KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <KpiCard
-              title="Miles"
-              value={rollup?.miles.toFixed(1) || '0.0'}
-              subtitle="Distance"
-              color="purple"
-            />
-            <KpiCard
-              title="Orders"
-              value={entries.filter(e => e.type === 'ORDER').length}
-              subtitle="Deliveries"
-              color="blue"
-            />
-            <KpiCard
-              title="Avg Order"
-              value={`$${rollup?.average_order_value.toFixed(2) || '0.00'}`}
-              subtitle="Per Order"
-              color="green"
-            />
-            <KpiCard
-              title="Margin"
-              value={rollup?.revenue ? `${(((rollup.profit || 0) / rollup.revenue) * 100).toFixed(0)}%` : '-'}
-              subtitle="Efficiency"
-              color="orange"
-            />
           </div>
         </div>
 
+
+        {/* Achievements Modal */}
+        {!isSimple && showAchievementsModal && (
+          <AchievementsModal 
+            entries={entries} 
+            rollup={rollup} 
+            monthlyGoal={monthlyGoal}
+            onClose={() => setShowAchievementsModal(false)}
+          />
+        )}
+
+        {!isSimple && (
+          <div>
+            {/* Calculate date range for AI suggestions based on current period */}
+            {(() => {
+              let fromDate = '';
+              let toDate = '';
+              
+              const now = new Date();
+              const startOfDay = (date: Date) => {
+                const d = new Date(date);
+                d.setHours(0, 0, 0, 0);
+                return d;
+              };
+              const endOfDay = (date: Date) => {
+                const d = new Date(date);
+                d.setHours(23, 59, 59, 999);
+                return d;
+              };
+              
+              if (period === 'today' || period === 'yesterday') {
+                const offset = period === 'today' ? dayOffset : -1;
+                const targetDay = new Date(now);
+                targetDay.setDate(targetDay.getDate() + offset);
+                fromDate = startOfDay(targetDay).toISOString();
+                toDate = endOfDay(targetDay).toISOString();
+              } else if (period === 'week') {
+                const weekStart = new Date(now);
+                weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+                fromDate = startOfDay(weekStart).toISOString();
+                toDate = endOfDay(now).toISOString();
+              } else if (period === 'last7') {
+                const last7 = new Date(now);
+                last7.setDate(last7.getDate() - 6);
+                fromDate = startOfDay(last7).toISOString();
+                toDate = endOfDay(now).toISOString();
+              } else if (period === 'month') {
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                fromDate = startOfDay(monthStart).toISOString();
+                toDate = endOfDay(now).toISOString();
+              } else if (period === 'lastMonth') {
+                const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+                fromDate = startOfDay(lastMonthStart).toISOString();
+                toDate = endOfDay(lastMonthEnd).toISOString();
+              } else {
+                fromDate = startOfDay(now).toISOString();
+                toDate = endOfDay(now).toISOString();
+              }
+              
+              return <AISuggestions fromDate={fromDate} toDate={toDate} />;
+            })()}
+          </div>
+        )}
+
         {selectedIds.length > 0 && (
-          <div className="mb-3 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <span className="text-blue-900 font-medium text-sm">
+          <div className="mb-4 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <span className="text-blue-900 font-medium">
               {selectedIds.length} {selectedIds.length === 1 ? 'entry' : 'entries'} selected
             </span>
             <button
               onClick={() => setBulkDeleteConfirm(true)}
               disabled={bulkDeleteMutation.isPending}
-              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded-lg font-medium disabled:bg-gray-400"
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium disabled:bg-gray-400"
             >
-              {bulkDeleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              {bulkDeleteMutation.isPending ? 'Deleting...' : 'Delete Selected'}
             </button>
           </div>
         )}
 
-        {/* Entries Table */}
-        <div className="mb-4" data-tour="entries">
+        <div className="mb-6" data-tour="entries">
           <EntriesTable 
             entries={filteredEntries} 
             onDelete={handleDelete}

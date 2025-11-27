@@ -22,7 +22,7 @@ export function PeriodChips({ selected, onSelect, onCustomClick }: PeriodChipsPr
   ];
 
   return (
-    <div className="flex gap-1.5 overflow-x-auto pb-1 px-0 -mx-3 px-3">
+    <div className="flex gap-1 md:gap-2 overflow-x-auto pb-2 px-1">
       {periods.map((period) => (
         <button
           key={period.value}
@@ -33,10 +33,10 @@ export function PeriodChips({ selected, onSelect, onCustomClick }: PeriodChipsPr
               onSelect(period.value);
             }
           }}
-          className={`px-3 md:px-3.5 py-1 md:py-1.5 rounded-full text-xs font-semibold whitespace-nowrap touch-manipulation transition-all ${
+          className={`px-2 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium whitespace-nowrap touch-manipulation transition-all ${
             selected === period.value
-              ? `${config.chipActiveBg} ${config.chipActive} shadow-md scale-105`
-              : `${config.chipInactive} hover:opacity-75`
+              ? `${config.chipActiveBg} ${config.chipActive} shadow-lg`
+              : config.chipInactive
           }`}
         >
           {period.label}
