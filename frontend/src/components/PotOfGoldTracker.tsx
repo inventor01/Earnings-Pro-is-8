@@ -28,9 +28,7 @@ export function PotOfGoldTracker() {
   const currentProfit = Math.max(0, parseFloat(monthlyData?.profit as string) || 0);
   const goalAmount = parseFloat(monthlyGoal?.target_profit as string) || 0;
   
-  if (goalAmount === 0) return null;
-  
-  const progressPercent = Math.min(Math.max(0, (currentProfit / goalAmount) * 100), 100);
+  const progressPercent = goalAmount > 0 ? Math.min(Math.max(0, (currentProfit / goalAmount) * 100), 100) : 0;
   const isGoalReached = currentProfit >= goalAmount;
 
   const handleEditClick = () => {
@@ -165,6 +163,56 @@ export function PotOfGoldTracker() {
               Cancel
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show "Set Your Goal" prompt when no goal is set
+  if (goalAmount === 0) {
+    return (
+      <div className={`rounded-2xl p-5 md:p-6 border-2 transition-all ${
+        themeConfig.name === 'dark-neon'
+          ? 'bg-gradient-to-br from-purple-900/60 via-slate-900/50 to-blue-900/40 border-cyan-400/60'
+          : themeConfig.name === 'simple-light'
+          ? 'bg-gradient-to-br from-blue-100 via-purple-50 to-yellow-100 border-purple-300'
+          : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-cyan-500/60'
+      }`}>
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="text-5xl md:text-6xl mb-3">🪙</div>
+            <h3 className={`font-black text-lg md:text-xl mb-2`}
+            style={themeConfig.name === 'simple-light' ? {
+              backgroundImage: 'linear-gradient(to right, rgb(29, 78, 216), rgb(37, 99, 235))',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              color: 'transparent'
+            } : {
+              backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              color: 'transparent'
+            }}>
+              Start Your Pot of Gold
+            </h3>
+            <p className={`text-sm ${themeConfig.name === 'simple-light' ? 'text-purple-700' : 'text-slate-300'}`}>
+              Set a monthly profit goal to track your treasure
+            </p>
+          </div>
+          <button
+            onClick={handleEditClick}
+            className={`w-full py-3 rounded-xl font-bold transition-all ${
+              themeConfig.name === 'dark-neon'
+                ? 'bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black shadow-lg hover:shadow-yellow-400/50'
+                : themeConfig.name === 'simple-light'
+                ? 'bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white'
+                : 'bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black shadow-lg'
+            }`}
+          >
+            Set Monthly Goal
+          </button>
         </div>
       </div>
     );
