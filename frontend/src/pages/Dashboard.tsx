@@ -21,6 +21,7 @@ import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { AchievementsModal } from '../components/AchievementsModal';
 import { ProfitCalendar } from '../components/ProfitCalendar';
 import { useTheme } from '../lib/themeContext';
+import { useSimpleMode } from '../lib/simpleModeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
 
@@ -30,6 +31,7 @@ interface DashboardProps {
 
 export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const { logout } = useAuth();
+  const { isSimple } = useSimpleMode();
   const [period, setPeriod] = useState<Period>('today');
   const [amount, setAmount] = useState('0');
   const [mode, setMode] = useState<CalcMode>('add');
