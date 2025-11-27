@@ -877,7 +877,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
           {/* Right Column - Quick Stats & Achievements */}
           <div className="space-y-4 md:space-y-6">
-            {!isSimple && <PotOfGoldTracker />}
+            <PotOfGoldTracker />
             
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
