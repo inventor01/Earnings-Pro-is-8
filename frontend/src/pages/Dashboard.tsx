@@ -98,6 +98,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   });
   const [showGoalBanner, setShowGoalBanner] = useState(() => {
     const saved = localStorage.getItem('showGoalBanner');
+    // Always show goal banner by default - it's a core feature
     return saved === null ? true : saved === 'true';
   });
   
