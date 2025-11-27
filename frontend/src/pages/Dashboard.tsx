@@ -32,6 +32,7 @@ interface DashboardProps {
 export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const { logout } = useAuth();
   const { isSimple } = useSimpleMode();
+  const [activeTab, setActiveTab] = useState<'home' | 'income' | 'expenses' | 'taxes'>('home');
   const [period, setPeriod] = useState<Period>('today');
   const [amount, setAmount] = useState('0');
   const [mode, setMode] = useState<CalcMode>('add');
@@ -621,68 +622,43 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
       )}
       <div className={contentClass}>
-        <div className="flex justify-between items-center mb-4 md:mb-8 lg:mb-10 gap-2">
-          <div className="flex items-center gap-1 md:gap-3 lg:gap-4">
-            <span className="text-4xl md:text-6xl lg:text-7xl drop-shadow-lg" style={{
-              textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)' : 'none',
-              filter: isDarkTheme ? 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))' : 'none',
-              animation: 'car-drive 2s ease-in-out infinite'
-            }}>
-              🚗
-            </span>
-            <div className="flex items-center gap-0">
-              <h1 className={`text-lg md:text-5xl lg:text-6xl font-black ${config.titleColor}`}>EARNINGS</h1>
-              <h1 
-                className="text-lg md:text-5xl lg:text-6xl font-black whitespace-nowrap"
-                style={{
-                  backgroundImage: isDarkTheme ? 'linear-gradient(to right, rgba(34, 211, 238, 0.95), rgba(99, 102, 241, 0.95))' : 'none',
-                  WebkitBackgroundClip: isDarkTheme ? 'text' : 'unset',
-                  backgroundClip: isDarkTheme ? 'text' : 'unset',
-                  WebkitTextFillColor: isDarkTheme ? 'transparent' : 'inherit',
-                  textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.6), 0 0 40px rgba(99, 102, 241, 0.4)' : 'none',
-                  color: isDarkTheme ? 'transparent' : '#000',
-                  WebkitTextStroke: !isDarkTheme ? '1.5px #000' : 'none',
-                  textStroke: !isDarkTheme ? '1.5px #000' : 'none'
-                } as any}
-              > PRO</h1>
-            </div>
+        {/* Tab Navigation */}
+        <div className={`mb-6 border-b ${isDarkTheme ? 'border-slate-700' : 'border-gray-200'}`}>
+          <div className="flex gap-6">
+            {['home', 'income', 'expenses', 'taxes'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab as any)}
+                className={`pb-3 px-1 font-medium transition-colors capitalize ${
+                  activeTab === tab
+                    ? isDarkTheme
+                      ? 'text-cyan-400 border-b-2 border-cyan-400'
+                      : 'text-blue-600 border-b-2 border-blue-600'
+                    : isDarkTheme
+                    ? 'text-slate-500 hover:text-slate-400'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
-          <div className="flex gap-1 md:gap-2">
-            <button
-              onClick={() => onNavigateToLeaderboard?.()}
-              className={`relative p-2 md:p-2.5 rounded-lg transition-all ${
-                isDarkTheme
-                  ? 'hover:bg-cyan-500/20 text-cyan-400'
-                  : 'hover:bg-blue-100 text-blue-600'
-              }`}
-              title="View leaderboard"
-            >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-              <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                🏆
-              </span>
-            </button>
-            <button
-              onClick={() => setResetConfirm(true)}
-              className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
-                isDarkTheme
-                  ? 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-700 hover:to-red-600 hover:shadow-red-500/50'
-                  : 'bg-red-500 text-white hover:bg-red-600'
-              }`}
-              title="Reset today's data"
-            >
-              Reset
-            </button>
+        </div>
+
+        {/* Header with settings/refresh buttons */}
+        <div className="flex justify-between items-center mb-6 gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">👤</span>
+          </div>
+          <div className="flex gap-2">
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className={`p-2 md:p-2.5 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : config.textPrimary + ' hover:opacity-80'}`}
+              className={`p-2 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : config.textPrimary + ' hover:opacity-80'}`}
               title="Refresh data"
             >
               <svg 
-                className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`} 
+                className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} 
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
@@ -697,10 +673,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             </button>
             <button
               onClick={() => setShowSettings(true)}
-              className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
+              className={`p-2 transition-colors ${config.textPrimary} hover:opacity-80`}
               data-tour="settings"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -713,6 +689,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         </div>
 
+        {activeTab === 'home' && (
+          <>
         <div className="mb-4 md:mb-8 lg:mb-10 overflow-x-auto" data-tour="periods">
           <PeriodChips selected={period} onSelect={setPeriod} />
         </div>
