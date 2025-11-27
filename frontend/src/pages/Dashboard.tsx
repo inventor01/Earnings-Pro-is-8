@@ -621,138 +621,40 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
       )}
       <div className={contentClass}>
-        <div className="flex justify-between items-center mb-3 md:mb-6 gap-2">
-          <div className="flex items-center gap-1 md:gap-3">
-            <span className="text-4xl md:text-6xl drop-shadow-lg" style={{
-              textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)' : 'none',
-              filter: isDarkTheme ? 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))' : 'none',
-              animation: 'car-drive 2s ease-in-out infinite'
-            }}>
-              🚗
-            </span>
-            <div className="flex items-center gap-0">
-              <h1 className={`text-lg md:text-5xl font-black ${config.titleColor}`}>EARNINGS</h1>
-              <h1 
-                className="text-lg md:text-5xl font-black whitespace-nowrap"
-                style={{
-                  backgroundImage: isDarkTheme ? 'linear-gradient(to right, rgba(34, 211, 238, 0.95), rgba(99, 102, 241, 0.95))' : 'none',
-                  WebkitBackgroundClip: isDarkTheme ? 'text' : 'unset',
-                  backgroundClip: isDarkTheme ? 'text' : 'unset',
-                  WebkitTextFillColor: isDarkTheme ? 'transparent' : 'inherit',
-                  textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.6), 0 0 40px rgba(99, 102, 241, 0.4)' : 'none',
-                  color: isDarkTheme ? 'transparent' : '#000',
-                  WebkitTextStroke: !isDarkTheme ? '1.5px #000' : 'none',
-                  textStroke: !isDarkTheme ? '1.5px #000' : 'none'
-                } as any}
-              > PRO</h1>
-            </div>
-          </div>
-          <div className="flex gap-1 md:gap-2">
-            <button
-              onClick={logout}
-              className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
-                isDarkTheme
-                  ? 'bg-gradient-to-r from-slate-700 to-slate-600 text-white hover:from-slate-600 hover:to-slate-500'
-                  : 'bg-gray-400 text-white hover:bg-gray-500'
-              }`}
-              title="Sign out"
-            >
-              Sign Out
-            </button>
-            <button
-              onClick={() => onNavigateToLeaderboard?.()}
-              className={`relative p-2 md:p-2.5 rounded-lg transition-all ${
-                isDarkTheme
-                  ? 'hover:bg-cyan-500/20 text-cyan-400'
-                  : 'hover:bg-blue-100 text-blue-600'
-              }`}
-              title="View leaderboard"
-            >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-              <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                🏆
-              </span>
-            </button>
-            <button
-              onClick={() => setResetConfirm(true)}
-              className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
-                isDarkTheme
-                  ? 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-700 hover:to-red-600 hover:shadow-red-500/50'
-                  : 'bg-red-500 text-white hover:bg-red-600'
-              }`}
-              title="Reset today's data"
-            >
-              Reset
-            </button>
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className={`p-2 md:p-2.5 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : config.textPrimary + ' hover:opacity-80'}`}
-              title="Refresh data"
-            >
-              <svg 
-                className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`} 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-            </button>
-            <button
-              onClick={() => setShowSettings(true)}
-              className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
-              data-tour="settings"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-3 md:mb-6 overflow-x-auto" data-tour="periods">
-          <PeriodChips selected={period} onSelect={setPeriod} />
-        </div>
-
-        <div className="mb-4 md:mb-6" data-tour="search">
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
-            isDarkTheme
-              ? 'bg-slate-800 border-slate-700 focus-within:border-cyan-400'
-              : 'bg-white border-gray-300 focus-within:border-blue-500'
-          }`}>
-            <svg className={`w-5 h-5 ${isDarkTheme ? 'text-slate-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        {/* Minimal Header - Settings and Logout only */}
+        <div className="flex justify-end items-center mb-4 md:mb-6 gap-2">
+          <button
+            onClick={() => setShowSettings(true)}
+            className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
+            data-tour="settings"
+            title="Settings"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <input
-              type="text"
-              placeholder="Search transactions..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`flex-1 bg-transparent outline-none text-sm ${isDarkTheme ? 'text-white placeholder-slate-400' : 'text-gray-900 placeholder-gray-400'}`}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className={`text-sm font-medium ${isDarkTheme ? 'text-slate-400 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                ✕
-              </button>
-            )}
-          </div>
+          </button>
+          <button
+            onClick={logout}
+            className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
+              isDarkTheme
+                ? 'bg-gradient-to-r from-slate-700 to-slate-600 text-white hover:from-slate-600 hover:to-slate-500'
+                : 'bg-gray-400 text-white hover:bg-gray-500'
+            }`}
+            title="Sign out"
+          >
+            Sign Out
+          </button>
+        </div>
+
+        {/* Period Selector */}
+        <div className="mb-6 overflow-x-auto" data-tour="periods">
+          <PeriodChips selected={period} onSelect={setPeriod} />
         </div>
 
         {/* Negative Profit Alert */}
@@ -789,37 +691,11 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         )}
 
-        {/* Dashboard Grid - Everything in One View */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-6">
-          {/* Left Column - Performance Overview */}
-          <div className="lg:col-span-3 space-y-4 md:space-y-6 scroll-smooth" data-tour="performance">
-            {/* Performance Overview Header with Toggle */}
-            <div className="flex items-center justify-between">
-              <h2 className={`text-lg font-bold ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>
-                Performance Overview
-              </h2>
-              <button
-                onClick={() => setShowPerformanceOverview(!showPerformanceOverview)}
-                className={`p-2 rounded-lg transition-all ${
-                  isDarkTheme
-                    ? 'text-slate-400 hover:text-cyan-300 hover:bg-slate-700/50'
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-gray-200'
-                }`}
-                title={showPerformanceOverview ? 'Collapse' : 'Expand'}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {showPerformanceOverview ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  )}
-                </svg>
-              </button>
-            </div>
-
-            {showPerformanceOverview && (
-              <>
-                <SummaryCard
+        {/* Simplified Dashboard Grid */}
+        <div className="space-y-6 mb-6" data-tour="performance">
+          {/* Top 3 Cards - Revenue, Profit, Expenses */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <SummaryCard
                   revenue={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
                   expenses={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
                   profit={`$${rollup?.profit.toFixed(2) || '0.00'}`}
