@@ -29,7 +29,7 @@ interface DashboardProps {
   onNavigateToLeaderboard?: () => void;
 }
 
-export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
+export function Dashboard({ }: DashboardProps) {
   const { logout } = useAuth();
   const { isSimple } = useSimpleMode();
   const [activeTab, setActiveTab] = useState<'home' | 'income' | 'expenses' | 'taxes'>('home');
@@ -954,6 +954,26 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             onSelectChange={setSelectedIds}
           />
         </div>
+          </>
+        )}
+
+        {activeTab === 'income' && (
+          <div className={`py-8 text-center ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>
+            <p className="text-lg">Income tab content coming soon</p>
+          </div>
+        )}
+
+        {activeTab === 'expenses' && (
+          <div className={`py-8 text-center ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>
+            <p className="text-lg">Expenses tab content coming soon</p>
+          </div>
+        )}
+
+        {activeTab === 'taxes' && (
+          <div className={`py-8 text-center ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>
+            <p className="text-lg">Taxes tab content coming soon</p>
+          </div>
+        )}
       </div>
 
       <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 z-50 ${calcExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`} data-tour="calculator">
