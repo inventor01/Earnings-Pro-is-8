@@ -691,24 +691,46 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         )}
 
+        {/* Daily Summary Badge */}
+        {period === 'today' && rollup && (
+          <div className={`mb-4 p-3 rounded-lg border flex items-center justify-between ${
+            isDarkTheme
+              ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-cyan-500/50'
+              : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300'
+          }`}>
+            <div>
+              <span className={`text-sm font-semibold ${isDarkTheme ? 'text-cyan-300' : 'text-blue-700'}`}>
+                📊 Today's Summary
+              </span>
+            </div>
+            <div className={`text-right ${isDarkTheme ? 'text-cyan-200' : 'text-blue-600'}`}>
+              <span className="text-xs font-mono">{entries.filter(e => e.type === 'ORDER').length} orders • {rollup.miles.toFixed(1)} mi</span>
+            </div>
+          </div>
+        )}
+
         {/* Dashboard Cards Section - Sleek & Compact */}
         <div className="space-y-3 mb-4" data-tour="performance">
-          {/* Top 3 Cards - Revenue, Profit, Expenses */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <KpiCard
-              title="Revenue"
-              value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
-              color="blue"
-            />
+          {/* Top Cards - Profit emphasized, Revenue & Expenses side by side */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <KpiCard
               title="Profit"
               value={`$${rollup?.profit.toFixed(2) || '0.00'}`}
               color="green"
+              isPrimary={true}
+              comparison={{ value: Math.round(((rollup?.profit || 0) / (rollup?.revenue || 1)) * 100), label: 'Margin' }}
+            />
+            <KpiCard
+              title="Revenue"
+              value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
+              color="blue"
+              comparison={undefined}
             />
             <KpiCard
               title="Expenses"
               value={`$${rollup?.expenses.toFixed(2) || '0.00'}`}
               color="red"
+              comparison={undefined}
             />
           </div>
 
