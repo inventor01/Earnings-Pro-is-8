@@ -850,29 +850,33 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                 />
 
                 {/* Profit Calendar Toggle and Display */}
-                <div className="w-full px-2 md:px-0">
-                  <button
-                    onClick={() => setShowCalendar(!showCalendar)}
-                    className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl ${
-                      isDarkTheme
-                        ? showCalendar
-                          ? 'bg-gradient-to-r from-cyan-500 to-cyan-400 text-white border-2 border-cyan-300 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50'
-                          : 'bg-gradient-to-r from-slate-700 to-slate-800 text-cyan-300 border-2 border-cyan-500/50 hover:from-slate-600 hover:to-slate-700 hover:text-cyan-200 hover:border-cyan-400'
-                        : showCalendar
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-400 hover:from-blue-600 hover:to-blue-700'
-                        : 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white border-2 border-blue-300 hover:from-blue-500 hover:to-indigo-600 hover:border-blue-400'
-                    }`}
-                  >
-                    <span className="text-2xl md:text-3xl">{showCalendar ? '📆' : '📅'}</span>
-                    <span>{showCalendar ? 'Hide Calendar' : 'Show Calendar'}</span>
-                    <span className={`ml-2 transition-transform ${showCalendar ? 'rotate-180' : ''}`}>↓</span>
-                  </button>
-                </div>
+                {!isSimple && (
+                  <>
+                    <div className="w-full px-2 md:px-0">
+                      <button
+                        onClick={() => setShowCalendar(!showCalendar)}
+                        className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl ${
+                          isDarkTheme
+                            ? showCalendar
+                              ? 'bg-gradient-to-r from-cyan-500 to-cyan-400 text-white border-2 border-cyan-300 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50'
+                              : 'bg-gradient-to-r from-slate-700 to-slate-800 text-cyan-300 border-2 border-cyan-500/50 hover:from-slate-600 hover:to-slate-700 hover:text-cyan-200 hover:border-cyan-400'
+                            : showCalendar
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-400 hover:from-blue-600 hover:to-blue-700'
+                            : 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white border-2 border-blue-300 hover:from-blue-500 hover:to-indigo-600 hover:border-blue-400'
+                        }`}
+                      >
+                        <span className="text-2xl md:text-3xl">{showCalendar ? '📆' : '📅'}</span>
+                        <span>{showCalendar ? 'Hide Calendar' : 'Show Calendar'}</span>
+                        <span className={`ml-2 transition-transform ${showCalendar ? 'rotate-180' : ''}`}>↓</span>
+                      </button>
+                    </div>
 
-                {showCalendar && (
-                  <div>
-                    <ProfitCalendar entries={monthlyEntries} />
-                  </div>
+                    {showCalendar && (
+                      <div>
+                        <ProfitCalendar entries={monthlyEntries} />
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
@@ -880,7 +884,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
           {/* Right Column - Quick Stats & Achievements */}
           <div className="space-y-4 md:space-y-6">
-            <PotOfGoldTracker />
+            {!isSimple && <PotOfGoldTracker />}
             
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
@@ -902,7 +906,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
 
         {/* Achievements Modal */}
-        {showAchievementsModal && (
+        {!isSimple && showAchievementsModal && (
           <AchievementsModal 
             entries={entries} 
             rollup={rollup} 
@@ -911,57 +915,59 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           />
         )}
 
-        <div>
-          {/* Calculate date range for AI suggestions based on current period */}
-          {(() => {
-            let fromDate = '';
-            let toDate = '';
-            
-            const now = new Date();
-            const startOfDay = (date: Date) => {
-              const d = new Date(date);
-              d.setHours(0, 0, 0, 0);
-              return d;
-            };
-            const endOfDay = (date: Date) => {
-              const d = new Date(date);
-              d.setHours(23, 59, 59, 999);
-              return d;
-            };
-            
-            if (period === 'today' || period === 'yesterday') {
-              const offset = period === 'today' ? dayOffset : -1;
-              const targetDay = new Date(now);
-              targetDay.setDate(targetDay.getDate() + offset);
-              fromDate = startOfDay(targetDay).toISOString();
-              toDate = endOfDay(targetDay).toISOString();
-            } else if (period === 'week') {
-              const weekStart = new Date(now);
-              weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-              fromDate = startOfDay(weekStart).toISOString();
-              toDate = endOfDay(now).toISOString();
-            } else if (period === 'last7') {
-              const last7 = new Date(now);
-              last7.setDate(last7.getDate() - 6);
-              fromDate = startOfDay(last7).toISOString();
-              toDate = endOfDay(now).toISOString();
-            } else if (period === 'month') {
-              const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-              fromDate = startOfDay(monthStart).toISOString();
-              toDate = endOfDay(now).toISOString();
-            } else if (period === 'lastMonth') {
-              const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-              const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-              fromDate = startOfDay(lastMonthStart).toISOString();
-              toDate = endOfDay(lastMonthEnd).toISOString();
-            } else {
-              fromDate = startOfDay(now).toISOString();
-              toDate = endOfDay(now).toISOString();
-            }
-            
-            return <AISuggestions fromDate={fromDate} toDate={toDate} />;
-          })()}
-        </div>
+        {!isSimple && (
+          <div>
+            {/* Calculate date range for AI suggestions based on current period */}
+            {(() => {
+              let fromDate = '';
+              let toDate = '';
+              
+              const now = new Date();
+              const startOfDay = (date: Date) => {
+                const d = new Date(date);
+                d.setHours(0, 0, 0, 0);
+                return d;
+              };
+              const endOfDay = (date: Date) => {
+                const d = new Date(date);
+                d.setHours(23, 59, 59, 999);
+                return d;
+              };
+              
+              if (period === 'today' || period === 'yesterday') {
+                const offset = period === 'today' ? dayOffset : -1;
+                const targetDay = new Date(now);
+                targetDay.setDate(targetDay.getDate() + offset);
+                fromDate = startOfDay(targetDay).toISOString();
+                toDate = endOfDay(targetDay).toISOString();
+              } else if (period === 'week') {
+                const weekStart = new Date(now);
+                weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+                fromDate = startOfDay(weekStart).toISOString();
+                toDate = endOfDay(now).toISOString();
+              } else if (period === 'last7') {
+                const last7 = new Date(now);
+                last7.setDate(last7.getDate() - 6);
+                fromDate = startOfDay(last7).toISOString();
+                toDate = endOfDay(now).toISOString();
+              } else if (period === 'month') {
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                fromDate = startOfDay(monthStart).toISOString();
+                toDate = endOfDay(now).toISOString();
+              } else if (period === 'lastMonth') {
+                const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+                fromDate = startOfDay(lastMonthStart).toISOString();
+                toDate = endOfDay(lastMonthEnd).toISOString();
+              } else {
+                fromDate = startOfDay(now).toISOString();
+                toDate = endOfDay(now).toISOString();
+              }
+              
+              return <AISuggestions fromDate={fromDate} toDate={toDate} />;
+            })()}
+          </div>
+        )}
 
         {selectedIds.length > 0 && (
           <div className="mb-4 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -1179,7 +1185,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         />
       )}
 
-      {showShareCard && (
+      {!isSimple && showShareCard && (
         <>
           <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setShowShareCard(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
