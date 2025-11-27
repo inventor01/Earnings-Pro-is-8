@@ -3,6 +3,7 @@ import { useTheme } from '../lib/themeContext';
 import { getAllThemes, ThemeName } from '../lib/themes';
 import { MetricVisibility } from './SummaryCard';
 import { useQuery } from '@tanstack/react-query';
+import { useSimpleMode } from '../lib/simpleModeContext';
 
 interface UserInfo {
   id: string;
@@ -26,6 +27,7 @@ interface SettingsDrawerProps {
 
 export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
   const { theme, setTheme, config } = useTheme();
+  const { isSimple, setIsSimple } = useSimpleMode();
   const { data: userInfo } = useQuery<UserInfo>({
     queryKey: ['userInfo'],
     queryFn: async () => {
@@ -90,6 +92,26 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             </div>
           )}
           
+          <div className="mb-6">
+            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+              View Mode
+            </label>
+            <button
+              onClick={() => setIsSimple(!isSimple)}
+              className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all mb-3 ${
+                isSimple
+                  ? isDark
+                    ? 'bg-cyan-500/30 border border-cyan-400 text-cyan-300'
+                    : 'bg-blue-100 border border-blue-500 text-blue-700'
+                  : isDark
+                  ? 'bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500'
+                  : 'bg-gray-100 border border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              {isSimple ? '✓ Simple Mode' : '◯ Simple Mode'}
+            </button>
+          </div>
+
           <div className="mb-6">
             <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
               Theme
