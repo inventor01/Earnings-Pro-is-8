@@ -21,11 +21,12 @@ interface SettingsDrawerProps {
   onResetAll?: () => void;
   onExport?: () => void;
   onRestartTour?: () => void;
+  onLogout?: () => void;
   metricVisibility?: Partial<MetricVisibility>;
   onMetricVisibilityChange?: (visibility: Partial<MetricVisibility>) => void;
 }
 
-export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
+export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, onLogout, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
   const { theme, setTheme, config } = useTheme();
   const { isSimple, setIsSimple } = useSimpleMode();
   const { data: userInfo } = useQuery<UserInfo>({
@@ -226,6 +227,22 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             </button>
             <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
               Permanently delete all entries. This action cannot be undone.
+            </p>
+            <button
+              onClick={() => {
+                onLogout?.();
+                onClose();
+              }}
+              className={`w-full py-1.5 px-3 rounded text-sm font-medium transition-all mt-3 ${
+                isDark
+                  ? 'bg-red-900/30 hover:bg-red-900/50 border border-red-500 text-red-400'
+                  : 'bg-red-500 hover:bg-red-600 text-white'
+              }`}
+            >
+              🚪 Sign Out
+            </button>
+            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+              End your session and sign out.
             </p>
           </div>
         </div>
