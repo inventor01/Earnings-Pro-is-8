@@ -621,15 +621,15 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
       )}
       <div className={contentClass}>
-        {/* Minimal Header - Settings and Logout only */}
-        <div className="flex justify-end items-center mb-4 md:mb-6 gap-2">
+        {/* Compact Header */}
+        <div className="flex justify-end items-center mb-3 gap-1.5">
           <button
             onClick={() => setShowSettings(true)}
-            className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
+            className={`p-1.5 transition-colors ${config.textPrimary} hover:opacity-70`}
             data-tour="settings"
             title="Settings"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -641,7 +641,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </button>
           <button
             onClick={logout}
-            className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
+            className={`px-2.5 py-1 text-xs rounded-lg font-semibold whitespace-nowrap shadow-md transition-all ${
               isDarkTheme
                 ? 'bg-gradient-to-r from-slate-700 to-slate-600 text-white hover:from-slate-600 hover:to-slate-500'
                 : 'bg-gray-400 text-white hover:bg-gray-500'
@@ -653,16 +653,16 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
 
         {/* Period Selector */}
-        <div className="mb-6 overflow-x-auto" data-tour="periods">
+        <div className="mb-4 overflow-x-auto" data-tour="periods">
           <PeriodChips selected={period} onSelect={setPeriod} />
         </div>
 
         {/* Negative Profit Alert */}
         {rollup && rollup.profit < 0 && showNegativeAlert && (
-          <div className={`mb-4 md:mb-6 p-4 md:p-5 rounded-xl border-2 transition-all ${
+          <div className={`mb-3 p-3 rounded-lg border transition-all ${
             isDarkTheme
-              ? 'bg-gradient-to-r from-red-900/40 to-red-800/30 border-red-600/60 shadow-lg shadow-red-900/30'
-              : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-300 shadow-md shadow-red-200/50'
+              ? 'bg-gradient-to-r from-red-900/40 to-red-800/30 border-red-600/60 shadow-md'
+              : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-300 shadow-sm'
           }`}>
             <div className="flex items-center gap-4">
               <div className="text-4xl md:text-5xl flex-shrink-0 animate-pulse">⚠️</div>
@@ -691,10 +691,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         )}
 
-        {/* Dashboard Cards Section */}
-        <div className="space-y-6 mb-6" data-tour="performance">
+        {/* Dashboard Cards Section - Sleek & Compact */}
+        <div className="space-y-3 mb-4" data-tour="performance">
           {/* Top 3 Cards - Revenue, Profit, Expenses */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <KpiCard
               title="Revenue"
               value={`$${rollup?.revenue.toFixed(2) || '0.00'}`}
@@ -713,7 +713,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
 
           {/* Bottom 4 Cards - KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <KpiCard
               title="Miles"
               value={rollup?.miles.toFixed(1) || '0.0'}
@@ -742,22 +742,22 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
 
         {selectedIds.length > 0 && (
-          <div className="mb-4 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <span className="text-blue-900 font-medium">
+          <div className="mb-3 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <span className="text-blue-900 font-medium text-sm">
               {selectedIds.length} {selectedIds.length === 1 ? 'entry' : 'entries'} selected
             </span>
             <button
               onClick={() => setBulkDeleteConfirm(true)}
               disabled={bulkDeleteMutation.isPending}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium disabled:bg-gray-400"
+              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded-lg font-medium disabled:bg-gray-400"
             >
-              {bulkDeleteMutation.isPending ? 'Deleting...' : 'Delete Selected'}
+              {bulkDeleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </button>
           </div>
         )}
 
         {/* Entries Table */}
-        <div className="mb-6" data-tour="entries">
+        <div className="mb-4" data-tour="entries">
           <EntriesTable 
             entries={filteredEntries} 
             onDelete={handleDelete}
