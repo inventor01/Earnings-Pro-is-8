@@ -96,11 +96,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     date: getDefaultDate(),
     time: getDefaultTime(),
   });
-  const [showGoalBanner, setShowGoalBanner] = useState(() => {
-    const saved = localStorage.getItem('showGoalBanner');
-    // Always show goal banner by default - it's a core feature
-    return saved === null ? true : saved === 'true';
-  });
+  const [showGoalBanner, setShowGoalBanner] = useState(true);
   
   const [showNegativeAlert, setShowNegativeAlert] = useState(true);
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
@@ -535,11 +531,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   };
 
   const handleToggleGoalBanner = () => {
-    setShowGoalBanner(prev => {
-      const newValue = !prev;
-      localStorage.setItem('showGoalBanner', newValue.toString());
-      return newValue;
-    });
+    setShowGoalBanner(prev => !prev);
   };
 
   const handleRefresh = async () => {
