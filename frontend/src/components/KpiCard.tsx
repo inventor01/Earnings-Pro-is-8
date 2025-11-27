@@ -35,7 +35,7 @@ export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color
     'pulse-glow';
 
   return (
-    <div className={`relative p-4 md:p-6 rounded-2xl overflow-hidden group min-h-max ${themeConfig.name !== 'simple-light' ? glowClass : ''}`}>
+    <div className={`relative p-5 md:p-7 lg:p-8 rounded-2xl overflow-hidden group min-h-max ${themeConfig.name !== 'simple-light' ? glowClass : ''}`}>
       {/* Background with dark dashboard effect */}
       <div className={`absolute inset-0 ${colorConfig.bg} border-2 ${colorConfig.border} rounded-2xl`} />
       {themeConfig.name !== 'simple-light' && (
@@ -50,14 +50,14 @@ export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color
       {/* Content */}
       <div className="relative z-10 space-y-3">
         {/* Title - Dashboard label */}
-        <div className={`text-xs md:text-sm font-bold uppercase tracking-wide md:tracking-widest ${colorConfig.accent} opacity-80 font-mono flex items-center gap-1 whitespace-nowrap`}>
+        <div className={`text-xs md:text-sm lg:text-base font-bold uppercase tracking-wide md:tracking-widest ${colorConfig.accent} opacity-80 font-mono flex items-center gap-1 whitespace-nowrap`}>
           <span>{ICON_MAP[title] || '📈'}</span>
           {title}
         </div>
         
         {/* Main value - Large and prominent like speedometer */}
         <div className="flex items-end gap-1">
-          <div className={`text-4xl md:text-6xl font-black ${colorConfig.accent} font-mono tracking-tight transition-all duration-300 group-hover:scale-110 cursor-pointer ${themeConfig.name === 'simple-light' ? '' : 'drop-shadow-lg group-hover:drop-shadow-2xl'}`} style={themeConfig.name !== 'simple-light' ? { textShadow: `0 0 20px ${colorConfig.accent.includes('green') ? 'rgba(34, 197, 94, 0.5)' : colorConfig.accent.includes('red') ? 'rgba(239, 68, 68, 0.5)' : colorConfig.accent.includes('blue') ? 'rgba(59, 130, 246, 0.5)' : colorConfig.accent.includes('purple') ? 'rgba(168, 85, 247, 0.5)' : 'rgba(249, 115, 22, 0.5)'}` } : {}}>
+          <div className={`text-4xl md:text-6xl lg:text-7xl font-black ${colorConfig.accent} font-mono tracking-tight transition-all duration-300 group-hover:scale-110 cursor-pointer ${themeConfig.name === 'simple-light' ? '' : 'drop-shadow-lg group-hover:drop-shadow-2xl'}`} style={themeConfig.name !== 'simple-light' ? { textShadow: `0 0 20px ${colorConfig.accent.includes('green') ? 'rgba(34, 197, 94, 0.5)' : colorConfig.accent.includes('red') ? 'rgba(239, 68, 68, 0.5)' : colorConfig.accent.includes('blue') ? 'rgba(59, 130, 246, 0.5)' : colorConfig.accent.includes('purple') ? 'rgba(168, 85, 247, 0.5)' : 'rgba(249, 115, 22, 0.5)'}` } : {}}>
             <CountUpNumber value={value} />
           </div>
         </div>

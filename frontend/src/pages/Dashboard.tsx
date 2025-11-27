@@ -591,10 +591,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     : 'min-h-screen bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950 flex flex-col';
 
   const contentClass = config.name === 'simple-light'
-    ? 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-gray-50 via-gray-100 to-white'
+    ? 'flex-1 overflow-y-auto max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 py-4 md:py-8 lg:py-10 pb-24 w-full bg-gradient-to-b from-gray-50 via-gray-100 to-white'
     : config.name === 'dark-neon'
-    ? 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-black via-gray-900 to-black'
-    : 'flex-1 overflow-y-auto max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-6 pb-24 w-full bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950';
+    ? 'flex-1 overflow-y-auto max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 py-4 md:py-8 lg:py-10 pb-24 w-full bg-gradient-to-b from-black via-gray-900 to-black'
+    : 'flex-1 overflow-y-auto max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 py-4 md:py-8 lg:py-10 pb-24 w-full bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950';
 
   return (
     <div className={dashboardClass}>
@@ -621,9 +621,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
       )}
       <div className={contentClass}>
-        <div className="flex justify-between items-center mb-3 md:mb-6 gap-2">
-          <div className="flex items-center gap-1 md:gap-3">
-            <span className="text-4xl md:text-6xl drop-shadow-lg" style={{
+        <div className="flex justify-between items-center mb-4 md:mb-8 lg:mb-10 gap-2">
+          <div className="flex items-center gap-1 md:gap-3 lg:gap-4">
+            <span className="text-4xl md:text-6xl lg:text-7xl drop-shadow-lg" style={{
               textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)' : 'none',
               filter: isDarkTheme ? 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))' : 'none',
               animation: 'car-drive 2s ease-in-out infinite'
@@ -631,9 +631,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               🚗
             </span>
             <div className="flex items-center gap-0">
-              <h1 className={`text-lg md:text-5xl font-black ${config.titleColor}`}>EARNINGS</h1>
+              <h1 className={`text-lg md:text-5xl lg:text-6xl font-black ${config.titleColor}`}>EARNINGS</h1>
               <h1 
-                className="text-lg md:text-5xl font-black whitespace-nowrap"
+                className="text-lg md:text-5xl lg:text-6xl font-black whitespace-nowrap"
                 style={{
                   backgroundImage: isDarkTheme ? 'linear-gradient(to right, rgba(34, 211, 238, 0.95), rgba(99, 102, 241, 0.95))' : 'none',
                   WebkitBackgroundClip: isDarkTheme ? 'text' : 'unset',
@@ -724,11 +724,11 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         </div>
 
-        <div className="mb-3 md:mb-6 overflow-x-auto" data-tour="periods">
+        <div className="mb-4 md:mb-8 lg:mb-10 overflow-x-auto" data-tour="periods">
           <PeriodChips selected={period} onSelect={setPeriod} />
         </div>
 
-        <div className="mb-4 md:mb-6" data-tour="search">
+        <div className="mb-4 md:mb-8 lg:mb-10" data-tour="search">
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
             isDarkTheme
               ? 'bg-slate-800 border-slate-700 focus-within:border-cyan-400'
@@ -757,7 +757,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
         {/* Negative Profit Alert */}
         {rollup && rollup.profit < 0 && showNegativeAlert && (
-          <div className={`mb-4 md:mb-6 p-4 md:p-5 rounded-xl border-2 transition-all ${
+          <div className={`mb-4 md:mb-8 lg:mb-10 p-4 md:p-6 lg:p-8 rounded-xl border-2 transition-all ${
             isDarkTheme
               ? 'bg-gradient-to-r from-red-900/40 to-red-800/30 border-red-600/60 shadow-lg shadow-red-900/30'
               : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-300 shadow-md shadow-red-200/50'
@@ -790,9 +790,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         )}
 
         {/* Dashboard Grid - Everything in One View */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8 lg:gap-10 mb-4 md:mb-8 lg:mb-10">
           {/* Left Column - Performance Overview */}
-          <div className="lg:col-span-3 space-y-4 md:space-y-6 scroll-smooth" data-tour="performance">
+          <div className="lg:col-span-3 space-y-6 md:space-y-8 lg:space-y-10 scroll-smooth" data-tour="performance">
             {/* Performance Overview Header with Toggle */}
             <div className="flex items-center justify-between">
               <h2 className={`text-lg font-bold ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>
@@ -876,10 +876,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
 
           {/* Right Column - Quick Stats & Achievements */}
-          <div className="lg:col-span-1 space-y-4 md:space-y-6">
+          <div className="lg:col-span-1 space-y-6 md:space-y-8 lg:space-y-10">
             <PotOfGoldTracker />
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4 md:gap-6">
               <KpiCard
                 title="$/Mile"
                 value={`$${rollup?.dollars_per_mile.toFixed(2) || '0.00'}`}
