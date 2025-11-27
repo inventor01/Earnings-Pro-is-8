@@ -790,9 +790,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         )}
 
         {/* Dashboard Grid - Everything in One View */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-6">
           {/* Left Column - Performance Overview */}
-          <div className="lg:col-span-2 space-y-4 md:space-y-6 scroll-smooth" data-tour="performance">
+          <div className="lg:col-span-3 space-y-4 md:space-y-6 scroll-smooth" data-tour="performance">
             {/* Performance Overview Header with Toggle */}
             <div className="flex items-center justify-between">
               <h2 className={`text-lg font-bold ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>
@@ -876,7 +876,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
 
           {/* Right Column - Quick Stats & Achievements */}
-          <div className="space-y-4 md:space-y-6">
+          <div className="lg:col-span-1 space-y-4 md:space-y-6">
             <PotOfGoldTracker />
             
             <div className="grid grid-cols-2 gap-3">
