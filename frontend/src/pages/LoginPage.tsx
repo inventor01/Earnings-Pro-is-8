@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useAuth } from '../lib/authContext';
-import { useTheme } from '../lib/themeContext';
+import { useAuth } from '../lib/authContext.tsx';
+import { useTheme } from '../lib/themeContext.tsx';
 
 export function LoginPage() {
   const [credential, setCredential] = useState('');

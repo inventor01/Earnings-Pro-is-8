@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTheme } from '../lib/themeContext';
+import { useTheme } from '../lib/themeContext.tsx';
 
 interface OnboardingTourProps {
   isOpen: boolean;

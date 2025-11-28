@@ -1,9 +1,9 @@
 import { Settings } from '../lib/api';
-import { useTheme } from '../lib/themeContext';
+import { useTheme } from '../lib/themeContext.tsx';
 import { getAllThemes, ThemeName } from '../lib/themes';
 import { MetricVisibility } from './SummaryCard';
 import { useQuery } from '@tanstack/react-query';
-import { useSimpleMode } from '../lib/simpleModeContext';
+import { useSimpleMode } from '../lib/simpleModeContext.tsx';
 
 interface UserInfo {
   id: string;

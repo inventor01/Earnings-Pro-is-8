@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useTheme } from '../lib/themeContext';
+import { useTheme } from '../lib/themeContext.tsx';
 
 interface TourStep {
   id: string;

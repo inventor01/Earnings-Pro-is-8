@@ -1,4 +1,4 @@
-import { useTheme } from '../lib/themeContext';
+import { useTheme } from '../lib/themeContext.tsx';
 import { CountUpNumber } from './CountUpNumber';
 import { useRef, useState } from 'react';
 

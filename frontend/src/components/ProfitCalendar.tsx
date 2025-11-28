@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useTheme } from '../lib/themeContext';
+import { useTheme } from '../lib/themeContext.tsx';
 import { getESTDateString } from '../lib/dateUtils';
 
 interface ProfitCalendarProps {

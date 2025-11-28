@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTheme } from '../lib/themeContext';
+import { useTheme } from '../lib/themeContext.tsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface LeaderboardUser {
