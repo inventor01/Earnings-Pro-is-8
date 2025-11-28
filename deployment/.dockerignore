@@ -1,18 +1,14 @@
-node_modules
-npm-debug.log
-yarn-error.log
+# Ignore node_modules to prevent bloating Docker build
+frontend/node_modules
+frontend/dist
+backend/__pycache__
+backend/.pytest_cache
+backend/tests
 .git
 .gitignore
 README.md
 .env
-.DS_Store
-attached_assets/
-.idea
-.vscode
-*.local
-dist-ssr
-.pythonlibs
-__pycache__
+.env.local
 *.pyc
-.pytest_cache
-.coverage
+__pycache__
+.DS_Store
