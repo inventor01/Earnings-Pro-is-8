@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes
 from backend.db import engine, Base
 from backend.services.background_jobs import start_background_jobs, stop_background_jobs
+import os
 
 Base.metadata.create_all(bind=engine)
 
@@ -36,6 +39,12 @@ app.include_router(oauth.router, prefix="/api", tags=["oauth"])
 app.include_router(points.router, prefix="/api", tags=["points"])
 app.include_router(leaderboard_routes.router, prefix="/api", tags=["leaderboard"])
 
-@app.get("/")
-async def root():
-    return {"message": "Delivery Driver Earnings API"}
+# Serve frontend static files (must be after all API routes)
+dist_path = os.path.join(os.path.dirname(__file__), "dist")
+if os.path.exists(dist_path):
+    app.mount("/", StaticFiles(directory=dist_path, html=True), name="static")
+else:
+    # Fallback if dist not available (for development)
+    @app.get("/")
+    async def root():
+        return {"message": "Delivery Driver Earnings API"}

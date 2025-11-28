@@ -3,19 +3,13 @@ set -e
 
 echo "Starting Delivery Driver Earnings Dashboard..."
 
+# Get PORT from environment, default to 8000
+PORT=${PORT:-8000}
+
 # Initialize database if needed
+echo "Initializing database..."
 python -c "from backend.db import Base, engine; Base.metadata.create_all(bind=engine)" || true
 
-# Start backend API in the background
-echo "Starting backend API..."
-uvicorn backend.app:app --host 0.0.0.0 --port 8000 &
-BACKEND_PID=$!
-
-# Start frontend server (serve the built dist folder)
-echo "Starting frontend server..."
-cd /app
-python -m http.server 5000 --directory ./frontend/dist &
-FRONTEND_PID=$!
-
-# Wait for both processes
-wait $BACKEND_PID $FRONTEND_PID
+# Start backend API with frontend static files
+echo "Starting backend API on port $PORT..."
+uvicorn backend.app:app --host 0.0.0.0 --port $PORT

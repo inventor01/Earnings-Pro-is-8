@@ -23,14 +23,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./backend/
 
 # Copy the built frontend from the frontend-builder stage
-COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+COPY --from=frontend-builder /app/frontend/dist ./backend/dist
 
 # Copy the startup script
 COPY start.sh .
 RUN chmod +x start.sh
 
-# Expose ports
-EXPOSE 5000 8000
+# Expose port (Railway uses PORT environment variable)
+EXPOSE 8000
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
