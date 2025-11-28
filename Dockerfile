@@ -1,61 +1,54 @@
-# Multi-stage build: Node.js frontend builder
-FROM node:18-alpine AS frontend-builder
+# ================================
+# FRONTEND BUILD STAGE
+# ================================
+FROM node:20-slim AS frontend-builder
 
 WORKDIR /app/frontend
 
-# Copy frontend code and package files
+# Copy package files first
 COPY frontend/package.json frontend/package-lock.json ./
-
-# Install dependencies
 RUN npm ci --prefer-offline --no-audit
 
-# Copy ALL config files needed for TypeScript + Vite build
-COPY frontend/tsconfig.json frontend/tsconfig.node.json frontend/vite.config.ts ./
+# Copy configs
+COPY frontend/tsconfig*.json ./
+COPY frontend/vite.config.* ./
+COPY frontend/postcss.config.js ./
+COPY frontend/tailwind.config.js ./
+COPY frontend/index.html ./
 
-# Copy frontend source code (includes src/lib/, src/components/, etc.)
+# Copy source
 COPY frontend/src ./src
 
-# Build frontend (outputs to dist/)
+# Build
 RUN npm run build
 
-# Final stage: Python runtime with backend + static frontend
-FROM python:3.11-slim
+# ================================
+# BACKEND STAGE (Python FastAPI)
+# ================================
+FROM python:3.11-slim AS backend
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends gcc postgresql-client \
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Set noninteractive mode to avoid debconf warnings
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install system dependencies for psycopg2 and other packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy Python dependencies and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend code
-COPY backend/ ./backend/
+# Copy backend source
+COPY backend .
 
-# Copy built frontend from frontend-builder stage to backend/dist
-COPY --from=frontend-builder /app/frontend/dist ./backend/dist
-
-# Copy startup script
-COPY start.sh .
-RUN chmod +x start.sh
+# Copy frontend build output to dist directory
+COPY --from=frontend-builder /app/frontend/dist ./dist
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Expose port (Railway will set PORT env var, defaults to 8000)
+# Expose port
 EXPOSE 8000
 
-# Health check (optional but recommended)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:${PORT:-8000}/api/health')" || exit 1
-
-# Start application via startup script
-CMD ["bash", "start.sh"]
+# Start application
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

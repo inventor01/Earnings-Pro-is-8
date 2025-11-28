@@ -183,8 +183,8 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
         } else if (step.id === 'export') {
           // For export button inside settings drawer, wait for drawer to open and scroll to show it
           setTimeout(() => {
-            const exportElement = document.querySelector('[data-tour="export"]');
-            const settingsDrawer = document.querySelector('[class*="fixed right-0 top-0"]');
+            const exportElement = document.querySelector('[data-tour="export"]') as HTMLElement | null;
+            const settingsDrawer = document.querySelector('[class*="fixed right-0 top-0"]') as HTMLElement | null;
             
             if (exportElement && settingsDrawer) {
               // Scroll the settings drawer to show the export section

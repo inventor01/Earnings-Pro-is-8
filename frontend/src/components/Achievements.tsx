@@ -70,7 +70,8 @@ export function Achievements({ entries, rollup, monthlyGoal }: AchievementsProps
     if (greenStreak >= 90) level = 'Legendary';
 
     // Generate badges
-    const badges = [];
+    type Badge = { icon: string; label: string };
+    const badges: Badge[] = [];
     if (greenStreak >= 7) badges.push({ icon: '🔥', label: `${greenStreak}-Day Green Streak!` });
     if (profitableDays >= 10) badges.push({ icon: '💚', label: `${profitableDays} Profitable Days` });
     if (goalStreak > 0) badges.push({ icon: '🎯', label: 'Goal Crushed This Month!' });

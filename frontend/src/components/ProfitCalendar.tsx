@@ -95,7 +95,15 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
     });
 
     // Build calendar grid
-    const days = [];
+    type CalendarDay = {
+      day: number;
+      dateStr: string;
+      profit: number;
+      revenue: number;
+      expenses: number;
+      hasData: boolean;
+    } | null;
+    const days: CalendarDay[] = [];
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
