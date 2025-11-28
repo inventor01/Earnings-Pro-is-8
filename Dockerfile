@@ -12,7 +12,7 @@ RUN npm ci --prefer-offline --no-audit
 # Copy ALL config files needed for TypeScript + Vite build
 COPY frontend/tsconfig.json frontend/tsconfig.node.json frontend/vite.config.ts ./
 
-# Copy frontend source
+# Copy frontend source code (includes src/lib/, src/components/, etc.)
 COPY frontend/src ./src
 
 # Build frontend (outputs to dist/)
