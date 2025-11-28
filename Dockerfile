@@ -9,9 +9,11 @@ COPY frontend/package.json frontend/package-lock.json ./
 # Install dependencies
 RUN npm ci --prefer-offline --no-audit
 
+# Copy ALL config files needed for TypeScript + Vite build
+COPY frontend/tsconfig.json frontend/tsconfig.node.json frontend/vite.config.ts ./
+
 # Copy frontend source
 COPY frontend/src ./src
-COPY frontend/tsconfig.json frontend/vite.config.ts ./
 
 # Build frontend (outputs to dist/)
 RUN npm run build
@@ -20,6 +22,9 @@ RUN npm run build
 FROM python:3.11-slim
 
 WORKDIR /app
+
+# Set noninteractive mode to avoid debconf warnings
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies for psycopg2 and other packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
