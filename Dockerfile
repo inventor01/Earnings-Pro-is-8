@@ -11,7 +11,6 @@ RUN npm ci --prefer-offline --no-audit
 
 # Copy frontend source
 COPY frontend/src ./src
-COPY frontend/public ./public
 COPY frontend/tsconfig.json frontend/vite.config.ts ./
 
 # Build frontend (outputs to dist/)
