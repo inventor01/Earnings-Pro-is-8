@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api, TimeframeType } from '../lib/api';
-import { useTheme } from '../lib/themeContext.tsx';
+import { useTheme } from '../lib/themeContext';
 
 interface ProfitGoalsBarProps {
   timeframe: TimeframeType;

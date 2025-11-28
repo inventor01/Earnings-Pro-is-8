@@ -1,4 +1,4 @@
-import { useTheme } from '../lib/themeContext.tsx';
+import { useTheme } from '../lib/themeContext';
 
 export type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth' | 'custom';
 

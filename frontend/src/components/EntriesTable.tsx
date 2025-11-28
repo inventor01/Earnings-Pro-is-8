@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Entry } from '../lib/api';
-import { useTheme } from '../lib/themeContext.tsx';
+import { useTheme } from '../lib/themeContext';
 import { formatDateEST } from '../lib/dateUtils';
 
 interface EntriesTableProps {

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTheme } from '../lib/themeContext.tsx';
+import { useTheme } from '../lib/themeContext';
 import { useState } from 'react';
 
 export function PointsCard() {

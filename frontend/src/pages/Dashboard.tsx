@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, Entry, EntryCreate, EntryType, TimeframeType } from '../lib/api';
-import { useAuth } from '../lib/authContext.tsx';
+import { useAuth } from '../lib/authContext';
 import { PeriodChips, Period } from '../components/PeriodChips';
 import { KpiCard } from '../components/KpiCard';
 import { SummaryCard, MetricVisibility } from '../components/SummaryCard';
@@ -20,8 +20,8 @@ import { ShareCard } from '../components/ShareCard';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { AchievementsModal } from '../components/AchievementsModal';
 import { ProfitCalendar } from '../components/ProfitCalendar';
-import { useTheme } from '../lib/themeContext.tsx';
-import { useSimpleMode } from '../lib/simpleModeContext.tsx';
+import { useTheme } from '../lib/themeContext';
+import { useSimpleMode } from '../lib/simpleModeContext';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
 

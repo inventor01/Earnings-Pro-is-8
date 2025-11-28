@@ -1,4 +1,4 @@
-import { useTheme } from '../lib/themeContext.tsx';
+import { useTheme } from '../lib/themeContext';
 import { useRef } from 'react';
 import html2canvas from 'html2canvas';
 

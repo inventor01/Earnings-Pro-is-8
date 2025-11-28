@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useTheme } from '../lib/themeContext.tsx';
+import { useTheme } from '../lib/themeContext';
 
 interface AchievementsModalProps {
   entries: any[];

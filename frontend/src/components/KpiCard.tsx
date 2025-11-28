@@ -1,4 +1,4 @@
-import { useTheme } from '../lib/themeContext.tsx';
+import { useTheme } from '../lib/themeContext';
 import { CountUpNumber } from './CountUpNumber';
 
 const ICON_MAP: Record<string, string> = {
