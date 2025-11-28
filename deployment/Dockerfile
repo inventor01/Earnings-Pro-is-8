@@ -27,8 +27,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend code
 COPY backend/ ./backend/
 
-# Copy the built frontend from the frontend-builder stage
-COPY --from=frontend-builder /app/dist ./frontend/dist
+# Copy the built frontend from the frontend-builder stage to backend/dist (backend serves it)
+COPY --from=frontend-builder /app/dist ./backend/dist
 
 # Copy the startup script
 COPY start.sh .
