@@ -111,78 +111,128 @@ export function SummaryCard({
     }
   };
 
-  const MetricCard = ({ icon, label, value, color, secondary, subtext, isNegative }: any) => (
-    <>
-      <style>{`
-        @keyframes blink-red {
-          0%, 100% {
-            filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
-            opacity: 1;
+  const MetricCard = ({ icon, label, value, color, secondary, subtext, isNegative }: any) => {
+    // Determine background color based on label
+    const bgColorMap: { [key: string]: string } = {
+      'Revenue': 'bg-lime-50 border-lime-400',
+      'Expenses': 'bg-red-50 border-red-300',
+      'Profit': 'bg-green-50 border-green-400',
+      'Miles': 'bg-purple-50 border-purple-300',
+      'Orders': 'bg-blue-50 border-blue-300',
+      'Avg Order': 'bg-yellow-50 border-yellow-400'
+    };
+    
+    const bgStyle = bgColorMap[label] || 'bg-lime-50 border-lime-400';
+    
+    return (
+      <>
+        <style>{`
+          @keyframes blink-red {
+            0%, 100% {
+              filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+              opacity: 1;
+            }
+            50% {
+              filter: drop-shadow(0 0 16px rgba(239, 68, 68, 1));
+              opacity: 0.7;
+            }
           }
-          50% {
-            filter: drop-shadow(0 0 16px rgba(239, 68, 68, 1));
-            opacity: 0.7;
-          }
-        }
-        
-        @keyframes subtle-glow {
-          0%, 100% {
-            filter: drop-shadow(0 0 2px rgba(34, 211, 238, 0.15));
-            text-shadow: 0 0 4px rgba(34, 211, 238, 0.1);
-          }
-          50% {
-            filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.25));
-            text-shadow: 0 0 6px rgba(34, 211, 238, 0.15);
-          }
-        }
-      `}</style>
-      <div className={`relative p-4 md:p-5 lg:p-6 rounded-xl transition-all duration-300 group/card ${
-        themeConfig.name === 'dark-neon'
-          ? 'bg-slate-800 border border-slate-700/50 hover:border-slate-600/80 hover:shadow-lg hover:shadow-slate-900/50'
-          : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
-          ? 'bg-white border-2 border-lime-400 hover:border-lime-500 hover:shadow-lg hover:shadow-lime-400/40'
-          : 'bg-slate-800 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg'
-      }`}>
-        {/* Top accent line - solid color */}
-        <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-xl ${
-          themeConfig.name === 'ninja-green' ? 'bg-lime-500' : 'bg-slate-600'
-        }`} />
-        
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className={`text-4xl md:text-5xl lg:text-6xl drop-shadow-lg`}>{icon}</div>
-            <div className={`text-xs md:text-sm lg:text-base font-bold uppercase tracking-wider leading-none ${
-              themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-green-700' : 'text-slate-400'
-            }`}>{label}</div>
-          </div>
           
-          <div className="space-y-1">
-            <div className={`text-4xl md:text-6xl lg:text-7xl font-black font-mono transition-all duration-300 group-hover/card:scale-110 cursor-pointer leading-none whitespace-nowrap overflow-hidden text-ellipsis ${
-              isNegative ? 'text-red-600' : themeConfig.name === 'ninja-green' ? 'text-lime-600' : secondary
-            }`}
-            style={isNegative ? {
-              animation: 'blink-red 0.8s ease-in-out infinite'
-            } : themeConfig.name === 'ninja-green' ? {
-              animation: 'subtle-glow 2s ease-in-out infinite',
-              filter: 'drop-shadow(0 0 8px rgba(132, 204, 22, 0.3))'
-            } : {
-              animation: 'subtle-glow 2s ease-in-out infinite'
-            }}>
-              <CountUpNumber value={value} />
+          @keyframes subtle-glow {
+            0%, 100% {
+              filter: drop-shadow(0 0 2px rgba(34, 211, 238, 0.15));
+              text-shadow: 0 0 4px rgba(34, 211, 238, 0.1);
+            }
+            50% {
+              filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.25));
+              text-shadow: 0 0 6px rgba(34, 211, 238, 0.15);
+            }
+          }
+          
+          @keyframes pulse-indicator {
+            0%, 100% {
+              transform: scaleX(1);
+              opacity: 0.8;
+            }
+            50% {
+              transform: scaleX(1.05);
+              opacity: 1;
+            }
+          }
+        `}</style>
+        <div className={`relative p-4 md:p-5 lg:p-6 rounded-xl transition-all duration-300 group/card border-2 ${
+          themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
+            ? `${bgStyle} hover:shadow-lg hover:shadow-lime-300/30`
+            : 'bg-slate-800 border-slate-700/50'
+        }`}>
+          {/* Top accent line - solid color */}
+          <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-xl ${
+            label === 'Revenue' ? 'bg-lime-500' :
+            label === 'Expenses' ? 'bg-red-500' :
+            label === 'Profit' ? 'bg-green-600' :
+            label === 'Miles' ? 'bg-purple-500' :
+            label === 'Orders' ? 'bg-blue-500' :
+            'bg-yellow-500'
+          }`} />
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className={`text-4xl md:text-5xl lg:text-6xl drop-shadow-lg group-hover/card:scale-125 transition-transform`}>{icon}</div>
+              <div className={`text-xs md:text-sm lg:text-base font-bold uppercase tracking-wider leading-none ${
+                label === 'Expenses' ? 'text-red-700' :
+                label === 'Profit' ? 'text-green-700' :
+                label === 'Miles' ? 'text-purple-700' :
+                label === 'Orders' ? 'text-blue-700' :
+                'text-green-700'
+              }`}>{label}</div>
             </div>
             
-            {subtext && (
-              <div className={`text-xs md:text-sm lg:text-base font-medium ${
-                themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-green-600' : 'text-slate-400'
-              }`}>
-                {subtext}
+            <div className="space-y-2">
+              <div className={`text-4xl md:text-6xl lg:text-7xl font-black font-mono transition-all duration-300 group-hover/card:scale-110 cursor-pointer leading-none whitespace-nowrap overflow-hidden text-ellipsis ${
+                isNegative ? 'text-red-600' : themeConfig.name === 'ninja-green' ? 'text-lime-700' : secondary
+              }`}
+              style={isNegative ? {
+                animation: 'blink-red 0.8s ease-in-out infinite'
+              } : themeConfig.name === 'ninja-green' ? {
+                animation: 'subtle-glow 2s ease-in-out infinite',
+                filter: 'drop-shadow(0 0 8px rgba(132, 204, 22, 0.3))'
+              } : {
+                animation: 'subtle-glow 2s ease-in-out infinite'
+              }}>
+                <CountUpNumber value={value} />
               </div>
-            )}
+              
+              {/* Visual indicator bar */}
+              <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all duration-700 ${
+                    label === 'Revenue' ? 'bg-lime-500' :
+                    label === 'Expenses' ? 'bg-red-500' :
+                    label === 'Profit' ? 'bg-green-600' :
+                    label === 'Miles' ? 'bg-purple-500' :
+                    label === 'Orders' ? 'bg-blue-500' :
+                    'bg-yellow-500'
+                  }`}
+                  style={{
+                    width: '75%',
+                    animation: 'pulse-indicator 2s ease-in-out infinite'
+                  }}
+                />
+              </div>
+              
+              {subtext && (
+                <div className={`text-xs md:text-sm lg:text-base font-medium ${
+                  themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-gray-700' : 'text-slate-400'
+                }`}>
+                  {subtext}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </>
-  );
+      </>
+    );
+  };
 
   // Parse profit to check if negative
   const profitValue = parseFloat(profit.replace('$', '').replace(',', ''));
