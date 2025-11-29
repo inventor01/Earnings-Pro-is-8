@@ -1016,14 +1016,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                   mode={mode}
                   onAmountChange={setAmount}
                   onModeChange={handleModeChange}
+                  onNextStep={() => setEntryFormStep(1)}
                 />
               </div>
-              <button
-                onClick={() => setEntryFormStep(1)}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg text-lg font-bold mb-6"
-              >
-                Next Step →
-              </button>
             </>
           )}
 

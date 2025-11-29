@@ -7,9 +7,10 @@ interface CalcPadProps {
   mode: CalcMode;
   onAmountChange: (amount: string) => void;
   onModeChange: (mode: CalcMode) => void;
+  onNextStep?: () => void;
 }
 
-export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadProps) {
+export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep }: CalcPadProps) {
   const [isClearHeld, setIsClearHeld] = useState(false);
   const clearTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const handleNumber = (num: string) => {
@@ -42,8 +43,8 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadP
     setIsClearHeld(false);
     clearTimeoutRef.current = setTimeout(() => {
       setIsClearHeld(true);
-      handleClear();
-    }, 500); // 500ms hold to clear
+      onNextStep?.();
+    }, 500); // 500ms hold to go to next step
   };
 
   const handleClearTouchEnd = () => {
@@ -138,11 +139,12 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadP
             onMouseUp={handleClearTouchEnd}
             className={`w-full p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation ${
               isClearHeld
-                ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white scale-110'
+                ? 'bg-gradient-to-br from-green-500 to-green-600 text-white scale-110'
                 : 'bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white'
             }`}
+            title="Tap to backspace, hold to continue"
           >
-            ⌫
+            {isClearHeld ? '→' : '⌫'}
           </button>
           <button
             onClick={() => handleNumber('0')}
