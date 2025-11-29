@@ -315,8 +315,8 @@ export function SummaryCard({
             icon="📊"
             label="Avg Order"
             value={avgOrder}
-            color="from-orange-500 to-orange-400"
-            secondary={colorConfig.accent}
+            color="from-yellow-500 to-yellow-400"
+            secondary={themeConfig.name === 'ninja-green' ? 'text-yellow-900' : colorConfig.accent}
           />
         )}
       </div>

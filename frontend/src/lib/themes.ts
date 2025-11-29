@@ -139,33 +139,33 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
     kpiColors: {
       green: { glow: 'from-lime-400 to-lime-600', accent: 'text-green-900', border: 'border-lime-500', bg: 'bg-lime-100' },
       red: { glow: 'from-red-400 to-red-600', accent: 'text-red-900', border: 'border-red-500', bg: 'bg-red-100' },
-      blue: { glow: 'from-lime-400 to-green-700', accent: 'text-green-900', border: 'border-lime-500', bg: 'bg-lime-100' },
+      blue: { glow: 'from-yellow-400 to-yellow-500', accent: 'text-yellow-900', border: 'border-yellow-500', bg: 'bg-yellow-100' },
       purple: { glow: 'from-green-700 to-green-800', accent: 'text-green-900', border: 'border-green-600', bg: 'bg-green-100' },
       orange: { glow: 'from-yellow-400 to-yellow-500', accent: 'text-yellow-900', border: 'border-yellow-500', bg: 'bg-yellow-100' },
       gray: { glow: 'from-lime-300 to-lime-500', accent: 'text-green-900', border: 'border-lime-400', bg: 'bg-lime-50' },
     },
     
-    titleColor: 'text-transparent bg-clip-text bg-gradient-to-r from-lime-400 via-green-800 to-lime-500',
+    titleColor: 'text-transparent bg-clip-text bg-gradient-to-r from-lime-400 via-yellow-500 to-green-800',
     textPrimary: 'text-green-900',
     textSecondary: 'text-lime-600',
     
     chipInactive: 'bg-lime-100 text-green-900 border border-lime-500',
     chipActive: 'text-white',
-    chipActiveBg: 'bg-gradient-to-r from-lime-400 to-green-800',
+    chipActiveBg: 'bg-gradient-to-r from-lime-400 via-yellow-400 to-green-800',
     
     tableBg: 'bg-white border border-lime-500',
     tableHeader: 'bg-lime-200 border-b border-lime-500',
     tableHeaderText: 'text-green-900',
     tableRow: 'text-gray-900',
-    tableRowHover: 'hover:bg-lime-100',
-    tableRowSelected: 'bg-lime-200 border-l-4 border-lime-600',
+    tableRowHover: 'hover:bg-yellow-50',
+    tableRowSelected: 'bg-yellow-100 border-l-4 border-yellow-500',
     
-    buttonPrimary: 'bg-gradient-to-r from-lime-400 to-green-800 hover:from-lime-500 hover:to-green-900',
+    buttonPrimary: 'bg-gradient-to-r from-lime-400 via-yellow-400 to-green-800 hover:from-lime-500 hover:via-yellow-500 hover:to-green-900',
     buttonPrimaryText: 'text-white font-bold',
     
     textGreen: 'text-lime-600',
     textRed: 'text-red-700',
-    textCyan: 'text-lime-600',
+    textCyan: 'text-yellow-600',
   },
 };
 
