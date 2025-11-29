@@ -1,4 +1,5 @@
 import { useTheme } from '../lib/themeContext';
+import { useEffect, useRef } from 'react';
 
 interface ScrollToTopButtonProps {
   isFormOpen?: boolean;
@@ -7,26 +8,56 @@ interface ScrollToTopButtonProps {
 export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps) {
   const { theme } = useTheme();
   const isDarkTheme = theme === 'ninja-dark';
+  const containerRef = useRef<HTMLElement | null>(null);
+
+  // Find the scrollable container on mount and whenever DOM changes
+  useEffect(() => {
+    const findScrollContainer = () => {
+      const performanceOverview = document.getElementById('performance-overview');
+      if (performanceOverview) {
+        const container = performanceOverview.closest('.overflow-y-auto') as HTMLElement | null;
+        if (container) {
+          containerRef.current = container;
+          return;
+        }
+      }
+      
+      // Fallback: find first overflow-y-auto container
+      const container = document.querySelector('.overflow-y-auto') as HTMLElement | null;
+      if (container) {
+        containerRef.current = container;
+      }
+    };
+
+    findScrollContainer();
+    
+    // Re-find on window resize in case layout changed
+    window.addEventListener('resize', findScrollContainer);
+    return () => window.removeEventListener('resize', findScrollContainer);
+  }, []);
 
   const scrollToTop = () => {
-    // Try to scroll the performance overview element first
-    const performanceOverview = document.getElementById('performance-overview');
+    // Use the cached container or find it fresh
+    let container = containerRef.current;
     
-    // Find the nearest scrollable parent container
-    let scrollableContainer = performanceOverview?.closest('.overflow-y-auto');
-    
-    if (!scrollableContainer) {
-      // Fallback to finding any overflow-y-auto element
-      scrollableContainer = document.querySelector('.overflow-y-auto');
+    if (!container) {
+      const performanceOverview = document.getElementById('performance-overview');
+      container = performanceOverview?.closest('.overflow-y-auto') as HTMLElement | null;
+      
+      if (!container) {
+        container = document.querySelector('.overflow-y-auto') as HTMLElement | null;
+      }
+      
+      containerRef.current = container;
     }
     
-    if (scrollableContainer) {
-      scrollableContainer.scrollTo({
+    if (container) {
+      container.scrollTo({
         top: 0,
         behavior: 'smooth'
       });
     } else {
-      // Last resort - scroll the window
+      // Fallback to window scroll
       window.scrollTo({
         top: 0,
         behavior: 'smooth'
@@ -34,18 +65,34 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLButtonElement>) => {
+    // Ensure touch events work smoothly on mobile
+    (e.currentTarget as HTMLButtonElement).style.opacity = '1';
+  };
+
+  const handleTouchEnd = () => {
+    setTimeout(() => {
+      const btn = document.querySelector('[aria-label="Scroll to top"]') as HTMLButtonElement | null;
+      if (btn) {
+        btn.style.opacity = '';
+      }
+    }, 150);
+  };
+
   return (
     <>
         <button
           onClick={scrollToTop}
-          className={`fixed right-3 md:right-5 bottom-20 md:bottom-44 z-50 p-2 md:p-3 rounded-full shadow-lg transition-all active:scale-95 active:opacity-100 hover:opacity-100 opacity-40 md:hover:scale-110 touch-action-manipulation ${
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className={`fixed right-3 md:right-5 bottom-20 md:bottom-44 z-50 p-2 md:p-3 rounded-full shadow-lg transition-all active:scale-95 active:opacity-100 hover:opacity-100 opacity-60 md:opacity-40 md:hover:scale-110 touch-action-manipulation cursor-pointer ${
             isDarkTheme
               ? 'bg-gradient-to-br from-cyan-400 to-cyan-500 text-slate-900 border-2 border-cyan-300'
               : 'bg-gradient-to-br from-yellow-300 to-yellow-400 text-slate-900 border-2 border-yellow-200'
           }`}
           aria-label="Scroll to top"
           title="Scroll to top"
-          style={{ touchAction: 'manipulation' }}
+          style={{ touchAction: 'manipulation', WebkitTouchCallout: 'none' }}
         >
           <svg className="w-5 md:w-6 h-5 md:h-6 font-bold" fill="currentColor" viewBox="0 0 24 24">
             <path d="M7 16l-4-4m0 0l4-4m-4 4h18" transform="rotate(90 12 12)" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} />
