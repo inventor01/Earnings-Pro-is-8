@@ -43,7 +43,7 @@ export function LoginPage() {
     }
   };
 
-  const isDarkTheme = config.name !== 'simple-light' && config.name !== 'ninja-green';
+  const isDarkTheme = false;
 
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''}`}>
@@ -56,7 +56,7 @@ export function LoginPage() {
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">🚗</div>
           <h1 className={`text-3xl font-black mb-2 ${config.titleColor}`}>
-            EARNINGS PRO
+            Earnings Ninja
           </h1>
           <p className={`text-sm ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
             Track your delivery driver earnings

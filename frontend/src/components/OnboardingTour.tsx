@@ -18,7 +18,7 @@ interface TourStep {
 const tourSteps: TourStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to EARNINGS PRO',
+    title: 'Welcome to Earnings Ninja',
     description: 'Track your delivery driver earnings across all gig platforms. Let\'s take a quick tour to get you started!',
     target: 'body',
     position: 'bottom',
@@ -91,7 +91,7 @@ const tourSteps: TourStep[] = [
 export function OnboardingTour({ isOpen, onComplete, onStepChange }: OnboardingTourProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const { config } = useTheme();
-  const isDarkTheme = config.name !== 'simple-light';
+  const isDarkTheme = true;
   
   const step = tourSteps[currentStep];
   const isLastStep = currentStep === tourSteps.length - 1;
