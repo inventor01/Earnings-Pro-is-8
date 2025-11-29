@@ -1,4 +1,3 @@
-import { useState, useRef } from 'react';
 
 export type CalcMode = 'add' | 'subtract';
 
@@ -11,8 +10,6 @@ interface CalcPadProps {
 }
 
 export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep }: CalcPadProps) {
-  const [isClearHeld, setIsClearHeld] = useState(false);
-  const clearTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const handleNumber = (num: string) => {
     if (amount === '0') {
       onAmountChange(num);
@@ -39,25 +36,6 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
     onAmountChange('0');
   };
 
-  const handleClearTouchStart = () => {
-    setIsClearHeld(false);
-    clearTimeoutRef.current = setTimeout(() => {
-      setIsClearHeld(true);
-      onNextStep?.();
-    }, 500); // 500ms hold to go to next step
-  };
-
-  const handleClearTouchEnd = () => {
-    if (clearTimeoutRef.current) {
-      clearTimeout(clearTimeoutRef.current);
-      clearTimeoutRef.current = null;
-    }
-    // If not held long enough, do backspace instead
-    if (!isClearHeld) {
-      handleBackspace();
-    }
-    setIsClearHeld(false);
-  };
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg md:rounded-2xl shadow-xl p-4 md:p-6 w-full">
@@ -152,20 +130,12 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
           </button>
         </div>
 
-        {/* Row 5: Backspace/Next Step (dual-function) */}
+        {/* Row 5: Next Step */}
         <button
-          onTouchStart={handleClearTouchStart}
-          onTouchEnd={handleClearTouchEnd}
-          onMouseDown={handleClearTouchStart}
-          onMouseUp={handleClearTouchEnd}
-          className={`w-full p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation ${
-            isClearHeld
-              ? 'bg-gradient-to-br from-green-500 to-green-600 text-white scale-110'
-              : 'bg-gradient-to-br from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-gray-900'
-          }`}
-          title="Tap to backspace, hold to continue"
+          onClick={() => onNextStep?.()}
+          className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg text-lg font-bold transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
         >
-          {isClearHeld ? '→ Next Step' : '⌫ Backspace'}
+          Next Step →
         </button>
       </div>
     </div>
