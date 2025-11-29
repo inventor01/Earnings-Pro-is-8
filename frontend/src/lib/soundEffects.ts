@@ -1,3 +1,5 @@
+import kaChingSound from '../assets/ka-ching.wav';
+
 /**
  * Check if sounds are muted
  */
@@ -88,10 +90,10 @@ export function playKaChing(): void {
   if (isSoundMuted()) return;
   
   try {
-    const audio = new Audio('/assets/ka-ching.wav');
+    const audio = new Audio(kaChingSound);
     audio.volume = 0.7;
-    audio.play().catch(() => {
-      console.debug('Ka-ching sound not available');
+    audio.play().catch((err) => {
+      console.debug('Ka-ching sound not available:', err);
     });
   } catch (error) {
     console.debug('Ka-ching sound error:', error);
