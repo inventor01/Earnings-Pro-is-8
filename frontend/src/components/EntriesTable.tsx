@@ -4,7 +4,9 @@ import { useTheme } from '../lib/themeContext';
 import { formatDateEST } from '../lib/dateUtils';
 import doordashLogo from '../assets/doordash-logo.png';
 import ubereatsLogo from '../assets/ubereats-logo.png';
+import ubereatsLogoDark from '../assets/ubereats-dark.png';
 import instacartLogo from '../assets/instacart-logo.png';
+import instacartLogoDark from '../assets/instacart-dark.png';
 import grubhubLogo from '../assets/grubhub-logo.png';
 import shiptLogo from '../assets/shipt-logo.png';
 
@@ -116,13 +118,15 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   };
 
   const getAppLogo = (app: string): string | null => {
+    const isDarkTheme = config.name !== 'simple-light';
+    
     switch (app) {
       case 'DOORDASH':
         return doordashLogo;
       case 'UBEREATS':
-        return ubereatsLogo;
+        return isDarkTheme ? ubereatsLogoDark : ubereatsLogo;
       case 'INSTACART':
-        return instacartLogo;
+        return isDarkTheme ? instacartLogoDark : instacartLogo;
       case 'GRUBHUB':
         return grubhubLogo;
       case 'SHIPT':

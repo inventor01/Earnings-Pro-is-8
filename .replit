@@ -91,6 +91,10 @@ externalPort = 8080
 localPort = 45339
 externalPort = 4200
 
+[[ports]]
+localPort = 45841
+externalPort = 6800
+
 [nix]
 channel = "stable-25_05"
 packages = ["libxcrypt", "imagemagick"]
