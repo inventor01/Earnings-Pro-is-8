@@ -16,8 +16,8 @@ export const Icons = {
       <circle cx="19" cy="6" r="1" fill="currentColor" />
       {/* Price divider line */}
       <line x1="4" y1="13" x2="18" y2="13" strokeOpacity="0.4" />
-      {/* Dollar symbol */}
-      <path d="M10 10.5h3M11.5 9v3M10 14.5h3" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Minus sign */}
+      <line x1="8" y1="13" x2="14" y2="13" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   
