@@ -845,7 +845,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           <div className="lg:col-span-3 space-y-6 md:space-y-8 lg:space-y-10 scroll-smooth" data-tour="performance">
             {/* Performance Overview Header with Toggle */}
             <div className="flex items-center justify-between gap-2" id="performance-overview">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-wider text-green-500 drop-shadow-lg" style={{fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Courier, monospace', letterSpacing: '0.1em'}}>
+              <h2 className="flex items-center gap-3 text-2xl md:text-3xl lg:text-4xl font-black tracking-wider text-green-500 drop-shadow-lg" style={{fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Courier, monospace', letterSpacing: '0.1em'}}>
+                <svg className="w-8 h-8 md:w-10 md:h-10" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-2.96-3.83c-.3-.39-.97-.39-1.25 0-.31.4-.31 1.03 0 1.41l3.54 4.35c.3.39.9.39 1.2 0l3.79-4.87c.31-.39.31-1.02 0-1.41-.32-.4-.95-.4-1.27.01z"/>
+                </svg>
                 PERFORMANCE OVERVIEW
               </h2>
               <div className="flex gap-2">
