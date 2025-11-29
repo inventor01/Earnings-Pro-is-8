@@ -143,10 +143,10 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
           </div>
         </div>
 
-        <div className="border-t border-gray-200/50 p-4 flex-shrink-0 space-y-3">
+        <div className="border-t border-gray-200/50 p-3 flex-shrink-0 space-y-2">
           <div>
-            <h3 className="text-xs font-semibold mb-2 text-gray-900 flex items-center gap-1.5">
-              <Icons.HelpCircle width={14} height={14} className="text-gray-600" strokeWidth={2} />
+            <h3 className="text-xs font-semibold mb-1.5 text-gray-900 flex items-center gap-1">
+              <Icons.HelpCircle width={12} height={12} className="text-gray-600" strokeWidth={2} />
               Help & Tutorial
             </h3>
             <button
@@ -154,43 +154,43 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                 onRestartTour?.();
                 onClose();
               }}
-              className="w-full py-2 px-3 rounded-lg text-sm font-medium transition-all bg-yellow-500 hover:bg-yellow-600 text-white border border-yellow-600 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              className="w-full py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all bg-yellow-500 hover:bg-yellow-600 text-white border border-yellow-600 flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
             >
-              <Icons.HelpCircle width={16} height={16} strokeWidth={2} />
+              <Icons.HelpCircle width={14} height={14} strokeWidth={2} />
               Restart Tour
             </button>
-            <p className="text-xs mt-1 text-gray-600">
+            <p className="text-xs mt-0.5 text-gray-600">
               Learn all features with the interactive tour.
             </p>
           </div>
 
           <div data-tour="export">
-            <h3 className="text-xs font-semibold mb-2 text-gray-900 flex items-center gap-1.5">
-              <Icons.Download width={14} height={14} className="text-gray-600" strokeWidth={2} />
+            <h3 className="text-xs font-semibold mb-1.5 text-gray-900 flex items-center gap-1">
+              <Icons.Download width={12} height={12} className="text-gray-600" strokeWidth={2} />
               Export
             </h3>
             <button
               onClick={onExport}
-              className="w-full py-2 px-3 rounded-lg text-sm font-medium transition-all bg-lime-500 hover:bg-lime-600 text-white border border-lime-600 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              className="w-full py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all bg-lime-500 hover:bg-lime-600 text-white border border-lime-600 flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
             >
-              <Icons.Download width={16} height={16} strokeWidth={2} />
+              <Icons.Download width={14} height={14} strokeWidth={2} />
               Export to CSV
             </button>
-            <p className="text-xs mt-1 text-gray-600">
+            <p className="text-xs mt-0.5 text-gray-600">
               Download all entries as CSV.
             </p>
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold mb-2 text-red-700">Danger Zone</h3>
+            <h3 className="text-xs font-semibold mb-1.5 text-red-700">Danger Zone</h3>
             <button
               onClick={handleResetAll}
-              className="w-full py-2 px-3 rounded-lg text-sm font-medium transition-all bg-red-500 hover:bg-red-600 text-white border border-red-600 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              className="w-full py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all bg-red-500 hover:bg-red-600 text-white border border-red-600 flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
             >
-              <Icons.Trash2 width={16} height={16} strokeWidth={2} />
+              <Icons.Trash2 width={14} height={14} strokeWidth={2} />
               Reset All Data
             </button>
-            <p className="text-xs mt-1.5 text-gray-600">
+            <p className="text-xs mt-0.5 text-gray-600">
               Permanently delete all entries. Cannot be undone.
             </p>
             <button
@@ -198,12 +198,12 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                 onLogout?.();
                 onClose();
               }}
-              className="w-full py-2 px-3 rounded-lg text-sm font-medium transition-all mt-2 bg-red-500 hover:bg-red-600 text-white border border-red-600 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              className="w-full py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all mt-1.5 bg-red-500 hover:bg-red-600 text-white border border-red-600 flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
             >
-              <Icons.LogOut width={16} height={16} strokeWidth={2} />
+              <Icons.LogOut width={14} height={14} strokeWidth={2} />
               Sign Out
             </button>
-            <p className="text-xs mt-1.5 text-gray-600">
+            <p className="text-xs mt-0.5 text-gray-600">
               End your session.
             </p>
           </div>
