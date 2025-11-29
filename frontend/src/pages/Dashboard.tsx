@@ -621,7 +621,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               alt="Earnings Ninja" 
               className="h-28 md:h-44 lg:h-56 w-auto drop-shadow-lg"
               style={{
-                filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))',
+                filter: 'drop-shadow(0 0 12px rgba(234, 179, 8, 0.8))',
               }}
             />
           </div>
