@@ -959,7 +959,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 z-50 ${calcExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`} data-tour="calculator">
         <button
           onClick={() => setCalcExpanded(!calcExpanded)}
-          className="w-full py-4 px-4 flex items-center justify-between bg-lime-500 text-white font-bold text-lg hover:bg-lime-600 opacity-100 shadow-lg"
+          className="w-full py-4 px-4 flex items-center justify-between bg-green-700 text-white font-bold text-lg hover:bg-green-800 opacity-100 shadow-lg"
         >
           <span>{calcExpanded ? '▼ Hide Calculator' : '+ Add Entry'}</span>
           <span className="text-sm font-semibold">{amount !== '0' ? `$${amount}` : ''}</span>
@@ -979,7 +979,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               </div>
               <button
                 onClick={() => setEntryFormStep(1)}
-                className="w-full bg-lime-500 hover:bg-lime-600 text-white py-4 rounded-lg text-lg font-bold mb-6"
+                className="w-full bg-green-700 hover:bg-green-800 text-white py-4 rounded-lg text-lg font-bold mb-6"
               >
                 Next Step →
               </button>
@@ -1001,7 +1001,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               <div className="flex gap-3 mt-4 mb-6">
                 <button
                   onClick={() => setEntryFormStep(0)}
-                  className="flex-1 bg-lime-500 hover:bg-lime-600 text-white py-4 rounded-lg text-lg font-bold"
+                  className="flex-1 bg-green-700 hover:bg-green-800 text-white py-4 rounded-lg text-lg font-bold"
                 >
                   ← Back
                 </button>
