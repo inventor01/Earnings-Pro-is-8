@@ -135,17 +135,6 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
             />
           )}
 
-          {/* Hidden options section - toggleable */}
-          {isRevenueEntry && (
-            <button
-              type="button"
-              onClick={() => setShowMoreOptions(!showMoreOptions)}
-              className="w-full py-2 px-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold text-sm text-gray-700 transition-colors"
-            >
-              {showMoreOptions ? '▼ Hide More Options' : '▶ More Options'}
-            </button>
-          )}
-
           {/* Conditionally show more options for ORDER */}
           {isRevenueEntry && showMoreOptions && (
             <>
@@ -375,6 +364,17 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
                 </div>
               )}
             </div>
+          )}
+
+          {/* Hidden options section - toggleable - moved to bottom */}
+          {isRevenueEntry && (
+            <button
+              type="button"
+              onClick={() => setShowMoreOptions(!showMoreOptions)}
+              className="w-full py-2 px-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold text-sm text-gray-700 transition-colors"
+            >
+              {showMoreOptions ? '▼ Hide More Options' : '▶ More Options'}
+            </button>
           )}
         </>
       )}
