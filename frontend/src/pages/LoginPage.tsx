@@ -58,7 +58,10 @@ export function LoginPage() {
           <h1 className={`text-3xl font-black mb-2 ${config.titleColor}`}>
             Earnings Ninja
           </h1>
-          <p className={`text-sm ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
+          <p className={`text-sm font-semibold ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'} mb-1`}>
+            Grow your earnings with Earnings Ninja
+          </p>
+          <p className={`text-xs ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
             Track your delivery driver earnings
           </p>
         </div>
