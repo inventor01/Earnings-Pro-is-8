@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/authContext';
 import { useTheme } from '../lib/themeContext';
+import { ForgotPasswordModal } from '../components/ForgotPasswordModal';
 import ninjaLogo from '../assets/logo-ninja-official.png';
 
 export function LoginPage() {
@@ -10,6 +11,7 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { login } = useAuth();
   const { config } = useTheme();
 
@@ -153,6 +155,23 @@ export function LoginPage() {
           </button>
         </form>
 
+        {/* Forgot Password Link */}
+        {mode === 'login' && (
+          <div className="mt-3 text-center">
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className={`text-sm transition-colors ${
+                isDarkTheme
+                  ? 'text-lime-400 hover:text-lime-300'
+                  : 'text-lime-600 hover:text-lime-700'
+              }`}
+            >
+              Forgot password?
+            </button>
+          </div>
+        )}
+
         {/* Mode Toggle */}
         <div className={`mt-6 text-center text-sm ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
@@ -186,6 +205,11 @@ export function LoginPage() {
             View Demo Account
           </button>
         </div>
+
+        <ForgotPasswordModal 
+          isOpen={showForgotPassword}
+          onClose={() => setShowForgotPassword(false)}
+        />
       </div>
     </div>
   );
