@@ -345,7 +345,7 @@ export function PotOfGoldTracker() {
           className="text-5xl md:text-6xl cursor-pointer hover:scale-125 transition-transform"
           style={{
             animation: 'pulse-gold 1.5s ease-in-out infinite',
-            filter: 'drop-shadow(0 0 10px rgba(34, 211, 238, 0.8))'
+            filter: 'drop-shadow(0 0 10px rgba(250, 204, 21, 0.8))'
           }}
         >
           💵
