@@ -341,7 +341,7 @@ export function SummaryCard({
               }`}
               style={isNegative ? {
                 animation: 'blink-red 0.8s ease-in-out infinite'
-              } : {
+              } : isDarkTheme ? {
                 animation: 'subtle-glow 2s ease-in-out infinite',
                 filter: `drop-shadow(0 0 12px ${
                   label === 'Revenue' ? 'rgba(132, 204, 22, 0.6)' :
@@ -358,7 +358,7 @@ export function SummaryCard({
                   label === 'Orders' ? 'rgba(59, 130, 246, 0.2)' :
                   'rgba(202, 138, 4, 0.2)'
                 })`
-              }}>
+              } : {}}>
                 {hideData ? '***' : <CountUpNumber value={value} />}
               </div>
               
