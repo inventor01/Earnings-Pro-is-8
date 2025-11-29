@@ -33,7 +33,7 @@ export function ScrollToTopButton() {
       {isVisible && (
         <button
           onClick={scrollToTop}
-          className={`fixed right-4 top-1/2 -translate-y-1/2 z-50 md:hidden p-3 rounded-full shadow-lg transition-all hover:scale-110 active:scale-95 ${
+          className={`fixed right-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full shadow-lg transition-all hover:scale-110 active:scale-95 ${
             isDarkTheme
               ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-900'
               : 'bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-slate-900'
