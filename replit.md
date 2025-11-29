@@ -63,6 +63,28 @@ The application provides a calculator-style input with add/subtract modes, real-
 - **APScheduler**: Background job scheduler for periodic order syncing.
 - **httpx**: Async HTTP client for making API calls to Uber and Shipt platforms.
 
+## Critical Bug Fix: Auto-Seeding Prevention (November 29, 2025)
+
+### The Issue
+The `seed_demo_entries()` function in `backend/auth.py` was automatically creating 30 demo entries ($476.25 profit) every time the default user was accessed. This caused:
+- Persistent $476 profit that appeared even after clearing data
+- Affected both demo and personal accounts
+- Impossible to clear without finding and disabling the seeding
+
+### The Fix
+1. **Removed the `seed_demo_entries()` function entirely** from `backend/auth.py` (dead code)
+2. **Disabled all auto-seeding** in `get_or_create_default_user()` with explicit documentation
+3. **Added a prominent warning comment** preventing future developers from re-adding auto-seeding
+4. **Verified no other auto-seeding mechanisms** exist in the codebase
+
+### Key Lesson
+Users must start with a completely empty ledger. Demo data should only be added via:
+- Explicit endpoints (if created)
+- Manual scripts (`backend/scripts/seed.py`, `backend/seed_this_week.py`)
+- User manual entry
+
+**This will never happen again** - the code now has a clear warning preventing accidental re-introduction of auto-seeding.
+
 ## Recent Additions (November 25, 2025)
 
 ### Interactive Onboarding Tour
