@@ -3,8 +3,7 @@ export const Icons = {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="7" x2="12" y2="17" />
-      <path d="M9 9h6" />
-      <path d="M9 15h6" />
+      <path d="M9 9c0-1 1-1.5 2-1.5s2 0.5 2 1.5c0 1.5-2 1.5-2 3s2 1.5 2 3c0 1 -1 1.5 -2 1.5s-2 -0.5 -2 -1.5" />
     </svg>
   ),
   
