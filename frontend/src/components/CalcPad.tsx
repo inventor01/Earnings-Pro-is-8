@@ -10,6 +10,14 @@ interface CalcPadProps {
 }
 
 export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep }: CalcPadProps) {
+  const handleClearTouchStart = () => {
+    onNextStep?.();
+  };
+
+  const handleClearTouchEnd = () => {
+    // Function still needed for event handling
+  };
+
   const handleNumber = (num: string) => {
     if (amount === '0') {
       onAmountChange(num);
