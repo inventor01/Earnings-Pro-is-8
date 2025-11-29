@@ -328,7 +328,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1 whitespace-nowrap">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d={getTypeIcon(entry.type)}/></svg>
+                    <svg className={`w-5 h-5 ${config.name === 'simple-light' ? 'text-gray-700' : 'text-white'}`} fill="currentColor" viewBox="0 0 24 24"><path d={getTypeIcon(entry.type)}/></svg>
                     <span className={`text-sm font-bold ${config.textPrimary}`}>{entry.type}</span>
                   </div>
                 </td>
