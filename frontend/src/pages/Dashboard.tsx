@@ -725,8 +725,12 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                 </svg>
               </button>
               <button
+                type="button"
                 onClick={() => setShowSettings(true)}
-                className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
+                className={`p-2 md:p-2.5 rounded-lg transition-colors pointer-events-auto z-50 ${config.textPrimary} hover:opacity-80 ${
+                  isDarkTheme ? '' : 'hover:bg-yellow-100'
+                }`}
+                title="Settings"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
