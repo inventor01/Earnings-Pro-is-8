@@ -19,7 +19,8 @@ export function PotOfGoldTracker() {
     queryKey: ['goal', 'THIS_MONTH', user?.id],
     queryFn: () => api.getGoal('THIS_MONTH'),
     staleTime: 0,
-    refetchOnMount: 'stale',
+    gcTime: 0,
+    refetchOnMount: true,
   });
 
   const { data: monthlyData, refetch: refetchMonthlyData } = useQuery({
@@ -29,7 +30,8 @@ export function PotOfGoldTracker() {
       return res.json();
     },
     staleTime: 0,
-    refetchOnMount: 'stale',
+    gcTime: 0,
+    refetchOnMount: true,
   });
 
   const currentProfit = Math.max(0, parseFloat(String(monthlyData?.profit)) || 0);
