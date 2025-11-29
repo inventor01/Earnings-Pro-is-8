@@ -130,21 +130,13 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
           ))}
         </div>
 
-        {/* Row 4: C 0 . (period inline) */}
+        {/* Row 4: C 0 . */}
         <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
           <button
-            onTouchStart={handleClearTouchStart}
-            onTouchEnd={handleClearTouchEnd}
-            onMouseDown={handleClearTouchStart}
-            onMouseUp={handleClearTouchEnd}
-            className={`w-full p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation ${
-              isClearHeld
-                ? 'bg-gradient-to-br from-green-500 to-green-600 text-white scale-110'
-                : 'bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white'
-            }`}
-            title="Tap to backspace, hold to continue"
+            onClick={handleClear}
+            className="w-full bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
           >
-            {isClearHeld ? '→' : '⌫'}
+            C
           </button>
           <button
             onClick={() => handleNumber('0')}
@@ -160,12 +152,20 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
           </button>
         </div>
 
-        {/* Row 5: Backspace */}
+        {/* Row 5: Backspace/Next Step (dual-function) */}
         <button
-          onClick={handleBackspace}
-          className="w-full bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 p-4 md:p-6 rounded-lg md:rounded-xl text-base md:text-xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+          onTouchStart={handleClearTouchStart}
+          onTouchEnd={handleClearTouchEnd}
+          onMouseDown={handleClearTouchStart}
+          onMouseUp={handleClearTouchEnd}
+          className={`w-full p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation ${
+            isClearHeld
+              ? 'bg-gradient-to-br from-green-500 to-green-600 text-white scale-110'
+              : 'bg-gradient-to-br from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-gray-900'
+          }`}
+          title="Tap to backspace, hold to continue"
         >
-          ⌫ Backspace
+          {isClearHeld ? '→ Next Step' : '⌫ Backspace'}
         </button>
       </div>
     </div>
