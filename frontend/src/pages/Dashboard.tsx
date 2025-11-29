@@ -627,27 +627,11 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             <img 
               src={ninjaLogo} 
               alt="Earnings Ninja" 
-              className="h-16 md:h-24 lg:h-28 w-auto drop-shadow-lg"
+              className="h-20 md:h-32 lg:h-40 w-auto drop-shadow-lg"
               style={{
                 filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))',
               }}
             />
-            <div className="flex items-center gap-0">
-              <h1 className={`text-lg md:text-5xl lg:text-6xl font-black ${config.titleColor}`}>EARNINGS</h1>
-              <h1 
-                className="text-lg md:text-5xl lg:text-6xl font-black whitespace-nowrap"
-                style={{
-                  backgroundImage: isDarkTheme ? 'linear-gradient(to right, rgba(34, 211, 238, 0.95), rgba(99, 102, 241, 0.95))' : 'none',
-                  WebkitBackgroundClip: isDarkTheme ? 'text' : 'unset',
-                  backgroundClip: isDarkTheme ? 'text' : 'unset',
-                  WebkitTextFillColor: isDarkTheme ? 'transparent' : 'inherit',
-                  textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.6), 0 0 40px rgba(99, 102, 241, 0.4)' : 'none',
-                  color: isDarkTheme ? 'transparent' : '#000',
-                  WebkitTextStroke: !isDarkTheme ? '1.5px #000' : 'none',
-                  textStroke: !isDarkTheme ? '1.5px #000' : 'none'
-                } as any}
-              > PRO</h1>
-            </div>
           </div>
           <div className="flex gap-1 md:gap-2">
             <button
