@@ -1,6 +1,10 @@
 import { useTheme } from '../lib/themeContext';
 
-export function ScrollToTopButton() {
+interface ScrollToTopButtonProps {
+  isFormOpen?: boolean;
+}
+
+export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps) {
   const { theme } = useTheme();
   const isDarkTheme = theme === 'dark-neon';
 
@@ -13,6 +17,7 @@ export function ScrollToTopButton() {
 
   return (
     <>
+        {!isFormOpen && (
         <button
           onClick={scrollToTop}
           className={`fixed right-3 md:right-5 bottom-24 md:bottom-32 z-50 p-2 md:p-3 rounded-full shadow-lg transition-all active:scale-95 active:opacity-100 hover:opacity-100 opacity-40 md:hover:scale-110 touch-action-manipulation ${
@@ -28,6 +33,7 @@ export function ScrollToTopButton() {
             <path d="M7 16l-4-4m0 0l4-4m-4 4h18" transform="rotate(90 12 12)" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} />
           </svg>
         </button>
+        )}
     </>
   );
 }

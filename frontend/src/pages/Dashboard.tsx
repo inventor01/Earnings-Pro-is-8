@@ -1243,7 +1243,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       {showFeatureTour && <FeatureTour onClose={handleCloseTour} />}
 
       {/* Floating Scroll to Top Button - Mobile optimized, positioned at right-center */}
-      <ScrollToTopButton />
+      <ScrollToTopButton isFormOpen={calcExpanded} />
     </div>
   );
 }
