@@ -139,8 +139,8 @@ export function SummaryCard({
       <div className={`relative p-4 md:p-5 lg:p-6 rounded-xl transition-all duration-300 group/card ${
         themeConfig.name === 'dark-neon'
           ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/40 border border-slate-700/50 hover:border-slate-600/80 hover:from-slate-800/80 hover:to-slate-900/60 hover:shadow-lg hover:shadow-slate-900/50'
-          : themeConfig.name === 'simple-light'
-          ? 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md hover:shadow-gray-200/50'
+          : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
+          ? 'bg-white border border-lime-300 hover:border-lime-400 hover:shadow-md hover:shadow-lime-200/50'
           : 'bg-slate-800/60 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg'
       }`}>
         {/* Top accent line */}
@@ -150,7 +150,7 @@ export function SummaryCard({
           <div className="flex items-center justify-between gap-2">
             <div className={`text-2xl md:text-3xl lg:text-4xl`}>{icon}</div>
             <div className={`text-xs md:text-sm lg:text-base font-bold uppercase tracking-wider opacity-70 leading-none ${
-              themeConfig.name === 'simple-light' ? 'text-gray-600' : 'text-slate-400'
+              themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-gray-600' : 'text-slate-400'
             }`}>{label}</div>
           </div>
           
@@ -168,7 +168,7 @@ export function SummaryCard({
             
             {subtext && (
               <div className={`text-xs md:text-sm lg:text-base font-medium opacity-75 ${
-                themeConfig.name === 'simple-light' ? 'text-gray-500' : 'text-slate-400'
+                themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-gray-500' : 'text-slate-400'
               }`}>
                 {subtext}
               </div>
@@ -194,7 +194,7 @@ export function SummaryCard({
       {/* Header */}
       <div className="flex items-center justify-between mb-3 md:mb-4 px-2">
         <div className={`text-xs md:text-sm font-bold uppercase tracking-widest ${
-          themeConfig.name === 'simple-light' ? 'text-gray-700' : 'text-slate-400'
+          themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-gray-700' : 'text-slate-400'
         } opacity-80 font-mono`}>
           Performance Overview
         </div>
@@ -209,8 +209,8 @@ export function SummaryCard({
                     onClick={() => onDayChange(dayOffset - 1)}
                     className={`p-1.5 md:p-2 rounded-lg transition-all ${
                       isDarkTheme
-                        ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                        ? 'bg-gradient-to-r from-lime-900 to-lime-800 text-lime-400 hover:from-lime-800 hover:to-lime-700 hover:shadow-lg hover:shadow-lime-500/20'
+                        : 'bg-lime-500 text-white hover:bg-lime-600'
                     } font-bold text-sm md:text-base`}
                     title="Previous day"
                   >
@@ -218,8 +218,8 @@ export function SummaryCard({
                   </button>
                   <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
                     isDarkTheme
-                      ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 border border-cyan-500/30'
-                      : 'bg-gray-100 text-gray-800 border border-gray-300'
+                      ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-lime-300 border border-lime-500/30'
+                      : 'bg-lime-100 text-green-800 border border-lime-300'
                   }`}>
                     {getDateLabel(dayOffset)}
                   </div>
@@ -227,8 +227,8 @@ export function SummaryCard({
                     onClick={() => onDayChange(dayOffset + 1)}
                     className={`p-1.5 md:p-2 rounded-lg transition-all ${
                       isDarkTheme
-                        ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-cyan-400 hover:from-blue-800 hover:to-blue-700 hover:shadow-lg hover:shadow-cyan-500/20'
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                        ? 'bg-gradient-to-r from-lime-900 to-lime-800 text-lime-400 hover:from-lime-800 hover:to-lime-700 hover:shadow-lg hover:shadow-lime-500/20'
+                        : 'bg-lime-500 text-white hover:bg-lime-600'
                     } font-bold text-sm md:text-base`}
                     title="Next day"
                   >
@@ -239,8 +239,8 @@ export function SummaryCard({
               {!showDayNav && periodLabel && (
                 <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
                   isDarkTheme
-                    ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 border border-cyan-500/30'
-                    : 'bg-gray-100 text-gray-800 border border-gray-300'
+                    ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-lime-300 border border-lime-500/30'
+                    : 'bg-lime-100 text-green-800 border border-lime-300'
                 }`}>
                   {periodLabel}
                 </div>
@@ -328,9 +328,9 @@ export function SummaryCard({
             onClick={onShare}
             className={`px-3 py-1 rounded-lg transition-all text-xs md:text-sm font-medium opacity-70 hover:opacity-100 ${
               themeConfig.name === 'dark-neon'
-                ? 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-400/10'
-                : themeConfig.name === 'simple-light'
-                ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                ? 'text-lime-400 hover:text-lime-300 hover:bg-lime-400/10'
+                : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
+                ? 'text-lime-600 hover:text-lime-700 hover:bg-lime-50'
                 : 'text-gray-600 hover:text-black hover:bg-gray-100'
             }`}
             title="Share performance"
