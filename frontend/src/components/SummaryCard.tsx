@@ -256,17 +256,17 @@ export function SummaryCard({
                 <>
                   <button
                     onClick={() => onDayChange(dayOffset - 1)}
-                    className="p-1.5 md:p-2 rounded-lg transition-all bg-yellow-500 text-white hover:bg-yellow-600 font-bold text-sm md:text-base"
+                    className="p-1.5 md:p-2 rounded-lg transition-all bg-amber-500 text-white hover:bg-amber-600 font-bold text-sm md:text-base"
                     title="Previous day"
                   >
                     ←
                   </button>
-                  <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-yellow-200 text-yellow-900 border border-yellow-500">
+                  <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-amber-200 text-amber-900 border border-amber-500">
                     {getDateLabel(dayOffset)}
                   </div>
                   <button
                     onClick={() => onDayChange(dayOffset + 1)}
-                    className="p-1.5 md:p-2 rounded-lg transition-all bg-yellow-500 text-white hover:bg-yellow-600 font-bold text-sm md:text-base"
+                    className="p-1.5 md:p-2 rounded-lg transition-all bg-amber-500 text-white hover:bg-amber-600 font-bold text-sm md:text-base"
                     title="Next day"
                   >
                     →
@@ -274,7 +274,7 @@ export function SummaryCard({
                 </>
               )}
               {!showDayNav && periodLabel && (
-                <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-yellow-200 text-yellow-900 border border-yellow-500">
+                <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-amber-200 text-amber-900 border border-amber-500">
                   {periodLabel}
                 </div>
               )}
@@ -359,7 +359,7 @@ export function SummaryCard({
         <div className="mt-3 md:mt-4 flex justify-center">
           <button
             onClick={onShare}
-            className="px-3 py-1 rounded-lg transition-all text-xs md:text-sm font-medium opacity-70 hover:opacity-100 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-100 flex items-center gap-1"
+            className="px-3 py-1 rounded-lg transition-all text-xs md:text-sm font-medium opacity-70 hover:opacity-100 text-amber-600 hover:text-amber-700 hover:bg-amber-100 flex items-center gap-1"
             title="Share performance"
           >
             <Icons.Share2 width={16} height={16} />
