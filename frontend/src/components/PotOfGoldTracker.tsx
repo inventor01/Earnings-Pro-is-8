@@ -39,9 +39,24 @@ export function PotOfGoldTracker() {
     refetchOnReconnect: true,
   });
 
+  // Force invalidate cache and refetch on component mount
   useEffect(() => {
     if (user?.id) {
-      // Force refetch on mount
+      // NUCLEAR: Clear React Query cache completely
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['goal'] });
+      
+      // Force immediate refetch of fresh data
+      setTimeout(() => {
+        refetchGoal().catch(() => {});
+        refetchMonthlyData().catch(() => {});
+      }, 50);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      // Force refetch on user change
       refetchGoal().catch(() => {});
       refetchMonthlyData().catch(() => {});
     }

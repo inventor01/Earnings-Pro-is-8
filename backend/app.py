@@ -28,6 +28,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add cache control headers to prevent stale data issues
+@app.middleware("http")
+async def add_cache_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(auth_routes.router, prefix="/api", tags=["auth"])
 app.include_router(settings.router, prefix="/api", tags=["settings"])
