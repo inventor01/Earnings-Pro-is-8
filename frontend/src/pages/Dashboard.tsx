@@ -583,19 +583,11 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       });
 
   const { config } = useTheme();
-  const isDarkTheme = config.name !== 'simple-light';
+  const isDarkTheme = config.name !== 'simple-light' && config.name !== 'ninja-green';
 
-  const dashboardClass = config.name === 'simple-light' 
-    ? 'min-h-screen bg-gradient-to-b from-gray-50 via-gray-100 to-white flex flex-col'
-    : config.name === 'dark-neon'
-    ? 'min-h-screen bg-gradient-to-b from-black via-gray-900 to-black flex flex-col'
-    : 'min-h-screen bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950 flex flex-col';
+  const dashboardClass = `min-h-screen ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''} flex flex-col`;
 
-  const contentClass = config.name === 'simple-light'
-    ? 'flex-1 overflow-y-auto max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 py-4 md:py-8 lg:py-10 pb-24 w-full bg-gradient-to-b from-gray-50 via-gray-100 to-white'
-    : config.name === 'dark-neon'
-    ? 'flex-1 overflow-y-auto max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 py-4 md:py-8 lg:py-10 pb-24 w-full bg-gradient-to-b from-black via-gray-900 to-black'
-    : 'flex-1 overflow-y-auto max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 py-4 md:py-8 lg:py-10 pb-24 w-full bg-gradient-to-b from-gray-950 via-slate-900 to-gray-950';
+  const contentClass = `flex-1 overflow-y-auto max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 py-4 md:py-8 lg:py-10 pb-24 w-full ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''}`;
 
   return (
     <div className={dashboardClass}>

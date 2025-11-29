@@ -43,14 +43,10 @@ export function LoginPage() {
     }
   };
 
-  const isDarkTheme = config.name !== 'simple-light';
+  const isDarkTheme = config.name !== 'simple-light' && config.name !== 'ninja-green';
 
   return (
-    <div className={`min-h-screen flex items-center justify-center px-4 ${
-      isDarkTheme
-        ? 'bg-gradient-to-br from-black via-gray-900 to-black'
-        : 'bg-gradient-to-br from-gray-50 to-white'
-    }`}>
+    <div className={`min-h-screen flex items-center justify-center px-4 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''}`}>
       <div className={`w-full max-w-md rounded-xl shadow-2xl p-8 ${
         isDarkTheme
           ? 'bg-slate-900 border border-slate-700'
@@ -143,11 +139,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full py-3 rounded-lg font-bold transition-all ${
-              isDarkTheme
-                ? 'bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600 disabled:opacity-50 text-white'
-                : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:opacity-50 text-white'
-            }`}
+            className={`w-full py-3 rounded-lg font-bold transition-all ${config.buttonPrimary} ${config.buttonPrimaryText} disabled:opacity-50`}
           >
             {isLoading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>
