@@ -7,6 +7,12 @@ interface AISuggestionsProps {
   toDate?: string;
 }
 
+interface TimeBreakdown {
+  hourlyRate: number;
+  timePerOrder: number;
+  minOrderAmount: number;
+}
+
 export function AISuggestions({ fromDate, toDate }: AISuggestionsProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -17,14 +23,24 @@ export function AISuggestions({ fromDate, toDate }: AISuggestionsProps) {
     enabled: !!fromDate && !!toDate,
   });
 
+  // Calculate time breakdowns for different hourly rates
+  const calculateTimeBreakdowns = (avgOrder: number): TimeBreakdown[] => {
+    const rates = [15, 18, 20, 25, 30];
+    return rates.map(rate => ({
+      hourlyRate: rate,
+      timePerOrder: Math.round((avgOrder / rate) * 60), // minutes
+      minOrderAmount: Math.round((rate / 60) * 10 * 100) / 100, // min order for 10 min orders
+    }));
+  };
+
   if (isLoading) {
     return (
-      <div className="mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-300 rounded-xl p-4 animate-pulse">
+      <div className="mb-6 bg-gradient-to-r from-yellow-50 to-green-50 border-2 border-yellow-300 rounded-xl p-4 animate-pulse">
         <div className="flex items-center gap-3">
           <span className="text-3xl">💡</span>
           <div className="flex-1">
-            <div className="h-6 bg-purple-200 rounded w-32 mb-2"></div>
-            <div className="h-4 bg-purple-100 rounded w-48"></div>
+            <div className="h-6 bg-yellow-200 rounded w-32 mb-2"></div>
+            <div className="h-4 bg-yellow-100 rounded w-48"></div>
           </div>
         </div>
       </div>
@@ -35,18 +51,20 @@ export function AISuggestions({ fromDate, toDate }: AISuggestionsProps) {
     return null;
   }
 
+  const timeBreakdowns = suggestions ? calculateTimeBreakdowns(parseFloat(suggestions.average_order)) : [];
+
   return (
     <div className="mb-4 md:mb-6">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-300 rounded-lg md:rounded-xl p-3 md:p-4 hover:from-purple-100 hover:to-indigo-100 transition-all text-left active:scale-95"
+        className="w-full bg-gradient-to-r from-yellow-50 to-green-50 border-2 border-yellow-400 rounded-lg md:rounded-xl p-3 md:p-4 hover:from-yellow-100 hover:to-green-100 transition-all text-left active:scale-95"
       >
         <div className="flex justify-between items-center gap-2">
           <div className="flex items-center gap-2 md:gap-3 min-w-0">
             <span className="text-xl md:text-3xl flex-shrink-0">💡</span>
             <div className="min-w-0">
               <h3 className="text-base md:text-lg font-black text-gray-900">AI Tips</h3>
-              <p className="text-xs md:text-sm text-gray-600 truncate">
+              <p className="text-xs md:text-sm text-gray-700 truncate">
                 {suggestions.total_orders} orders • Min: ${suggestions.minimum_order}
               </p>
             </div>
@@ -58,7 +76,7 @@ export function AISuggestions({ fromDate, toDate }: AISuggestionsProps) {
       </button>
 
       {expanded && (
-        <div className="mt-2 md:mt-4 bg-white border-2 border-purple-200 rounded-lg md:rounded-xl p-4 md:p-6 space-y-3 md:space-y-4 shadow-sm">
+        <div className="mt-2 md:mt-4 bg-gradient-to-br from-white to-yellow-50 border-2 border-yellow-300 rounded-lg md:rounded-xl p-4 md:p-6 space-y-3 md:space-y-4 shadow-sm">
           <div className="space-y-3">
             <div className="flex gap-2 md:gap-3">
               <span className="text-xl md:text-2xl flex-shrink-0">📊</span>
@@ -83,7 +101,32 @@ export function AISuggestions({ fromDate, toDate }: AISuggestionsProps) {
               </div>
             </div>
 
-            <div className="border-t-2 border-purple-100 pt-3">
+            <div className="border-t-2 border-yellow-200 pt-3">
+              <div className="flex gap-2 md:gap-3">
+                <span className="text-xl md:text-2xl flex-shrink-0">⏱️</span>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-gray-900 mb-2 md:mb-3 text-sm md:text-base">Earn More Strategy: Time Breakdowns</h4>
+                  <div className="space-y-2">
+                    {timeBreakdowns.map((breakdown) => (
+                      <div key={breakdown.hourlyRate} className="bg-white border-2 border-green-400 rounded p-2 md:p-3">
+                        <div className="flex justify-between items-center gap-2">
+                          <div>
+                            <p className="text-xs md:text-sm font-bold text-green-700">${breakdown.hourlyRate}/hour</p>
+                            <p className="text-xs text-gray-600">Spend {breakdown.timePerOrder}m per order</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs md:text-sm font-bold text-green-700">Min: ${breakdown.minOrderAmount}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2 italic">Complete orders faster or accept higher-paying orders to hit your hourly goal!</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t-2 border-yellow-200 pt-3">
               <div className="flex gap-2 md:gap-3">
                 <span className="text-xl md:text-2xl flex-shrink-0">🎯</span>
                 <div className="flex-1 min-w-0 overflow-hidden">
@@ -96,8 +139,8 @@ export function AISuggestions({ fromDate, toDate }: AISuggestionsProps) {
             </div>
 
             {suggestions.reasoning && (
-              <div className="text-xs text-gray-500 italic pt-1 md:pt-2">
-                {suggestions.reasoning}
+              <div className="text-xs text-gray-600 italic pt-1 md:pt-2 border-t-2 border-yellow-200 pt-3">
+                <span className="font-semibold">Why:</span> {suggestions.reasoning}
               </div>
             )}
           </div>
