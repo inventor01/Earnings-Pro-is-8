@@ -9,10 +9,29 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
   const isDarkTheme = theme === 'ninja-dark';
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
+    // Try to scroll the performance overview element first
+    const performanceOverview = document.getElementById('performance-overview');
+    
+    // Find the nearest scrollable parent container
+    let scrollableContainer = performanceOverview?.closest('.overflow-y-auto');
+    
+    if (!scrollableContainer) {
+      // Fallback to finding any overflow-y-auto element
+      scrollableContainer = document.querySelector('.overflow-y-auto');
+    }
+    
+    if (scrollableContainer) {
+      scrollableContainer.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    } else {
+      // Last resort - scroll the window
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
   };
 
   return (
