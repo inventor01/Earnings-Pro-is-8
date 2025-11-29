@@ -129,6 +129,26 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   
+  // Reset calculator to step 0 whenever it's opened
+  useEffect(() => {
+    if (calcExpanded) {
+      // Reset to initial calculator state
+      setAmount('0');
+      setMode('add');
+      setEntryFormStep(0);
+      setFormData({
+        type: 'ORDER',
+        app: 'UBEREATS',
+        distance_miles: '',
+        category: 'GAS',
+        note: '',
+        receipt_url: undefined,
+        date: getDefaultDate(),
+        time: getDefaultTime(),
+      });
+    }
+  }, [calcExpanded]);
+
   const handleCloseTour = () => {
     localStorage.setItem('hasCompletedFeatureTour', 'true');
     setShowFeatureTour(false);

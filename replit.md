@@ -63,6 +63,19 @@ The application provides a calculator-style input with add/subtract modes, real-
 - **APScheduler**: Background job scheduler for periodic order syncing.
 - **httpx**: Async HTTP client for making API calls to Uber and Shipt platforms.
 
+## Calculator Auto-Reset Improvement (November 29, 2025)
+
+### Improvement
+Added automatic reset for money and miles calculator when reopened:
+- When user opens "Add Entry" button, calculator always starts fresh
+- Amount resets to $0
+- Mode resets to "Revenue" (add)
+- Returns to first calculator step (not form fields)
+- Distance/miles also resets to empty
+- Ensures clean slate every time without needing to clear previous entries
+
+**Implementation**: useEffect hook monitors `calcExpanded` state and resets all calculator-related state when true (file: `frontend/src/pages/Dashboard.tsx`, lines 135-153)
+
 ## Critical Bug Fix: Auto-Seeding Prevention (November 29, 2025)
 
 ### The Issue
