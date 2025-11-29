@@ -615,8 +615,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
       )}
       <div className={contentClass}>
-        <div className="flex justify-between items-center mb-4 md:mb-8 lg:mb-10 gap-2">
-          <div className="flex items-center gap-1 md:gap-3 lg:gap-4">
+        <div className="flex justify-between items-start md:items-center mb-4 md:mb-8 lg:mb-10 gap-2">
+          <div className="flex flex-col items-center md:items-start gap-2">
             <img 
               src={ninjaLogo} 
               alt="Earnings Ninja" 
@@ -625,6 +625,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                 filter: 'drop-shadow(0 0 12px rgba(234, 179, 8, 0.8))',
               }}
             />
+            <p className={`text-sm md:text-lg font-semibold ${config.titleColor}`}>
+              Grow your earnings with Earnings Ninja
+            </p>
           </div>
           <div className="flex gap-1 md:gap-2">
             <button
