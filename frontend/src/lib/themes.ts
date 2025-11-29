@@ -70,8 +70,8 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
     textSecondary: 'text-lime-600',
     
     chipInactive: 'bg-lime-100 text-green-900 border border-lime-500',
-    chipActive: 'text-white',
-    chipActiveBg: 'bg-lime-500',
+    chipActive: 'text-gray-900',
+    chipActiveBg: 'bg-yellow-400',
     
     tableBg: 'bg-white border border-lime-500',
     tableHeader: 'bg-lime-200 border-b border-lime-500',
