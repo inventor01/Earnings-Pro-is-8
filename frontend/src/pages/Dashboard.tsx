@@ -119,8 +119,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSearch, setShowSearch] = useState(false); // Hidden by default on mobile
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [showFeatureTour, setShowFeatureTour] = useState(() => {
     const hasCompletedTour = localStorage.getItem('hasCompletedFeatureTour');
     // Show tour on first load only - when hasCompletedTour is not set
@@ -174,33 +172,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       window.removeEventListener('tour-calculator-close', handleTourCalculatorClose);
     };
   }, []);
-
-  // Handle scroll to show/hide search
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const isMobile = window.innerWidth < 768; // md breakpoint in Tailwind
-      
-      if (isMobile) {
-        // Keep search hidden on mobile
-        setShowSearch(false);
-      } else {
-        // Desktop behavior
-        if (currentScrollY < lastScrollY - 80) {
-          // Scrolled up significantly - show search
-          setShowSearch(true);
-        } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-          // Scrolling down and past threshold - hide search
-          setShowSearch(false);
-        }
-      }
-      
-      setLastScrollY(currentScrollY);
-    };
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
 
   useEffect(() => {
     setSelectedIds([]);
@@ -644,20 +615,19 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         </div>
       )}
-      <div className={`fixed top-0 left-0 right-0 z-40 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''} shadow-md`}>
-        <div className="max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 py-4 md:py-8 lg:py-10 w-full">
-          <div className="flex justify-between items-center mb-4 md:mb-8 lg:mb-10 gap-2">
-            <div className="flex items-center gap-1 md:gap-3 lg:gap-4">
-              <img 
-                src={ninjaLogo} 
-                alt="Earnings Ninja" 
-                className="h-28 md:h-44 lg:h-56 w-auto drop-shadow-lg"
-                style={{
-                  filter: 'drop-shadow(0 0 12px rgba(234, 179, 8, 0.8))',
-                }}
-              />
-            </div>
-            <div className="flex gap-1 md:gap-2">
+      <div className={contentClass}>
+        <div className="flex justify-between items-center mb-4 md:mb-8 lg:mb-10 gap-2">
+          <div className="flex items-center gap-1 md:gap-3 lg:gap-4">
+            <img 
+              src={ninjaLogo} 
+              alt="Earnings Ninja" 
+              className="h-28 md:h-44 lg:h-56 w-auto drop-shadow-lg"
+              style={{
+                filter: 'drop-shadow(0 0 12px rgba(234, 179, 8, 0.8))',
+              }}
+            />
+          </div>
+          <div className="flex gap-1 md:gap-2">
             <button
               onClick={() => onNavigateToLeaderboard?.()}
               className={`relative p-2 md:p-2.5 rounded-lg transition-all ${
@@ -723,38 +693,34 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         </div>
 
-          <div className="mb-4 md:mb-8 lg:mb-10 overflow-x-auto" data-tour="periods">
-            <PeriodChips selected={period} onSelect={setPeriod} />
-          </div>
+        <div className="mb-4 md:mb-8 lg:mb-10 overflow-x-auto" data-tour="periods">
+          <PeriodChips selected={period} onSelect={setPeriod} />
+        </div>
 
-          <div className={`mb-4 md:mb-8 lg:mb-10 transition-all duration-300 overflow-hidden ${showSearch ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`} data-tour="search">
-            <div className={`flex items-center gap-3 px-4 py-3 md:py-3.5 rounded-xl border-2 transition-all shadow-md hover:shadow-lg ${
-              isDarkTheme
-                ? 'bg-slate-800 border-lime-500/40 focus-within:border-lime-400 focus-within:shadow-lg focus-within:shadow-lime-500/20'
-                : 'bg-lime-50 border-lime-400 focus-within:border-lime-500 focus-within:shadow-lg focus-within:shadow-lime-400/30'
-            }`}>
-              <Icons.Search className={`w-5 h-5 flex-shrink-0 ${isDarkTheme ? 'text-lime-400' : 'text-lime-600'}`} />
-              <input
-                type="text"
-                placeholder="Search transactions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`flex-1 bg-transparent outline-none text-sm font-medium ${isDarkTheme ? 'text-white placeholder-slate-500' : 'text-gray-900 placeholder-lime-500/60'}`}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className={`flex-shrink-0 p-1 rounded-md transition-all ${isDarkTheme ? 'text-slate-400 hover:text-lime-400 hover:bg-slate-700' : 'text-lime-600 hover:text-lime-700 hover:bg-lime-100'}`}
-                >
-                  <Icons.X className="w-5 h-5" />
-                </button>
-              )}
-            </div>
+        <div className="mb-4 md:mb-8 lg:mb-10" data-tour="search">
+          <div className={`flex items-center gap-3 px-4 py-3 md:py-3.5 rounded-xl border-2 transition-all shadow-md hover:shadow-lg ${
+            isDarkTheme
+              ? 'bg-slate-800 border-lime-500/40 focus-within:border-lime-400 focus-within:shadow-lg focus-within:shadow-lime-500/20'
+              : 'bg-lime-50 border-lime-400 focus-within:border-lime-500 focus-within:shadow-lg focus-within:shadow-lime-400/30'
+          }`}>
+            <Icons.Search className={`w-5 h-5 flex-shrink-0 ${isDarkTheme ? 'text-lime-400' : 'text-lime-600'}`} />
+            <input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`flex-1 bg-transparent outline-none text-sm font-medium ${isDarkTheme ? 'text-white placeholder-slate-500' : 'text-gray-900 placeholder-lime-500/60'}`}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className={`flex-shrink-0 p-1 rounded-md transition-all ${isDarkTheme ? 'text-slate-400 hover:text-lime-400 hover:bg-slate-700' : 'text-lime-600 hover:text-lime-700 hover:bg-lime-100'}`}
+              >
+                <Icons.X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
-      </div>
-
-      <div className={`${contentClass} pt-96`}>
 
         {/* Negative Profit Alert */}
         {rollup && rollup.profit < 0 && showNegativeAlert && (
