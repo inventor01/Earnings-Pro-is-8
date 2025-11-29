@@ -140,7 +140,7 @@ export function SummaryCard({
         themeConfig.name === 'dark-neon'
           ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/40 border border-slate-700/50 hover:border-slate-600/80 hover:from-slate-800/80 hover:to-slate-900/60 hover:shadow-lg hover:shadow-slate-900/50'
           : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
-          ? 'bg-white border border-lime-300 hover:border-lime-400 hover:shadow-md hover:shadow-lime-200/50'
+          ? 'bg-white border border-lime-500 hover:border-lime-600 hover:shadow-md hover:shadow-lime-300/50'
           : 'bg-slate-800/60 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg'
       }`}>
         {/* Top accent line */}
@@ -219,7 +219,7 @@ export function SummaryCard({
                   <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
                     isDarkTheme
                       ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-lime-300 border border-lime-500/30'
-                      : 'bg-lime-100 text-green-800 border border-lime-300'
+                      : 'bg-lime-200 text-green-900 border border-lime-500'
                   }`}>
                     {getDateLabel(dayOffset)}
                   </div>
@@ -240,7 +240,7 @@ export function SummaryCard({
                 <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
                   isDarkTheme
                     ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-lime-300 border border-lime-500/30'
-                    : 'bg-lime-100 text-green-800 border border-lime-300'
+                    : 'bg-lime-200 text-green-900 border border-lime-500'
                 }`}>
                   {periodLabel}
                 </div>
