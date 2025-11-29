@@ -124,6 +124,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     // Show tour on first load only - when hasCompletedTour is not set
     return hasCompletedTour === null;
   });
+  const [showScrollTop, setShowScrollTop] = useState(false);
   
   const handleCloseTour = () => {
     localStorage.setItem('hasCompletedFeatureTour', 'true');
@@ -172,6 +173,21 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       window.removeEventListener('tour-calculator-close', handleTourCalculatorClose);
     };
   }, []);
+
+  // Handle scroll to show/hide button
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      setShowScrollTop(scrollTop > 300);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     setSelectedIds([]);
@@ -1221,6 +1237,18 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
       {/* Feature Tour - Interactive tour guide */}
       {showFeatureTour && <FeatureTour onClose={handleCloseTour} />}
+
+      {/* Floating Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-30 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 px-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 active:scale-95"
+          title="Scroll to top"
+          aria-label="Scroll to top"
+        >
+          ↑ Top
+        </button>
+      )}
     </div>
   );
 }
