@@ -3,7 +3,6 @@ import { useTheme } from '../lib/themeContext';
 import { MetricVisibility } from './SummaryCard';
 import { Icons } from './Icons';
 import { useQuery } from '@tanstack/react-query';
-import { useSimpleMode } from '../lib/simpleModeContext';
 
 interface UserInfo {
   id: string;
@@ -28,7 +27,6 @@ interface SettingsDrawerProps {
 
 export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, onLogout, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
   const { config } = useTheme();
-  const { isSimple, setIsSimple } = useSimpleMode();
   const { data: userInfo } = useQuery<UserInfo>({
     queryKey: ['userInfo'],
     queryFn: async () => {
@@ -93,22 +91,6 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             </div>
           )}
           
-          <div className="mb-6 mt-6">
-            <label className="block text-sm font-semibold mb-3 text-gray-900">
-              View Mode
-            </label>
-            <button
-              onClick={() => setIsSimple(!isSimple)}
-              className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
-                isSimple
-                  ? 'bg-lime-500 border-lime-600 text-white shadow-md'
-                  : 'bg-gray-50 border-gray-200 text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              {isSimple ? '✓ Simple Mode' : '○ Simple Mode'}
-            </button>
-          </div>
-
           <div className="py-6 border-t border-gray-200/50">
             <h3 className="text-sm font-semibold mb-4 text-gray-900">Performance Overview Metrics</h3>
             <div className="space-y-3">

@@ -24,7 +24,6 @@ import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { AchievementsModal } from '../components/AchievementsModal';
 import { ProfitCalendar } from '../components/ProfitCalendar';
 import { useTheme } from '../lib/themeContext';
-import { useSimpleMode } from '../lib/simpleModeContext';
 import { Icons } from '../components/Icons';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
@@ -35,7 +34,6 @@ interface DashboardProps {
 
 export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const { logout } = useAuth();
-  const { isSimple } = useSimpleMode();
   const [period, setPeriod] = useState<Period>('today');
   const [amount, setAmount] = useState('0');
   const [mode, setMode] = useState<CalcMode>('add');
@@ -840,45 +838,41 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                 />
 
                 {/* Profit Calendar Toggle and Display */}
-                {!isSimple && (
-                  <>
-                    <div className="w-full px-2 md:px-0">
-                      <button
-                        onClick={() => setShowCalendar(!showCalendar)}
-                        className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl border-2 ${
-                          showCalendar
-                            ? 'bg-yellow-400 text-black border-yellow-500 shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 hover:bg-yellow-500'
-                            : 'bg-lime-100 text-lime-700 border-lime-400 hover:bg-lime-200'
-                        }`}
-                      >
-                        <Icons.Calendar className="w-6 h-6 md:w-7 md:h-7" />
-                        <span>{showCalendar ? 'Hide Calendar' : 'Show Calendar'}</span>
-                        <span className={`ml-2 transition-transform ${showCalendar ? 'rotate-180' : ''}`}>↓</span>
-                      </button>
-                    </div>
+                <div className="w-full px-2 md:px-0">
+                  <button
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl border-2 ${
+                      showCalendar
+                        ? 'bg-yellow-400 text-black border-yellow-500 shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 hover:bg-yellow-500'
+                        : 'bg-lime-100 text-lime-700 border-lime-400 hover:bg-lime-200'
+                    }`}
+                  >
+                    <Icons.Calendar className="w-6 h-6 md:w-7 md:h-7" />
+                    <span>{showCalendar ? 'Hide Calendar' : 'Show Calendar'}</span>
+                    <span className={`ml-2 transition-transform ${showCalendar ? 'rotate-180' : ''}`}>↓</span>
+                  </button>
+                </div>
 
-                    {showCalendar && (
-                      <div>
-                        <ProfitCalendar 
-                          entries={monthlyEntries}
-                          onDayClick={(dateStr) => {
-                            const todayEst = getESTDateString(new Date().toISOString());
-                            const offset = Math.floor((new Date(dateStr) - new Date(todayEst)) / (1000 * 60 * 60 * 24));
-                            setDayOffset(offset);
-                            if (period !== 'today') {
-                              setPeriod('today');
-                            }
-                          }}
-                          selectedDateStr={(() => {
-                            const now = new Date();
-                            const d = new Date();
-                            d.setDate(d.getDate() + dayOffset);
-                            return getESTDateString(d.toISOString());
-                          })()}
-                        />
-                      </div>
-                    )}
-                  </>
+                {showCalendar && (
+                  <div>
+                    <ProfitCalendar 
+                      entries={monthlyEntries}
+                      onDayClick={(dateStr) => {
+                        const todayEst = getESTDateString(new Date().toISOString());
+                        const offset = Math.floor((new Date(dateStr) - new Date(todayEst)) / (1000 * 60 * 60 * 24));
+                        setDayOffset(offset);
+                        if (period !== 'today') {
+                          setPeriod('today');
+                        }
+                      }}
+                      selectedDateStr={(() => {
+                        const now = new Date();
+                        const d = new Date();
+                        d.setDate(d.getDate() + dayOffset);
+                        return getESTDateString(d.toISOString());
+                      })()}
+                    />
+                  </div>
                 )}
               </>
             )}
@@ -908,7 +902,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
 
         {/* Achievements Modal */}
-        {!isSimple && showAchievementsModal && (
+        {showAchievementsModal && (
           <AchievementsModal 
             entries={entries} 
             rollup={rollup} 
@@ -917,10 +911,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           />
         )}
 
-        {!isSimple && (
-          <div>
-            {/* Calculate date range for AI suggestions based on current period */}
-            {(() => {
+        <div>
+          {/* Calculate date range for AI suggestions based on current period */}
+          {(() => {
               let fromDate = '';
               let toDate = '';
               
@@ -969,7 +962,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               return <AISuggestions fromDate={fromDate} toDate={toDate} />;
             })()}
           </div>
-        )}
 
         {selectedIds.length > 0 && (
           <div className="mb-4 flex items-center justify-between bg-lime-50 border border-lime-200 rounded-lg p-4">
@@ -1189,7 +1181,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         />
       )}
 
-      {!isSimple && showShareCard && (
+      {showShareCard && (
         <>
           <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setShowShareCard(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
