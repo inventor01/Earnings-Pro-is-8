@@ -9,8 +9,14 @@ export function ScrollToBottomButton({ isFormOpen = false }: ScrollToBottomButto
   const isDarkTheme = theme === 'dark-neon';
 
   const scrollToBottom = () => {
+    const scrollHeight = Math.max(
+      document.body.scrollHeight,
+      document.documentElement.scrollHeight,
+      document.body.offsetHeight,
+      document.documentElement.offsetHeight
+    );
     window.scrollTo({
-      top: document.documentElement.scrollHeight,
+      top: scrollHeight,
       behavior: 'smooth',
     });
   };
