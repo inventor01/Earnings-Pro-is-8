@@ -111,8 +111,9 @@ Keep response concise, practical, and directly applicable.
     
     if client is None:
         # OpenAI not configured - return statistical analysis
+        peak_hours = f"{peak_hour}:00" if peak_hour else "business hours"
         return {
-            "suggestion": f"Keep working during peak hours ({peak_hour}:00 if peak_hour else 'business hours') and aim for orders above ${min_viable_order:.2f}",
+            "suggestion": f"Keep working during peak hours ({peak_hours}) and aim for orders above ${min_viable_order:.2f}",
             "minimum_order": round(min_viable_order, 2),
             "peak_time": f"{peak_hour}:00 - {peak_hour+1}:00" if peak_hour else None,
             "average_order": round(avg_order, 2),
@@ -155,8 +156,9 @@ Keep response concise, practical, and directly applicable.
     
     except Exception as e:
         # Fallback if AI call fails
+        peak_hours = f"{peak_hour}:00" if peak_hour else "business hours"
         return {
-            "suggestion": f"Keep working during peak hours ({peak_hour}:00 if peak_hour else 'business hours') and aim for orders above ${min_viable_order:.2f}",
+            "suggestion": f"Keep working during peak hours ({peak_hours}) and aim for orders above ${min_viable_order:.2f}",
             "minimum_order": round(min_viable_order, 2),
             "peak_time": f"{peak_hour}:00 - {peak_hour+1}:00" if peak_hour else None,
             "average_order": round(avg_order, 2),
