@@ -762,15 +762,15 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           <div className="lg:col-span-3 space-y-6 md:space-y-8 lg:space-y-10 scroll-smooth" data-tour="performance">
             {/* Performance Overview Header with Toggle */}
             <div className="flex items-center justify-between">
-              <h2 className={`text-lg font-bold ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>
+              <h2 className={`text-lg font-bold ${isDarkTheme ? 'text-lime-300' : 'text-lime-600'}`}>
                 Performance Overview
               </h2>
               <button
                 onClick={() => setShowPerformanceOverview(!showPerformanceOverview)}
                 className={`p-2 rounded-lg transition-all ${
                   isDarkTheme
-                    ? 'text-slate-400 hover:text-cyan-300 hover:bg-slate-700/50'
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-gray-200'
+                    ? 'text-slate-400 hover:text-lime-300 hover:bg-slate-700/50'
+                    : 'text-gray-600 hover:text-lime-600 hover:bg-lime-200'
                 }`}
                 title={showPerformanceOverview ? 'Collapse' : 'Expand'}
               >
@@ -818,11 +818,11 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                         className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl ${
                           isDarkTheme
                             ? showCalendar
-                              ? 'bg-gradient-to-r from-cyan-500 to-cyan-400 text-white border-2 border-cyan-300 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50'
-                              : 'bg-gradient-to-r from-slate-700 to-slate-800 text-cyan-300 border-2 border-cyan-500/50 hover:from-slate-600 hover:to-slate-700 hover:text-cyan-200 hover:border-cyan-400'
+                              ? 'bg-gradient-to-r from-lime-500 to-lime-400 text-white border-2 border-lime-300 shadow-lg shadow-lime-500/30 hover:shadow-lime-500/50'
+                              : 'bg-gradient-to-r from-slate-700 to-slate-800 text-lime-300 border-2 border-lime-500/50 hover:from-slate-600 hover:to-slate-700 hover:text-lime-200 hover:border-lime-400'
                             : showCalendar
-                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-400 hover:from-blue-600 hover:to-blue-700'
-                            : 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white border-2 border-blue-300 hover:from-blue-500 hover:to-indigo-600 hover:border-blue-400'
+                            ? 'bg-gradient-to-r from-lime-500 to-green-700 text-white border-2 border-lime-400 hover:from-lime-600 hover:to-green-800'
+                            : 'bg-gradient-to-r from-lime-400 to-green-600 text-white border-2 border-lime-300 hover:from-lime-500 hover:to-green-700 hover:border-lime-400'
                         }`}
                       >
                         <span className="text-2xl md:text-3xl">{showCalendar ? '📆' : '📅'}</span>
