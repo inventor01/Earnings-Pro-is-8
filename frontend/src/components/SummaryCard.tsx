@@ -313,39 +313,6 @@ export function SummaryCard({
         )}
       </div>
       
-      {/* Date/Period Display with Navigation - Bottom Center */}
-      <div className="mt-4 md:mt-5 lg:mt-6 flex justify-center">
-        {(showDayNav || periodLabel) && (
-          <div className="flex items-center gap-2">
-            {showDayNav && onDayChange && getDateLabel && (
-              <>
-                <button
-                  onClick={() => onDayChange(dayOffset - 1)}
-                  className="p-1.5 md:p-2 rounded-lg transition-all bg-yellow-400 text-gray-900 hover:bg-yellow-500 font-bold text-sm md:text-base"
-                  title="Previous day"
-                >
-                  ←
-                </button>
-                <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-yellow-300 text-gray-900 border border-yellow-400">
-                  {getDateLabel(dayOffset)}
-                </div>
-                <button
-                  onClick={() => onDayChange(dayOffset + 1)}
-                  className="p-1.5 md:p-2 rounded-lg transition-all bg-yellow-400 text-gray-900 hover:bg-yellow-500 font-bold text-sm md:text-base"
-                  title="Next day"
-                >
-                  →
-                </button>
-              </>
-            )}
-            {!showDayNav && periodLabel && (
-              <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-yellow-300 text-gray-900 border border-yellow-400">
-                {periodLabel}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
       
       {/* Share Button */}
       {onShare && (
