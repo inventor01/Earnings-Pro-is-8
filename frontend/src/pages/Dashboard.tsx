@@ -89,6 +89,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const [showShareCard, setShowShareCard] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [viewingEntry, setViewingEntry] = useState<Entry | null>(null);
+  const [logoAnimating, setLogoAnimating] = useState(false);
   const [editingFormData, setEditingFormData] = useState<EntryFormData>({
     type: 'ORDER',
     app: 'UBEREATS',
@@ -644,9 +645,14 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               <img 
                 src={ninjaLogo} 
                 alt="Earnings Ninja" 
-                className="h-28 md:h-44 lg:h-56 w-auto drop-shadow-lg logo-animate"
+                onClick={() => {
+                  setLogoAnimating(true);
+                  setTimeout(() => setLogoAnimating(false), 600);
+                }}
+                className={`h-28 md:h-44 lg:h-56 w-auto drop-shadow-lg logo-animate cursor-pointer transition-transform hover:scale-105 ${logoAnimating ? 'animate-bounce' : ''}`}
                 style={{
                   filter: 'drop-shadow(0 0 12px rgba(234, 179, 8, 0.8))',
+                  animation: logoAnimating ? 'pulse-gold 0.6s ease-out' : 'none',
                 }}
               />
             </div>
