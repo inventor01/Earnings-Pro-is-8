@@ -131,7 +131,7 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
   'ninja-green': {
     name: 'ninja-green',
     label: 'Ninja Green',
-    dashBg: 'bg-lime-50',
+    dashBg: 'bg-white',
     dashFrom: '',
     dashTo: '',
     dashVia: '',
