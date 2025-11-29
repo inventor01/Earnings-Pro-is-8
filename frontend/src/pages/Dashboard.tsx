@@ -816,7 +816,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                         onClick={() => setShowCalendar(!showCalendar)}
                         className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl border-2 ${
                           showCalendar
-                            ? 'bg-lime-400 text-black border-lime-500 shadow-lg shadow-lime-500/30 hover:shadow-lime-500/50 hover:bg-lime-500'
+                            ? 'bg-yellow-400 text-black border-yellow-500 shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 hover:bg-yellow-500'
                             : 'bg-lime-100 text-lime-700 border-lime-400 hover:bg-lime-200'
                         }`}
                       >
