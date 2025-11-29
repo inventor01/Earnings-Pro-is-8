@@ -8,13 +8,13 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
   const { theme } = useTheme();
   const isDarkTheme = theme === 'ninja-dark';
 
-  const scrollToPerformanceOverview = () => {
-    // Find the performance overview element
-    const performanceOverview = document.getElementById('performance-overview');
+  const scrollToSearchBar = () => {
+    // Find the search bar element
+    const searchBar = document.getElementById('search-bar');
     
-    if (performanceOverview) {
+    if (searchBar) {
       // Scroll the element into view smoothly
-      performanceOverview.scrollIntoView({
+      searchBar.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       });
@@ -56,7 +56,7 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
   return (
     <>
         <button
-          onClick={scrollToPerformanceOverview}
+          onClick={scrollToSearchBar}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           className={`fixed right-3 md:right-5 bottom-20 md:bottom-44 z-50 p-2 md:p-3 rounded-full shadow-lg transition-all active:scale-95 active:opacity-100 hover:opacity-100 opacity-60 md:opacity-40 md:hover:scale-110 touch-action-manipulation cursor-pointer ${
@@ -64,8 +64,8 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
               ? 'bg-gradient-to-br from-cyan-400 to-cyan-500 text-slate-900 border-2 border-cyan-300'
               : 'bg-gradient-to-br from-yellow-300 to-yellow-400 text-slate-900 border-2 border-yellow-200'
           }`}
-          aria-label="Scroll to Performance Overview"
-          title="Scroll to Performance Overview"
+          aria-label="Scroll to search bar"
+          title="Scroll to search bar"
           style={{ touchAction: 'manipulation', WebkitTouchCallout: 'none' }}
         >
           <svg className="w-5 md:w-6 h-5 md:h-6 font-bold" fill="currentColor" viewBox="0 0 24 24">
