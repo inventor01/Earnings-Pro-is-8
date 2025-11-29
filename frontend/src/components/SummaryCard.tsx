@@ -140,26 +140,31 @@ export function SummaryCard({
         themeConfig.name === 'dark-neon'
           ? 'bg-slate-800 border border-slate-700/50 hover:border-slate-600/80 hover:shadow-lg hover:shadow-slate-900/50'
           : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
-          ? 'bg-white border border-lime-500 hover:border-lime-600 hover:shadow-md hover:shadow-lime-300/50'
+          ? 'bg-white border-2 border-lime-400 hover:border-lime-500 hover:shadow-lg hover:shadow-lime-400/40'
           : 'bg-slate-800 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg'
       }`}>
-        {/* Top accent line */}
-        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r rounded-t-xl opacity-50 ${color}`} />
+        {/* Top accent line - solid color */}
+        <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-xl ${
+          themeConfig.name === 'ninja-green' ? 'bg-lime-500' : 'bg-slate-600'
+        }`} />
         
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <div className={`text-2xl md:text-3xl lg:text-4xl`}>{icon}</div>
-            <div className={`text-xs md:text-sm lg:text-base font-bold uppercase tracking-wider opacity-70 leading-none ${
-              themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-gray-600' : 'text-slate-400'
+            <div className={`text-4xl md:text-5xl lg:text-6xl drop-shadow-lg`}>{icon}</div>
+            <div className={`text-xs md:text-sm lg:text-base font-bold uppercase tracking-wider leading-none ${
+              themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-green-700' : 'text-slate-400'
             }`}>{label}</div>
           </div>
           
           <div className="space-y-1">
-            <div className={`text-3xl md:text-5xl lg:text-6xl font-black font-mono transition-all duration-300 group-hover/card:scale-105 cursor-pointer leading-none whitespace-nowrap overflow-hidden text-ellipsis ${
-              isNegative ? 'text-red-500' : secondary
+            <div className={`text-4xl md:text-6xl lg:text-7xl font-black font-mono transition-all duration-300 group-hover/card:scale-110 cursor-pointer leading-none whitespace-nowrap overflow-hidden text-ellipsis ${
+              isNegative ? 'text-red-600' : themeConfig.name === 'ninja-green' ? 'text-lime-600' : secondary
             }`}
             style={isNegative ? {
               animation: 'blink-red 0.8s ease-in-out infinite'
+            } : themeConfig.name === 'ninja-green' ? {
+              animation: 'subtle-glow 2s ease-in-out infinite',
+              filter: 'drop-shadow(0 0 8px rgba(132, 204, 22, 0.3))'
             } : {
               animation: 'subtle-glow 2s ease-in-out infinite'
             }}>
@@ -167,8 +172,8 @@ export function SummaryCard({
             </div>
             
             {subtext && (
-              <div className={`text-xs md:text-sm lg:text-base font-medium opacity-75 ${
-                themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-gray-500' : 'text-slate-400'
+              <div className={`text-xs md:text-sm lg:text-base font-medium ${
+                themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-green-600' : 'text-slate-400'
               }`}>
                 {subtext}
               </div>
@@ -251,7 +256,7 @@ export function SummaryCard({
       </div>
 
       {/* Metrics Grid - Shopify Style */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 md:gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4">
         {/* Revenue */}
         {visibility.revenue && (
           <MetricCard
