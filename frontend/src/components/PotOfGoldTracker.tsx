@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../lib/themeContext';
+import { useAuth } from '../lib/authContext';
 import { api } from '../lib/api';
 
 export function PotOfGoldTracker() {
   const { config: themeConfig } = useTheme();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [tempGoal, setTempGoal] = useState('');
   const [tempGoalName, setTempGoalName] = useState('Savings Goal');
@@ -14,12 +16,12 @@ export function PotOfGoldTracker() {
   const [isHidden, setIsHidden] = useState(false);
 
   const { data: monthlyGoal, refetch: refetchGoal } = useQuery({
-    queryKey: ['goal', 'THIS_MONTH'],
+    queryKey: ['goal', 'THIS_MONTH', user?.id],
     queryFn: () => api.getGoal('THIS_MONTH'),
   });
 
   const { data: monthlyData, refetch: refetchMonthlyData } = useQuery({
-    queryKey: ['rollup', 'THIS_MONTH'],
+    queryKey: ['rollup', 'THIS_MONTH', user?.id],
     queryFn: async () => {
       const res = await fetch('/api/rollup?timeframe=THIS_MONTH');
       return res.json();
