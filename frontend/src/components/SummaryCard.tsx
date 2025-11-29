@@ -1,5 +1,6 @@
 import { useTheme } from '../lib/themeContext';
 import { CountUpNumber } from './CountUpNumber';
+import { Icons } from './Icons';
 import { useRef, useState } from 'react';
 
 export interface MetricVisibility {
@@ -111,7 +112,7 @@ export function SummaryCard({
     }
   };
 
-  const MetricCard = ({ icon, label, value, color, secondary, subtext, isNegative }: any) => {
+  const MetricCard = ({ icon: Icon, label, value, color, secondary, subtext, isNegative }: any) => {
     // Determine background color based on label
     const bgColorMap: { [key: string]: string } = {
       'Revenue': 'bg-lime-50 border-lime-400',
@@ -173,7 +174,9 @@ export function SummaryCard({
           
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <div className={`text-4xl md:text-5xl lg:text-6xl drop-shadow-lg group-hover/card:scale-125 transition-transform`}>{icon}</div>
+              <div className="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 text-lime-600 drop-shadow-lg group-hover/card:scale-125 transition-transform">
+                <Icon width="100%" height="100%" />
+              </div>
               <div className={`text-xs md:text-sm lg:text-base font-bold uppercase tracking-wider leading-none ${
                 label === 'Expenses' ? 'text-red-700' :
                 label === 'Profit' ? 'text-green-700' :
@@ -284,7 +287,7 @@ export function SummaryCard({
         {/* Revenue */}
         {visibility.revenue && (
           <MetricCard
-            icon="💰"
+            icon={Icons.Revenue}
             label="Revenue"
             value={revenue}
             color="from-blue-500 to-blue-400"
@@ -295,7 +298,7 @@ export function SummaryCard({
         {/* Expenses */}
         {visibility.expenses && (
           <MetricCard
-            icon="💸"
+            icon={Icons.Expenses}
             label="Expenses"
             value={expenses}
             color="from-red-500 to-red-400"
@@ -306,7 +309,7 @@ export function SummaryCard({
         {/* Profit */}
         {visibility.profit && (
           <MetricCard
-            icon="🎯"
+            icon={Icons.Profit}
             label="Profit"
             value={profit}
             color="from-green-500 to-green-400"
@@ -319,7 +322,7 @@ export function SummaryCard({
         {/* Miles */}
         {visibility.miles && (
           <MetricCard
-            icon="🛣️"
+            icon={Icons.Miles}
             label="Miles"
             value={miles}
             color="from-purple-500 to-purple-400"
@@ -330,7 +333,7 @@ export function SummaryCard({
         {/* Orders */}
         {visibility.orders && (
           <MetricCard
-            icon="📦"
+            icon={Icons.Orders}
             label="Orders"
             value={orders.toString()}
             color="from-cyan-500 to-cyan-400"
@@ -341,7 +344,7 @@ export function SummaryCard({
         {/* Avg Order */}
         {visibility.avgOrder && avgOrder && (
           <MetricCard
-            icon="📊"
+            icon={Icons.AvgOrder}
             label="Avg Order"
             value={avgOrder}
             color="from-yellow-500 to-yellow-400"
@@ -355,10 +358,11 @@ export function SummaryCard({
         <div className="mt-3 md:mt-4 flex justify-center">
           <button
             onClick={onShare}
-            className="px-3 py-1 rounded-lg transition-all text-xs md:text-sm font-medium opacity-70 hover:opacity-100 text-lime-600 hover:text-lime-700 hover:bg-lime-100"
+            className="px-3 py-1 rounded-lg transition-all text-xs md:text-sm font-medium opacity-70 hover:opacity-100 text-lime-600 hover:text-lime-700 hover:bg-lime-100 flex items-center gap-1"
             title="Share performance"
           >
-            🔗 Share
+            <Icons.Share2 width={16} height={16} />
+            Share
           </button>
         </div>
       )}

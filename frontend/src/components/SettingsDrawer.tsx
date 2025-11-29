@@ -1,6 +1,7 @@
 import { Settings } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
 import { MetricVisibility } from './SummaryCard';
+import { Icons } from './Icons';
 import { useQuery } from '@tanstack/react-query';
 import { useSimpleMode } from '../lib/simpleModeContext';
 
@@ -61,18 +62,22 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
       <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose} />
       <div className="fixed right-0 top-0 h-full w-full md:w-80 shadow-xl z-50 flex flex-col bg-white text-gray-900 border-l-2 border-lime-500">
         <div className="flex justify-between items-center mb-6 p-6 border-b border-lime-400 flex-shrink-0">
-          <h2 className="text-xl font-bold text-green-800">Settings</h2>
-          <button onClick={onClose} className="text-green-700 hover:text-green-900">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <h2 className="text-xl font-bold text-green-800 flex items-center gap-2">
+            <Icons.Settings width={24} height={24} className="text-lime-600" />
+            Settings
+          </h2>
+          <button onClick={onClose} className="text-green-700 hover:text-green-900 w-6 h-6">
+            <Icons.X width="100%" height="100%" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6">
           {userInfo && (
             <div className="mb-6 p-4 rounded-lg bg-lime-50 border-2 border-lime-400">
-              <h3 className="text-sm font-medium mb-3 text-green-800">👤 Account Information</h3>
+              <h3 className="text-sm font-medium mb-3 text-green-800 flex items-center gap-2">
+                <Icons.User width={16} height={16} className="text-green-800" />
+                Account Information
+              </h3>
               <div className="space-y-2 text-sm">
                 <div>
                   <p className="text-green-700">Username</p>
@@ -106,13 +111,13 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             <h3 className="text-sm font-medium mb-4 text-green-800">Performance Overview Metrics</h3>
             <div className="space-y-3">
               {[
-                { key: 'revenue' as const, label: '💰 Revenue' },
-                { key: 'expenses' as const, label: '💸 Expenses' },
-                { key: 'profit' as const, label: '🎯 Profit' },
-                { key: 'miles' as const, label: '🛣️ Miles' },
-                { key: 'orders' as const, label: '📦 Orders' },
-                { key: 'avgOrder' as const, label: '📊 Avg Order' },
-              ].map(({ key, label }) => (
+                { key: 'revenue' as const, label: 'Revenue', icon: Icons.Revenue },
+                { key: 'expenses' as const, label: 'Expenses', icon: Icons.Expenses },
+                { key: 'profit' as const, label: 'Profit', icon: Icons.Profit },
+                { key: 'miles' as const, label: 'Miles', icon: Icons.Miles },
+                { key: 'orders' as const, label: 'Orders', icon: Icons.Orders },
+                { key: 'avgOrder' as const, label: 'Avg Order', icon: Icons.AvgOrder },
+              ].map(({ key, label, icon: IconComponent }) => (
                 <button
                   key={key}
                   onClick={() => handleMetricToggle(key)}
@@ -128,6 +133,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                     onChange={() => {}}
                     className="w-4 h-4 cursor-pointer"
                   />
+                  <IconComponent width={16} height={16} />
                   {label}
                 </button>
               ))}
@@ -137,15 +143,19 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
 
         <div className="border-t border-lime-400 p-4 flex-shrink-0 space-y-2">
           <div>
-            <h3 className="text-xs font-medium mb-1 text-green-800">Help & Tutorial</h3>
+            <h3 className="text-xs font-medium mb-1 text-green-800 flex items-center gap-1">
+              <Icons.HelpCircle width={14} height={14} />
+              Help & Tutorial
+            </h3>
             <button
               onClick={() => {
                 onRestartTour?.();
                 onClose();
               }}
-              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-600"
+              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-600 flex items-center justify-center gap-2"
             >
-              🎓 Restart Tour
+              <Icons.HelpCircle width={16} height={16} />
+              Restart Tour
             </button>
             <p className="text-xs mt-0.5 text-green-600">
               See the interactive tour again to learn all features.
@@ -153,12 +163,16 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
           </div>
 
           <div data-tour="export">
-            <h3 className="text-xs font-medium mb-1 text-green-800">Export</h3>
+            <h3 className="text-xs font-medium mb-1 text-green-800 flex items-center gap-1">
+              <Icons.Download width={14} height={14} />
+              Export
+            </h3>
             <button
               onClick={onExport}
-              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-lime-500 hover:bg-lime-600 text-white border-2 border-lime-600"
+              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-lime-500 hover:bg-lime-600 text-white border-2 border-lime-600 flex items-center justify-center gap-2"
             >
-              📥 Export to CSV
+              <Icons.Download width={16} height={16} />
+              Export to CSV
             </button>
             <p className="text-xs mt-0.5 text-green-600">
               Download all entries as a CSV file.
@@ -169,9 +183,10 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             <h3 className="text-xs font-medium mb-1 text-green-800">Danger Zone</h3>
             <button
               onClick={handleResetAll}
-              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-red-500 hover:bg-red-600 text-white border-2 border-red-600"
+              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-red-500 hover:bg-red-600 text-white border-2 border-red-600 flex items-center justify-center gap-2"
             >
-              🗑️ Reset All Data
+              <Icons.Trash2 width={16} height={16} />
+              Reset All Data
             </button>
             <p className="text-xs mt-0.5 text-green-600">
               Permanently delete all entries. This action cannot be undone.
@@ -181,9 +196,10 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                 onLogout?.();
                 onClose();
               }}
-              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all mt-3 bg-red-500 hover:bg-red-600 text-white border-2 border-red-600"
+              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all mt-3 bg-red-500 hover:bg-red-600 text-white border-2 border-red-600 flex items-center justify-center gap-2"
             >
-              🚪 Sign Out
+              <Icons.LogOut width={16} height={16} />
+              Sign Out
             </button>
             <p className="text-xs mt-0.5 text-green-600">
               End your session and sign out.
