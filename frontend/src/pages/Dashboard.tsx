@@ -1242,7 +1242,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-30 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 px-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 active:scale-95"
+          className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-30 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-2 md:py-3 px-3 md:px-4 text-sm md:text-base rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 active:scale-95"
           title="Scroll to top"
           aria-label="Scroll to top"
         >
