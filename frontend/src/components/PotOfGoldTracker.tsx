@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../lib/themeContext';
 import { useAuth } from '../lib/authContext';
 import { api } from '../lib/api';
@@ -7,6 +7,7 @@ import { api } from '../lib/api';
 export function PotOfGoldTracker() {
   const { config: themeConfig } = useTheme();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [tempGoal, setTempGoal] = useState('');
   const [tempGoalName, setTempGoalName] = useState('Savings Goal');
@@ -69,6 +70,13 @@ export function PotOfGoldTracker() {
         return;
       }
       await api.createGoal('THIS_MONTH', parseFloat(tempGoal), tempGoalName || 'Savings Goal');
+      
+      // NUCLEAR: Clear ALL rollup and goal caches to prevent stale data
+      queryClient.removeQueries({ queryKey: ['rollup'] });
+      queryClient.removeQueries({ queryKey: ['goal'] });
+      queryClient.removeQueries({ queryKey: ['entries'] });
+      
+      // Force immediate refetch of fresh data
       await refetchGoal();
       await refetchMonthlyData();
       setIsEditing(false);
