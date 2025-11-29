@@ -27,7 +27,7 @@ import { useTheme } from '../lib/themeContext';
 import { Icons } from '../components/Icons';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
-import { playChaChing } from '../lib/soundEffects';
+import { playChaChing, playKaChing } from '../lib/soundEffects';
 
 interface DashboardProps {
   onNavigateToLeaderboard?: () => void;
@@ -284,7 +284,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       refetchEntries();
       refetchRollup();
       setAmount('0');
-      playChaChing(); // Play cha-ching sound
+      playKaChing(); // Play ka-ching sound
       setToast({ message: 'Entry added successfully!', type: 'success' });
     },
     onError: () => {

@@ -80,3 +80,20 @@ export function playChaChing(): void {
     console.debug('Sound effect not available:', error);
   }
 }
+
+/**
+ * Play ka-ching sound effect from audio file
+ */
+export function playKaChing(): void {
+  if (isSoundMuted()) return;
+  
+  try {
+    const audio = new Audio('/assets/ka-ching.wav');
+    audio.volume = 0.7;
+    audio.play().catch(() => {
+      console.debug('Ka-ching sound not available');
+    });
+  } catch (error) {
+    console.debug('Ka-ching sound error:', error);
+  }
+}
