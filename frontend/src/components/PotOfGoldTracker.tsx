@@ -23,27 +23,28 @@ export function PotOfGoldTracker() {
     refetchOnMount: true,
   });
 
-  const { data: monthlyData, refetch: refetchMonthlyData } = useQuery({
+  const { data: monthlyData, refetch: refetchMonthlyData, isLoading: isRollupLoading } = useQuery({
     queryKey: ['rollup', 'THIS_MONTH', user?.id],
     queryFn: async () => {
-      const res = await fetch('/api/rollup?timeframe=THIS_MONTH');
-      return res.json();
+      const res = await fetch(`/api/rollup?timeframe=THIS_MONTH&t=${Date.now()}`);
+      if (!res.ok) throw new Error('Failed to fetch rollup');
+      const data = await res.json();
+      return data;
     },
     staleTime: 0,
     gcTime: 0,
-    refetchOnMount: true,
+    refetchOnMount: 'stale',
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   useEffect(() => {
     if (user?.id) {
-      // Refetch when user changes - use callback to avoid infinite loops
-      const timer = setTimeout(() => {
-        refetchGoal();
-        refetchMonthlyData();
-      }, 0);
-      return () => clearTimeout(timer);
+      // Force refetch on mount
+      refetchGoal().catch(() => {});
+      refetchMonthlyData().catch(() => {});
     }
-  }, [user?.id]);
+  }, [user?.id, refetchGoal, refetchMonthlyData]);
 
   const currentProfit = Math.max(0, parseFloat(String(monthlyData?.profit)) || 0);
   const goalAmount = monthlyGoal?.target_profit ? parseFloat(String(monthlyGoal.target_profit)) : 0;
