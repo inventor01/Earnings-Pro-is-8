@@ -731,7 +731,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
       </div>
 
-      <div className={`${contentClass} pt-20 md:pt-32 lg:pt-24`}>
+      <div className={`${contentClass} pt-16 md:pt-32 lg:pt-24`}>
 
         {/* Search Bar - Collapsible */}
         {showSearchBar && (
