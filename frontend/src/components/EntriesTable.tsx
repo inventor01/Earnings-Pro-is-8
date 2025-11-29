@@ -124,7 +124,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
       case 'DOORDASH':
         return doordashLogo;
       case 'UBEREATS':
-        return isDarkTheme ? ubereatsLogoDark : ubereatsLogo;
+        return isDarkTheme ? null : ubereatsLogo;
       case 'INSTACART':
         return isDarkTheme ? instacartLogoDark : instacartLogo;
       case 'GRUBHUB':
@@ -134,6 +134,17 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
       default:
         return null;
     }
+  };
+
+  const getFormattedAppName = (app: string): string => {
+    const nameMap: Record<string, string> = {
+      'UBEREATS': 'Uber Eats',
+      'DOORDASH': 'DoorDash',
+      'INSTACART': 'Instacart',
+      'GRUBHUB': 'GrubHub',
+      'SHIPT': 'Shipt'
+    };
+    return nameMap[app] || app;
   };
 
   const getAppColor = (app: string) => {
@@ -345,11 +356,12 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                   ) : (
                     <div className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center justify-center ${getAppColor(entry.app)}`}>
                       {(() => {
+                        const isDarkTheme = config.name !== 'simple-light';
                         const logoSrc = getAppLogo(entry.app);
                         return logoSrc ? (
                           <img src={logoSrc} alt={entry.app} className="h-5 w-auto max-w-[70px] object-contain" />
                         ) : (
-                          <span>{entry.app}</span>
+                          <span className={isDarkTheme && entry.app === 'UBEREATS' ? 'text-white' : ''}>{getFormattedAppName(entry.app)}</span>
                         );
                       })()}
                     </div>
