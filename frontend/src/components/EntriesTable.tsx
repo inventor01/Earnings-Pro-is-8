@@ -354,12 +354,13 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                       {entry.category || 'OTHER'}
                     </span>
                   ) : (
-                    <div className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center justify-center ${getAppColor(entry.app)}`}>
+                    <div className={`px-1 md:px-2 py-1 rounded text-xs font-bold whitespace-nowrap inline-flex items-center justify-center ${getAppColor(entry.app)}`}>
                       {(() => {
                         const isDarkTheme = config.name !== 'simple-light';
+                        const isLightTheme = config.name === 'simple-light';
                         const logoSrc = getAppLogo(entry.app);
                         return logoSrc ? (
-                          <img src={logoSrc} alt={entry.app} className="h-4 md:h-5 w-auto max-w-[60px] md:max-w-[80px] object-contain" />
+                          <img src={logoSrc} alt={entry.app} className={`w-auto object-contain ${isLightTheme ? 'h-6 md:h-7 max-w-[90px] md:max-w-[120px]' : 'h-4 md:h-5 max-w-[60px] md:max-w-[80px]'}`} />
                         ) : (
                           <span className={isDarkTheme && entry.app === 'UBEREATS' ? 'text-white font-bold' : ''} style={isDarkTheme && entry.app === 'UBEREATS' ? { fontFamily: 'Montserrat, sans-serif', letterSpacing: '-0.02em', fontWeight: 700 } : {}}>{getFormattedAppName(entry.app)}</span>
                         );
