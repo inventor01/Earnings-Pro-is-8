@@ -254,6 +254,11 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       rollupTimeframe,
       period === 'today' ? dayOffset : undefined
     ),
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const { data: entries = [], refetch: refetchEntries } = useQuery({
@@ -262,16 +267,29 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       rollupTimeframe,
       period === 'today' ? dayOffset : undefined
     ),
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const { data: monthlyEntries = [] } = useQuery({
     queryKey: ['entries', 'THIS_MONTH'],
     queryFn: () => api.getEntries('THIS_MONTH'),
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const { data: monthlyGoal, refetch: refetchMonthlyGoal } = useQuery({
     queryKey: ['goal', 'THIS_MONTH'],
     queryFn: () => api.getGoal('THIS_MONTH'),
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const createMutation = useMutation({
