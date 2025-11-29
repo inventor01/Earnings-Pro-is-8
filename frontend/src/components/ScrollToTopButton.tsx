@@ -1,19 +1,8 @@
-import { useState, useEffect } from 'react';
 import { useTheme } from '../lib/themeContext';
 
 export function ScrollToTopButton() {
-  const [isVisible, setIsVisible] = useState(false);
   const { theme } = useTheme();
   const isDarkTheme = theme === 'dark-neon';
-
-  const toggleVisibility = () => {
-    const scrollThreshold = window.innerWidth < 768 ? 10 : 50; // Mobile: 10px, Desktop: 50px
-    if (window.scrollY > scrollThreshold) {
-      setIsVisible(true);
-    } else {
-      setIsVisible(false);
-    }
-  };
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -22,16 +11,8 @@ export function ScrollToTopButton() {
     });
   };
 
-  useEffect(() => {
-    window.addEventListener('scroll', toggleVisibility);
-    return () => {
-      window.removeEventListener('scroll', toggleVisibility);
-    };
-  }, []);
-
   return (
     <>
-      {isVisible && (
         <button
           onClick={scrollToTop}
           className={`fixed right-5 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full shadow-2xl transition-all hover:scale-125 active:scale-95 animate-bounce ${
@@ -46,7 +27,6 @@ export function ScrollToTopButton() {
             <path d="M7 16l-4-4m0 0l4-4m-4 4h18" transform="rotate(90 12 12)" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} />
           </svg>
         </button>
-      )}
     </>
   );
 }
