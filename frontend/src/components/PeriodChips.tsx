@@ -33,10 +33,10 @@ export function PeriodChips({ selected, onSelect, onCustomClick }: PeriodChipsPr
               onSelect(period.value);
             }
           }}
-          className={`px-2 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium whitespace-nowrap touch-manipulation transition-all ${
+          className={`px-2 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium whitespace-nowrap touch-manipulation transition-all shadow-md ${
             selected === period.value
-              ? `${config.chipActiveBg} ${config.chipActive} shadow-xl shadow-yellow-400/60`
-              : config.chipInactive
+              ? `${config.chipActiveBg} ${config.chipActive} shadow-2xl shadow-yellow-400/70`
+              : `${config.chipInactive} shadow-md`
           }`}
         >
           {period.label}
