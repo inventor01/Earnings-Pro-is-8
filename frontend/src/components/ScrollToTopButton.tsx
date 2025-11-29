@@ -6,7 +6,7 @@ interface ScrollToTopButtonProps {
 
 export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps) {
   const { theme } = useTheme();
-  const isDarkTheme = theme === 'dark-neon';
+  const isDarkTheme = theme === 'ninja-dark';
 
   const scrollToTop = () => {
     window.scrollTo({
