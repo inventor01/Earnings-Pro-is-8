@@ -19,6 +19,7 @@ import { FeatureTour } from '../components/FeatureTour';
 // import { PointsCard } from '../components/PointsCard';
 import { ShareCard } from '../components/ShareCard';
 import { ScrollToTopButton } from '../components/ScrollToTopButton';
+import { CoinAnimation } from '../components/CoinAnimation';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { AchievementsModal } from '../components/AchievementsModal';
 import { ProfitCalendar } from '../components/ProfitCalendar';
@@ -610,6 +611,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
   return (
     <div className={dashboardClass}>
+      {/* Coin burst animation on page load */}
+      <CoinAnimation />
+
       {rollup && showGoalBanner && (
         <ProfitGoalsBar
           timeframe={getTimeframeFromPeriod(period)}
