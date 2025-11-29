@@ -25,7 +25,7 @@ RUN npm run build
 # ================================
 # BACKEND STAGE (Python FastAPI)
 # ================================
-FROM python:3.11-slim AS backend
+FROM python:3.11-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
@@ -34,21 +34,23 @@ RUN apt-get update \
 
 WORKDIR /app
 
+# Copy requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend source
+# Copy backend source (preserves backend/ folder structure)
 COPY backend ./backend
 
-# Copy frontend build output to dist directory
+# Copy frontend build output
 COPY --from=frontend-builder /app/frontend/dist ./dist
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH="/app"
 
 # Expose port
 EXPOSE 8000
 
-# Start application
-CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start application (entry point is backend/app.py)
+CMD ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000"]
