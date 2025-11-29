@@ -1,10 +1,10 @@
 export const Icons = {
   Revenue: (props: React.SVGProps<SVGSVGElement>) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...props}>
-      <line x1="12" y1="3" x2="12" y2="8" />
-      <line x1="12" y1="16" x2="12" y2="21" />
-      <path d="M8 8c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4H10" />
-      <path d="M14 12c0 2.2-1.8 4-4 4s-4-1.8-4-4 1.8-4 4-4h2" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M8 6c0-1.5 1.5-2.5 4-2.5s4 1 4 2.5-1.5 2.5-4 2.5H9" />
+      <path d="M8 18c0-1.5 1.5-2.5 4-2.5s4 1 4 2.5-1.5 2.5-4 2.5H9" />
+      <path d="M15 12h-6" />
     </svg>
   ),
   
