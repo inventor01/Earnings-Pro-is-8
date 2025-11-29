@@ -647,7 +647,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             <div className="flex gap-1 md:gap-2">
               <button
                 onClick={() => onNavigateToLeaderboard?.()}
-                className={`relative p-2 md:p-2.5 rounded-lg transition-all ${
+                className={`relative p-2 md:p-2.5 rounded-lg transition-all mr-auto ${
                   isDarkTheme
                     ? 'hover:bg-lime-500/20 text-lime-400'
                     : 'hover:bg-lime-100 text-lime-600'
