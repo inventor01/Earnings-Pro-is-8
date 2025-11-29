@@ -74,10 +74,12 @@ export function PotOfGoldTracker() {
     return (
       <div className={`rounded-2xl p-4 border-2 transition-all ${
         themeConfig.name === 'dark-neon'
-          ? 'bg-gradient-to-br from-purple-900/60 via-slate-900/50 to-blue-900/40 border-cyan-400/60'
+          ? 'bg-slate-900 border-cyan-400/60'
           : themeConfig.name === 'simple-light'
-          ? 'bg-gradient-to-br from-blue-100 via-purple-50 to-yellow-100 border-purple-300'
-          : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-cyan-500/60'
+          ? 'bg-white border-blue-300'
+          : themeConfig.name === 'ninja-green'
+          ? 'bg-white border-lime-500'
+          : 'bg-slate-900 border-cyan-500/60'
       }`}>
         <button
           onClick={() => setIsHidden(false)}
@@ -85,7 +87,9 @@ export function PotOfGoldTracker() {
             themeConfig.name === 'dark-neon'
               ? 'bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-200 border border-cyan-400/50'
               : themeConfig.name === 'simple-light'
-              ? 'bg-purple-200 hover:bg-purple-300 text-purple-900'
+              ? 'bg-blue-200 hover:bg-blue-300 text-blue-900'
+              : themeConfig.name === 'ninja-green'
+              ? 'bg-lime-500 hover:bg-lime-600 text-white border border-lime-600'
               : 'bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-300 border border-cyan-400/30'
           }`}
         >
@@ -99,39 +103,41 @@ export function PotOfGoldTracker() {
     return (
       <div className={`rounded-2xl p-5 md:p-6 border-2 transition-all ${
         themeConfig.name === 'dark-neon'
-          ? 'bg-gradient-to-br from-yellow-900/40 to-orange-900/30 border-yellow-500/50 backdrop-blur-sm'
+          ? 'bg-yellow-900/40 border-yellow-500/50 backdrop-blur-sm'
           : themeConfig.name === 'simple-light'
-          ? 'bg-gradient-to-br from-yellow-100 to-orange-100 border-yellow-300'
+          ? 'bg-yellow-100 border-yellow-300'
+          : themeConfig.name === 'ninja-green'
+          ? 'bg-yellow-100 border-yellow-500'
           : 'bg-black/60 border-yellow-500 backdrop-blur-sm'
       }`}>
         <div className="space-y-3">
           <label className={`block text-sm font-bold ${
-            themeConfig.name === 'simple-light' ? 'text-yellow-900' : 'text-yellow-300'
+            themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-yellow-900' : 'text-yellow-300'
           }`}>
             Monthly Pot of Gold Goal
           </label>
           <div className={`flex gap-2 p-3 rounded-xl border-2 transition-all ${
             themeConfig.name === 'dark-neon'
               ? 'bg-yellow-900/30 border-yellow-400/60 focus-within:border-yellow-400'
-              : themeConfig.name === 'simple-light'
-              ? 'bg-white border-yellow-300 focus-within:border-yellow-500'
+              : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
+              ? 'bg-white border-yellow-400 focus-within:border-yellow-500'
               : 'bg-gray-900 border-yellow-500/60 focus-within:border-yellow-400'
           }`}>
-            <span className={`font-bold text-lg ${themeConfig.name === 'simple-light' ? 'text-yellow-900' : 'text-yellow-400'}`}>$</span>
+            <span className={`font-bold text-lg ${themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-yellow-900' : 'text-yellow-400'}`}>$</span>
             <input
               type="number"
               value={tempGoal}
               onChange={(e) => setTempGoal(e.target.value)}
               placeholder="Enter goal amount"
               className={`flex-1 bg-transparent outline-none font-bold text-lg ${
-                themeConfig.name === 'simple-light' ? 'text-yellow-900' : 'text-yellow-300'
+                themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-yellow-900' : 'text-yellow-300'
               }`}
               autoFocus
             />
           </div>
           {error && (
             <p className={`text-sm font-medium animate-pulse ${
-              themeConfig.name === 'simple-light' ? 'text-red-600' : 'text-red-400'
+              themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-red-600' : 'text-red-400'
             }`}>
               {error}
             </p>
@@ -142,10 +148,10 @@ export function PotOfGoldTracker() {
               disabled={isSaving}
               className={`flex-1 py-3 rounded-xl font-bold transition-all ${
                 themeConfig.name === 'dark-neon'
-                  ? 'bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black disabled:opacity-50 shadow-lg hover:shadow-yellow-400/50'
-                  : themeConfig.name === 'simple-light'
-                  ? 'bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white disabled:opacity-50'
-                  : 'bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black disabled:opacity-50 shadow-lg'
+                  ? 'bg-yellow-400 hover:bg-yellow-500 text-black disabled:opacity-50 shadow-lg'
+                  : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
+                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white disabled:opacity-50'
+                  : 'bg-yellow-400 hover:bg-yellow-500 text-black disabled:opacity-50 shadow-lg'
               }`}
             >
               {isSaving ? 'Saving...' : 'Save Goal'}
@@ -155,8 +161,8 @@ export function PotOfGoldTracker() {
               className={`flex-1 py-3 rounded-xl font-bold transition-all ${
                 themeConfig.name === 'dark-neon'
                   ? 'bg-gray-700/60 hover:bg-gray-600/80 text-gray-100'
-                  : themeConfig.name === 'simple-light'
-                  ? 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                  : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
+                  ? 'bg-gray-300 hover:bg-gray-400 text-gray-900'
                   : 'bg-gray-700/60 hover:bg-gray-600/80 text-gray-100'
               }`}
             >
@@ -173,31 +179,28 @@ export function PotOfGoldTracker() {
     return (
       <div className={`rounded-2xl p-5 md:p-6 border-2 transition-all ${
         themeConfig.name === 'dark-neon'
-          ? 'bg-gradient-to-br from-purple-900/60 via-slate-900/50 to-blue-900/40 border-cyan-400/60'
+          ? 'bg-slate-900 border-cyan-400/60'
           : themeConfig.name === 'simple-light'
-          ? 'bg-gradient-to-br from-blue-100 via-purple-50 to-yellow-100 border-purple-300'
-          : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-cyan-500/60'
+          ? 'bg-white border-blue-300'
+          : themeConfig.name === 'ninja-green'
+          ? 'bg-white border-lime-500'
+          : 'bg-slate-900 border-cyan-500/60'
       }`}>
         <div className="space-y-4">
           <div className="text-center">
             <div className="text-5xl md:text-6xl mb-3">🪙</div>
-            <h3 className={`font-black text-lg md:text-xl mb-2`}
-            style={themeConfig.name === 'simple-light' ? {
-              backgroundImage: 'linear-gradient(to right, rgb(29, 78, 216), rgb(37, 99, 235))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              color: 'transparent'
-            } : {
-              backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              color: 'transparent'
-            }}>
+            <h3 className={`font-black text-lg md:text-xl mb-2 ${
+              themeConfig.name === 'simple-light' ? 'text-blue-700' : 
+              themeConfig.name === 'ninja-green' ? 'text-green-800' :
+              'text-white'
+            }`}>
               Start Your Pot of Gold
             </h3>
-            <p className={`text-sm ${themeConfig.name === 'simple-light' ? 'text-purple-700' : 'text-slate-300'}`}>
+            <p className={`text-sm ${
+              themeConfig.name === 'simple-light' ? 'text-blue-600' :
+              themeConfig.name === 'ninja-green' ? 'text-green-700' :
+              'text-slate-300'
+            }`}>
               Set a monthly profit goal to track your treasure
             </p>
           </div>
@@ -205,10 +208,10 @@ export function PotOfGoldTracker() {
             onClick={handleEditClick}
             className={`w-full py-3 rounded-xl font-bold transition-all ${
               themeConfig.name === 'dark-neon'
-                ? 'bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black shadow-lg hover:shadow-yellow-400/50'
-                : themeConfig.name === 'simple-light'
-                ? 'bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white'
-                : 'bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black shadow-lg'
+                ? 'bg-yellow-400 hover:bg-yellow-500 text-black shadow-lg'
+                : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
+                ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                : 'bg-yellow-400 hover:bg-yellow-500 text-black shadow-lg'
             }`}
           >
             Set Monthly Goal
@@ -222,13 +225,15 @@ export function PotOfGoldTracker() {
     <div 
       className={`rounded-2xl p-4 md:p-6 border-2 transition-all group relative min-h-auto ${
         themeConfig.name === 'dark-neon'
-          ? 'bg-gradient-to-br from-purple-900/60 via-slate-900/50 to-blue-900/40 border-cyan-400/60 hover:border-cyan-300/80 hover:from-purple-900/80 hover:via-slate-900/70 hover:to-blue-900/60 shadow-2xl hover:shadow-cyan-400/40'
+          ? 'bg-slate-900 border-cyan-400/60 hover:border-cyan-300/80 shadow-2xl hover:shadow-cyan-400/40'
           : themeConfig.name === 'simple-light'
-          ? 'bg-gradient-to-br from-blue-50 via-blue-50 to-cyan-50 border-blue-300 hover:border-blue-400'
-          : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-cyan-500/60 hover:border-cyan-300'
+          ? 'bg-white border-blue-300 hover:border-blue-400'
+          : themeConfig.name === 'ninja-green'
+          ? 'bg-white border-lime-500 hover:border-lime-600'
+          : 'bg-slate-900 border-cyan-500/60 hover:border-cyan-300'
       }`}
       style={{
-        animation: themeConfig.name === 'dark-neon' ? 'pot-glow 3s ease-in-out infinite' : 'none'
+        animation: themeConfig.name === 'dark-neon' ? 'pot-glow 3s ease-in-out infinite' : themeConfig.name === 'ninja-green' ? 'none' : 'none'
       }}
     >
       {/* Starfield background */}
@@ -320,36 +325,18 @@ export function PotOfGoldTracker() {
       {/* Header section */}
       <div className="relative z-10 flex items-start justify-between mb-3 gap-3">
         <div className="cursor-pointer" onClick={handleEditClick}>
-          <h3 className={`font-black text-lg md:text-xl mb-1`}
-          style={themeConfig.name === 'simple-light' ? {
-            backgroundImage: 'linear-gradient(to right, rgb(29, 78, 216), rgb(37, 99, 235))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            color: 'transparent'
-          } : {
-            backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            color: 'transparent'
-          }}>
+          <h3 className={`font-black text-lg md:text-xl mb-1 ${
+            themeConfig.name === 'simple-light' ? 'text-blue-700' :
+            themeConfig.name === 'ninja-green' ? 'text-green-800' :
+            'text-white'
+          }`}>
             Monthly Profit Goal
           </h3>
-          <p className={`text-xs md:text-sm font-semibold`}
-          style={themeConfig.name === 'simple-light' ? {
-            backgroundImage: 'linear-gradient(to right, rgb(37, 99, 235), rgb(59, 130, 246))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            color: 'transparent'
-          } : {
-            backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            color: 'transparent'
-          }}>
+          <p className={`text-xs md:text-sm font-semibold ${
+            themeConfig.name === 'simple-light' ? 'text-blue-600' :
+            themeConfig.name === 'ninja-green' ? 'text-green-700' :
+            'text-slate-300'
+          }`}>
             {Math.min(100, Math.round(progressPercent))}% to your monthly treasure
           </p>
         </div>
@@ -377,9 +364,13 @@ export function PotOfGoldTracker() {
             const isFilled = progressPercent / 100 >= barFillPercent;
             const colors = themeConfig.name === 'simple-light' 
               ? ['bg-blue-400', 'bg-blue-500', 'bg-teal-400', 'bg-teal-500', 'bg-cyan-400']
+              : themeConfig.name === 'ninja-green'
+              ? ['bg-lime-400', 'bg-lime-500', 'bg-green-600', 'bg-yellow-400', 'bg-yellow-500']
               : ['bg-red-400', 'bg-yellow-400', 'bg-green-400', 'bg-blue-400', 'bg-purple-400'];
             const colorRgb = themeConfig.name === 'simple-light'
               ? ['rgb(96, 165, 250)', 'rgb(59, 130, 246)', 'rgb(20, 184, 166)', 'rgb(14, 165, 233)', 'rgb(34, 211, 238)']
+              : themeConfig.name === 'ninja-green'
+              ? ['rgb(163, 230, 53)', 'rgb(132, 204, 22)', 'rgb(21, 128, 61)', 'rgb(250, 204, 21)', 'rgb(234, 179, 8)']
               : ['rgb(248, 113, 113)', 'rgb(250, 204, 21)', 'rgb(74, 222, 128)', 'rgb(96, 165, 250)', 'rgb(192, 132, 250)'];
             return (
               <div
@@ -387,7 +378,7 @@ export function PotOfGoldTracker() {
                 className={`flex-1 rounded-full transition-all duration-500 transform group-hover/rainbow:scale-y-110 ${
                   isFilled
                     ? colors[i]
-                    : themeConfig.name === 'simple-light' ? 'bg-blue-100' : 'bg-gray-700'
+                    : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'bg-blue-100' : 'bg-gray-700'
                 }`}
                 style={{
                   height: `${24 + i * 8}px`,
@@ -405,16 +396,20 @@ export function PotOfGoldTracker() {
         themeConfig.name === 'dark-neon'
           ? 'bg-slate-800/60 border-cyan-400/50'
           : themeConfig.name === 'simple-light'
-          ? 'bg-blue-200 border-purple-300'
+          ? 'bg-blue-200 border-blue-300'
+          : themeConfig.name === 'ninja-green'
+          ? 'bg-lime-100 border-lime-400'
           : 'bg-slate-800 border-cyan-500/30'
       }`}>
         <div
           className={`h-full transition-all duration-700 rounded-full ${
             themeConfig.name === 'dark-neon'
-              ? 'bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 shadow-lg shadow-yellow-400/60'
+              ? 'bg-yellow-400 shadow-lg shadow-yellow-400/60'
               : themeConfig.name === 'simple-light'
-              ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400'
-              : 'bg-gradient-to-r from-yellow-400 via-orange-400 to-orange-500'
+              ? 'bg-blue-500'
+              : themeConfig.name === 'ninja-green'
+              ? 'bg-lime-500'
+              : 'bg-yellow-400'
           }`}
           style={{ 
             width: `${progressPercent}%`,
@@ -426,41 +421,24 @@ export function PotOfGoldTracker() {
       {/* Stats section */}
       <div className="relative z-10 flex items-center justify-between mb-2 gap-2">
         <div className="flex items-baseline gap-3">
-          <span className={`text-4xl font-black`}
+          <span className={`text-4xl font-black ${
+            currentProfit < 0 ? 'text-red-600' :
+            themeConfig.name === 'simple-light' ? 'text-blue-700' :
+            themeConfig.name === 'ninja-green' ? 'text-green-800' :
+            'text-white'
+          }`}
           style={currentProfit < 0 ? {
-            animation: 'blink-red 0.8s ease-in-out infinite',
-            color: 'rgb(239, 68, 68)'
-          } : themeConfig.name === 'simple-light' ? {
-            animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none',
-            backgroundImage: 'linear-gradient(to right, rgb(5, 150, 105), rgb(16, 185, 129))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            color: 'transparent'
-          } : {
-            animation: isGoalReached ? 'pulse-gold 0.6s ease-out' : 'none',
-            backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            color: 'transparent'
-          }}>
+            animation: 'blink-red 0.8s ease-in-out infinite'
+          } : isGoalReached ? {
+            animation: 'pulse-gold 0.6s ease-out'
+          } : {}}>
             ${currentProfit.toFixed(0)}
           </span>
-          <span className={`text-base font-bold`}
-          style={themeConfig.name === 'simple-light' ? {
-            backgroundImage: 'linear-gradient(to right, rgb(16, 185, 129), rgb(52, 211, 153))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            color: 'transparent'
-          } : {
-            backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            color: 'transparent'
-          }}>
+          <span className={`text-base font-bold ${
+            themeConfig.name === 'simple-light' ? 'text-blue-600' :
+            themeConfig.name === 'ninja-green' ? 'text-green-700' :
+            'text-slate-400'
+          }`}>
             / ${goalAmount.toFixed(0)}
           </span>
         </div>
@@ -472,37 +450,23 @@ export function PotOfGoldTracker() {
       {isGoalReached && (
         <div className={`relative z-10 p-4 rounded-2xl text-center text-base font-bold animate-pulse ${
           themeConfig.name === 'dark-neon'
-            ? 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border-2 border-cyan-400/50 shadow-lg shadow-cyan-400/30'
+            ? 'bg-cyan-500/30 border-2 border-cyan-400/50 shadow-lg shadow-cyan-400/30 text-cyan-300'
             : themeConfig.name === 'simple-light'
-            ? 'bg-gradient-to-r from-emerald-200 to-teal-200'
-            : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border-2 border-cyan-400/50'
-        }`}
-        style={{
-          backgroundImage: themeConfig.name === 'simple-light' 
-            ? 'linear-gradient(to right, rgb(5, 150, 105), rgb(20, 184, 166))'
-            : themeConfig.name !== 'dark-neon'
-            ? 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))'
-            : 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          color: 'transparent'
-        }}>
+            ? 'bg-blue-200 border-2 border-blue-300 text-blue-700'
+            : themeConfig.name === 'ninja-green'
+            ? 'bg-lime-200 border-2 border-lime-400 text-lime-700'
+            : 'bg-cyan-500/30 border-2 border-cyan-400/50 text-cyan-300'
+        }`}>
           You found your pot of gold!
         </div>
       )}
 
       {/* Hint text */}
       <div className={`relative z-10 text-sm text-center mt-6 opacity-70 transition-all group-hover:opacity-100 ${
-        themeConfig.name === 'simple-light' ? 'text-blue-600' : 'text-cyan-300'
-      }`}
-      style={themeConfig.name !== 'simple-light' ? {
-        backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-        color: 'transparent'
-      } : {}}>
+        themeConfig.name === 'simple-light' ? 'text-blue-600' :
+        themeConfig.name === 'ninja-green' ? 'text-green-600' :
+        'text-cyan-300'
+      }`}>
         Click the coin to celebrate • Click to edit your goal
       </div>
 
