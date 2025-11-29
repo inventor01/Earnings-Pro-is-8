@@ -125,7 +125,7 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
         {/* Row 5: Next Step */}
         <button
           onClick={() => onNextStep?.()}
-          className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg text-lg font-bold transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+          className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 py-4 rounded-lg text-lg font-bold transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
         >
           Next Step →
         </button>
