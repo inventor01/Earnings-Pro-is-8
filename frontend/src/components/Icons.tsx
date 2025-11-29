@@ -39,9 +39,8 @@ export const Icons = {
   
   AvgOrder: (props: React.SVGProps<SVGSVGElement>) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
-      <rect x="3" y="7" width="5" height="10" rx="0.5" />
-      <rect x="9" y="4" width="5" height="13" rx="0.5" />
-      <rect x="15" y="8" width="5" height="9" rx="0.5" />
+      <rect x="5" y="9" width="5" height="8" />
+      <rect x="14" y="6" width="5" height="11" />
       <line x1="3" y1="18" x2="21" y2="18" />
     </svg>
   ),
