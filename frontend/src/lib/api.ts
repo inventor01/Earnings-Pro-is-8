@@ -78,6 +78,7 @@ export interface Goal {
   id: number;
   timeframe: TimeframeType;
   target_profit: number;
+  goal_name: string;
   created_at: string;
   updated_at: string;
 }
