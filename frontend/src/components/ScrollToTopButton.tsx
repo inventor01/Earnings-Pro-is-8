@@ -33,15 +33,16 @@ export function ScrollToTopButton() {
       {isVisible && (
         <button
           onClick={scrollToTop}
-          className={`fixed right-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full shadow-lg transition-all hover:scale-110 active:scale-95 ${
+          className={`fixed right-5 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full shadow-2xl transition-all hover:scale-125 active:scale-95 animate-bounce ${
             isDarkTheme
-              ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-900'
-              : 'bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-slate-900'
+              ? 'bg-gradient-to-br from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 text-slate-900 border-2 border-cyan-300'
+              : 'bg-gradient-to-br from-yellow-300 to-yellow-400 hover:from-yellow-200 hover:to-yellow-300 text-slate-900 border-2 border-yellow-200'
           }`}
           aria-label="Scroll to top"
+          title="Scroll to top"
         >
-          <svg className="w-5 h-5 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M7 16l-4-4m0 0l4-4m-4 4h18" transform="rotate(90 12 12)" />
+          <svg className="w-7 h-7 font-bold" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M7 16l-4-4m0 0l4-4m-4 4h18" transform="rotate(90 12 12)" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} />
           </svg>
         </button>
       )}
