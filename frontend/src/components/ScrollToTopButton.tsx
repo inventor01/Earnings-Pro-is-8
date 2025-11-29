@@ -9,9 +9,9 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
   const isDarkTheme = theme === 'dark-neon';
 
   const scrollToTop = () => {
-    const header = document.getElementById('header');
-    if (header) {
-      header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const performanceOverview = document.getElementById('performance-overview');
+    if (performanceOverview) {
+      performanceOverview.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
       // Fallback to top if element not found
       window.scrollTo({
