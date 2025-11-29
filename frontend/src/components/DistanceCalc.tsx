@@ -127,7 +127,7 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
             }`}
             title="Tap to backspace, hold to clear"
           >
-            {isCHeld ? '✓ Clear' : 'C'}
+            {isCHeld ? '✓' : '⌫'}
           </button>
           <button
             onClick={() => handleNumber('0')}
