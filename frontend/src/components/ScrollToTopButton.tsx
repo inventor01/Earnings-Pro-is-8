@@ -8,27 +8,32 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
   const { theme } = useTheme();
   const isDarkTheme = theme === 'ninja-dark';
 
-  const scrollToTop = () => {
-    // Try all possible scroll targets
-    const targets = [
-      document.querySelector('.overflow-y-auto') as HTMLElement | null, // Dashboard content
-      document.documentElement, // HTML element
-      document.body, // Body element
-      window // Window object
-    ];
+  const scrollToPerformanceOverview = () => {
+    // Find the performance overview element
+    const performanceOverview = document.getElementById('performance-overview');
+    
+    if (performanceOverview) {
+      // Scroll the element into view smoothly
+      performanceOverview.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    } else {
+      // Fallback: scroll to top if element not found
+      const targets = [
+        document.querySelector('.overflow-y-auto') as HTMLElement | null,
+        document.documentElement,
+        document.body,
+        window
+      ];
 
-    for (const target of targets) {
-      if (target) {
-        if (target === window) {
-          window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-          });
-        } else {
-          target.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-          });
+      for (const target of targets) {
+        if (target) {
+          if (target === window) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            target.scrollTo({ top: 0, behavior: 'smooth' });
+          }
         }
       }
     }
@@ -51,7 +56,7 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
   return (
     <>
         <button
-          onClick={scrollToTop}
+          onClick={scrollToPerformanceOverview}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           className={`fixed right-3 md:right-5 bottom-20 md:bottom-44 z-50 p-2 md:p-3 rounded-full shadow-lg transition-all active:scale-95 active:opacity-100 hover:opacity-100 opacity-60 md:opacity-40 md:hover:scale-110 touch-action-manipulation cursor-pointer ${
@@ -59,8 +64,8 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
               ? 'bg-gradient-to-br from-cyan-400 to-cyan-500 text-slate-900 border-2 border-cyan-300'
               : 'bg-gradient-to-br from-yellow-300 to-yellow-400 text-slate-900 border-2 border-yellow-200'
           }`}
-          aria-label="Scroll to top"
-          title="Scroll to top"
+          aria-label="Scroll to Performance Overview"
+          title="Scroll to Performance Overview"
           style={{ touchAction: 'manipulation', WebkitTouchCallout: 'none' }}
         >
           <svg className="w-5 md:w-6 h-5 md:h-6 font-bold" fill="currentColor" viewBox="0 0 24 24">
