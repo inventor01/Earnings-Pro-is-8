@@ -845,7 +845,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           <div className="lg:col-span-3 space-y-6 md:space-y-8 lg:space-y-10 scroll-smooth" data-tour="performance">
             {/* Performance Overview Header with Toggle */}
             <div className="flex items-center justify-between gap-2" id="performance-overview">
-              <h2 className={`flex items-center gap-3 text-2xl md:text-3xl font-black tracking-wider drop-shadow-lg ${isDarkTheme ? 'text-green-500' : 'text-slate-700'}`} style={{fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Courier, monospace', letterSpacing: '0.1em', ...(isDarkTheme ? {textShadow: '0 0 15px rgba(34, 197, 94, 0.4)'} : {})}}>
+              <h2 className={`flex items-center gap-3 text-2xl md:text-3xl font-black tracking-tight drop-shadow-lg ${isDarkTheme ? 'text-green-500' : 'text-slate-700'}`} style={{fontFamily: '"Trebuchet MS", "Arial Black", sans-serif', ...(isDarkTheme ? {textShadow: '0 0 15px rgba(34, 197, 94, 0.4)'} : {})}}>
                 <svg className="w-8 h-8 md:w-10 md:h-10" fill="currentColor" viewBox="0 0 24 24" style={isDarkTheme ? {filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))'} : {}}>
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                 </svg>
