@@ -845,8 +845,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           <div className="lg:col-span-3 space-y-6 md:space-y-8 lg:space-y-10 scroll-smooth" data-tour="performance">
             {/* Performance Overview Header with Toggle */}
             <div className="flex items-center justify-between gap-2" id="performance-overview">
-              <h2 className={`flex items-center gap-3 text-lg md:text-xl font-black tracking-tight drop-shadow-lg ${isDarkTheme ? 'text-green-500' : 'text-slate-700'}`} style={{fontFamily: '"Trebuchet MS", "Arial Black", sans-serif', ...(isDarkTheme ? {textShadow: '0 0 15px rgba(34, 197, 94, 0.4)'} : {})}}>
-                <svg className="w-7 h-7 md:w-8 md:h-8" fill="currentColor" viewBox="0 0 24 24" style={isDarkTheme ? {filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))'} : {}}>
+              <h2 className={`flex items-center gap-3 text-lg md:text-xl font-black tracking-tight drop-shadow-lg text-white`} style={{fontFamily: '"Trebuchet MS", "Arial Black", sans-serif'}}>
+                <svg className="w-7 h-7 md:w-8 md:h-8" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                 </svg>
                 PERFORMANCE OVERVIEW
