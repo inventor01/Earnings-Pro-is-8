@@ -96,7 +96,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
     setError('');
   };
 
-  const progressColor = 'bg-blue-500';
+  const progressColor = 'bg-lime-500';
   // Round to avoid floating point issues - if progress is 99.5% or higher, show 100%
   const displayProgress = goalProgress >= 99.5 ? 100 : Math.max(0, Math.min(goalProgress, 100));
   const displayPercentage = displayProgress === 100 ? 100 : Math.round(goalProgress);
@@ -105,7 +105,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
     // Show edit form if editing, otherwise show "Set Goal" button
     if (isEditing) {
       return (
-        <div className={`w-full px-4 py-3 ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200'}`}>
+        <div className={`w-full px-4 py-3 ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700' : 'bg-gradient-to-r from-lime-50 to-yellow-50 border-b border-lime-200'}`}>
           <div className="max-w-6xl mx-auto space-y-2">
             <div className="flex items-center gap-2">
               <span className={`text-sm font-medium ${isDarkTheme ? 'text-slate-300' : 'text-gray-600'}`}>{TIMEFRAME_LABELS[timeframe]} Goal:</span>
@@ -115,13 +115,13 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
                 value={tempGoal}
                 onChange={(e) => setTempGoal(e.target.value)}
                 placeholder="Enter goal amount"
-                className={`px-3 py-2 border-2 rounded-lg text-sm w-32 focus:outline-none focus:ring-2 transition-all font-medium ${isDarkTheme ? 'bg-slate-700 border-cyan-500 text-cyan-300 focus:ring-cyan-500 focus:border-cyan-500' : 'bg-white border-blue-400 text-gray-800 focus:ring-blue-500 focus:border-blue-500'}`}
+                className={`px-3 py-2 border-2 rounded-lg text-sm w-32 focus:outline-none focus:ring-2 transition-all font-medium ${isDarkTheme ? 'bg-slate-700 border-lime-500 text-lime-300 focus:ring-lime-500 focus:border-lime-500' : 'bg-white border-lime-400 text-gray-800 focus:ring-lime-500 focus:border-lime-500'}`}
                 autoFocus
               />
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className={`px-3 py-2 text-white text-xs font-bold rounded-lg hover:scale-105 disabled:bg-gray-400 transition-all duration-200 uppercase tracking-wide ${isDarkTheme ? 'bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600' : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 hover:shadow-lg'}`}
+                className={`px-3 py-2 text-white text-xs font-bold rounded-lg hover:scale-105 disabled:bg-gray-400 transition-all duration-200 uppercase tracking-wide ${isDarkTheme ? 'bg-gradient-to-r from-lime-600 to-green-700 hover:from-lime-700 hover:to-green-800' : 'bg-gradient-to-r from-lime-500 to-green-700 hover:from-lime-600 hover:to-green-800 hover:shadow-lg'}`}
               >
                 {isSaving ? 'Saving...' : 'Save'}
               </button>
@@ -143,7 +143,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
     }
 
     return (
-      <div className={`w-full px-4 py-3 animate-pulse ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200'}`}>
+      <div className={`w-full px-4 py-3 animate-pulse ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700' : 'bg-gradient-to-r from-lime-50 to-yellow-50 border-b border-lime-200'}`}>
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className={`text-sm ${isDarkTheme ? 'text-slate-300' : 'text-gray-600'}`}>
             <span className="font-medium">{TIMEFRAME_LABELS[timeframe]} Goal:</span> Set a target to track progress
@@ -151,7 +151,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
           <div className="flex gap-2">
             <button
               onClick={handleEditClick}
-              className={`px-3 py-1 text-white text-sm rounded-lg transition-all duration-200 font-medium edit-button-hover ${isDarkTheme ? 'bg-cyan-600 hover:bg-cyan-700 hover:shadow-lg hover:shadow-cyan-500/20' : 'bg-blue-500 hover:bg-blue-600 hover:shadow-lg'}`}
+              className={`px-3 py-1 text-white text-sm rounded-lg transition-all duration-200 font-medium edit-button-hover ${isDarkTheme ? 'bg-lime-600 hover:bg-lime-700 hover:shadow-lg hover:shadow-lime-500/20' : 'bg-lime-500 hover:bg-lime-600 hover:shadow-lg'}`}
             >
               Set Goal
             </button>
@@ -171,13 +171,13 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
   }
 
   return (
-    <div className={`w-full px-2 md:px-5 py-2 md:py-4 transition-all duration-500 shadow-md ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b border-slate-700' : 'bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border-b border-blue-300'}`}>
+    <div className={`w-full px-2 md:px-5 py-2 md:py-4 transition-all duration-500 shadow-md ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b border-slate-700' : 'bg-gradient-to-r from-lime-50 via-yellow-50 to-lime-50 border-b border-lime-300'}`}>
       <div className="max-w-6xl mx-auto">
         {/* Single inline row */}
         <div className="flex items-center gap-1.5 md:gap-4 justify-between">
           <div className="flex items-center gap-1 md:gap-4 flex-nowrap overflow-x-auto scrollbar-hide">
             {/* Label - very compact on mobile */}
-            <span className={`text-xs md:text-base lg:text-lg font-bold transition-colors duration-500 goal-label-animated whitespace-nowrap ${isDarkTheme ? 'text-cyan-400' : 'text-blue-700'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <span className={`text-xs md:text-base lg:text-lg font-bold transition-colors duration-500 goal-label-animated whitespace-nowrap ${isDarkTheme ? 'text-lime-400' : 'text-green-800'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
               {TIMEFRAME_LABELS[timeframe].replace("'s", "")}:
             </span>
 
@@ -190,13 +190,13 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
                   value={tempGoal}
                   onChange={(e) => setTempGoal(e.target.value)}
                   placeholder="Goal"
-                  className={`px-2 py-1 border-2 rounded text-xs md:text-base w-16 md:w-28 focus:outline-none focus:ring-2 transition-all font-medium ${isDarkTheme ? 'bg-slate-700 border-cyan-500 text-cyan-300 focus:ring-cyan-500 focus:border-cyan-500' : 'bg-white border-blue-400 text-gray-800 focus:ring-blue-500 focus:border-blue-500'}`}
+                  className={`px-2 py-1 border-2 rounded text-xs md:text-base w-16 md:w-28 focus:outline-none focus:ring-2 transition-all font-medium ${isDarkTheme ? 'bg-slate-700 border-lime-500 text-lime-300 focus:ring-lime-500 focus:border-lime-500' : 'bg-white border-lime-400 text-gray-800 focus:ring-lime-500 focus:border-lime-500'}`}
                   autoFocus
                 />
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className={`px-2 py-1 md:px-3 md:py-2 text-white text-xs font-bold rounded hover:scale-105 disabled:bg-gray-400 transition-all ${isDarkTheme ? 'bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600' : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600'}`}
+                  className={`px-2 py-1 md:px-3 md:py-2 text-white text-xs font-bold rounded hover:scale-105 disabled:bg-gray-400 transition-all ${isDarkTheme ? 'bg-gradient-to-r from-lime-600 to-green-700 hover:from-lime-700 hover:to-green-800' : 'bg-gradient-to-r from-lime-500 to-green-700 hover:from-lime-600 hover:to-green-800'}`}
                 >
                   {isSaving ? '...' : 'OK'}
                 </button>
@@ -209,12 +209,12 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
               </div>
             ) : (
               <div className="flex items-center gap-1 md:gap-2 whitespace-nowrap">
-                <span className={`text-xl md:text-3xl lg:text-4xl font-black transition-colors duration-500 ${isDarkTheme ? 'text-cyan-400' : 'text-blue-600'}`} style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <span className={`text-xl md:text-3xl lg:text-4xl font-black transition-colors duration-500 ${isDarkTheme ? 'text-lime-400' : 'text-lime-600'}`} style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   ${goalAmount}
                 </span>
                 <button
                   onClick={handleEditClick}
-                  className={`text-xs font-bold transition-all ${isDarkTheme ? 'text-cyan-400 hover:text-cyan-300' : 'text-blue-600 hover:text-blue-800'}`}
+                  className={`text-xs font-bold transition-all ${isDarkTheme ? 'text-lime-400 hover:text-lime-300' : 'text-lime-600 hover:text-lime-800'}`}
                   title="Edit goal"
                 >
                   edit
@@ -226,11 +226,11 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
             <span className={`hidden md:inline text-lg ${isDarkTheme ? 'text-slate-600' : 'text-gray-400'}`}>•</span>
 
             {/* Progress Info - very compact on mobile */}
-            <span className={`text-xs md:text-base lg:text-lg font-bold transition-colors duration-500 flex items-center gap-0.5 md:gap-2 whitespace-nowrap ${isGoalReached ? (isDarkTheme ? 'text-cyan-400' : 'text-blue-700') : (isDarkTheme ? 'text-slate-300' : 'text-gray-700')}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <span className={`text-xs md:text-base lg:text-lg font-bold transition-colors duration-500 flex items-center gap-0.5 md:gap-2 whitespace-nowrap ${isGoalReached ? (isDarkTheme ? 'text-lime-400' : 'text-green-800') : (isDarkTheme ? 'text-slate-300' : 'text-gray-700')}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
               <span className="hidden md:inline">${currentProfit.toFixed(2)}</span>
               <span className={`hidden md:inline ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>/</span>
               <span>${goalAmount}</span>
-              <span key={percentageKey} className={`font-black text-xs md:text-lg lg:text-xl percentage-display inline-block ${isDarkTheme ? 'text-cyan-400' : 'text-blue-600'}`} style={{ fontFamily: "'Outfit', sans-serif" }}>
+              <span key={percentageKey} className={`font-black text-xs md:text-lg lg:text-xl percentage-display inline-block ${isDarkTheme ? 'text-lime-400' : 'text-lime-600'}`} style={{ fontFamily: "'Outfit', sans-serif" }}>
                 {displayPercentage}%
               </span>
             </span>
@@ -249,9 +249,9 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
         </div>
 
         {/* Progress bar - bigger */}
-        <div className={`w-full rounded-full h-2.5 md:h-4 overflow-hidden shadow-inner transition-all duration-500 progress-section mt-2 md:mt-2.5 ${isDarkTheme ? 'bg-slate-700 shadow-cyan-900/30' : 'bg-gray-300 shadow-blue-300'}`}>
+        <div className={`w-full rounded-full h-2.5 md:h-4 overflow-hidden shadow-inner transition-all duration-500 progress-section mt-2 md:mt-2.5 ${isDarkTheme ? 'bg-slate-700 shadow-lime-900/30' : 'bg-gray-300 shadow-lime-300'}`}>
           <div
-            className={`h-2.5 md:h-4 rounded-full transition-all duration-500 ease-out progress-bar-fill ${goalProgress > 50 ? 'shimmer-effect' : ''} ${isGoalReached ? 'goal-pulse shadow-lg' : ''} ${isDarkTheme ? 'bg-gradient-to-r from-cyan-500 to-cyan-400 shadow-cyan-500/50' : 'bg-blue-500'}`}
+            className={`h-2.5 md:h-4 rounded-full transition-all duration-500 ease-out progress-bar-fill ${goalProgress > 50 ? 'shimmer-effect' : ''} ${isGoalReached ? 'goal-pulse shadow-lg' : ''} ${isDarkTheme ? 'bg-gradient-to-r from-lime-500 to-lime-400 shadow-lime-500/50' : 'bg-gradient-to-r from-lime-500 to-green-600'}`}
             style={{ width: `${displayProgress}%` }}
           />
         </div>
