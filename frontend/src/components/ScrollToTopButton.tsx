@@ -15,7 +15,7 @@ export function ScrollToTopButton() {
     <>
         <button
           onClick={scrollToTop}
-          className={`fixed right-3 md:right-5 top-1/2 -translate-y-1/2 z-50 p-2 md:p-3 rounded-full shadow-lg transition-all active:scale-95 active:opacity-100 hover:opacity-100 opacity-40 md:hover:scale-110 touch-action-manipulation ${
+          className={`fixed right-3 md:right-5 bottom-6 md:bottom-8 z-50 p-2 md:p-3 rounded-full shadow-lg transition-all active:scale-95 active:opacity-100 hover:opacity-100 opacity-40 md:hover:scale-110 touch-action-manipulation ${
             isDarkTheme
               ? 'bg-gradient-to-br from-cyan-400 to-cyan-500 text-slate-900 border-2 border-cyan-300'
               : 'bg-gradient-to-br from-yellow-300 to-yellow-400 text-slate-900 border-2 border-yellow-200'
