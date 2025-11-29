@@ -327,10 +327,10 @@ export function PotOfGoldTracker() {
         <div className="cursor-pointer" onClick={handleEditClick}>
           <h3 className={`font-black text-lg md:text-xl mb-1 ${
             themeConfig.name === 'simple-light' ? 'text-blue-700' :
-            themeConfig.name === 'ninja-green' ? 'text-green-800' :
+            themeConfig.name === 'ninja-green' ? 'text-yellow-600' :
             'text-white'
           }`}>
-            Monthly Earnings Target
+            💰 Monthly Earnings Target
           </h3>
           <p className={`text-xs md:text-sm font-semibold ${
             themeConfig.name === 'simple-light' ? 'text-blue-600' :
@@ -345,10 +345,10 @@ export function PotOfGoldTracker() {
           className="text-5xl md:text-6xl cursor-pointer hover:scale-125 transition-transform"
           style={{
             animation: 'pulse-gold 1.5s ease-in-out infinite',
-            filter: 'drop-shadow(0 0 10px rgba(250, 204, 21, 0.8))'
+            filter: 'drop-shadow(0 0 12px rgba(250, 204, 21, 1))'
           }}
         >
-          💵
+          💰
         </div>
       </div>
 
@@ -364,10 +364,10 @@ export function PotOfGoldTracker() {
                   className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs md:text-sm transition-all duration-500 ${
                     isReached
                       ? themeConfig.name === 'ninja-green'
-                        ? 'bg-lime-500 text-white shadow-lg shadow-lime-500/50'
+                        ? 'bg-gradient-to-br from-yellow-400 to-yellow-500 text-gray-900 shadow-lg shadow-yellow-400/60'
                         : 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/50'
                       : themeConfig.name === 'ninja-green'
-                      ? 'bg-lime-100 text-green-700 border-2 border-lime-300'
+                      ? 'bg-yellow-200 text-yellow-800 border-2 border-yellow-400'
                       : 'bg-slate-200 text-slate-600 border-2 border-slate-300'
                   }`}
                 >
@@ -378,10 +378,10 @@ export function PotOfGoldTracker() {
                     className={`flex-1 h-1 transition-all duration-500 mt-3 -mb-3 ${
                       progressPercent > milestoneTrigger
                         ? themeConfig.name === 'ninja-green'
-                          ? 'bg-lime-500 shadow-md shadow-lime-500/50'
+                          ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 shadow-md shadow-yellow-400/60'
                           : 'bg-cyan-400 shadow-md shadow-cyan-400/50'
                         : themeConfig.name === 'ninja-green'
-                        ? 'bg-lime-200'
+                        ? 'bg-yellow-200'
                         : 'bg-slate-300'
                     }`}
                   />
@@ -409,12 +409,12 @@ export function PotOfGoldTracker() {
               : themeConfig.name === 'simple-light'
               ? 'bg-blue-500'
               : themeConfig.name === 'ninja-green'
-              ? 'bg-lime-500'
+              ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 shadow-lg shadow-yellow-400/60'
               : 'bg-yellow-400'
           }`}
           style={{ 
             width: `${progressPercent}%`,
-            boxShadow: themeConfig.name === 'dark-neon' ? `0 0 15px rgba(250, 204, 21, 0.5)` : 'none'
+            boxShadow: themeConfig.name === 'ninja-green' ? `0 0 15px rgba(250, 204, 21, 0.6)` : themeConfig.name === 'dark-neon' ? `0 0 15px rgba(250, 204, 21, 0.5)` : 'none'
           }}
         />
       </div>
@@ -455,10 +455,10 @@ export function PotOfGoldTracker() {
             : themeConfig.name === 'simple-light'
             ? 'bg-blue-200 border-2 border-blue-300 text-blue-700'
             : themeConfig.name === 'ninja-green'
-            ? 'bg-lime-200 border-2 border-lime-400 text-lime-700'
+            ? 'bg-gradient-to-r from-yellow-200 to-yellow-100 border-2 border-yellow-400 shadow-lg shadow-yellow-400/40 text-yellow-800'
             : 'bg-cyan-500/30 border-2 border-cyan-400/50 text-cyan-300'
         }`}>
-          Mission accomplished, ninja! 💵
+          🥷 Mission accomplished, ninja! 💰
         </div>
       )}
 
