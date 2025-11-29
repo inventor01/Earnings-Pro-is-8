@@ -188,7 +188,7 @@ export function PotOfGoldTracker() {
       }`}>
         <div className="space-y-4">
           <div className="text-center">
-            <div className="text-5xl md:text-6xl mb-3">🥷</div>
+            <div className="text-5xl md:text-6xl mb-3">💰</div>
             <h3 className={`font-black text-lg md:text-xl mb-2 ${
               themeConfig.name === 'simple-light' ? 'text-blue-700' : 
               themeConfig.name === 'ninja-green' ? 'text-green-800' :
@@ -348,7 +348,7 @@ export function PotOfGoldTracker() {
             filter: 'drop-shadow(0 0 10px rgba(34, 211, 238, 0.8))'
           }}
         >
-          🥷
+          💰
         </div>
       </div>
 
@@ -457,7 +457,7 @@ export function PotOfGoldTracker() {
             ? 'bg-lime-200 border-2 border-lime-400 text-lime-700'
             : 'bg-cyan-500/30 border-2 border-cyan-400/50 text-cyan-300'
         }`}>
-          Mission accomplished, ninja! 🥷
+          Mission accomplished, ninja! 💰
         </div>
       )}
 
@@ -467,7 +467,7 @@ export function PotOfGoldTracker() {
         themeConfig.name === 'ninja-green' ? 'text-green-600' :
         'text-cyan-300'
       }`}>
-        Click the ninja to celebrate • Click to edit your target
+        Click the cash to celebrate • Click to edit your target
       </div>
 
       {/* Hide button */}
