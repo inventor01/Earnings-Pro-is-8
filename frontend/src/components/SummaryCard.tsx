@@ -160,11 +160,7 @@ export function SummaryCard({
             }
           }
         `}</style>
-        <div className={`relative p-4 md:p-5 lg:p-6 rounded-xl transition-all duration-300 group/card border-2 ${
-          themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
-            ? `${bgStyle} hover:shadow-lg hover:shadow-lime-300/30`
-            : 'bg-slate-800 border-slate-700/50'
-        }`}>
+        <div className={`relative p-4 md:p-5 lg:p-6 rounded-xl transition-all duration-300 group/card border-2 ${bgStyle} hover:shadow-lg hover:shadow-lime-300/30`}>
           {/* Top accent line - solid color */}
           <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-xl ${
             label === 'Revenue' ? 'bg-lime-500' :
@@ -189,15 +185,13 @@ export function SummaryCard({
             
             <div className="space-y-2">
               <div className={`text-4xl md:text-6xl lg:text-7xl font-black font-mono transition-all duration-300 group-hover/card:scale-110 cursor-pointer leading-none whitespace-nowrap overflow-hidden text-ellipsis ${
-                isNegative ? 'text-red-600' : themeConfig.name === 'ninja-green' ? 'text-lime-700' : secondary
+                isNegative ? 'text-red-600' : 'text-lime-700'
               }`}
               style={isNegative ? {
                 animation: 'blink-red 0.8s ease-in-out infinite'
-              } : themeConfig.name === 'ninja-green' ? {
+              } : {
                 animation: 'subtle-glow 2s ease-in-out infinite',
                 filter: 'drop-shadow(0 0 8px rgba(132, 204, 22, 0.3))'
-              } : {
-                animation: 'subtle-glow 2s ease-in-out infinite'
               }}>
                 <CountUpNumber value={value} />
               </div>
@@ -221,9 +215,7 @@ export function SummaryCard({
               </div>
               
               {subtext && (
-                <div className={`text-xs md:text-sm lg:text-base font-medium ${
-                  themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-gray-700' : 'text-slate-400'
-                }`}>
+                <div className="text-xs md:text-sm lg:text-base font-medium text-gray-700">
                   {subtext}
                 </div>
               )}
@@ -248,9 +240,7 @@ export function SummaryCard({
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3 md:mb-4 px-2">
-        <div className={`text-xs md:text-sm font-bold uppercase tracking-widest ${
-          themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-gray-700' : 'text-slate-400'
-        } opacity-80 font-mono`}>
+        <div className="text-xs md:text-sm font-bold uppercase tracking-widest text-gray-700 opacity-80 font-mono">
           Performance Overview
         </div>
         
@@ -262,29 +252,17 @@ export function SummaryCard({
                 <>
                   <button
                     onClick={() => onDayChange(dayOffset - 1)}
-                    className={`p-1.5 md:p-2 rounded-lg transition-all ${
-                      isDarkTheme
-                        ? 'bg-lime-700 text-lime-100 hover:bg-lime-600 hover:shadow-lg hover:shadow-lime-500/20'
-                        : 'bg-lime-500 text-white hover:bg-lime-600'
-                    } font-bold text-sm md:text-base`}
+                    className="p-1.5 md:p-2 rounded-lg transition-all bg-lime-500 text-white hover:bg-lime-600 font-bold text-sm md:text-base"
                     title="Previous day"
                   >
                     ←
                   </button>
-                  <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
-                    isDarkTheme
-                      ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-lime-300 border border-lime-500/30'
-                      : 'bg-lime-200 text-green-900 border border-lime-500'
-                  }`}>
+                  <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-lime-200 text-green-900 border border-lime-500">
                     {getDateLabel(dayOffset)}
                   </div>
                   <button
                     onClick={() => onDayChange(dayOffset + 1)}
-                    className={`p-1.5 md:p-2 rounded-lg transition-all ${
-                      isDarkTheme
-                        ? 'bg-lime-700 text-lime-100 hover:bg-lime-600 hover:shadow-lg hover:shadow-lime-500/20'
-                        : 'bg-lime-500 text-white hover:bg-lime-600'
-                    } font-bold text-sm md:text-base`}
+                    className="p-1.5 md:p-2 rounded-lg transition-all bg-lime-500 text-white hover:bg-lime-600 font-bold text-sm md:text-base"
                     title="Next day"
                   >
                     →
@@ -292,11 +270,7 @@ export function SummaryCard({
                 </>
               )}
               {!showDayNav && periodLabel && (
-                <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap ${
-                  isDarkTheme
-                    ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-lime-300 border border-lime-500/30'
-                    : 'bg-lime-200 text-green-900 border border-lime-500'
-                }`}>
+                <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-lime-200 text-green-900 border border-lime-500">
                   {periodLabel}
                 </div>
               )}
@@ -371,7 +345,7 @@ export function SummaryCard({
             label="Avg Order"
             value={avgOrder}
             color="from-yellow-500 to-yellow-400"
-            secondary={themeConfig.name === 'ninja-green' ? 'text-yellow-900' : colorConfig.accent}
+            secondary="text-yellow-900"
           />
         )}
       </div>
@@ -381,13 +355,7 @@ export function SummaryCard({
         <div className="mt-3 md:mt-4 flex justify-center">
           <button
             onClick={onShare}
-            className={`px-3 py-1 rounded-lg transition-all text-xs md:text-sm font-medium opacity-70 hover:opacity-100 ${
-              themeConfig.name === 'dark-neon'
-                ? 'text-lime-400 hover:text-lime-300 hover:bg-lime-700'
-                : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
-                ? 'text-lime-600 hover:text-lime-700 hover:bg-lime-100'
-                : 'text-gray-600 hover:text-black hover:bg-gray-100'
-            }`}
+            className="px-3 py-1 rounded-lg transition-all text-xs md:text-sm font-medium opacity-70 hover:opacity-100 text-lime-600 hover:text-lime-700 hover:bg-lime-100"
             title="Share performance"
           >
             🔗 Share

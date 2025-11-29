@@ -1,6 +1,5 @@
 import { Settings } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
-import { getAllThemes, ThemeName } from '../lib/themes';
 import { MetricVisibility } from './SummaryCard';
 import { useQuery } from '@tanstack/react-query';
 import { useSimpleMode } from '../lib/simpleModeContext';
@@ -27,7 +26,7 @@ interface SettingsDrawerProps {
 }
 
 export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, onLogout, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
-  const { theme, setTheme, config } = useTheme();
+  const { config } = useTheme();
   const { isSimple, setIsSimple } = useSimpleMode();
   const { data: userInfo } = useQuery<UserInfo>({
     queryKey: ['userInfo'],
@@ -57,19 +56,13 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
     onMetricVisibilityChange?.(newVisibility);
   };
 
-  const isDark = config.name !== 'simple-light';
-
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose} />
-      <div className={`fixed right-0 top-0 h-full w-full md:w-80 shadow-xl z-50 flex flex-col ${
-        isDark 
-          ? 'bg-slate-900 text-slate-100 border-l border-slate-700' 
-          : 'bg-white text-gray-900 border-l border-gray-200'
-      }`}>
-        <div className={`flex justify-between items-center mb-6 p-6 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'} flex-shrink-0`}>
-          <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Settings</h2>
-          <button onClick={onClose} className={isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700'}>
+      <div className="fixed right-0 top-0 h-full w-full md:w-80 shadow-xl z-50 flex flex-col bg-white text-gray-900 border-l-2 border-lime-500">
+        <div className="flex justify-between items-center mb-6 p-6 border-b border-lime-400 flex-shrink-0">
+          <h2 className="text-xl font-bold text-green-800">Settings</h2>
+          <button onClick={onClose} className="text-green-700 hover:text-green-900">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -78,68 +71,39 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
 
         <div className="flex-1 overflow-y-auto px-6">
           {userInfo && (
-            <div className={`mb-6 p-4 rounded-lg ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-100 border border-gray-200'}`}>
-              <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>👤 Account Information</h3>
+            <div className="mb-6 p-4 rounded-lg bg-lime-50 border-2 border-lime-400">
+              <h3 className="text-sm font-medium mb-3 text-green-800">👤 Account Information</h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>Username</p>
-                  <p className={`font-semibold ${isDark ? 'text-slate-200' : 'text-gray-900'}`}>{userInfo.first_name}</p>
+                  <p className="text-green-700">Username</p>
+                  <p className="font-semibold text-gray-900">{userInfo.first_name}</p>
                 </div>
                 <div>
-                  <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>Email</p>
-                  <p className={`font-semibold break-all ${isDark ? 'text-slate-200' : 'text-gray-900'}`}>{userInfo.email}</p>
+                  <p className="text-green-700">Email</p>
+                  <p className="font-semibold break-all text-gray-900">{userInfo.email}</p>
                 </div>
               </div>
             </div>
           )}
           
           <div className="mb-6">
-            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+            <label className="block text-sm font-medium mb-2 text-green-800">
               View Mode
             </label>
             <button
               onClick={() => setIsSimple(!isSimple)}
-              className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all mb-3 ${
+              className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all mb-3 border-2 ${
                 isSimple
-                  ? isDark
-                    ? 'bg-cyan-500/30 border border-cyan-400 text-cyan-300'
-                    : 'bg-blue-100 border border-blue-500 text-blue-700'
-                  : isDark
-                  ? 'bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500'
-                  : 'bg-gray-100 border border-gray-300 text-gray-700 hover:border-gray-400'
+                  ? 'bg-lime-500 border-lime-600 text-white'
+                  : 'bg-lime-100 border-lime-400 text-green-900 hover:bg-lime-200'
               }`}
             >
               {isSimple ? '✓ Simple Mode' : '◯ Simple Mode'}
             </button>
           </div>
 
-          <div className="mb-6">
-            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-              Theme
-            </label>
-            <div className="space-y-2">
-              {getAllThemes().map((t) => (
-                <button
-                  key={t.name}
-                  onClick={() => setTheme(t.name as ThemeName)}
-                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    theme === t.name
-                      ? isDark
-                        ? 'bg-cyan-500/30 border border-cyan-400 text-cyan-300'
-                        : 'bg-blue-100 border border-blue-500 text-blue-700'
-                      : isDark
-                      ? 'bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500'
-                      : 'bg-gray-100 border border-gray-300 text-gray-700 hover:border-gray-400'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={`py-6 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-            <h3 className={`text-sm font-medium mb-4 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Performance Overview Metrics</h3>
+          <div className="py-6 border-t border-lime-400">
+            <h3 className="text-sm font-medium mb-4 text-green-800">Performance Overview Metrics</h3>
             <div className="space-y-3">
               {[
                 { key: 'revenue' as const, label: '💰 Revenue' },
@@ -152,14 +116,10 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                 <button
                   key={key}
                   onClick={() => handleMetricToggle(key)}
-                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-3 ${
+                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-3 border-2 ${
                     metricVisibility[key] !== false
-                      ? isDark
-                        ? 'bg-cyan-500/20 border border-cyan-400 text-cyan-300'
-                        : 'bg-blue-100 border border-blue-500 text-blue-700'
-                      : isDark
-                      ? 'bg-slate-800 border border-slate-700 text-slate-400 opacity-50'
-                      : 'bg-gray-100 border border-gray-300 text-gray-500 opacity-50'
+                      ? 'bg-lime-200 border-lime-500 text-green-900'
+                      : 'bg-gray-100 border-gray-300 text-gray-500 opacity-50'
                   }`}
                 >
                   <input
@@ -175,57 +135,45 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
           </div>
         </div>
 
-        <div className={`border-t ${isDark ? 'border-slate-700' : 'border-gray-200'} p-4 flex-shrink-0 space-y-2`}>
+        <div className="border-t border-lime-400 p-4 flex-shrink-0 space-y-2">
           <div>
-            <h3 className={`text-xs font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Help & Tutorial</h3>
+            <h3 className="text-xs font-medium mb-1 text-green-800">Help & Tutorial</h3>
             <button
               onClick={() => {
                 onRestartTour?.();
                 onClose();
               }}
-              className={`w-full py-1.5 px-3 rounded text-sm font-medium transition-all ${
-                isDark
-                  ? 'bg-indigo-900/30 hover:bg-indigo-900/50 border border-indigo-500 text-indigo-400'
-                  : 'bg-indigo-500 hover:bg-indigo-600 text-white'
-              }`}
+              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-600"
             >
               🎓 Restart Tour
             </button>
-            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+            <p className="text-xs mt-0.5 text-green-600">
               See the interactive tour again to learn all features.
             </p>
           </div>
 
           <div data-tour="export">
-            <h3 className={`text-xs font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Export</h3>
+            <h3 className="text-xs font-medium mb-1 text-green-800">Export</h3>
             <button
               onClick={onExport}
-              className={`w-full py-1.5 px-3 rounded text-sm font-medium transition-all ${
-                isDark
-                  ? 'bg-cyan-900/30 hover:bg-cyan-900/50 border border-cyan-500 text-cyan-400'
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
+              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-lime-500 hover:bg-lime-600 text-white border-2 border-lime-600"
             >
               📥 Export to CSV
             </button>
-            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+            <p className="text-xs mt-0.5 text-green-600">
               Download all entries as a CSV file.
             </p>
           </div>
 
           <div>
-            <h3 className={`text-xs font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Danger Zone</h3>
+            <h3 className="text-xs font-medium mb-1 text-green-800">Danger Zone</h3>
             <button
               onClick={handleResetAll}
-              className={`w-full py-1.5 px-3 rounded text-sm font-medium transition-all ${
-                isDark
-                  ? 'bg-red-900/30 hover:bg-red-900/50 border border-red-500 text-red-400'
-                  : 'bg-red-500 hover:bg-red-600 text-white'
-              }`}
+              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-red-500 hover:bg-red-600 text-white border-2 border-red-600"
             >
               🗑️ Reset All Data
             </button>
-            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+            <p className="text-xs mt-0.5 text-green-600">
               Permanently delete all entries. This action cannot be undone.
             </p>
             <button
@@ -233,15 +181,11 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                 onLogout?.();
                 onClose();
               }}
-              className={`w-full py-1.5 px-3 rounded text-sm font-medium transition-all mt-3 ${
-                isDark
-                  ? 'bg-red-900/30 hover:bg-red-900/50 border border-red-500 text-red-400'
-                  : 'bg-red-500 hover:bg-red-600 text-white'
-              }`}
+              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all mt-3 bg-red-500 hover:bg-red-600 text-white border-2 border-red-600"
             >
               🚪 Sign Out
             </button>
-            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+            <p className="text-xs mt-0.5 text-green-600">
               End your session and sign out.
             </p>
           </div>
