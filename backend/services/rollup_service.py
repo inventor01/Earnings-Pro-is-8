@@ -88,6 +88,7 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
                     "id": goal.id,
                     "timeframe": goal.timeframe.value,
                     "target_profit": float(goal.target_profit),
+                    "goal_name": goal.goal_name,
                     "created_at": goal.created_at.isoformat(),
                     "updated_at": goal.updated_at.isoformat()
                 }
