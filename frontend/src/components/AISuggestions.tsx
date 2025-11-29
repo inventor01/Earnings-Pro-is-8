@@ -19,7 +19,9 @@ export function AISuggestions({ fromDate, toDate }: AISuggestionsProps) {
   const { data: suggestions, isLoading, error } = useQuery({
     queryKey: ['suggestions', fromDate, toDate],
     queryFn: () => api.getSuggestions(fromDate, toDate),
-    staleTime: 60000, // 1 minute
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
     enabled: !!fromDate && !!toDate,
   });
 
