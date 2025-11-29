@@ -106,18 +106,13 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   };
 
   const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'ORDER':
-        return '📦';
-      case 'BONUS':
-        return '🎁';
-      case 'EXPENSE':
-        return '💰';
-      case 'CANCELLATION':
-        return '❌';
-      default:
-        return '•';
-    }
+    const iconMap: Record<string, string> = {
+      'ORDER': 'M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z',
+      'BONUS': 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z',
+      'EXPENSE': 'M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm0 20c-4.962 0-9-4.038-9-9s4.038-9 9-9 9 4.038 9 9-4.038 9-9 9zm3.5-9c.828 0 1.5-.672 1.5-1.5S16.328 9 15.5 9 14 9.672 14 10.5s.672 1.5 1.5 1.5zm-7 0c.828 0 1.5-.672 1.5-1.5S9.328 9 8.5 9 7 9.672 7 10.5 7.672 12 8.5 12zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z',
+      'CANCELLATION': 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z'
+    };
+    return iconMap[type] || 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z';
   };
 
   const getAppLogo = (app: string): string | null => {
@@ -235,27 +230,19 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
     }
   };
 
-  const getCategoryEmoji = (category: string) => {
-    switch (category) {
-      case 'GAS':
-        return '⛽';
-      case 'PARKING':
-        return '🅿️';
-      case 'TOLLS':
-        return '🛣️';
-      case 'MAINTENANCE':
-        return '🔧';
-      case 'PHONE':
-        return '📱';
-      case 'SUBSCRIPTION':
-        return '📦';
-      case 'FOOD':
-        return '🍔';
-      case 'LEISURE':
-        return '🎮';
-      default:
-        return '📋';
-    }
+  const getCategoryIcon = (category: string) => {
+    const iconMap: Record<string, string> = {
+      'GAS': 'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z',
+      'PARKING': 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z',
+      'TOLLS': 'M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm11 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM5 12l2-6h10l2 6H5z',
+      'MAINTENANCE': 'M9.5 3C7.57 3 6 4.57 6 6.5c0 .89.35 1.69.91 2.28L2.29 15.86c-.39.39-.39 1.02 0 1.41l1.41 1.41c.39.39 1.02.39 1.41 0l4.62-4.62c.59.56 1.39.94 2.27.94 1.93 0 3.5-1.57 3.5-3.5S11.43 8 9.5 8c-.89 0-1.69.35-2.28.91l-4.62-4.62c-.39-.39-1.02-.39-1.41 0L0 1.41C-.39 1.8-.39 2.43 0 2.82l4.62 4.62C4.35 8.31 4 9.11 4 10c0 1.93 1.57 3.5 3.5 3.5s3.5-1.57 3.5-3.5S11.43 3 9.5 3zm0 5c-.83 0-1.5-.67-1.5-1.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm10-6h2V0h-2v2zm0 18h2v-2h-2v2zm4-9h-2v2h2v-2zM19 0v2h2V0h-2z',
+      'PHONE': 'M17 10.5V7c0 .55-.45 1-1 1H4c-.55 0-1-.45-1-1v3.5C2.01 10.5 1 11.37 1 12.5v6c0 1.13 1.01 2 2.25 2h13.5c1.24 0 2.25-.87 2.25-2v-6c0-1.13-1.01-2-2.25-2zm-13 1.5h11V8H4v3.5z',
+      'SUBSCRIPTION': 'M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z',
+      'FOOD': 'M11.59 7.41L15.17 3.82c.39-.39 1.02-.39 1.41 0l2.83 2.83c.39.39.39 1.02 0 1.41L15.41 11.59c.54-.54.54-1.42 0-1.96l-1.41-1.41c-.55-.55-1.44-.55-1.98 0l-1.41 1.41c-.39.39-.39 1.02 0 1.41L3 21h18V3H3l8.59 8.59z',
+      'LEISURE': 'M15 19.88c.04-.3.13-.59.21-.86.05-.16.09-.32.12-.48.03-.16.04-.32.04-.48 0-.36-.06-.71-.16-1.02-.04-.12-.09-.23-.14-.34-.01-.02-.01-.04-.02-.07-.01-.02-.01-.04-.02-.06-1.42-2.09-3.97-3.59-6.99-3.88V1c0-.55.45-1 1-1h2c.55 0 1 .45 1 1v10.88c1.11-.59 1.99-1.76 1.99-3.13 0-1.97-1.49-3.6-3.37-3.99 1.35-.59 2.37-1.95 2.37-3.5 0-2.21-1.79-4-4-4s-4 1.79-4 4c0 1.54 1.01 2.89 2.37 3.5C6.49 8.27 5 9.9 5 11.88c0 1.37.88 2.54 1.99 3.13V1c0-.55.45-1 1-1h2c.55 0 1 .45 1 1v10.88z',
+      'OTHER': 'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z'
+    };
+    return iconMap[category] || iconMap['OTHER'];
   };
 
   const SortHeader = ({ field, label }: { field: SortField; label: string }) => {
@@ -269,7 +256,11 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
       >
         {label}
         <span className={`inline-flex transition-transform ${isActive && sortOrder === 'desc' ? 'rotate-180' : ''}`}>
-          {isActive ? (sortOrder === 'asc' ? '🔼' : '🔽') : '⇅'}
+          {isActive ? (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+          ) : (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          )}
         </span>
       </button>
     );
@@ -337,14 +328,15 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1 whitespace-nowrap">
-                    <span className="text-xl">{getTypeIcon(entry.type)}</span>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d={getTypeIcon(entry.type)}/></svg>
                     <span className={`text-sm font-bold ${config.textPrimary}`}>{entry.type}</span>
                   </div>
                 </td>
                 <td className="px-4 py-3">
                   {entry.type === 'EXPENSE' ? (
-                    <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block ${getCategoryColor(entry.category || 'OTHER')}`}>
-                      {getCategoryEmoji(entry.category || 'OTHER')} {entry.category || 'OTHER'}
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center gap-1 ${getCategoryColor(entry.category || 'OTHER')}`}>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d={getCategoryIcon(entry.category || 'OTHER')}/></svg>
+                      {entry.category || 'OTHER'}
                     </span>
                   ) : (
                     <div className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center justify-center ${getAppColor(entry.app)}`}>
@@ -383,10 +375,11 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                           link.target = '_blank';
                           link.click();
                         }}
-                        className={`text-xs font-medium ${config.textCyan} hover:opacity-80 transition-opacity`}
+                        className={`text-xs font-medium flex items-center gap-1 ${config.textCyan} hover:opacity-80 transition-opacity`}
                         title="View receipt"
                       >
-                        📸 Receipt
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        Receipt
                       </button>
                     )}
                   </div>
@@ -397,7 +390,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                     className={`text-sm font-medium transition-colors ${config.textSecondary} hover:${config.textCyan}`}
                     title="View entry details"
                   >
-                    👁️
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                   </button>
                   <button
                     onClick={() => onEdit && onEdit(entry)}
