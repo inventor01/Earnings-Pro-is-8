@@ -79,8 +79,8 @@ export function LoginPage() {
                 placeholder="deliverydriver99"
                 className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
                   isDarkTheme
-                    ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-cyan-400'
-                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
+                    ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-lime-400'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-lime-500'
                 }`}
               />
             </div>
@@ -99,8 +99,8 @@ export function LoginPage() {
               placeholder={mode === 'login' ? 'you@example.com or deliverydriver99' : 'you@example.com'}
               className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
                 isDarkTheme
-                  ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-cyan-400'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
+                  ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-lime-400'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-lime-500'
               }`}
               required
             />
@@ -119,8 +119,8 @@ export function LoginPage() {
               placeholder="••••••••"
               className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
                 isDarkTheme
-                  ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-cyan-400'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
+                  ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-lime-400'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-lime-500'
               }`}
               required
             />
@@ -153,8 +153,8 @@ export function LoginPage() {
             onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
             className={`font-semibold transition-colors ${
               isDarkTheme
-                ? 'text-cyan-400 hover:text-cyan-300'
-                : 'text-blue-600 hover:text-blue-700'
+                ? 'text-lime-400 hover:text-lime-300'
+                : 'text-lime-600 hover:text-lime-700'
             }`}
           >
             {mode === 'login' ? 'Sign Up' : 'Sign In'}
@@ -171,8 +171,8 @@ export function LoginPage() {
             onClick={() => login('guest-token')}
             className={`w-full py-2 rounded-lg font-medium transition-all text-sm ${
               isDarkTheme
-                ? 'bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-600'
-                : 'bg-gray-100 hover:bg-gray-200 text-blue-600 border border-gray-300'
+                ? 'bg-lime-900/30 hover:bg-lime-900/50 text-lime-600 border border-lime-500'
+                : 'bg-lime-100 hover:bg-lime-200 text-green-700 border border-lime-400'
             }`}
           >
             Continue as Guest
