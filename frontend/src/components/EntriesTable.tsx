@@ -194,9 +194,9 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
         case 'GAS':
           return 'border-2 border-lime-500 text-lime-600 bg-transparent';
         case 'PARKING':
-          return 'border-2 border-green-500 text-green-600 bg-transparent';
+          return 'border-2 border-green-700 text-green-800 bg-transparent';
         case 'TOLLS':
-          return 'border-2 border-green-600 text-green-700 bg-transparent';
+          return 'border-2 border-green-700 text-green-800 bg-transparent';
         case 'MAINTENANCE':
           return 'border-2 border-lime-500 text-lime-600 bg-transparent';
         case 'PHONE':
@@ -217,9 +217,9 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
       case 'GAS':
         return 'border-2 border-lime-500 text-lime-400 bg-transparent';
       case 'PARKING':
-        return 'border-2 border-green-500 text-green-400 bg-transparent';
+        return 'border-2 border-green-700 text-green-600 bg-transparent';
       case 'TOLLS':
-        return 'border-2 border-green-600 text-green-400 bg-transparent';
+        return 'border-2 border-green-700 text-green-600 bg-transparent';
       case 'MAINTENANCE':
         return 'border-2 border-lime-500 text-lime-400 bg-transparent';
       case 'PHONE':
