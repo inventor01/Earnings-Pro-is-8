@@ -1,5 +1,4 @@
 import { useTheme } from '../lib/themeContext';
-import { useEffect, useRef } from 'react';
 
 interface ScrollToTopButtonProps {
   isFormOpen?: boolean;
@@ -8,61 +7,23 @@ interface ScrollToTopButtonProps {
 export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps) {
   const { theme } = useTheme();
   const isDarkTheme = theme === 'ninja-dark';
-  const containerRef = useRef<HTMLElement | null>(null);
-
-  // Find the scrollable container on mount and whenever DOM changes
-  useEffect(() => {
-    const findScrollContainer = () => {
-      const performanceOverview = document.getElementById('performance-overview');
-      if (performanceOverview) {
-        const container = performanceOverview.closest('.overflow-y-auto') as HTMLElement | null;
-        if (container) {
-          containerRef.current = container;
-          return;
-        }
-      }
-      
-      // Fallback: find first overflow-y-auto container
-      const container = document.querySelector('.overflow-y-auto') as HTMLElement | null;
-      if (container) {
-        containerRef.current = container;
-      }
-    };
-
-    findScrollContainer();
-    
-    // Re-find on window resize in case layout changed
-    window.addEventListener('resize', findScrollContainer);
-    return () => window.removeEventListener('resize', findScrollContainer);
-  }, []);
 
   const scrollToTop = () => {
-    // Use the cached container or find it fresh
-    let container = containerRef.current;
-    
-    if (!container) {
-      const performanceOverview = document.getElementById('performance-overview');
-      container = performanceOverview?.closest('.overflow-y-auto') as HTMLElement | null;
-      
-      if (!container) {
-        container = document.querySelector('.overflow-y-auto') as HTMLElement | null;
-      }
-      
-      containerRef.current = container;
-    }
-    
-    if (container) {
-      container.scrollTo({
+    // Strategy 1: Scroll the overflow-y-auto container (dashboard content)
+    const scrollContainer = document.querySelector('.overflow-y-auto') as HTMLElement | null;
+    if (scrollContainer && scrollContainer.scrollTop > 0) {
+      scrollContainer.scrollTo({
         top: 0,
         behavior: 'smooth'
       });
-    } else {
-      // Fallback to window scroll
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
+      return;
     }
+    
+    // Strategy 2: Scroll the window
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLButtonElement>) => {
