@@ -74,7 +74,7 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
     chipActiveBg: 'bg-yellow-400',
     
     tableBg: 'bg-white border border-lime-500',
-    tableHeader: 'bg-lime-200 border-b border-lime-500',
+    tableHeader: 'bg-lime-100 border-b border-lime-500',
     tableHeaderText: 'text-green-900',
     tableRow: 'text-gray-900',
     tableRowHover: 'hover:bg-yellow-50',
