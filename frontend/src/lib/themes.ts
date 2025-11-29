@@ -96,12 +96,12 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
     dashVia: 'via-gray-850',
     
     kpiColors: {
-      green: { glow: 'text-lime-400', accent: 'text-lime-300', border: 'border-lime-600', bg: 'bg-gray-800 border-lime-700' },
-      red: { glow: 'text-red-400', accent: 'text-red-300', border: 'border-red-600', bg: 'bg-gray-800 border-red-700' },
-      blue: { glow: 'text-yellow-400', accent: 'text-yellow-300', border: 'border-yellow-600', bg: 'bg-gray-800 border-yellow-700' },
-      purple: { glow: 'text-green-400', accent: 'text-green-300', border: 'border-green-600', bg: 'bg-gray-800 border-green-700' },
-      orange: { glow: 'text-yellow-400', accent: 'text-yellow-300', border: 'border-yellow-600', bg: 'bg-gray-800 border-yellow-700' },
-      gray: { glow: 'text-lime-400', accent: 'text-lime-300', border: 'border-lime-600', bg: 'bg-gray-800 border-lime-700' },
+      green: { glow: 'text-lime-300', accent: 'text-lime-200', border: 'border-lime-500', bg: 'bg-gradient-to-br from-gray-900 to-gray-800 border-lime-600' },
+      red: { glow: 'text-red-300', accent: 'text-red-200', border: 'border-red-500', bg: 'bg-gradient-to-br from-gray-900 to-gray-800 border-red-600' },
+      blue: { glow: 'text-yellow-300', accent: 'text-yellow-200', border: 'border-yellow-500', bg: 'bg-gradient-to-br from-gray-900 to-gray-800 border-yellow-600' },
+      purple: { glow: 'text-green-300', accent: 'text-green-200', border: 'border-green-500', bg: 'bg-gradient-to-br from-gray-900 to-gray-800 border-green-600' },
+      orange: { glow: 'text-yellow-300', accent: 'text-yellow-200', border: 'border-yellow-500', bg: 'bg-gradient-to-br from-gray-900 to-gray-800 border-yellow-600' },
+      gray: { glow: 'text-lime-300', accent: 'text-lime-200', border: 'border-lime-500', bg: 'bg-gradient-to-br from-gray-900 to-gray-800 border-lime-600' },
     },
     
     titleColor: 'text-yellow-300',
