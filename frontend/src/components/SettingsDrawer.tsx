@@ -185,7 +185,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             <h3 className="text-xs font-semibold mb-1.5 text-red-700">Danger Zone</h3>
             <button
               onClick={handleResetAll}
-              className="w-full py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all bg-red-500 hover:bg-red-600 text-white border border-red-600 flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
+              className="w-full py-1.5 px-2.5 pl-4 rounded-lg text-xs font-medium transition-all bg-red-500 hover:bg-red-600 text-white border border-red-600 flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
             >
               <Icons.Trash2 width={14} height={14} strokeWidth={2} />
               Reset All Data
