@@ -879,24 +879,19 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                         <ProfitCalendar 
                           entries={monthlyEntries}
                           onDayClick={(dateStr) => {
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
-                            const clicked = new Date(dateStr);
-                            clicked.setHours(0, 0, 0, 0);
-                            const offset = Math.floor((clicked - today) / (1000 * 60 * 60 * 24));
+                            const todayEst = getESTDateString(new Date().toISOString());
+                            const offset = Math.floor((new Date(dateStr) - new Date(todayEst)) / (1000 * 60 * 60 * 24));
                             setDayOffset(offset);
                             if (period !== 'today') {
                               setPeriod('today');
                             }
                           }}
-                          selectedDateStr={getDateLabel(dayOffset) === 'Today' ? new Date().toISOString().split('T')[0] : 
-                            getDateLabel(dayOffset) === 'Yesterday' ? new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0] :
-                            (() => {
-                              const d = new Date();
-                              d.setDate(d.getDate() + dayOffset);
-                              return d.toISOString().split('T')[0];
-                            })()
-                          }
+                          selectedDateStr={(() => {
+                            const now = new Date();
+                            const d = new Date();
+                            d.setDate(d.getDate() + dayOffset);
+                            return getESTDateString(d.toISOString());
+                          })()}
                         />
                       </div>
                     )}
