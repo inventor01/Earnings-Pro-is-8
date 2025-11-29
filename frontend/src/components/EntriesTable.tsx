@@ -5,7 +5,7 @@ import { formatDateEST } from '../lib/dateUtils';
 import doordashLogo from '../assets/doordash-logo.png';
 import ubereatsLogo from '../assets/ubereats-logo.png';
 import ubereatsLogoDark from '../assets/ubereats-dark.png';
-import instacartLogo from '../assets/instacart-logo.jpg';
+import instacartLogo from '../assets/instacart-logo.png';
 import instacartLogoDark from '../assets/instacart-dark.png';
 import grubhubLogo from '../assets/grubhub-logo.png';
 import shiptLogo from '../assets/shipt-logo.png';
