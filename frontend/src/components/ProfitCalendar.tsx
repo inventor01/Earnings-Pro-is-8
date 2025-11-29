@@ -4,9 +4,10 @@ import { getESTDateString } from '../lib/dateUtils';
 
 interface ProfitCalendarProps {
   entries: any[];
+  onDayClick?: (dateStr: string) => void;
 }
 
-export function ProfitCalendar({ entries }: ProfitCalendarProps) {
+export function ProfitCalendar({ entries, onDayClick }: ProfitCalendarProps) {
   const { config: themeConfig } = useTheme();
   const isDarkTheme = themeConfig.name === 'dark-neon';
   const [metricView, setMetricView] = useState<'profit' | 'expenses' | 'revenue'>('profit');
@@ -255,6 +256,7 @@ export function ProfitCalendar({ entries }: ProfitCalendarProps) {
           return (
             <div
               key={idx}
+              onClick={() => dayData && onDayClick?.(dayData.dateStr)}
               className={`aspect-square rounded-lg flex items-center justify-center text-sm font-bold transition-all ${
                 dayData === null
                   ? ''

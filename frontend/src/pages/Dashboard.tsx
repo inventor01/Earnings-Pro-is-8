@@ -828,7 +828,20 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
                     {showCalendar && (
                       <div>
-                        <ProfitCalendar entries={monthlyEntries} />
+                        <ProfitCalendar 
+                          entries={monthlyEntries}
+                          onDayClick={(dateStr) => {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const clicked = new Date(dateStr);
+                            clicked.setHours(0, 0, 0, 0);
+                            const offset = Math.floor((clicked - today) / (1000 * 60 * 60 * 24));
+                            setDayOffset(offset);
+                            if (period !== 'today') {
+                              setPeriod('today');
+                            }
+                          }}
+                        />
                       </div>
                     )}
                   </>
