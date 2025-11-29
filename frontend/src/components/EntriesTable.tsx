@@ -359,7 +359,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                         const isDarkTheme = config.name !== 'simple-light';
                         const logoSrc = getAppLogo(entry.app);
                         return logoSrc ? (
-                          <img src={logoSrc} alt={entry.app} className="h-5 w-auto max-w-[70px] object-contain" />
+                          <img src={logoSrc} alt={entry.app} className="h-4 md:h-5 w-auto max-w-[60px] md:max-w-[80px] object-contain" />
                         ) : (
                           <span className={isDarkTheme && entry.app === 'UBEREATS' ? 'text-white font-bold' : ''} style={isDarkTheme && entry.app === 'UBEREATS' ? { fontFamily: 'Montserrat, sans-serif', letterSpacing: '-0.02em', fontWeight: 700 } : {}}>{getFormattedAppName(entry.app)}</span>
                         );
