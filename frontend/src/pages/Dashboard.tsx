@@ -720,7 +720,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
       </div>
 
-      <div className={`${contentClass} pt-40 md:pt-96 lg:pt-80`}>
+      <div className={`${contentClass} pt-20 md:pt-32 lg:pt-24`}>
 
         <div className="mb-4 md:mb-8 lg:mb-10" data-tour="search" id="search-bar">
           <div className={`flex items-center gap-3 px-4 py-3 md:py-3.5 rounded-xl border-2 transition-all shadow-md hover:shadow-lg ${
