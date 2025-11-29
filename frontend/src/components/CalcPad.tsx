@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 
 export type CalcMode = 'add' | 'subtract';
 
@@ -10,6 +11,9 @@ interface CalcPadProps {
 }
 
 export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep }: CalcPadProps) {
+  const [isCHeld, setIsCHeld] = useState(false);
+  const cTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const handleNumber = (num: string) => {
     if (amount === '0') {
       onAmountChange(num);
@@ -24,8 +28,35 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
     }
   };
 
-  const handleClear = () => {
+  const handleBackspace = () => {
+    if (amount.length > 1) {
+      onAmountChange(amount.slice(0, -1));
+    } else {
+      onAmountChange('0');
+    }
+  };
+
+  const handleClearFull = () => {
     onAmountChange('0');
+  };
+
+  const handleCTouchStart = () => {
+    setIsCHeld(false);
+    cTimeoutRef.current = setTimeout(() => {
+      setIsCHeld(true);
+      handleClearFull();
+    }, 500);
+  };
+
+  const handleCTouchEnd = () => {
+    if (cTimeoutRef.current) {
+      clearTimeout(cTimeoutRef.current);
+      cTimeoutRef.current = null;
+    }
+    if (!isCHeld) {
+      handleBackspace();
+    }
+    setIsCHeld(false);
   };
 
 
@@ -103,10 +134,18 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
         {/* Row 4: C 0 . */}
         <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
           <button
-            onClick={handleClear}
-            className="w-full bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+            onTouchStart={handleCTouchStart}
+            onTouchEnd={handleCTouchEnd}
+            onMouseDown={handleCTouchStart}
+            onMouseUp={handleCTouchEnd}
+            className={`w-full p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation ${
+              isCHeld
+                ? 'bg-gradient-to-br from-red-500 to-red-600 text-white scale-110'
+                : 'bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white'
+            }`}
+            title="Tap to backspace, hold to clear"
           >
-            C
+            {isCHeld ? '✓' : '⌫'}
           </button>
           <button
             onClick={() => handleNumber('0')}
