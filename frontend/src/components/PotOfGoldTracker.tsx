@@ -323,7 +323,7 @@ export function PotOfGoldTracker() {
       `}</style>
 
       {/* Header section */}
-      <div className="relative z-10 flex items-start justify-between mb-3 gap-3">
+      <div className="relative z-10 flex items-start justify-between mb-6 gap-4">
         <div className="cursor-pointer" onClick={handleEditClick}>
           <h3 className={`font-black text-lg md:text-xl mb-1 ${
             themeConfig.name === 'simple-light' ? 'text-blue-700' :
@@ -352,20 +352,16 @@ export function PotOfGoldTracker() {
         </div>
       </div>
 
-      {/* Ninja stars decoration */}
-      <div className="relative z-10 flex justify-between items-center mb-8 opacity-80">
-      </div>
-
       {/* Mission milestone progress */}
-      <div className="relative z-10 mb-6">
-        <div className="flex items-center justify-between gap-2">
+      <div className="relative z-10 mb-8">
+        <div className="flex items-start justify-between gap-1">
           {[...Array(5)].map((_, i) => {
             const milestoneTrigger = (i + 1) * 20;
             const isReached = progressPercent >= milestoneTrigger;
             return (
               <div key={i} className="flex flex-col items-center flex-1">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-500 ${
+                  className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs md:text-sm transition-all duration-500 ${
                     isReached
                       ? themeConfig.name === 'ninja-green'
                         ? 'bg-lime-500 text-white shadow-lg shadow-lime-500/50'
@@ -379,7 +375,7 @@ export function PotOfGoldTracker() {
                 </div>
                 {i < 4 && (
                   <div
-                    className={`h-0.5 w-full transition-all duration-500 mt-2 ${
+                    className={`flex-1 h-1 transition-all duration-500 mt-3 -mb-3 ${
                       progressPercent > milestoneTrigger
                         ? themeConfig.name === 'ninja-green'
                           ? 'bg-lime-500 shadow-md shadow-lime-500/50'
@@ -397,7 +393,7 @@ export function PotOfGoldTracker() {
       </div>
 
       {/* Progress bar with glow */}
-      <div className={`relative z-10 h-4 rounded-full overflow-hidden mb-3 border-2 border-opacity-50 ${
+      <div className={`relative z-10 h-4 rounded-full overflow-hidden mb-4 border-2 border-opacity-50 ${
         themeConfig.name === 'dark-neon'
           ? 'bg-slate-800/60 border-cyan-400/50'
           : themeConfig.name === 'simple-light'
@@ -424,7 +420,7 @@ export function PotOfGoldTracker() {
       </div>
 
       {/* Stats section */}
-      <div className="relative z-10 flex items-center justify-between mb-2 gap-2">
+      <div className="relative z-10 flex items-center justify-between mb-4 gap-2">
         <div className="flex items-baseline gap-3">
           <span className={`text-4xl font-black ${
             currentProfit < 0 ? 'text-red-600' :
