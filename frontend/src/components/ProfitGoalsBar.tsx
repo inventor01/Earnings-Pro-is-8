@@ -28,10 +28,8 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
   const [isSaving, setIsSaving] = useState(false);
   const [tempGoal, setTempGoal] = useState('');
   const [isGoalReached, setIsGoalReached] = useState(false);
-  const [percentageKey, setPercentageKey] = useState(0);
   const [error, setError] = useState('');
   const goalReachedRef = useRef<boolean>(false);
-  const previousProgressRef = useRef(0);
 
   useEffect(() => {
     // Load current goal on mount and when timeframe changes
@@ -59,11 +57,6 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
       setIsGoalReached(false);
     }
 
-    // Trigger animation when percentage changes significantly
-    if (Math.round(goalProgress) !== Math.round(previousProgressRef.current)) {
-      setPercentageKey(prev => prev + 1);
-      previousProgressRef.current = goalProgress;
-    }
   }, [goalProgress, goalAmount, timeframe, onGoalReached]);
 
   const handleEditClick = () => {
@@ -99,7 +92,6 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
   const progressColor = 'bg-lime-500';
   // Round to avoid floating point issues - if progress is 99.5% or higher, show 100%
   const displayProgress = goalProgress >= 99.5 ? 100 : Math.max(0, Math.min(goalProgress, 100));
-  const displayPercentage = displayProgress === 100 ? 100 : Math.round(goalProgress);
 
   if (!goalAmount) {
     // Show edit form if editing, otherwise show "Set Goal" button
