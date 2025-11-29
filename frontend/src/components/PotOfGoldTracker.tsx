@@ -18,7 +18,7 @@ export function PotOfGoldTracker() {
     queryFn: () => api.getGoal('THIS_MONTH'),
   });
 
-  const { data: monthlyData } = useQuery({
+  const { data: monthlyData, refetch: refetchMonthlyData } = useQuery({
     queryKey: ['rollup', 'THIS_MONTH'],
     queryFn: async () => {
       const res = await fetch('/api/rollup?timeframe=THIS_MONTH');
@@ -50,6 +50,7 @@ export function PotOfGoldTracker() {
       }
       await api.createGoal('THIS_MONTH', parseFloat(tempGoal), tempGoalName || 'Savings Goal');
       await refetchGoal();
+      await refetchMonthlyData();
       setIsEditing(false);
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Failed to save goal';
