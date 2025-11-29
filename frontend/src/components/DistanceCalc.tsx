@@ -67,13 +67,13 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg md:rounded-2xl shadow-xl p-4 md:p-6">
-      <div className="mb-4 md:mb-6">
-        <div className="text-4xl md:text-6xl font-black text-right mb-3 md:mb-6 p-3 md:p-6 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg md:rounded-xl border-4 border-blue-300">
+      <div className="mb-2 md:mb-3">
+        <div className="text-4xl md:text-6xl font-black text-right mb-2 md:mb-3 p-3 md:p-6 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg md:rounded-xl border-4 border-blue-300">
           {display} mi
         </div>
       </div>
 
-      <div className="space-y-2 md:space-y-3">
+      <div className="space-y-1 md:space-y-2">
         {/* Row 1: 7 8 9 */}
         <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
           {['7', '8', '9'].map((num) => (
