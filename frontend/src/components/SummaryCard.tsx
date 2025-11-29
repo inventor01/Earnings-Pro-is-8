@@ -167,10 +167,19 @@ export function SummaryCard({
               opacity: 1;
             }
           }
+
+          .metric-card-pattern {
+            background-image: 
+              radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+          }
         `}</style>
-        <div className={`relative p-5 md:p-6 lg:p-7 rounded-2xl transition-all duration-300 group/card ${colors.bg} border border-gray-200/50 ${colors.shadow} backdrop-blur-sm`}>
+        <div className={`relative p-5 md:p-6 lg:p-7 rounded-2xl transition-all duration-300 group/card ${colors.bg} border border-gray-200/50 ${colors.shadow} backdrop-blur-sm overflow-hidden`}>
+          <div className="metric-card-pattern absolute inset-0 rounded-2xl pointer-events-none" />
+          
           {/* Accent line at top */}
-          <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-2xl ${
+          <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-2xl z-10 ${
             label === 'Revenue' ? 'bg-lime-500' :
             label === 'Expenses' ? 'bg-red-500' :
             label === 'Profit' ? 'bg-green-600' :
@@ -179,7 +188,7 @@ export function SummaryCard({
             'bg-yellow-500'
           }`} />
           
-          <div className="space-y-3">
+          <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between gap-3">
               <div className={`w-14 h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 ${colors.icon} group-hover/card:scale-110 group-hover/card:rotate-6 transition-all duration-300`}>
                 <Icon width="100%" height="100%" strokeWidth={1.5} />
