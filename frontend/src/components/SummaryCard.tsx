@@ -256,17 +256,17 @@ export function SummaryCard({
                 <>
                   <button
                     onClick={() => onDayChange(dayOffset - 1)}
-                    className="p-1.5 md:p-2 rounded-lg transition-all bg-yellow-400 text-black hover:bg-yellow-500 font-bold text-sm md:text-base"
+                    className="p-1.5 md:p-2 rounded-lg transition-all bg-lime-500 text-white hover:bg-lime-600 font-bold text-sm md:text-base"
                     title="Previous day"
                   >
                     ←
                   </button>
-                  <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-yellow-400 text-black border border-yellow-500">
+                  <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-lime-200 text-green-900 border border-lime-500">
                     {getDateLabel(dayOffset)}
                   </div>
                   <button
                     onClick={() => onDayChange(dayOffset + 1)}
-                    className="p-1.5 md:p-2 rounded-lg transition-all bg-yellow-400 text-black hover:bg-yellow-500 font-bold text-sm md:text-base"
+                    className="p-1.5 md:p-2 rounded-lg transition-all bg-lime-500 text-white hover:bg-lime-600 font-bold text-sm md:text-base"
                     title="Next day"
                   >
                     →
