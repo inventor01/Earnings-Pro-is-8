@@ -122,21 +122,21 @@ export function SummaryCard({
   const MetricCard = ({ icon: Icon, label, value, color, secondary, subtext, isNegative }: any) => {
     // Determine colors based on label and theme
     const lightColorMap: { [key: string]: { icon: string; accent: string; bg: string; shadow: string } } = {
-      'Revenue': { icon: 'text-lime-600', accent: 'text-lime-700', bg: 'bg-gradient-to-br from-white to-lime-50', shadow: 'hover:shadow-lg hover:shadow-lime-500/20' },
-      'Expenses': { icon: 'text-red-600', accent: 'text-red-700', bg: 'bg-gradient-to-br from-white to-red-50', shadow: 'hover:shadow-lg hover:shadow-red-500/20' },
-      'Profit': { icon: 'text-green-600', accent: 'text-green-700', bg: 'bg-gradient-to-br from-white to-green-50', shadow: 'hover:shadow-lg hover:shadow-green-500/20' },
-      'Miles': { icon: 'text-purple-600', accent: 'text-purple-700', bg: 'bg-gradient-to-br from-white to-purple-50', shadow: 'hover:shadow-lg hover:shadow-purple-500/20' },
-      'Orders': { icon: 'text-blue-600', accent: 'text-blue-700', bg: 'bg-gradient-to-br from-white to-blue-50', shadow: 'hover:shadow-lg hover:shadow-blue-500/20' },
-      'Avg Order': { icon: 'text-yellow-600', accent: 'text-yellow-700', bg: 'bg-gradient-to-br from-white to-yellow-50', shadow: 'hover:shadow-lg hover:shadow-yellow-500/20' }
+      'Revenue': { icon: 'text-lime-600', accent: 'text-lime-700', bg: 'metric-gradient-lime', shadow: 'hover:shadow-2xl hover:shadow-lime-500/40' },
+      'Expenses': { icon: 'text-red-600', accent: 'text-red-700', bg: 'metric-gradient-red', shadow: 'hover:shadow-2xl hover:shadow-red-500/40' },
+      'Profit': { icon: 'text-green-600', accent: 'text-green-700', bg: 'metric-gradient-green', shadow: 'hover:shadow-2xl hover:shadow-green-500/40' },
+      'Miles': { icon: 'text-purple-600', accent: 'text-purple-700', bg: 'metric-gradient-purple', shadow: 'hover:shadow-2xl hover:shadow-purple-500/40' },
+      'Orders': { icon: 'text-blue-600', accent: 'text-blue-700', bg: 'metric-gradient-blue', shadow: 'hover:shadow-2xl hover:shadow-blue-500/40' },
+      'Avg Order': { icon: 'text-yellow-600', accent: 'text-yellow-700', bg: 'metric-gradient-yellow', shadow: 'hover:shadow-2xl hover:shadow-yellow-500/40' }
     };
 
     const darkColorMap: { [key: string]: { icon: string; accent: string; bg: string; shadow: string } } = {
-      'Revenue': { icon: 'text-lime-400', accent: 'text-lime-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-lime-500/30' },
-      'Expenses': { icon: 'text-red-400', accent: 'text-red-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-red-500/30' },
-      'Profit': { icon: 'text-green-400', accent: 'text-green-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-green-500/30' },
-      'Miles': { icon: 'text-purple-400', accent: 'text-purple-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-purple-500/30' },
-      'Orders': { icon: 'text-blue-400', accent: 'text-blue-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-blue-500/30' },
-      'Avg Order': { icon: 'text-yellow-400', accent: 'text-yellow-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-yellow-500/30' }
+      'Revenue': { icon: 'text-lime-400', accent: 'text-lime-300', bg: 'metric-dark-gradient-lime', shadow: 'hover:shadow-2xl hover:shadow-lime-500/40' },
+      'Expenses': { icon: 'text-red-400', accent: 'text-red-300', bg: 'metric-dark-gradient-red', shadow: 'hover:shadow-2xl hover:shadow-red-500/40' },
+      'Profit': { icon: 'text-green-400', accent: 'text-green-300', bg: 'metric-dark-gradient-green', shadow: 'hover:shadow-2xl hover:shadow-green-500/40' },
+      'Miles': { icon: 'text-purple-400', accent: 'text-purple-300', bg: 'metric-dark-gradient-purple', shadow: 'hover:shadow-2xl hover:shadow-purple-500/40' },
+      'Orders': { icon: 'text-blue-400', accent: 'text-blue-300', bg: 'metric-dark-gradient-blue', shadow: 'hover:shadow-2xl hover:shadow-blue-500/40' },
+      'Avg Order': { icon: 'text-yellow-400', accent: 'text-yellow-300', bg: 'metric-dark-gradient-yellow', shadow: 'hover:shadow-2xl hover:shadow-yellow-500/40' }
     };
     
     const colorMap = isDarkTheme ? darkColorMap : lightColorMap;
@@ -176,6 +176,55 @@ export function SummaryCard({
               transform: scaleX(1.05);
               opacity: 1;
             }
+          }
+
+          @keyframes shimmer {
+            0%, 100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 1.05;
+            }
+          }
+
+          /* Light gradients */
+          .metric-gradient-lime {
+            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 50%, #dcfce7 100%);
+          }
+          .metric-gradient-red {
+            background: linear-gradient(135deg, #ffffff 0%, #fef2f2 50%, #fee2e2 100%);
+          }
+          .metric-gradient-green {
+            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 50%, #bbf7d0 100%);
+          }
+          .metric-gradient-purple {
+            background: linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #e9d5ff 100%);
+          }
+          .metric-gradient-blue {
+            background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 50%, #dbeafe 100%);
+          }
+          .metric-gradient-yellow {
+            background: linear-gradient(135deg, #ffffff 0%, #fffbeb 50%, #fef3c7 100%);
+          }
+
+          /* Dark gradients */
+          .metric-dark-gradient-lime {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+          }
+          .metric-dark-gradient-red {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+          }
+          .metric-dark-gradient-green {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+          }
+          .metric-dark-gradient-purple {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+          }
+          .metric-dark-gradient-blue {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+          }
+          .metric-dark-gradient-yellow {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
           }
 
           .metric-card-pattern {
@@ -227,7 +276,7 @@ export function SummaryCard({
               'glow-yellow'
             }`
             : `border border-gray-200/50 ${colors.shadow}`
-        } backdrop-blur-sm overflow-hidden`}>
+        } backdrop-blur-sm overflow-hidden group-hover/card:-translate-y-2`}>
           <div className="metric-card-pattern absolute inset-0 rounded-2xl pointer-events-none" />
           
           {/* Accent line at top */}
