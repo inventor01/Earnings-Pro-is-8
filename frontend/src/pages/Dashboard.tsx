@@ -23,6 +23,7 @@ import { AchievementsModal } from '../components/AchievementsModal';
 import { ProfitCalendar } from '../components/ProfitCalendar';
 import { useTheme } from '../lib/themeContext';
 import { useSimpleMode } from '../lib/simpleModeContext';
+import { Icons } from '../components/Icons';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
 
@@ -815,17 +816,13 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                     <div className="w-full px-2 md:px-0">
                       <button
                         onClick={() => setShowCalendar(!showCalendar)}
-                        className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl ${
-                          isDarkTheme
-                            ? showCalendar
-                              ? 'bg-lime-400 text-black border-2 border-lime-200 shadow-lg shadow-lime-500/30 hover:shadow-lime-500/50 hover:bg-lime-500'
-                              : 'bg-slate-700 text-lime-300 border-2 border-lime-500/50 hover:bg-slate-600 hover:text-lime-200 hover:border-lime-400'
-                            : showCalendar
-                            ? 'bg-yellow-400 text-black border-2 border-yellow-500 hover:bg-yellow-500'
-                            : 'bg-lime-500 text-white border-2 border-lime-600 hover:bg-lime-600 hover:border-lime-700'
+                        className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl border-2 ${
+                          showCalendar
+                            ? 'bg-lime-400 text-black border-lime-500 shadow-lg shadow-lime-500/30 hover:shadow-lime-500/50 hover:bg-lime-500'
+                            : 'bg-lime-100 text-lime-700 border-lime-400 hover:bg-lime-200'
                         }`}
                       >
-                        <span className="text-2xl md:text-3xl">{showCalendar ? '📆' : '📅'}</span>
+                        <Icons.Calendar className="w-6 h-6 md:w-7 md:h-7" />
                         <span>{showCalendar ? 'Hide Calendar' : 'Show Calendar'}</span>
                         <span className={`ml-2 transition-transform ${showCalendar ? 'rotate-180' : ''}`}>↓</span>
                       </button>
