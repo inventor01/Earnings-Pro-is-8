@@ -104,6 +104,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showPerformanceOverview, setShowPerformanceOverview] = useState(true);
+  const [hideAccountData, setHideAccountData] = useState(false);
   
   const [metricVisibility, setMetricVisibility] = useState<Partial<MetricVisibility>>(() => {
     const saved = localStorage.getItem('metricVisibility');
@@ -760,27 +761,50 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           {/* Left Column - Performance Overview */}
           <div className="lg:col-span-3 space-y-6 md:space-y-8 lg:space-y-10 scroll-smooth" data-tour="performance">
             {/* Performance Overview Header with Toggle */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <h2 className={`text-lg font-bold ${isDarkTheme ? 'text-lime-300' : 'text-green-900'}`}>
                 Performance Overview
               </h2>
-              <button
-                onClick={() => setShowPerformanceOverview(!showPerformanceOverview)}
-                className={`p-2 rounded-lg transition-all ${
-                  isDarkTheme
-                    ? 'text-slate-400 hover:text-lime-300 hover:bg-slate-700/50'
-                    : 'text-green-700 hover:text-green-900 hover:bg-lime-100'
-                }`}
-                title={showPerformanceOverview ? 'Collapse' : 'Expand'}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {showPerformanceOverview ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  )}
-                </svg>
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setHideAccountData(!hideAccountData)}
+                  className={`p-2 rounded-lg transition-all ${
+                    hideAccountData
+                      ? isDarkTheme
+                        ? 'text-slate-500 hover:text-slate-400 hover:bg-slate-700/50'
+                        : 'text-gray-400 hover:text-gray-500 hover:bg-gray-100'
+                      : isDarkTheme
+                      ? 'text-slate-400 hover:text-lime-300 hover:bg-slate-700/50'
+                      : 'text-green-700 hover:text-green-900 hover:bg-lime-100'
+                  }`}
+                  title={hideAccountData ? 'Show data' : 'Hide data'}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {hideAccountData ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 0c0 1.657-.672 3.157-1.757 4.243A6 6 0 0121 12a9.75 9.75 0 00-14.976-8.28M9 12a3 3 0 106 0 3 3 0 00-6 0z" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    )}
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setShowPerformanceOverview(!showPerformanceOverview)}
+                  className={`p-2 rounded-lg transition-all ${
+                    isDarkTheme
+                      ? 'text-slate-400 hover:text-lime-300 hover:bg-slate-700/50'
+                      : 'text-green-700 hover:text-green-900 hover:bg-lime-100'
+                  }`}
+                  title={showPerformanceOverview ? 'Collapse' : 'Expand'}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {showPerformanceOverview ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    )}
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {showPerformanceOverview && (
@@ -806,6 +830,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                   periodLabel={getPeriodLabel()}
                   visibilityConfig={metricVisibility}
                   onShare={() => setShowShareCard(true)}
+                  hideData={hideAccountData}
                 />
 
                 {/* Profit Calendar Toggle and Display */}

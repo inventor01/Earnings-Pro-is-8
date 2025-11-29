@@ -28,6 +28,7 @@ interface SummaryCardProps {
   periodLabel?: string;
   visibilityConfig?: Partial<MetricVisibility>;
   onShare?: () => void;
+  hideData?: boolean;
 }
 
 export function SummaryCard({ 
@@ -39,7 +40,8 @@ export function SummaryCard({
   showDayNav = false,
   periodLabel,
   visibilityConfig = {},
-  onShare
+  onShare,
+  hideData = false
 }: SummaryCardProps) {
   const { config: themeConfig } = useTheme();
   const colorConfig = themeConfig.kpiColors['blue'];
@@ -110,6 +112,11 @@ export function SummaryCard({
     if (diffX > diffY && diffX > 10) {
       e.preventDefault();
     }
+  };
+
+  const getMaskedValue = (val: string | number): string => {
+    if (hideData) return '***';
+    return String(val);
   };
 
   const MetricCard = ({ icon: Icon, label, value, color, secondary, subtext, isNegative }: any) => {
@@ -197,7 +204,7 @@ export function SummaryCard({
                   'rgba(202, 138, 4, 0.2)'
                 })`
               }}>
-                <CountUpNumber value={value} />
+                {hideData ? '***' : <CountUpNumber value={value} />}
               </div>
               
               {/* Modern indicator bar */}
@@ -220,7 +227,7 @@ export function SummaryCard({
               
               {subtext && (
                 <div className="text-xs md:text-sm font-medium text-gray-600 pt-1">
-                  {subtext}
+                  {hideData ? '***' : subtext}
                 </div>
               )}
             </div>
