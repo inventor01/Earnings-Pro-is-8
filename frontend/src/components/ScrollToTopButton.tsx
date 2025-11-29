@@ -9,29 +9,29 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
   const isDarkTheme = theme === 'ninja-dark';
 
   const scrollToTop = () => {
-    // Strategy 1: Try to scroll the overflow-y-auto container (dashboard content)
-    const scrollContainer = document.querySelector('.overflow-y-auto') as HTMLElement | null;
-    
-    if (scrollContainer) {
-      console.log('Found scroll container, scrolling to top. Current position:', scrollContainer.scrollTop);
-      scrollContainer.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-      
-      // Verify the scroll worked
-      setTimeout(() => {
-        console.log('After scroll, position is:', scrollContainer.scrollTop);
-      }, 500);
-      return;
+    // Try all possible scroll targets
+    const targets = [
+      document.querySelector('.overflow-y-auto') as HTMLElement | null, // Dashboard content
+      document.documentElement, // HTML element
+      document.body, // Body element
+      window // Window object
+    ];
+
+    for (const target of targets) {
+      if (target) {
+        if (target === window) {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        } else {
+          target.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      }
     }
-    
-    // Strategy 2: Fallback to window scroll
-    console.log('No container found, scrolling window');
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLButtonElement>) => {
