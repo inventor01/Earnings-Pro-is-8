@@ -182,13 +182,13 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
   };
 
   return (
-    <div className={`rounded-xl border-2 p-6 transition-all ${
+    <div className={`rounded-2xl border-2 p-6 transition-all shadow-2xl ${
       isDarkTheme
-        ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/40 border-cyan-500/30'
-        : 'bg-white border-blue-200'
+        ? 'bg-gradient-to-br from-slate-800/80 via-slate-900/60 to-slate-950/80 border-lime-500/40 shadow-xl shadow-lime-500/10'
+        : 'bg-gradient-to-br from-white to-lime-50 border-lime-400 shadow-lg shadow-lime-300/20'
     }`}>
       <div className="mb-4 space-y-3">
-        <h3 className={`text-xl font-bold text-center ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>
+        <h3 className={`text-2xl font-black text-center ${isDarkTheme ? 'text-yellow-400' : 'text-green-900'} drop-shadow-lg`}>
           {monthNames[calendarData.month]} {calendarData.year}
         </h3>
         
@@ -196,42 +196,42 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
         <div className="flex gap-2 justify-center flex-wrap">
           <button
             onClick={() => setMetricView('profit')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all transform hover:scale-105 shadow-md ${
               metricView === 'profit'
                 ? isDarkTheme
-                  ? 'bg-green-500/40 border border-green-400 text-green-300'
-                  : 'bg-green-500 text-white border border-green-600'
+                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 border-2 border-yellow-600 text-black shadow-lg shadow-yellow-400/50'
+                  : 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black border-2 border-yellow-600 shadow-lg shadow-yellow-400/40'
                 : isDarkTheme
-                ? 'bg-slate-700/40 border border-slate-600 text-slate-400'
-                : 'bg-gray-200 text-gray-600 border border-gray-300'
+                ? 'bg-slate-700/50 border border-slate-600 text-slate-300 hover:bg-slate-600/50'
+                : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300'
             }`}
           >
             💰 Profit
           </button>
           <button
             onClick={() => setMetricView('revenue')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all transform hover:scale-105 shadow-md ${
               metricView === 'revenue'
                 ? isDarkTheme
-                  ? 'bg-blue-500/40 border border-blue-400 text-blue-300'
-                  : 'bg-blue-500 text-white border border-blue-600'
+                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 border-2 border-yellow-600 text-black shadow-lg shadow-yellow-400/50'
+                  : 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black border-2 border-yellow-600 shadow-lg shadow-yellow-400/40'
                 : isDarkTheme
-                ? 'bg-slate-700/40 border border-slate-600 text-slate-400'
-                : 'bg-gray-200 text-gray-600 border border-gray-300'
+                ? 'bg-slate-700/50 border border-slate-600 text-slate-300 hover:bg-slate-600/50'
+                : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300'
             }`}
           >
             📈 Revenue
           </button>
           <button
             onClick={() => setMetricView('expenses')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all transform hover:scale-105 shadow-md ${
               metricView === 'expenses'
                 ? isDarkTheme
-                  ? 'bg-orange-500/40 border border-orange-400 text-orange-300'
-                  : 'bg-orange-500 text-white border border-orange-600'
+                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 border-2 border-yellow-600 text-black shadow-lg shadow-yellow-400/50'
+                  : 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black border-2 border-yellow-600 shadow-lg shadow-yellow-400/40'
                 : isDarkTheme
-                ? 'bg-slate-700/40 border border-slate-600 text-slate-400'
-                : 'bg-gray-200 text-gray-600 border border-gray-300'
+                ? 'bg-slate-700/50 border border-slate-600 text-slate-300 hover:bg-slate-600/50'
+                : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300'
             }`}
           >
             💸 Expenses
@@ -259,12 +259,12 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
             <div
               key={idx}
               onClick={() => dayData && onDayClick?.(dayData.dateStr)}
-              className={`aspect-square rounded-lg flex items-center justify-center text-sm font-bold transition-all ${
+              className={`aspect-square rounded-lg flex items-center justify-center text-sm font-bold transition-all transform ${
                 dayData === null
                   ? ''
                   : isSelected
-                  ? `bg-yellow-400 border-2 border-yellow-600 ${isDarkTheme ? 'text-black' : 'text-black'} hover:scale-105 cursor-pointer ring-2 ring-yellow-300 ring-offset-2`
-                  : `${color} ${isDarkTheme ? 'border border-slate-600' : 'border border-gray-300'} hover:scale-105 cursor-pointer`
+                  ? `bg-gradient-to-br from-yellow-300 to-yellow-500 border-2 border-yellow-700 text-black hover:scale-110 cursor-pointer ring-2 ring-yellow-200 ring-offset-2 shadow-xl shadow-yellow-400/60 animate-pulse`
+                  : `${color} ${isDarkTheme ? 'border border-slate-600 hover:shadow-md hover:shadow-slate-500/30' : 'border border-gray-300 hover:shadow-md hover:shadow-gray-300/40'} hover:scale-105 cursor-pointer transition-shadow`
               }`}
               title={dayData ? `${dayData.day}: $${numericValue.toFixed(2)}${isSelected ? ' (selected)' : ''}` : ''}
             >
@@ -285,7 +285,7 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
         })}
       </div>
 
-      <div className={`mt-4 pt-4 border-t ${isDarkTheme ? 'border-slate-700' : 'border-gray-300'} text-xs space-y-1`}>
+      <div className={`mt-6 pt-4 border-t-2 ${isDarkTheme ? 'border-lime-500/30' : 'border-lime-400'} text-xs space-y-1`}>
         {metricView === 'profit' && (
           <>
             <div className="flex items-center gap-2">
