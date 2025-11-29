@@ -356,36 +356,41 @@ export function PotOfGoldTracker() {
       <div className="relative z-10 flex justify-between items-center mb-8 opacity-80">
       </div>
 
-      {/* Ninja mission progress bars */}
-      <div className="relative z-10 mb-3 h-12 group/rainbow">
-        <div className="absolute inset-0 flex items-end justify-between gap-1.5 px-2">
+      {/* Mission milestone progress */}
+      <div className="relative z-10 mb-6">
+        <div className="flex items-center justify-between gap-2">
           {[...Array(5)].map((_, i) => {
-            const barFillPercent = (i + 1) / 5;
-            const isFilled = progressPercent / 100 >= barFillPercent;
-            const colors = themeConfig.name === 'simple-light' 
-              ? ['bg-blue-400', 'bg-blue-500', 'bg-teal-400', 'bg-teal-500', 'bg-cyan-400']
-              : themeConfig.name === 'ninja-green'
-              ? ['bg-lime-400', 'bg-lime-500', 'bg-green-600', 'bg-yellow-400', 'bg-yellow-500']
-              : ['bg-red-400', 'bg-yellow-400', 'bg-green-400', 'bg-blue-400', 'bg-purple-400'];
-            const colorRgb = themeConfig.name === 'simple-light'
-              ? ['rgb(96, 165, 250)', 'rgb(59, 130, 246)', 'rgb(20, 184, 166)', 'rgb(14, 165, 233)', 'rgb(34, 211, 238)']
-              : themeConfig.name === 'ninja-green'
-              ? ['rgb(163, 230, 53)', 'rgb(132, 204, 22)', 'rgb(21, 128, 61)', 'rgb(250, 204, 21)', 'rgb(234, 179, 8)']
-              : ['rgb(248, 113, 113)', 'rgb(250, 204, 21)', 'rgb(74, 222, 128)', 'rgb(96, 165, 250)', 'rgb(192, 132, 250)'];
+            const milestoneTrigger = (i + 1) * 20;
+            const isReached = progressPercent >= milestoneTrigger;
             return (
-              <div
-                key={i}
-                className={`flex-1 rounded-full transition-all duration-500 transform group-hover/rainbow:scale-y-110 ${
-                  isFilled
-                    ? colors[i]
-                    : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'bg-blue-100' : 'bg-gray-700'
-                }`}
-                style={{
-                  height: `${24 + i * 8}px`,
-                  opacity: isFilled ? 1 : 0.2,
-                  boxShadow: isFilled ? `0 0 15px ${colorRgb[i]}` : 'none'
-                }}
-              />
+              <div key={i} className="flex flex-col items-center flex-1">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-500 ${
+                    isReached
+                      ? themeConfig.name === 'ninja-green'
+                        ? 'bg-lime-500 text-white shadow-lg shadow-lime-500/50'
+                        : 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/50'
+                      : themeConfig.name === 'ninja-green'
+                      ? 'bg-lime-100 text-green-700 border-2 border-lime-300'
+                      : 'bg-slate-200 text-slate-600 border-2 border-slate-300'
+                  }`}
+                >
+                  {milestoneTrigger}%
+                </div>
+                {i < 4 && (
+                  <div
+                    className={`h-0.5 w-full transition-all duration-500 mt-2 ${
+                      progressPercent > milestoneTrigger
+                        ? themeConfig.name === 'ninja-green'
+                          ? 'bg-lime-500 shadow-md shadow-lime-500/50'
+                          : 'bg-cyan-400 shadow-md shadow-cyan-400/50'
+                        : themeConfig.name === 'ninja-green'
+                        ? 'bg-lime-200'
+                        : 'bg-slate-300'
+                    }`}
+                  />
+                )}
+              </div>
             );
           })}
         </div>
