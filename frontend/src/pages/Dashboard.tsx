@@ -959,7 +959,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 z-50 ${calcExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`} data-tour="calculator">
         <button
           onClick={() => setCalcExpanded(!calcExpanded)}
-          className="w-full py-4 px-4 flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold text-lg hover:from-blue-700 hover:to-blue-600 opacity-100 shadow-lg"
+          className="w-full py-4 px-4 flex items-center justify-between bg-gradient-to-r from-lime-500 to-green-700 text-white font-bold text-lg hover:from-lime-600 hover:to-green-800 opacity-100 shadow-lg"
         >
           <span>{calcExpanded ? '▼ Hide Calculator' : '+ Add Entry'}</span>
           <span className="text-sm font-semibold">{amount !== '0' ? `$${amount}` : ''}</span>
@@ -979,7 +979,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               </div>
               <button
                 onClick={() => setEntryFormStep(1)}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-lg text-lg font-bold mb-6"
+                className="w-full bg-lime-500 hover:bg-lime-600 text-white py-4 rounded-lg text-lg font-bold mb-6"
               >
                 Next Step →
               </button>
