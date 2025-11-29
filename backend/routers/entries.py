@@ -176,8 +176,6 @@ async def delete_entry(entry_id: int, db: Session = Depends(get_db), current_use
 
 @router.delete("/entries")
 async def delete_all_entries(db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
-    from backend.models import Goal
     db.query(Entry).filter(Entry.user_id == current_user.id).delete()
-    db.query(Goal).filter(Goal.user_id == current_user.id).delete()
     db.commit()
-    return {"message": "All entries and goals deleted successfully"}
+    return {"message": "All entries deleted successfully"}
