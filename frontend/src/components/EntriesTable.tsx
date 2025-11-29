@@ -141,20 +141,20 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
       }
     }
     
-    // Dark theme uses filled style
+    // Dark theme uses outline style
     switch (app) {
       case 'DOORDASH':
-        return 'border border-red-500 text-white bg-red-500';
+        return 'border-2 border-red-500 text-red-400 bg-transparent';
       case 'UBEREATS':
-        return 'border border-green-500 text-white bg-green-500';
+        return 'border-2 border-green-500 text-green-400 bg-transparent';
       case 'INSTACART':
-        return 'border border-orange-500 text-white bg-orange-500';
+        return 'border-2 border-orange-500 text-orange-400 bg-transparent';
       case 'GRUBHUB':
-        return 'border border-yellow-500 text-white bg-yellow-500';
+        return 'border-2 border-yellow-500 text-yellow-400 bg-transparent';
       case 'SHIPT':
-        return 'border border-lime-500 text-white bg-lime-500';
+        return 'border-2 border-lime-500 text-lime-400 bg-transparent';
       default:
-        return 'border border-gray-500 text-white bg-gray-500';
+        return 'border-2 border-gray-500 text-gray-400 bg-transparent';
     }
   };
 
@@ -190,26 +190,26 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
       }
     }
     
-    // Dark theme uses filled style
+    // Dark theme uses outline style
     switch (category) {
       case 'GAS':
-        return 'border border-lime-500 text-white bg-lime-500';
+        return 'border-2 border-lime-500 text-lime-400 bg-transparent';
       case 'PARKING':
-        return 'border border-green-500 text-white bg-green-500';
+        return 'border-2 border-green-500 text-green-400 bg-transparent';
       case 'TOLLS':
-        return 'border border-green-600 text-white bg-green-600';
+        return 'border-2 border-green-600 text-green-400 bg-transparent';
       case 'MAINTENANCE':
-        return 'border border-lime-500 text-white bg-lime-500';
+        return 'border-2 border-lime-500 text-lime-400 bg-transparent';
       case 'PHONE':
-        return 'border border-pink-500 text-white bg-pink-500';
+        return 'border-2 border-pink-500 text-pink-400 bg-transparent';
       case 'SUBSCRIPTION':
-        return 'border border-violet-500 text-white bg-violet-500';
+        return 'border-2 border-violet-500 text-violet-400 bg-transparent';
       case 'FOOD':
-        return 'border border-amber-500 text-white bg-amber-500';
+        return 'border-2 border-amber-500 text-amber-400 bg-transparent';
       case 'LEISURE':
-        return 'border border-rose-500 text-white bg-rose-500';
+        return 'border-2 border-rose-500 text-rose-400 bg-transparent';
       default:
-        return 'border border-gray-500 text-white bg-gray-500';
+        return 'border-2 border-gray-500 text-gray-400 bg-transparent';
     }
   };
 
