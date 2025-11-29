@@ -70,13 +70,13 @@ export function Achievements({ entries, rollup, monthlyGoal }: AchievementsProps
     if (greenStreak >= 90) level = 'Legendary';
 
     // Generate badges
-    type Badge = { icon: string; label: string };
+    type Badge = { icon: string; label: string; color: string };
     const badges: Badge[] = [];
-    if (greenStreak >= 7) badges.push({ icon: '🔥', label: `${greenStreak}-Day Green Streak!` });
-    if (profitableDays >= 10) badges.push({ icon: '💚', label: `${profitableDays} Profitable Days` });
-    if (goalStreak > 0) badges.push({ icon: '🎯', label: 'Goal Crushed This Month!' });
-    if (profitableDays >= 20) badges.push({ icon: '⭐', label: 'Consistent Earner' });
-    if (greenStreak >= 1) badges.push({ icon: '✅', label: 'Started Strong Today' });
+    if (greenStreak >= 7) badges.push({ icon: 'fire', label: `${greenStreak}-Day Green Streak!`, color: 'text-red-500' });
+    if (profitableDays >= 10) badges.push({ icon: 'heart', label: `${profitableDays} Profitable Days`, color: 'text-green-500' });
+    if (goalStreak > 0) badges.push({ icon: 'target', label: 'Goal Crushed This Month!', color: 'text-yellow-500' });
+    if (profitableDays >= 20) badges.push({ icon: 'star', label: 'Consistent Earner', color: 'text-yellow-400' });
+    if (greenStreak >= 1) badges.push({ icon: 'check', label: 'Started Strong Today', color: 'text-green-400' });
 
     return { level, streaks: { green: greenStreak, goal: goalStreak }, badges, profitableDays };
   }, [entries, rollup, monthlyGoal]);
@@ -103,7 +103,7 @@ export function Achievements({ entries, rollup, monthlyGoal }: AchievementsProps
         className="w-full p-4 md:p-5 flex items-center justify-between hover:opacity-80 transition-opacity"
       >
         <div className="flex items-center gap-3">
-          <span className="text-3xl">🏆</span>
+          <svg className="w-8 h-8 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           <div className="text-left">
             <h3 className={`text-lg md:text-xl font-bold ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>
               Achievements
@@ -125,12 +125,12 @@ export function Achievements({ entries, rollup, monthlyGoal }: AchievementsProps
           {/* Streaks */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className={`p-3 rounded-lg ${isDarkTheme ? 'bg-slate-700/50' : 'bg-blue-50'}`}>
-              <div className="text-2xl font-black text-red-500">🔥</div>
+              <svg className="w-7 h-7 text-red-500 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 2.08 13.5.67zM12 19.35c-3.13 0-5.68-2.55-5.68-5.68 0-3.14 2.55-5.68 5.68-5.68s5.68 2.55 5.68 5.68c0 3.13-2.55 5.68-5.68 5.68z"/></svg>
               <p className={`text-xs font-bold opacity-75 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>Green Streak</p>
               <p className={`text-lg font-black ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>{achievements.streaks.green} days</p>
             </div>
             <div className={`p-3 rounded-lg ${isDarkTheme ? 'bg-slate-700/50' : 'bg-blue-50'}`}>
-              <div className="text-2xl font-black text-yellow-400">🎯</div>
+              <svg className="w-7 h-7 text-yellow-400 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
               <p className={`text-xs font-bold opacity-75 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>Goals Met</p>
               <p className={`text-lg font-black ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>{achievements.streaks.goal}+ months</p>
             </div>
@@ -150,7 +150,11 @@ export function Achievements({ entries, rollup, monthlyGoal }: AchievementsProps
                   }`}
                   title={badge.label}
                 >
-                  <div className="text-2xl mb-1">{badge.icon}</div>
+                  {badge.icon === 'fire' && <svg className={`w-6 h-6 ${badge.color} mx-auto mb-1`} fill="currentColor" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 2.08 13.5.67zM12 19.35c-3.13 0-5.68-2.55-5.68-5.68 0-3.14 2.55-5.68 5.68-5.68s5.68 2.55 5.68 5.68c0 3.13-2.55 5.68-5.68 5.68z"/></svg>}
+                  {badge.icon === 'heart' && <svg className={`w-6 h-6 ${badge.color} mx-auto mb-1`} fill="currentColor" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>}
+                  {badge.icon === 'target' && <svg className={`w-6 h-6 ${badge.color} mx-auto mb-1`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>}
+                  {badge.icon === 'star' && <svg className={`w-6 h-6 ${badge.color} mx-auto mb-1`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>}
+                  {badge.icon === 'check' && <svg className={`w-6 h-6 ${badge.color} mx-auto mb-1`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>}
                   <p className={`text-xs font-bold leading-tight ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>
                     {badge.label.split(' ')[0]}
                   </p>

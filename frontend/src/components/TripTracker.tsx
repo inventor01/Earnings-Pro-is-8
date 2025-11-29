@@ -144,7 +144,10 @@ export function TripTracker({ onTripComplete }: TripTrackerProps) {
   return (
     <div className="bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg shadow-lg p-4 text-white">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-bold">🚗 Trip Tracker</h3>
+        <div className="flex items-center gap-2">
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm11 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM5 12l2-6h10l2 6H5z"/></svg>
+          <h3 className="text-lg font-bold">Trip Tracker</h3>
+        </div>
         {isTracking && (
           <span className="flex items-center text-sm">
             <span className="animate-pulse mr-2">🔴</span>

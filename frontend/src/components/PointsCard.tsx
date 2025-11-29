@@ -45,7 +45,7 @@ export function PointsCard() {
     }`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">⭐</span>
+          <svg className="w-7 h-7 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           <div>
             <div className={`text-2xl font-bold ${themeConfig.name === 'simple-light' ? 'text-purple-900' : 'text-purple-400'}`}>
               {pointsData.total_points}
@@ -56,8 +56,9 @@ export function PointsCard() {
           </div>
         </div>
         <div className="text-right">
-          <div className={`text-2xl font-bold ${themeConfig.name === 'simple-light' ? 'text-red-600' : 'text-red-400'}`}>
-            🔥 {pointsData.daily_streak}
+          <div className={`text-2xl font-bold ${themeConfig.name === 'simple-light' ? 'text-red-600' : 'text-red-400'} flex items-center gap-1`}>
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 2.08 13.5.67zM12 19.35c-3.13 0-5.68-2.55-5.68-5.68 0-3.14 2.55-5.68 5.68-5.68s5.68 2.55 5.68 5.68c0 3.13-2.55 5.68-5.68 5.68z"/></svg>
+            {pointsData.daily_streak}
           </div>
           <div className={`text-xs ${themeConfig.name === 'simple-light' ? 'text-red-600' : 'text-red-300'}`}>
             Day Streak
