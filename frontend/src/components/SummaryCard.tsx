@@ -312,9 +312,9 @@ export function SummaryCard({
               label === 'Orders' ? 'glow-blue' :
               'glow-yellow'
             }`
-            : `border-2 border-transparent ${colors.shadow} transition-all hover:border-current/20 group-hover/card:shadow-2xl`
-        } backdrop-blur-md overflow-hidden group-hover/card:-translate-y-2`}>
-          <div className="metric-card-pattern absolute inset-0 rounded-2xl pointer-events-none" />
+            : `border-2 border-transparent transition-all`
+        } backdrop-blur-md overflow-hidden`}>
+          {isDarkTheme && <div className="metric-card-pattern absolute inset-0 rounded-2xl pointer-events-none" />}
           
           {/* Accent line at top */}
           <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-2xl z-10 ${
