@@ -35,7 +35,7 @@ export function PotOfGoldTracker() {
   const isGoalReached = currentProfit >= goalAmount;
 
   const handleEditClick = () => {
-    setTempGoal(goalAmount.toString());
+    setTempGoal(goalAmount > 0 ? goalAmount.toString() : '');
     setTempGoalName(monthlyGoal?.goal_name || 'Savings Goal');
     setIsEditing(true);
     setError('');
