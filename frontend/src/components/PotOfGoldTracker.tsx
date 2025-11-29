@@ -221,7 +221,7 @@ export function PotOfGoldTracker() {
               themeConfig.name === 'ninja-green' ? 'text-green-700' :
               'text-slate-300'
             }`}>
-              Set a monthly earnings target to track your ninja progress
+              Name your savings goal and set a target to track your progress
             </p>
           </div>
           <button
@@ -234,7 +234,7 @@ export function PotOfGoldTracker() {
                 : 'bg-yellow-400 hover:bg-yellow-500 text-black shadow-lg'
             }`}
           >
-            Set Earnings Target
+            Create Savings Goal
           </button>
         </div>
       </div>
