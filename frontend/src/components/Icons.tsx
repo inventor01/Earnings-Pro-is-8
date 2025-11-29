@@ -8,16 +8,7 @@ export const Icons = {
   
   Expenses: (props: React.SVGProps<SVGSVGElement>) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
-      {/* Tag body - rounded rectangle */}
-      <path d="M4 7h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
-      {/* Folded corner cut */}
-      <path d="M18 7l2-2v2" />
-      {/* Hanging string hole - small circle at top right */}
-      <circle cx="19" cy="6" r="1" fill="currentColor" />
-      {/* Price divider line */}
-      <line x1="4" y1="13" x2="18" y2="13" strokeOpacity="0.4" />
-      {/* Minus sign */}
-      <line x1="8" y1="13" x2="14" y2="13" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="5" y1="12" x2="19" y2="12" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   
