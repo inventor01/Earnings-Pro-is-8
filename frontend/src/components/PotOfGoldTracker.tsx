@@ -36,10 +36,14 @@ export function PotOfGoldTracker() {
 
   useEffect(() => {
     if (user?.id) {
-      refetchGoal();
-      refetchMonthlyData();
+      // Refetch when user changes - use callback to avoid infinite loops
+      const timer = setTimeout(() => {
+        refetchGoal();
+        refetchMonthlyData();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [user?.id, refetchGoal, refetchMonthlyData]);
+  }, [user?.id]);
 
   const currentProfit = Math.max(0, parseFloat(String(monthlyData?.profit)) || 0);
   const goalAmount = monthlyGoal?.target_profit ? parseFloat(String(monthlyGoal.target_profit)) : 0;
