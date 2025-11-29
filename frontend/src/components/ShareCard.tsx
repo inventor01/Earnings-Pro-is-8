@@ -82,7 +82,7 @@ export function ShareCard({
         {/* Header */}
         <div className="mb-3 text-center">
           <div className="text-2xl font-bold mb-0.5">
-            <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">EARNINGS</span>
+            <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 bg-clip-text text-transparent">EARNINGS</span>
             <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent ml-1">PRO</span>
           </div>
           <p className="text-gray-400 text-xs">{periodLabel} Performance</p>
@@ -103,9 +103,9 @@ export function ShareCard({
           </div>
 
           {/* Profit */}
-          <div className="bg-gradient-to-br from-cyan-900/30 to-blue-800/10 rounded-lg p-2 border border-cyan-500/30">
-            <p className="text-cyan-400 text-xs font-semibold mb-0.5">💰 PROFIT</p>
-            <p className="text-cyan-300 text-lg font-bold break-words">${profit}</p>
+          <div className="bg-gradient-to-br from-yellow-900/30 to-yellow-800/10 rounded-lg p-2 border border-yellow-500/30">
+            <p className="text-yellow-400 text-xs font-semibold mb-0.5">💰 PROFIT</p>
+            <p className="text-yellow-300 text-lg font-bold break-words">${profit}</p>
           </div>
 
           {/* Miles */}

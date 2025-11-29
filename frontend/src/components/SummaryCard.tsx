@@ -119,7 +119,7 @@ export function SummaryCard({
       'Expenses': { icon: 'text-red-600', accent: 'text-red-700', bg: 'bg-gradient-to-br from-white to-red-50', shadow: 'hover:shadow-lg hover:shadow-red-500/20' },
       'Profit': { icon: 'text-green-600', accent: 'text-green-700', bg: 'bg-gradient-to-br from-white to-green-50', shadow: 'hover:shadow-lg hover:shadow-green-500/20' },
       'Miles': { icon: 'text-purple-600', accent: 'text-purple-700', bg: 'bg-gradient-to-br from-white to-purple-50', shadow: 'hover:shadow-lg hover:shadow-purple-500/20' },
-      'Orders': { icon: 'text-blue-600', accent: 'text-blue-700', bg: 'bg-gradient-to-br from-white to-blue-50', shadow: 'hover:shadow-lg hover:shadow-blue-500/20' },
+      'Orders': { icon: 'text-yellow-600', accent: 'text-yellow-700', bg: 'bg-gradient-to-br from-white to-yellow-50', shadow: 'hover:shadow-lg hover:shadow-yellow-400/20' },
       'Avg Order': { icon: 'text-yellow-600', accent: 'text-yellow-700', bg: 'bg-gradient-to-br from-white to-yellow-50', shadow: 'hover:shadow-lg hover:shadow-yellow-500/20' }
     };
     
@@ -337,7 +337,7 @@ export function SummaryCard({
             icon={Icons.Orders}
             label="Orders"
             value={orders.toString()}
-            color="from-cyan-500 to-cyan-400"
+            color="from-yellow-500 to-yellow-400"
             secondary={themeConfig.kpiColors['green'].accent}
           />
         )}

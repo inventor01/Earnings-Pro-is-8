@@ -395,19 +395,19 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
             <>
               {/* Inner highlight - bright glow inside the element */}
               <div
-                className="fixed border-2 border-cyan-400 rounded-lg pointer-events-none"
+                className="fixed border-2 border-yellow-400 rounded-lg pointer-events-none"
                 style={{
                   top: `${highlightBox.top - 4}px`,
                   left: `${highlightBox.left - 4}px`,
                   width: `${highlightBox.width + 8}px`,
                   height: `${highlightBox.height + 8}px`,
                   boxShadow: `
-                    0 0 15px rgba(34, 211, 238, 0.8),
-                    0 0 30px rgba(34, 211, 238, 0.6),
-                    0 0 45px rgba(6, 182, 212, 0.4),
-                    inset 0 0 15px rgba(34, 211, 238, 0.2)
+                    0 0 15px rgba(250, 204, 21, 0.8),
+                    0 0 30px rgba(250, 204, 21, 0.6),
+                    0 0 45px rgba(234, 179, 8, 0.4),
+                    inset 0 0 15px rgba(250, 204, 21, 0.2)
                   `,
-                  background: 'rgba(34, 211, 238, 0.05)',
+                  background: 'rgba(250, 204, 21, 0.05)',
                   zIndex: 41,
                 }}
               />
@@ -419,7 +419,7 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
                   left: `${highlightBox.left - 8}px`,
                   width: `${highlightBox.width + 16}px`,
                   height: `${highlightBox.height + 16}px`,
-                  boxShadow: `0 0 60px rgba(34, 211, 238, 0.3), 0 0 100px rgba(6, 182, 212, 0.15)`,
+                  boxShadow: `0 0 60px rgba(250, 204, 21, 0.3), 0 0 100px rgba(234, 179, 8, 0.15)`,
                   zIndex: 40,
                 }}
               />
@@ -463,9 +463,9 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
                 key={idx}
                 className={`h-0.5 transition-all ${
                   idx === currentStep
-                    ? 'w-2 md:w-6 bg-cyan-400'
+                    ? 'w-2 md:w-6 bg-yellow-400'
                     : idx < currentStep
-                    ? 'w-1 md:w-2 bg-cyan-400/50'
+                    ? 'w-1 md:w-2 bg-yellow-400/50'
                     : 'w-1 md:w-2 bg-gray-500'
                 }`}
               />
@@ -511,7 +511,7 @@ export function FeatureTour({ onClose }: FeatureTourProps) {
             </button>
             <button
               onClick={currentStep === TOUR_STEPS.length - 1 ? handleComplete : handleNext}
-              className={`flex-1 md:flex-none rounded transition-all whitespace-nowrap shadow-lg font-bold bg-gradient-to-r from-cyan-400 to-white hover:from-cyan-300 hover:to-gray-100 text-black border border-cyan-400 hover:shadow-cyan-400/50 ${
+              className={`flex-1 md:flex-none rounded transition-all whitespace-nowrap shadow-lg font-bold bg-gradient-to-r from-yellow-400 to-white hover:from-yellow-300 hover:to-gray-100 text-black border border-yellow-400 hover:shadow-yellow-400/50 ${
                 window.innerWidth < 360 ? 'px-1 py-1 text-[8px]' : 
                 window.innerWidth < 480 ? 'px-1.5 py-1 text-[9px]' : 
                 'md:py-1 px-2 md:px-3 text-xs md:text-sm'

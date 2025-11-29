@@ -72,7 +72,7 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadP
             <button
               key={num}
               onClick={() => handleNumber(num)}
-              className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+              className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-yellow-200 hover:to-yellow-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
             >
               {num}
             </button>
@@ -85,7 +85,7 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadP
             <button
               key={num}
               onClick={() => handleNumber(num)}
-              className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+              className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-yellow-200 hover:to-yellow-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
             >
               {num}
             </button>
@@ -98,7 +98,7 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadP
             <button
               key={num}
               onClick={() => handleNumber(num)}
-              className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+              className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-yellow-200 hover:to-yellow-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
             >
               {num}
             </button>
@@ -115,13 +115,13 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadP
           </button>
           <button
             onClick={() => handleNumber('0')}
-            className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+            className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-yellow-200 hover:to-yellow-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
           >
             0
           </button>
           <button
             onClick={handleDecimal}
-            className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-blue-200 hover:to-blue-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+            className="w-full bg-gradient-to-br from-gray-100 to-gray-200 hover:from-yellow-200 hover:to-yellow-300 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
           >
             .
           </button>
