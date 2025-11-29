@@ -9,17 +9,25 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
   const isDarkTheme = theme === 'ninja-dark';
 
   const scrollToTop = () => {
-    // Strategy 1: Scroll the overflow-y-auto container (dashboard content)
+    // Strategy 1: Try to scroll the overflow-y-auto container (dashboard content)
     const scrollContainer = document.querySelector('.overflow-y-auto') as HTMLElement | null;
-    if (scrollContainer && scrollContainer.scrollTop > 0) {
+    
+    if (scrollContainer) {
+      console.log('Found scroll container, scrolling to top. Current position:', scrollContainer.scrollTop);
       scrollContainer.scrollTo({
         top: 0,
         behavior: 'smooth'
       });
+      
+      // Verify the scroll worked
+      setTimeout(() => {
+        console.log('After scroll, position is:', scrollContainer.scrollTop);
+      }, 500);
       return;
     }
     
-    // Strategy 2: Scroll the window
+    // Strategy 2: Fallback to window scroll
+    console.log('No container found, scrolling window');
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
