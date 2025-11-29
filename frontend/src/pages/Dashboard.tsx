@@ -1083,7 +1083,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 z-50 ${calcExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`} data-tour="calculator">
         <button
           onClick={() => setCalcExpanded(!calcExpanded)}
-          className="w-full py-4 px-4 flex items-center justify-between bg-yellow-400 text-white font-bold text-lg hover:bg-yellow-500 opacity-100 shadow-lg"
+          className="w-full py-4 px-4 flex items-center justify-between bg-yellow-400 text-gray-900 font-bold text-lg hover:bg-yellow-500 opacity-100 shadow-lg"
         >
           <span className="flex items-center gap-3">
             {calcExpanded ? (
