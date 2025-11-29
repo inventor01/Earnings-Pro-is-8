@@ -9,7 +9,7 @@ export function PotOfGoldTracker() {
   const [tempGoal, setTempGoal] = useState('');
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [floatingCoins, setFloatingCoins] = useState<number[]>([]);
+  const [floatingShuriken, setFloatingShuriken] = useState<number[]>([]);
   const [isHidden, setIsHidden] = useState(false);
 
   const { data: monthlyGoal, refetch: refetchGoal } = useQuery({
@@ -62,11 +62,11 @@ export function PotOfGoldTracker() {
     setError('');
   };
 
-  const triggerCoins = () => {
-    const newCoins = Array.from({ length: 12 }, (_, i) => Date.now() + i * 30);
-    setFloatingCoins(prev => [...prev, ...newCoins]);
+  const triggerShuriken = () => {
+    const newShuriken = Array.from({ length: 12 }, (_, i) => Date.now() + i * 30);
+    setFloatingShuriken(prev => [...prev, ...newShuriken]);
     setTimeout(() => {
-      setFloatingCoins([]);
+      setFloatingShuriken([]);
     }, 2800);
   };
 
@@ -93,7 +93,7 @@ export function PotOfGoldTracker() {
               : 'bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-300 border border-cyan-400/30'
           }`}
         >
-          Show Monthly Goal
+          Show Monthly Target
         </button>
       </div>
     );
@@ -114,7 +114,7 @@ export function PotOfGoldTracker() {
           <label className={`block text-sm font-bold ${
             themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-yellow-900' : 'text-yellow-300'
           }`}>
-            Monthly Pot of Gold Goal
+            Monthly Earnings Target
           </label>
           <div className={`flex gap-2 p-3 rounded-xl border-2 transition-all ${
             themeConfig.name === 'dark-neon'
@@ -154,7 +154,7 @@ export function PotOfGoldTracker() {
                   : 'bg-yellow-400 hover:bg-yellow-500 text-black disabled:opacity-50 shadow-lg'
               }`}
             >
-              {isSaving ? 'Saving...' : 'Save Goal'}
+              {isSaving ? 'Saving...' : 'Save Target'}
             </button>
             <button
               onClick={handleCancel}
@@ -188,20 +188,20 @@ export function PotOfGoldTracker() {
       }`}>
         <div className="space-y-4">
           <div className="text-center">
-            <div className="text-5xl md:text-6xl mb-3">🪙</div>
+            <div className="text-5xl md:text-6xl mb-3">🥷</div>
             <h3 className={`font-black text-lg md:text-xl mb-2 ${
               themeConfig.name === 'simple-light' ? 'text-blue-700' : 
               themeConfig.name === 'ninja-green' ? 'text-green-800' :
               'text-white'
             }`}>
-              Start Your Pot of Gold
+              Launch Your Mission
             </h3>
             <p className={`text-sm ${
               themeConfig.name === 'simple-light' ? 'text-blue-600' :
               themeConfig.name === 'ninja-green' ? 'text-green-700' :
               'text-slate-300'
             }`}>
-              Set a monthly profit goal to track your treasure
+              Set a monthly earnings target to track your ninja progress
             </p>
           </div>
           <button
@@ -214,7 +214,7 @@ export function PotOfGoldTracker() {
                 : 'bg-yellow-400 hover:bg-yellow-500 text-black shadow-lg'
             }`}
           >
-            Set Monthly Goal
+            Set Earnings Target
           </button>
         </div>
       </div>
@@ -236,7 +236,7 @@ export function PotOfGoldTracker() {
         animation: themeConfig.name === 'dark-neon' ? 'pot-glow 3s ease-in-out infinite' : themeConfig.name === 'ninja-green' ? 'none' : 'none'
       }}
     >
-      {/* Starfield background */}
+      {/* Ninja stars/particles background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[...Array(20)].map((_, i) => (
           <div
@@ -253,16 +253,16 @@ export function PotOfGoldTracker() {
         ))}
       </div>
 
-      {/* Floating coins animation */}
+      {/* Floating shuriken animation */}
       <div className="absolute inset-0 pointer-events-none overflow-visible">
-        {floatingCoins.map((coinId, idx) => {
+        {floatingShuriken.map((shurikenId, idx) => {
           const angle = Math.random() * Math.PI * 2;
           const velocity = 80 + Math.random() * 100;
           const randomX = Math.cos(angle) * velocity;
           const randomY = Math.sin(angle) * velocity;
           return (
             <div
-              key={coinId}
+              key={shurikenId}
               className="absolute text-4xl"
               style={{
                 left: '50%',
@@ -283,7 +283,7 @@ export function PotOfGoldTracker() {
                 position: 'relative',
                 animation: 'spin-coin 1.2s linear forwards',
               }}>
-                🪙
+                ⭐
               </div>
             </div>
           );
@@ -330,33 +330,33 @@ export function PotOfGoldTracker() {
             themeConfig.name === 'ninja-green' ? 'text-green-800' :
             'text-white'
           }`}>
-            Monthly Profit Goal
+            Monthly Earnings Target
           </h3>
           <p className={`text-xs md:text-sm font-semibold ${
             themeConfig.name === 'simple-light' ? 'text-blue-600' :
             themeConfig.name === 'ninja-green' ? 'text-green-700' :
             'text-slate-300'
           }`}>
-            {Math.min(100, Math.round(progressPercent))}% to your monthly treasure
+            {Math.min(100, Math.round(progressPercent))}% mission complete
           </p>
         </div>
         <div 
-          onClick={triggerCoins}
+          onClick={triggerShuriken}
           className="text-5xl md:text-6xl cursor-pointer hover:scale-125 transition-transform"
           style={{
             animation: 'pulse-gold 1.5s ease-in-out infinite',
             filter: 'drop-shadow(0 0 10px rgba(34, 211, 238, 0.8))'
           }}
         >
-          🪙
+          🥷
         </div>
       </div>
 
-      {/* Cosmic decorations */}
+      {/* Ninja stars decoration */}
       <div className="relative z-10 flex justify-between items-center mb-8 opacity-80">
       </div>
 
-      {/* Rainbow bridge effect */}
+      {/* Ninja mission progress bars */}
       <div className="relative z-10 mb-3 h-12 group/rainbow">
         <div className="absolute inset-0 flex items-end justify-between gap-1.5 px-2">
           {[...Array(5)].map((_, i) => {
@@ -457,7 +457,7 @@ export function PotOfGoldTracker() {
             ? 'bg-lime-200 border-2 border-lime-400 text-lime-700'
             : 'bg-cyan-500/30 border-2 border-cyan-400/50 text-cyan-300'
         }`}>
-          You found your pot of gold!
+          Mission accomplished, ninja! 🥷
         </div>
       )}
 
@@ -467,7 +467,7 @@ export function PotOfGoldTracker() {
         themeConfig.name === 'ninja-green' ? 'text-green-600' :
         'text-cyan-300'
       }`}>
-        Click the coin to celebrate • Click to edit your goal
+        Click the ninja to celebrate • Click to edit your target
       </div>
 
       {/* Hide button */}
