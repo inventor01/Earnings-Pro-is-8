@@ -697,27 +697,25 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
 
         <div className="mb-4 md:mb-8 lg:mb-10" data-tour="search">
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+          <div className={`flex items-center gap-3 px-4 py-3 md:py-3.5 rounded-xl border-2 transition-all shadow-md hover:shadow-lg ${
             isDarkTheme
-              ? 'bg-slate-800 border-slate-700 focus-within:border-lime-400'
-              : 'bg-white border-gray-300 focus-within:border-lime-500'
+              ? 'bg-slate-800 border-lime-500/40 focus-within:border-lime-400 focus-within:shadow-lg focus-within:shadow-lime-500/20'
+              : 'bg-lime-50 border-lime-400 focus-within:border-lime-500 focus-within:shadow-lg focus-within:shadow-lime-400/30'
           }`}>
-            <svg className={`w-5 h-5 ${isDarkTheme ? 'text-slate-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            <Icons.Search className={`w-5 h-5 flex-shrink-0 ${isDarkTheme ? 'text-lime-400' : 'text-lime-600'}`} />
             <input
               type="text"
               placeholder="Search transactions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`flex-1 bg-transparent outline-none text-sm ${isDarkTheme ? 'text-white placeholder-slate-400' : 'text-gray-900 placeholder-gray-400'}`}
+              className={`flex-1 bg-transparent outline-none text-sm font-medium ${isDarkTheme ? 'text-white placeholder-slate-500' : 'text-gray-900 placeholder-lime-500/60'}`}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className={`text-sm font-medium ${isDarkTheme ? 'text-slate-400 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`flex-shrink-0 p-1 rounded-md transition-all ${isDarkTheme ? 'text-slate-400 hover:text-lime-400 hover:bg-slate-700' : 'text-lime-600 hover:text-lime-700 hover:bg-lime-100'}`}
               >
-                ✕
+                <Icons.X className="w-5 h-5" />
               </button>
             )}
           </div>
