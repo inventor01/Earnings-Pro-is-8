@@ -32,6 +32,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
   const { config, setTheme, themeName } = useTheme();
   const [soundMuted, setSoundMutedState] = useState(isSoundMuted());
   const themes = getAllThemes();
+  const isDarkTheme = config.name !== 'ninja-green';
   
   const { data: userInfo } = useQuery<UserInfo>({
     queryKey: ['userInfo'],
@@ -70,41 +71,57 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose} />
-      <div className="fixed right-0 top-0 h-full w-full md:w-80 shadow-2xl z-50 flex flex-col bg-gradient-to-b from-white to-gray-50 text-gray-900 border-l border-lime-500/20">
-        <div className="flex justify-between items-center px-6 py-5 border-b border-gray-200/50 flex-shrink-0 backdrop-blur-sm">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-3">
-            <div className="p-2 bg-lime-100 rounded-lg">
-              <Icons.Settings width={18} height={18} className="text-lime-700" strokeWidth={2} />
+      <div className={`fixed right-0 top-0 h-full w-full md:w-80 shadow-2xl z-50 flex flex-col ${
+        isDarkTheme
+          ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white border-l border-green-500/20'
+          : 'bg-gradient-to-b from-white to-gray-50 text-gray-900 border-l border-lime-500/20'
+      }`}>
+        <div className={`flex justify-between items-center px-6 py-5 border-b flex-shrink-0 backdrop-blur-sm ${
+          isDarkTheme
+            ? 'border-slate-700 bg-slate-900/50'
+            : 'border-gray-200/50'
+        }`}>
+          <h2 className={`text-lg font-bold flex items-center gap-3 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
+            <div className={`p-2 rounded-lg ${isDarkTheme ? 'bg-green-500/20' : 'bg-lime-100'}`}>
+              <Icons.Settings width={18} height={18} className={isDarkTheme ? 'text-green-400' : 'text-lime-700'} strokeWidth={2} />
             </div>
             Settings
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center transition-colors">
+          <button onClick={onClose} className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+            isDarkTheme
+              ? 'text-slate-400 hover:text-white hover:bg-slate-700'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+          }`}>
             <Icons.X width="100%" height="100%" strokeWidth={2} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6">
           {userInfo && (
-            <div className="mb-6 mt-4 p-4 rounded-xl bg-gradient-to-br from-lime-50 to-white border border-lime-200/60">
-              <h3 className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
-                <Icons.User width={16} height={16} className="text-lime-600" strokeWidth={2} />
+            <div className={`mb-6 mt-4 p-4 rounded-xl border ${
+              isDarkTheme
+                ? 'bg-gradient-to-br from-green-500/10 to-slate-800 border-green-500/30'
+                : 'bg-gradient-to-br from-lime-50 to-white border-lime-200/60'
+            }`}>
+              <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
+                <Icons.User width={16} height={16} className={isDarkTheme ? 'text-green-400' : 'text-lime-600'} strokeWidth={2} />
                 Account Information
               </h3>
               <div className="space-y-2.5 text-sm">
                 <div>
-                  <p className="text-gray-600 text-xs font-medium">Username</p>
-                  <p className="font-semibold text-gray-900 mt-0.5">{userInfo.first_name}</p>
+                  <p className={`text-xs font-medium ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>Username</p>
+                  <p className={`font-semibold mt-0.5 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>{userInfo.first_name}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600 text-xs font-medium">Email</p>
-                  <p className="font-semibold break-all text-gray-900 mt-0.5 text-sm">{userInfo.email}</p>
+                  <p className={`text-xs font-medium ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>Email</p>
+                  <p className={`font-semibold break-all mt-0.5 text-sm ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>{userInfo.email}</p>
                 </div>
               </div>
             </div>
           )}
           
-          <div className="py-6 border-t border-gray-200/50">
-            <h3 className="text-sm font-semibold mb-4 text-gray-900">Appearance</h3>
+          <div className={`py-6 border-t ${isDarkTheme ? 'border-slate-700' : 'border-gray-200/50'}`}>
+            <h3 className={`text-sm font-semibold mb-4 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>Appearance</h3>
             <div className="space-y-2">
               {themes.map((theme) => (
                 <button
@@ -112,7 +129,11 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                   onClick={() => setTheme(theme.name as ThemeName)}
                   className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-3 border ${
                     themeName === theme.name
-                      ? 'bg-lime-100 border-lime-300 text-gray-900 ring-2 ring-lime-400'
+                      ? isDarkTheme
+                        ? 'bg-green-500/20 border-green-400 text-white ring-2 ring-green-400'
+                        : 'bg-lime-100 border-lime-300 text-gray-900 ring-2 ring-lime-400'
+                      : isDarkTheme
+                      ? 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
                       : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -120,7 +141,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                     type="radio"
                     checked={themeName === theme.name}
                     onChange={() => {}}
-                    className="w-4 h-4 cursor-pointer accent-lime-600"
+                    className={`w-4 h-4 cursor-pointer ${isDarkTheme ? 'accent-green-400' : 'accent-lime-600'}`}
                   />
                   <span>{theme.label}</span>
                 </button>
@@ -128,13 +149,17 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             </div>
           </div>
 
-          <div className="py-6 border-t border-gray-200/50">
-            <h3 className="text-sm font-semibold mb-4 text-gray-900">Audio Settings</h3>
+          <div className={`py-6 border-t ${isDarkTheme ? 'border-slate-700' : 'border-gray-200/50'}`}>
+            <h3 className={`text-sm font-semibold mb-4 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>Audio Settings</h3>
             <button
               onClick={handleSoundToggle}
               className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-3 border ${
                 !soundMuted
-                  ? 'bg-lime-100 border-lime-200 text-gray-900'
+                  ? isDarkTheme
+                    ? 'bg-green-500/20 border-green-400 text-white'
+                    : 'bg-lime-100 border-lime-200 text-gray-900'
+                  : isDarkTheme
+                  ? 'bg-slate-700 border-slate-600 text-slate-400 opacity-60'
                   : 'bg-gray-50 border-gray-200 text-gray-400 opacity-60'
               }`}
             >
@@ -142,7 +167,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                 type="checkbox"
                 checked={!soundMuted}
                 onChange={() => {}}
-                className="w-4 h-4 cursor-pointer accent-lime-600"
+                className={`w-4 h-4 cursor-pointer ${isDarkTheme ? 'accent-green-400' : 'accent-lime-600'}`}
               />
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width={16} height={16} strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -152,8 +177,8 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             </button>
           </div>
 
-          <div className="py-6 border-t border-gray-200/50">
-            <h3 className="text-sm font-semibold mb-4 text-gray-900">Performance Overview Metrics</h3>
+          <div className={`py-6 border-t ${isDarkTheme ? 'border-slate-700' : 'border-gray-200/50'}`}>
+            <h3 className={`text-sm font-semibold mb-4 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>Performance Overview Metrics</h3>
             <div className="space-y-3">
               {[
                 { key: 'revenue' as const, label: 'Revenue', icon: Icons.Revenue },
@@ -168,7 +193,11 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                   onClick={() => handleMetricToggle(key)}
                   className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-3 border ${
                     metricVisibility[key] !== false
-                      ? 'bg-lime-100 border-lime-200 text-gray-900'
+                      ? isDarkTheme
+                        ? 'bg-green-500/20 border-green-400 text-white'
+                        : 'bg-lime-100 border-lime-200 text-gray-900'
+                      : isDarkTheme
+                      ? 'bg-slate-700 border-slate-600 text-slate-400 opacity-60'
                       : 'bg-gray-50 border-gray-200 text-gray-400 opacity-60'
                   }`}
                 >
@@ -176,7 +205,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                     type="checkbox"
                     checked={metricVisibility[key] !== false}
                     onChange={() => {}}
-                    className="w-4 h-4 cursor-pointer accent-lime-600"
+                    className={`w-4 h-4 cursor-pointer ${isDarkTheme ? 'accent-green-400' : 'accent-lime-600'}`}
                   />
                   <IconComponent width={16} height={16} strokeWidth={1.5} />
                   {label}
@@ -186,10 +215,10 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
           </div>
         </div>
 
-        <div className="border-t border-gray-200/50 p-3 flex-shrink-0 space-y-2">
+        <div className={`border-t p-3 flex-shrink-0 space-y-2 ${isDarkTheme ? 'border-slate-700 bg-slate-900/50' : 'border-gray-200/50'}`}>
           <div>
-            <h3 className="text-xs font-semibold mb-1.5 text-gray-900 flex items-center gap-1">
-              <Icons.HelpCircle width={12} height={12} className="text-gray-600" strokeWidth={2} />
+            <h3 className={`text-xs font-semibold mb-1.5 flex items-center gap-1 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
+              <Icons.HelpCircle width={12} height={12} className={isDarkTheme ? 'text-slate-400' : 'text-gray-600'} strokeWidth={2} />
               Help & Tutorial
             </h3>
             <button
@@ -202,30 +231,34 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
               <Icons.HelpCircle width={14} height={14} strokeWidth={2} />
               Restart Tour
             </button>
-            <p className="text-xs mt-0.5 text-gray-600">
+            <p className={`text-xs mt-0.5 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
               Learn all features with the interactive tour.
             </p>
           </div>
 
           <div data-tour="export">
-            <h3 className="text-xs font-semibold mb-1.5 text-gray-900 flex items-center gap-1">
-              <Icons.Download width={12} height={12} className="text-gray-600" strokeWidth={2} />
+            <h3 className={`text-xs font-semibold mb-1.5 flex items-center gap-1 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
+              <Icons.Download width={12} height={12} className={isDarkTheme ? 'text-slate-400' : 'text-gray-600'} strokeWidth={2} />
               Export
             </h3>
             <button
               onClick={onExport}
-              className="w-full py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all bg-lime-500 hover:bg-lime-600 text-white border border-lime-600 flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
+              className={`w-full py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all border flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg ${
+                isDarkTheme
+                  ? 'bg-green-600 hover:bg-green-700 text-white border-green-700'
+                  : 'bg-lime-500 hover:bg-lime-600 text-white border-lime-600'
+              }`}
             >
               <Icons.Download width={14} height={14} strokeWidth={2} />
               Export to CSV
             </button>
-            <p className="text-xs mt-0.5 text-gray-600">
+            <p className={`text-xs mt-0.5 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
               Download all entries as CSV.
             </p>
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold mb-1.5 text-red-700">Danger Zone</h3>
+            <h3 className={`text-xs font-semibold mb-1.5 ${isDarkTheme ? 'text-red-400' : 'text-red-700'}`}>Danger Zone</h3>
             <button
               onClick={handleResetAll}
               className="w-full py-1.5 px-2.5 pl-4 rounded-lg text-xs font-medium transition-all bg-red-500 hover:bg-red-600 text-white border border-red-600 flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
@@ -233,7 +266,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
               <Icons.Trash2 width={14} height={14} strokeWidth={2} />
               Reset All Data
             </button>
-            <p className="text-xs mt-0.5 text-gray-600">
+            <p className={`text-xs mt-0.5 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
               Permanently delete all entries. Cannot be undone.
             </p>
             <button
@@ -246,7 +279,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
               <Icons.LogOut width={14} height={14} strokeWidth={2} />
               Sign Out
             </button>
-            <p className="text-xs mt-0.5 text-gray-600">
+            <p className={`text-xs mt-0.5 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
               End your session.
             </p>
           </div>
