@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../lib/themeContext';
 import { useAuth } from '../lib/authContext';
@@ -15,7 +15,7 @@ export function PotOfGoldTracker() {
   const [floatingShuriken, setFloatingShuriken] = useState<number[]>([]);
   const [isHidden, setIsHidden] = useState(false);
 
-  const { data: monthlyGoal, refetch: refetchGoal } = useQuery({
+  const { data: monthlyGoal, refetch: refetchGoal, isLoading: isGoalLoading } = useQuery({
     queryKey: ['goal', 'THIS_MONTH', user?.id],
     queryFn: () => api.getGoal('THIS_MONTH'),
     staleTime: 0,
@@ -34,8 +34,15 @@ export function PotOfGoldTracker() {
     refetchOnMount: true,
   });
 
+  useEffect(() => {
+    if (user?.id) {
+      refetchGoal();
+      refetchMonthlyData();
+    }
+  }, [user?.id, refetchGoal, refetchMonthlyData]);
+
   const currentProfit = Math.max(0, parseFloat(String(monthlyData?.profit)) || 0);
-  const goalAmount = parseFloat(String(monthlyGoal?.target_profit)) || 0;
+  const goalAmount = monthlyGoal?.target_profit ? parseFloat(String(monthlyGoal.target_profit)) : 0;
   
   const progressPercent = goalAmount > 0 ? Math.round(Math.min(Math.max(0, (currentProfit / goalAmount) * 100), 100) * 100) / 100 : 0;
   const isGoalReached = currentProfit >= goalAmount;
