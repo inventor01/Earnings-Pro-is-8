@@ -341,23 +341,6 @@ export function SummaryCard({
               }`}
               style={isNegative ? {
                 animation: 'blink-red 0.8s ease-in-out infinite'
-              } : isDarkTheme ? {
-                animation: 'subtle-glow 2s ease-in-out infinite',
-                filter: `drop-shadow(0 0 12px ${
-                  label === 'Revenue' ? 'rgba(132, 204, 22, 0.6)' :
-                  label === 'Expenses' ? 'rgba(239, 68, 68, 0.5)' :
-                  label === 'Profit' ? 'rgba(34, 197, 94, 0.6)' :
-                  label === 'Miles' ? 'rgba(147, 51, 234, 0.5)' :
-                  label === 'Orders' ? 'rgba(59, 130, 246, 0.5)' :
-                  'rgba(202, 138, 4, 0.5)'
-                }) drop-shadow(0 0 24px ${
-                  label === 'Revenue' ? 'rgba(132, 204, 22, 0.3)' :
-                  label === 'Expenses' ? 'rgba(239, 68, 68, 0.2)' :
-                  label === 'Profit' ? 'rgba(34, 197, 94, 0.3)' :
-                  label === 'Miles' ? 'rgba(147, 51, 234, 0.2)' :
-                  label === 'Orders' ? 'rgba(59, 130, 246, 0.2)' :
-                  'rgba(202, 138, 4, 0.2)'
-                })`
               } : {}}>
                 {hideData ? '***' : <CountUpNumber value={value} />}
               </div>
