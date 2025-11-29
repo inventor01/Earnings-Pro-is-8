@@ -7,7 +7,8 @@ export function ScrollToTopButton() {
   const isDarkTheme = theme === 'dark-neon';
 
   const toggleVisibility = () => {
-    if (window.scrollY > 50) {
+    const scrollThreshold = window.innerWidth < 768 ? 10 : 50; // Mobile: 10px, Desktop: 50px
+    if (window.scrollY > scrollThreshold) {
       setIsVisible(true);
     } else {
       setIsVisible(false);
