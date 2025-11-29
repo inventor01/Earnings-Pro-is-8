@@ -13,10 +13,10 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
     const performanceOverview = document.getElementById('performance-overview');
     
     if (performanceOverview) {
-      // Scroll the element into view smoothly
+      // Scroll the element into view smoothly, centered to avoid header overlap on mobile
       performanceOverview.scrollIntoView({
         behavior: 'smooth',
-        block: 'start'
+        block: 'center'
       });
     } else {
       // Fallback: scroll to top if element not found
