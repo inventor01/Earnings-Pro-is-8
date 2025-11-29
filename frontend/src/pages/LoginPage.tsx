@@ -47,18 +47,18 @@ export function LoginPage() {
 
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''}`}>
-      <div className={`w-full max-w-md rounded-xl shadow-2xl p-8 ${
+      <div className={`w-full max-w-md rounded-xl shadow-2xl p-4 md:p-8 ${
         isDarkTheme
           ? 'bg-slate-900 border border-slate-700'
           : 'bg-white border border-gray-200'
       }`}>
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🚗</div>
-          <h1 className={`text-3xl font-black mb-2 ${config.titleColor}`}>
+        <div className="text-center mb-6 md:mb-8">
+          <div className="text-5xl md:text-6xl mb-3 md:mb-4">🚗</div>
+          <h1 className={`text-2xl md:text-3xl font-black mb-2 ${config.titleColor}`}>
             Earnings Ninja
           </h1>
-          <p className={`text-sm font-semibold ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'} mb-1`}>
+          <p className={`text-xs md:text-sm font-semibold ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'} mb-1`}>
             Grow your earnings with Earnings Ninja
           </p>
           <p className={`text-xs ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
