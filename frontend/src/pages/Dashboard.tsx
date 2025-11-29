@@ -119,7 +119,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSearch, setShowSearch] = useState(true);
+  const [showSearch, setShowSearch] = useState(false); // Hidden by default on mobile
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showFeatureTour, setShowFeatureTour] = useState(() => {
     const hasCompletedTour = localStorage.getItem('hasCompletedFeatureTour');
@@ -179,14 +179,20 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      const isMobile = window.innerWidth < 768; // md breakpoint in Tailwind
       
-      // Require scrolling up by 80px to show search
-      if (currentScrollY < lastScrollY - 80) {
-        // Scrolled up significantly - show search
-        setShowSearch(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down and past threshold - hide search
+      if (isMobile) {
+        // Keep search hidden on mobile
         setShowSearch(false);
+      } else {
+        // Desktop behavior
+        if (currentScrollY < lastScrollY - 80) {
+          // Scrolled up significantly - show search
+          setShowSearch(true);
+        } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+          // Scrolling down and past threshold - hide search
+          setShowSearch(false);
+        }
       }
       
       setLastScrollY(currentScrollY);
