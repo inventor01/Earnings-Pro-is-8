@@ -59,13 +59,10 @@ def get_or_create_default_user(db: Session) -> AuthUser:
         try:
             db.commit()
             db.refresh(user)
-            seed_demo_entries(db, user.id)
+            # Seeding disabled - users start with empty data
         except:
             db.rollback()
             user = db.query(AuthUser).filter(AuthUser.id == DEFAULT_USER_ID).first() or user
-    else:
-        # Make sure demo entries exist
-        seed_demo_entries(db, user.id)
     return user
 
 def get_current_user(credentials = Depends(security), db: Session = Depends(get_db)) -> AuthUser:
