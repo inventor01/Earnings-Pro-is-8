@@ -35,7 +35,7 @@ export function PeriodChips({ selected, onSelect, onCustomClick }: PeriodChipsPr
           }}
           className={`px-2 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium whitespace-nowrap touch-manipulation transition-all ${
             selected === period.value
-              ? `${config.chipActiveBg} ${config.chipActive} shadow-lg shadow-yellow-400/50`
+              ? `${config.chipActiveBg} ${config.chipActive} shadow-xl shadow-yellow-400/60`
               : config.chipInactive
           }`}
         >
