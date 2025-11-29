@@ -1049,7 +1049,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                 <button
                   onClick={handleSave}
                   disabled={createMutation.isPending}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-lg text-lg font-bold disabled:bg-gray-400"
+                  className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 py-4 rounded-lg text-lg font-bold disabled:bg-gray-400"
                 >
                   {createMutation.isPending ? 'Saving...' : 'Save Entry'}
                 </button>
