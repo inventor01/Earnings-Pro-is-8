@@ -63,6 +63,29 @@ The application provides a calculator-style input with add/subtract modes, real-
 - **APScheduler**: Background job scheduler for periodic order syncing.
 - **httpx**: Async HTTP client for making API calls to Uber and Shipt platforms.
 
+## Performance Overview Visual Enhancements (November 29, 2025)
+
+### Visual Upgrades
+Enhanced the Performance Overview dashboard cards with premium effects:
+
+**Styling Improvements:**
+- **Advanced Gradients**: Light/dark theme with 3-step color-coded gradients (each metric has unique colors: Lime/Red/Green/Purple/Blue/Yellow)
+- **Glassmorphism**: Increased backdrop blur (md → md) with sophisticated inset shadows and borders
+- **Color-Coded Glows**: Enhanced glow effects specific to each metric (0.25 opacity for better visibility)
+- **Better Shadow Layers**: Triple-layered shadows (inset top, inset bottom, drop shadow, color glow) for depth
+
+**Animation Enhancements:**
+- **Icon Float Animation**: Icons gently wobble and float continuously (float-wobble 4s animation)
+- **Smooth Hover Effects**: Cards lift up 12px with perspective 3D rotation on hover (cubic-bezier timing)
+- **Enhanced Scale**: Icons scale to 125% (up from 110%) and rotate 12° on hover
+- **Improved Transitions**: All transitions use 400ms duration with cubic-bezier easing for smooth feel
+
+**Layout Improvements:**
+- **Better Spacing**: Grid gaps increased (gap-4 md:gap-5 lg:gap-6) for more breathing room
+- **Refined Patterns**: Subtle background patterns with radial gradients for depth
+
+**File Modified**: `frontend/src/components/SummaryCard.tsx` - Enhanced CSS animations, gradients, shadows, and hover effects
+
 ## Calculator Auto-Reset Improvement (November 29, 2025)
 
 ### Improvement

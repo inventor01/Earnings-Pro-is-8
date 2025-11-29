@@ -187,87 +187,125 @@ export function SummaryCard({
             }
           }
 
-          /* Light gradients */
-          .metric-gradient-lime {
-            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 50%, #dcfce7 100%);
-          }
-          .metric-gradient-red {
-            background: linear-gradient(135deg, #ffffff 0%, #fef2f2 50%, #fee2e2 100%);
-          }
-          .metric-gradient-green {
-            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 50%, #bbf7d0 100%);
-          }
-          .metric-gradient-purple {
-            background: linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #e9d5ff 100%);
-          }
-          .metric-gradient-blue {
-            background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 50%, #dbeafe 100%);
-          }
-          .metric-gradient-yellow {
-            background: linear-gradient(135deg, #ffffff 0%, #fffbeb 50%, #fef3c7 100%);
+          @keyframes float-wobble {
+            0%, 100% {
+              transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+              transform: translateY(-4px) rotate(1deg);
+            }
           }
 
-          /* Dark gradients */
+          @keyframes icon-pulse {
+            0%, 100% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.08);
+            }
+          }
+
+          @keyframes border-glow {
+            0%, 100% {
+              border-color: currentColor;
+              box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+            }
+            50% {
+              box-shadow: 0 0 12px 0 rgba(255, 255, 255, 0.1);
+            }
+          }
+
+          /* Light gradients - Enhanced with more sophisticated colors */
+          .metric-gradient-lime {
+            background: linear-gradient(135deg, #ffffff 0%, #f7fee7 35%, #e4fdce 100%);
+          }
+          .metric-gradient-red {
+            background: linear-gradient(135deg, #ffffff 0%, #fef5f5 35%, #fecaca 100%);
+          }
+          .metric-gradient-green {
+            background: linear-gradient(135deg, #ffffff 0%, #f6fef9 35%, #a7f3d0 100%);
+          }
+          .metric-gradient-purple {
+            background: linear-gradient(135deg, #ffffff 0%, #faf8ff 35%, #e9d5ff 100%);
+          }
+          .metric-gradient-blue {
+            background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 35%, #bfdbfe 100%);
+          }
+          .metric-gradient-yellow {
+            background: linear-gradient(135deg, #ffffff 0%, #fffdf7 35%, #fde047 100%);
+          }
+
+          /* Dark gradients - Enhanced with color-coded depth */
           .metric-dark-gradient-lime {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+            background: linear-gradient(135deg, #1a2332 0%, #0f172a 50%, #1a3a1a 100%);
           }
           .metric-dark-gradient-red {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+            background: linear-gradient(135deg, #1a2332 0%, #0f172a 50%, #3a1a1a 100%);
           }
           .metric-dark-gradient-green {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+            background: linear-gradient(135deg, #1a2332 0%, #0f172a 50%, #1a3a2a 100%);
           }
           .metric-dark-gradient-purple {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+            background: linear-gradient(135deg, #1a2332 0%, #0f172a 50%, #2a1a3a 100%);
           }
           .metric-dark-gradient-blue {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+            background: linear-gradient(135deg, #1a2332 0%, #0f172a 50%, #1a2a3a 100%);
           }
           .metric-dark-gradient-yellow {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+            background: linear-gradient(135deg, #1a2332 0%, #0f172a 50%, #3a3a1a 100%);
           }
 
           .metric-card-pattern {
             background-image: 
-              radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
-            background-size: 20px 20px;
-            background-position: 0 0, 10px 10px;
+              radial-gradient(circle at 20% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(255,255,255,0.04) 0%, transparent 50%);
+            background-size: 200% 200%;
           }
 
           .dark-metric-card {
             box-shadow: 
-              inset 0 1px 0 rgba(255, 255, 255, 0.1),
-              0 0 20px rgba(0, 0, 0, 0.3),
-              0 0 40px var(--glow-color);
+              inset 0 1px 0 rgba(255, 255, 255, 0.15),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+              0 10px 30px rgba(0, 0, 0, 0.4),
+              0 0 60px var(--glow-color);
+            border: 1px solid rgba(255, 255, 255, 0.08);
           }
 
           .dark-metric-card.glow-lime {
-            --glow-color: rgba(132, 204, 22, 0.15);
+            --glow-color: rgba(132, 204, 22, 0.25);
           }
 
           .dark-metric-card.glow-red {
-            --glow-color: rgba(239, 68, 68, 0.15);
+            --glow-color: rgba(239, 68, 68, 0.25);
           }
 
           .dark-metric-card.glow-green {
-            --glow-color: rgba(34, 197, 94, 0.15);
+            --glow-color: rgba(34, 197, 94, 0.25);
           }
 
           .dark-metric-card.glow-purple {
-            --glow-color: rgba(147, 51, 234, 0.15);
+            --glow-color: rgba(147, 51, 234, 0.25);
           }
 
           .dark-metric-card.glow-blue {
-            --glow-color: rgba(59, 130, 246, 0.15);
+            --glow-color: rgba(59, 130, 246, 0.25);
           }
 
           .dark-metric-card.glow-yellow {
-            --glow-color: rgba(202, 138, 4, 0.15);
+            --glow-color: rgba(202, 138, 4, 0.25);
+          }
+
+          .metric-card-hover {
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+
+          .metric-card-hover:hover {
+            transform: translateY(-12px) perspective(1000px) rotateX(2deg);
           }
         `}</style>
-        <div className={`relative p-5 md:p-6 lg:p-7 rounded-2xl transition-all duration-300 group/card ${colors.bg} ${
+        <div className={`relative p-5 md:p-6 lg:p-7 rounded-2xl transition-all duration-400 group/card ${colors.bg} ${
           isDarkTheme 
-            ? `border border-slate-700/50 ${colors.shadow} dark-metric-card ${
+            ? `${colors.shadow} dark-metric-card metric-card-hover ${
               label === 'Revenue' ? 'glow-lime' :
               label === 'Expenses' ? 'glow-red' :
               label === 'Profit' ? 'glow-green' :
@@ -275,8 +313,8 @@ export function SummaryCard({
               label === 'Orders' ? 'glow-blue' :
               'glow-yellow'
             }`
-            : `border border-gray-200/50 ${colors.shadow}`
-        } backdrop-blur-sm overflow-hidden group-hover/card:-translate-y-2`}>
+            : `border-2 border-transparent ${colors.shadow} transition-all hover:border-current/20 group-hover/card:shadow-2xl`
+        } backdrop-blur-md overflow-hidden group-hover/card:-translate-y-2`}>
           <div className="metric-card-pattern absolute inset-0 rounded-2xl pointer-events-none" />
           
           {/* Accent line at top */}
@@ -291,7 +329,7 @@ export function SummaryCard({
           
           <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between gap-3">
-              <div className={`w-14 h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 ${colors.icon} group-hover/card:scale-110 group-hover/card:rotate-6 transition-all duration-300`}>
+              <div className={`w-14 h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 ${colors.icon} group-hover/card:scale-125 group-hover/card:rotate-12 transition-all duration-400 animate-[float-wobble_4s_ease-in-out_infinite]`} style={{animationDelay: '0.1s'}}>
                 <Icon width="100%" height="100%" strokeWidth={1.5} />
               </div>
               <div className={`text-xs md:text-sm lg:text-base font-semibold uppercase tracking-wide ${colors.accent} opacity-90`}>{label}</div>
@@ -366,8 +404,8 @@ export function SummaryCard({
       onTouchEnd={handleTouchEnd}
       style={{ cursor: showDayNav ? 'grab' : 'default' }}
     >
-      {/* Metrics Grid - Shopify Style */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4">
+      {/* Metrics Grid - Enhanced with better spacing */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-5 lg:gap-6">
         {/* Revenue */}
         {visibility.revenue && (
           <MetricCard
