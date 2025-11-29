@@ -131,10 +131,10 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
   'ninja-green': {
     name: 'ninja-green',
     label: 'Ninja Green',
-    dashBg: 'bg-gradient-to-br',
-    dashFrom: 'from-lime-100',
-    dashTo: 'to-yellow-50',
-    dashVia: 'via-white',
+    dashBg: 'bg-lime-100',
+    dashFrom: '',
+    dashTo: '',
+    dashVia: '',
     
     kpiColors: {
       green: { glow: 'from-lime-300 to-lime-500', accent: 'text-green-800', border: 'border-lime-400', bg: 'bg-lime-50' },
