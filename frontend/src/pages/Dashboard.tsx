@@ -646,8 +646,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               onClick={() => setResetConfirm(true)}
               className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
                 isDarkTheme
-                  ? 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-700 hover:to-red-600 hover:shadow-red-500/50'
-                  : 'bg-red-500 text-white hover:bg-red-600'
+                  ? 'bg-yellow-500 text-black hover:bg-yellow-600'
+                  : 'bg-yellow-500 text-black hover:bg-yellow-600'
               }`}
               title="Reset today's data"
             >
