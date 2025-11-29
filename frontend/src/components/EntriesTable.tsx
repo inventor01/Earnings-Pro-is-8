@@ -118,7 +118,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   };
 
   const getAppLogo = (app: string): string | null => {
-    const isLightTheme = config.name === 'simple-light';
+    const isLightTheme = config.name === 'ninja-green';
     
     switch (app) {
       case 'DOORDASH':
@@ -148,8 +148,8 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   };
 
   const getAppColor = (app: string) => {
-    const isBWTheme = config.name === 'bw-neon';
-    const isLightTheme = config.name === 'simple-light';
+    const isBWTheme = config.name === 'ninja-dark';
+    const isLightTheme = config.name === 'ninja-green';
     
     if (isBWTheme) {
       return 'border border-white text-white bg-black';
@@ -191,8 +191,8 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   };
 
   const getCategoryColor = (category: string) => {
-    const isBWTheme = config.name === 'bw-neon';
-    const isLightTheme = config.name === 'simple-light';
+    const isBWTheme = config.name === 'ninja-dark';
+    const isLightTheme = config.name === 'ninja-green';
     
     if (isBWTheme) {
       return 'border border-white text-white bg-black';
@@ -282,7 +282,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   };
 
   if (entries.length === 0) {
-    const isDarkTheme = config.name !== 'simple-light';
+    const isDarkTheme = config.name !== 'ninja-green';
     return (
       <div className={`rounded-lg shadow p-8 text-center ${config.tableBg} ${isDarkTheme ? 'text-lime-400' : 'text-lime-600'}`}>
         No entries yet. Add your first entry using the calculator below!
@@ -308,7 +308,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                     }
                   }}
                   onChange={handleSelectAll}
-                  className={`w-4 h-4 rounded cursor-pointer ${config.name === 'bw-neon' ? 'border-white text-white' : config.name === 'simple-light' ? 'border-blue-500 text-blue-600' : 'border-cyan-500 text-cyan-400'}`}
+                  className={`w-4 h-4 rounded cursor-pointer ${config.name === 'ninja-dark' ? 'border-white text-white' : config.name === 'ninja-green' ? 'border-blue-500 text-blue-600' : 'border-cyan-500 text-cyan-400'}`}
                 />
               </th>
               <th className="px-0 py-0">
@@ -330,7 +330,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
               <th className={`px-4 py-3 text-right text-xs font-bold uppercase ${config.tableHeaderText}`}>Actions</th>
             </tr>
           </thead>
-          <tbody className={`divide-y ${config.name === 'simple-light' ? 'divide-gray-200' : 'divide-slate-700'}`}>
+          <tbody className={`divide-y ${config.name === 'ninja-green' ? 'divide-gray-200' : 'divide-slate-700'}`}>
             {sortedEntries.map((entry) => (
               <tr key={entry.id} className={`${config.tableRowHover} transition-colors ${selectedIds.includes(entry.id) ? config.tableRowSelected : ''}`}>
                 <td className="px-4 py-3">
@@ -338,12 +338,12 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                     type="checkbox"
                     checked={selectedIds.includes(entry.id)}
                     onChange={() => handleSelectOne(entry.id)}
-                    className={`w-4 h-4 rounded cursor-pointer ${config.name === 'bw-neon' ? 'border-white text-white' : config.name === 'simple-light' ? 'border-blue-500 text-blue-600' : 'border-cyan-500 text-cyan-400'}`}
+                    className={`w-4 h-4 rounded cursor-pointer ${config.name === 'ninja-dark' ? 'border-white text-white' : config.name === 'ninja-green' ? 'border-blue-500 text-blue-600' : 'border-cyan-500 text-cyan-400'}`}
                   />
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1 whitespace-nowrap">
-                    <svg className={`w-5 h-5 ${config.name === 'simple-light' ? 'text-gray-700' : 'text-white'}`} fill="currentColor" viewBox="0 0 24 24"><path d={getTypeIcon(entry.type)}/></svg>
+                    <svg className={`w-5 h-5 ${config.name === 'ninja-green' ? 'text-gray-700' : 'text-white'}`} fill="currentColor" viewBox="0 0 24 24"><path d={getTypeIcon(entry.type)}/></svg>
                     <span className={`text-sm font-bold ${config.textPrimary}`}>{entry.type}</span>
                   </div>
                 </td>
@@ -356,7 +356,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                   ) : (
                     <div className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center justify-center ${getAppColor(entry.app)}`}>
                       {(() => {
-                        const isDarkTheme = config.name !== 'simple-light';
+                        const isDarkTheme = config.name !== 'ninja-green';
                         const logoSrc = getAppLogo(entry.app);
                         return logoSrc ? (
                           <img src={logoSrc} alt={entry.app} className="h-4 md:h-5 w-auto max-w-[100px] md:max-w-[120px] object-contain" />
