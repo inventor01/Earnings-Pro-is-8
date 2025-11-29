@@ -19,7 +19,6 @@ import { FeatureTour } from '../components/FeatureTour';
 // import { PointsCard } from '../components/PointsCard';
 import { ShareCard } from '../components/ShareCard';
 import { ScrollToTopButton } from '../components/ScrollToTopButton';
-import { ScrollToBottomButton } from '../components/ScrollToBottomButton';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { AchievementsModal } from '../components/AchievementsModal';
 import { ProfitCalendar } from '../components/ProfitCalendar';
@@ -1243,9 +1242,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       {/* Feature Tour - Interactive tour guide */}
       {showFeatureTour && <FeatureTour onClose={handleCloseTour} />}
 
-      {/* Floating Scroll Buttons - Mobile optimized, positioned at right side */}
+      {/* Floating Scroll to Search Button - Mobile optimized, positioned at right side */}
       <ScrollToTopButton isFormOpen={calcExpanded} />
-      <ScrollToBottomButton isFormOpen={calcExpanded} />
     </div>
   );
 }
