@@ -811,7 +811,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             {/* Performance Overview Header with Toggle */}
             <div className="flex items-center justify-between gap-2">
               <h2 className={`text-xl md:text-2xl font-bold ${isDarkTheme ? 'text-lime-300' : 'text-green-900'}`}>
-                📊 Performance Overview
+                Performance Overview
               </h2>
               <div className="flex gap-2">
                 <button
