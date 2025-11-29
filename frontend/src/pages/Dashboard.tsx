@@ -929,6 +929,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                         ? 'bg-yellow-400 text-black border-yellow-500 shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 hover:bg-yellow-500'
                         : 'bg-lime-100 text-lime-700 border-lime-400 hover:bg-lime-200'
                     }`}
+                    style={!showCalendar && !isDarkTheme ? {backgroundImage: 'radial-gradient(circle, rgba(200, 200, 200, 0.3) 1px, transparent 1px)', backgroundSize: '20px 20px'} : {}}
                   >
                     <Icons.Calendar className="w-6 h-6 md:w-7 md:h-7" />
                     <span>{showCalendar ? 'Hide Calendar' : 'Show Calendar'}</span>
