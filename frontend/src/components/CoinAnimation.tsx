@@ -8,20 +8,29 @@ export function CoinAnimation() {
     setIsVisible(true);
   }, []);
 
-  const coins = Array.from({ length: 8 }, (_, i) => i);
+  const coins = Array.from({ length: 8 }, (_, i) => {
+    // Calculate angle for each coin (spread evenly around 360 degrees)
+    const angle = (i / 8) * Math.PI * 2;
+    const distance = 300;
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
+    return { id: i, x, y, angle };
+  });
 
   return (
-    <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-30">
+    <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-30 overflow-hidden">
       {isVisible && coins.map((coin) => (
         <div
-          key={coin}
+          key={coin.id}
           className="coin-animation"
           style={{
-            '--coin-delay': `${coin * 0.1}s`,
+            '--coin-delay': `${coin.id * 0.08}s`,
+            '--tx': `${coin.x}px`,
+            '--ty': `${coin.y}px`,
           } as React.CSSProperties}
         >
           <svg
-            className="w-8 h-8 md:w-12 md:h-12 text-yellow-400"
+            className="w-12 h-12 md:w-20 md:h-20 lg:w-24 lg:h-24 text-yellow-400"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -59,27 +68,24 @@ export function CoinAnimation() {
         }
 
         .coin-animation {
-          --tx: ${Math.cos(Math.random() * Math.PI * 2) * 200}px;
-          --ty: ${Math.sin(Math.random() * Math.PI * 2) * 200}px;
           position: fixed;
-          top: 80px;
-          left: 80px;
-          animation: coinBurst 1.2s ease-out forwards;
+          top: 50px;
+          left: 50%;
+          transform: translateX(-50%);
+          animation: coinBurst 1.4s ease-out forwards;
           animation-delay: var(--coin-delay);
-          filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.8));
+          filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.9));
         }
 
         @media (min-width: 768px) {
           .coin-animation {
-            top: 120px;
-            left: 120px;
+            top: 100px;
           }
         }
 
         @media (min-width: 1024px) {
           .coin-animation {
-            top: 160px;
-            left: 160px;
+            top: 140px;
           }
         }
       `}</style>
