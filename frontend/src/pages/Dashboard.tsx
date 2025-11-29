@@ -845,7 +845,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           <div className="lg:col-span-3 space-y-6 md:space-y-8 lg:space-y-10 scroll-smooth" data-tour="performance">
             {/* Performance Overview Header with Toggle */}
             <div className="flex items-center justify-between gap-2" id="performance-overview">
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-wider text-green-500 drop-shadow-2xl" style={{fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Courier, monospace', letterSpacing: '0.1em'}}>
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-wider text-green-500 drop-shadow-lg" style={{fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Courier, monospace', letterSpacing: '0.1em'}}>
                 PERFORMANCE OVERVIEW
               </h2>
               <div className="flex gap-2">
