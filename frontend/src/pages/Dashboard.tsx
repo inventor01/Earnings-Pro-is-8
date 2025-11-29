@@ -125,6 +125,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     return hasCompletedTour === null;
   });
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(false);
   
   const handleCloseTour = () => {
     localStorage.setItem('hasCompletedFeatureTour', 'true');
@@ -717,14 +718,57 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
           <div className="max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 w-full pb-4 md:pb-8 lg:pb-10 overflow-x-auto" data-tour="periods">
             <PeriodChips selected={period} onSelect={setPeriod} onSearchClick={() => {
-              const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-              if (searchInput) searchInput.focus();
+              setShowSearchBar(true);
+              setTimeout(() => {
+                const searchBar = document.querySelector('#search-bar-input') as HTMLInputElement;
+                if (searchBar) {
+                  searchBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  searchBar.focus();
+                }
+              }, 0);
             }} />
           </div>
         </div>
       </div>
 
       <div className={`${contentClass} pt-20 md:pt-32 lg:pt-24`}>
+
+        {/* Search Bar - Collapsible */}
+        {showSearchBar && (
+          <div className="mb-4 md:mb-8 lg:mb-10 transition-all duration-300" id="search-bar">
+            <div className={`flex items-center gap-3 px-4 py-3 md:py-3.5 rounded-xl border-2 transition-all shadow-md hover:shadow-lg ${
+              isDarkTheme
+                ? 'bg-slate-800 border-lime-500/40 focus-within:border-lime-400 focus-within:shadow-lg focus-within:shadow-lime-500/20'
+                : 'bg-lime-50 border-lime-400 focus-within:border-lime-500 focus-within:shadow-lg focus-within:shadow-lime-400/30'
+            }`}>
+              <Icons.Search className={`w-5 h-5 flex-shrink-0 ${isDarkTheme ? 'text-lime-400' : 'text-lime-600'}`} />
+              <input
+                id="search-bar-input"
+                type="text"
+                placeholder="Search transactions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`flex-1 bg-transparent outline-none text-sm font-medium ${isDarkTheme ? 'text-white placeholder-slate-500' : 'text-gray-900 placeholder-lime-500/60'}`}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className={`flex-shrink-0 p-1 rounded-md transition-all ${isDarkTheme ? 'text-slate-400 hover:text-lime-400 hover:bg-slate-700' : 'text-lime-600 hover:text-lime-700 hover:bg-lime-100'}`}
+                >
+                  <Icons.X className="w-5 h-5" />
+                </button>
+              )}
+              <button
+                onClick={() => setShowSearchBar(false)}
+                className={`flex-shrink-0 p-1 rounded-md transition-all ${isDarkTheme ? 'text-slate-400 hover:text-slate-300 hover:bg-slate-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Negative Profit Alert */}
         {rollup && rollup.profit < 0 && showNegativeAlert && (
