@@ -1,3 +1,5 @@
+import { useState, useRef } from 'react';
+
 export type CalcMode = 'add' | 'subtract';
 
 interface CalcPadProps {
@@ -8,6 +10,8 @@ interface CalcPadProps {
 }
 
 export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadProps) {
+  const [isClearHeld, setIsClearHeld] = useState(false);
+  const clearTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const handleNumber = (num: string) => {
     if (amount === '0') {
       onAmountChange(num);
@@ -32,6 +36,26 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadP
 
   const handleClear = () => {
     onAmountChange('0');
+  };
+
+  const handleClearTouchStart = () => {
+    setIsClearHeld(false);
+    clearTimeoutRef.current = setTimeout(() => {
+      setIsClearHeld(true);
+      handleClear();
+    }, 500); // 500ms hold to clear
+  };
+
+  const handleClearTouchEnd = () => {
+    if (clearTimeoutRef.current) {
+      clearTimeout(clearTimeoutRef.current);
+      clearTimeoutRef.current = null;
+    }
+    // If not held long enough, do backspace instead
+    if (!isClearHeld) {
+      handleBackspace();
+    }
+    setIsClearHeld(false);
   };
 
   return (
@@ -108,10 +132,17 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange }: CalcPadP
         {/* Row 4: C 0 . (period inline) */}
         <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
           <button
-            onClick={handleClear}
-            className="w-full bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+            onTouchStart={handleClearTouchStart}
+            onTouchEnd={handleClearTouchEnd}
+            onMouseDown={handleClearTouchStart}
+            onMouseUp={handleClearTouchEnd}
+            className={`w-full p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation ${
+              isClearHeld
+                ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white scale-110'
+                : 'bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white'
+            }`}
           >
-            C
+            ⌫
           </button>
           <button
             onClick={() => handleNumber('0')}
