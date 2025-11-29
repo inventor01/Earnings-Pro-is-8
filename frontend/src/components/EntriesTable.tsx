@@ -264,7 +264,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
     return (
       <button
         onClick={() => handleSort(field)}
-        className={`px-4 py-3 text-left text-xs font-medium uppercase hover:opacity-80 transition-all w-full text-left flex items-center gap-2 ${config.tableHeaderText} ${isActive ? 'opacity-100' : 'opacity-75'}`}
+        className={`px-4 py-3 text-left text-xs font-bold uppercase hover:opacity-80 transition-all w-full text-left flex items-center gap-2 ${config.tableHeaderText} ${isActive ? 'opacity-100' : 'opacity-75'}`}
         title={`Sort by ${label}`}
       >
         {label}
@@ -320,8 +320,8 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
               <th className="px-0 py-0">
                 <SortHeader field="miles" label="Miles" />
               </th>
-              <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${config.tableHeaderText}`}>Note</th>
-              <th className={`px-4 py-3 text-right text-xs font-medium uppercase ${config.tableHeaderText}`}>Actions</th>
+              <th className={`px-4 py-3 text-left text-xs font-bold uppercase ${config.tableHeaderText}`}>Note</th>
+              <th className={`px-4 py-3 text-right text-xs font-bold uppercase ${config.tableHeaderText}`}>Actions</th>
             </tr>
           </thead>
           <tbody className={`divide-y ${config.name === 'simple-light' ? 'divide-gray-200' : 'divide-slate-700'}`}>
@@ -338,16 +338,16 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1 whitespace-nowrap">
                     <span className="text-xl">{getTypeIcon(entry.type)}</span>
-                    <span className={`text-sm ${config.textPrimary}`}>{entry.type}</span>
+                    <span className={`text-sm font-bold ${config.textPrimary}`}>{entry.type}</span>
                   </div>
                 </td>
                 <td className="px-4 py-3">
                   {entry.type === 'EXPENSE' ? (
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block ${getCategoryColor(entry.category || 'OTHER')}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block ${getCategoryColor(entry.category || 'OTHER')}`}>
                       {getCategoryEmoji(entry.category || 'OTHER')} {entry.category || 'OTHER'}
                     </span>
                   ) : (
-                    <div className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-flex items-center justify-center ${getAppColor(entry.app)}`}>
+                    <div className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center justify-center ${getAppColor(entry.app)}`}>
                       {(() => {
                         const logoSrc = getAppLogo(entry.app);
                         return logoSrc ? (
@@ -359,7 +359,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                     </div>
                   )}
                 </td>
-                <td className={`px-4 py-3 text-sm ${config.textSecondary}`}>
+                <td className={`px-4 py-3 text-sm font-bold ${config.textSecondary}`}>
                   {formatDateEST(entry.timestamp)}
                 </td>
                 <td className={`px-4 py-3 text-right font-black ${
@@ -367,12 +367,12 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                 }`}>
                   ${Math.abs(entry.amount).toFixed(2)}
                 </td>
-                <td className={`px-4 py-3 text-right text-sm ${config.textSecondary}`}>
+                <td className={`px-4 py-3 text-right text-sm font-bold ${config.textSecondary}`}>
                   {entry.distance_miles > 0 ? `${entry.distance_miles.toFixed(1)} mi` : '-'}
                 </td>
-                <td className={`px-4 py-3 text-sm ${config.textSecondary}`}>
+                <td className={`px-4 py-3 text-sm font-bold ${config.textSecondary}`}>
                   <div className="flex flex-col gap-1">
-                    {entry.note && <span className="truncate max-w-xs">{entry.note}</span>}
+                    {entry.note && <span className="truncate max-w-xs font-bold">{entry.note}</span>}
                     {entry.receipt_url && (
                       <button
                         onClick={() => {
@@ -401,13 +401,13 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                   </button>
                   <button
                     onClick={() => onEdit && onEdit(entry)}
-                    className={`text-sm font-medium transition-colors ${config.textCyan} hover:opacity-80`}
+                    className={`text-sm font-bold transition-colors ${config.textCyan} hover:opacity-80`}
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => onDelete && onDelete(entry.id)}
-                    className={`text-sm font-medium transition-colors ${config.textRed} hover:opacity-80`}
+                    className={`text-sm font-bold transition-colors ${config.textRed} hover:opacity-80`}
                   >
                     Delete
                   </button>
