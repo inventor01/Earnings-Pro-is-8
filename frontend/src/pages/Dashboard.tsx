@@ -180,8 +180,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      if (currentScrollY < lastScrollY) {
-        // Scrolling up - show search
+      // Require scrolling up by 80px to show search
+      if (currentScrollY < lastScrollY - 80) {
+        // Scrolled up significantly - show search
         setShowSearch(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
         // Scrolling down and past threshold - hide search
