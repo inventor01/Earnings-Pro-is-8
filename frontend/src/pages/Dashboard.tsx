@@ -637,7 +637,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         </div>
       )}
-      <div className={`fixed top-0 left-0 right-0 z-40 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''} shadow-md`}>
+      <div id="header" className={`fixed top-0 left-0 right-0 z-40 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''} shadow-md`}>
         <div className="max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 w-full">
           <div className="flex justify-between items-center py-4 md:py-8 lg:py-10 gap-2">
             <div className="flex items-center gap-1 md:gap-3 lg:gap-4">
