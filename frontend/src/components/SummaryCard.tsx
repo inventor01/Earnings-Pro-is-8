@@ -120,8 +120,8 @@ export function SummaryCard({
   };
 
   const MetricCard = ({ icon: Icon, label, value, color, secondary, subtext, isNegative }: any) => {
-    // Determine colors based on label
-    const colorMap: { [key: string]: { icon: string; accent: string; bg: string; shadow: string } } = {
+    // Determine colors based on label and theme
+    const lightColorMap: { [key: string]: { icon: string; accent: string; bg: string; shadow: string } } = {
       'Revenue': { icon: 'text-lime-600', accent: 'text-lime-700', bg: 'bg-gradient-to-br from-white to-lime-50', shadow: 'hover:shadow-lg hover:shadow-lime-500/20' },
       'Expenses': { icon: 'text-red-600', accent: 'text-red-700', bg: 'bg-gradient-to-br from-white to-red-50', shadow: 'hover:shadow-lg hover:shadow-red-500/20' },
       'Profit': { icon: 'text-green-600', accent: 'text-green-700', bg: 'bg-gradient-to-br from-white to-green-50', shadow: 'hover:shadow-lg hover:shadow-green-500/20' },
@@ -129,7 +129,17 @@ export function SummaryCard({
       'Orders': { icon: 'text-blue-600', accent: 'text-blue-700', bg: 'bg-gradient-to-br from-white to-blue-50', shadow: 'hover:shadow-lg hover:shadow-blue-500/20' },
       'Avg Order': { icon: 'text-yellow-600', accent: 'text-yellow-700', bg: 'bg-gradient-to-br from-white to-yellow-50', shadow: 'hover:shadow-lg hover:shadow-yellow-500/20' }
     };
+
+    const darkColorMap: { [key: string]: { icon: string; accent: string; bg: string; shadow: string } } = {
+      'Revenue': { icon: 'text-lime-400', accent: 'text-lime-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-lime-500/30' },
+      'Expenses': { icon: 'text-red-400', accent: 'text-red-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-red-500/30' },
+      'Profit': { icon: 'text-green-400', accent: 'text-green-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-green-500/30' },
+      'Miles': { icon: 'text-purple-400', accent: 'text-purple-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-purple-500/30' },
+      'Orders': { icon: 'text-blue-400', accent: 'text-blue-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-blue-500/30' },
+      'Avg Order': { icon: 'text-yellow-400', accent: 'text-yellow-300', bg: 'bg-gradient-to-br from-slate-900/80 via-slate-850 to-slate-800', shadow: 'hover:shadow-2xl hover:shadow-yellow-500/30' }
+    };
     
+    const colorMap = isDarkTheme ? darkColorMap : lightColorMap;
     const colors = colorMap[label] || colorMap['Revenue'];
     
     return (
@@ -174,8 +184,50 @@ export function SummaryCard({
             background-size: 20px 20px;
             background-position: 0 0, 10px 10px;
           }
+
+          .dark-metric-card {
+            box-shadow: 
+              inset 0 1px 0 rgba(255, 255, 255, 0.1),
+              0 0 20px rgba(0, 0, 0, 0.3),
+              0 0 40px var(--glow-color);
+          }
+
+          .dark-metric-card.glow-lime {
+            --glow-color: rgba(132, 204, 22, 0.15);
+          }
+
+          .dark-metric-card.glow-red {
+            --glow-color: rgba(239, 68, 68, 0.15);
+          }
+
+          .dark-metric-card.glow-green {
+            --glow-color: rgba(34, 197, 94, 0.15);
+          }
+
+          .dark-metric-card.glow-purple {
+            --glow-color: rgba(147, 51, 234, 0.15);
+          }
+
+          .dark-metric-card.glow-blue {
+            --glow-color: rgba(59, 130, 246, 0.15);
+          }
+
+          .dark-metric-card.glow-yellow {
+            --glow-color: rgba(202, 138, 4, 0.15);
+          }
         `}</style>
-        <div className={`relative p-5 md:p-6 lg:p-7 rounded-2xl transition-all duration-300 group/card ${colors.bg} border border-gray-200/50 ${colors.shadow} backdrop-blur-sm overflow-hidden`}>
+        <div className={`relative p-5 md:p-6 lg:p-7 rounded-2xl transition-all duration-300 group/card ${colors.bg} ${
+          isDarkTheme 
+            ? `border border-slate-700/50 ${colors.shadow} dark-metric-card ${
+              label === 'Revenue' ? 'glow-lime' :
+              label === 'Expenses' ? 'glow-red' :
+              label === 'Profit' ? 'glow-green' :
+              label === 'Miles' ? 'glow-purple' :
+              label === 'Orders' ? 'glow-blue' :
+              'glow-yellow'
+            }`
+            : `border border-gray-200/50 ${colors.shadow}`
+        } backdrop-blur-sm overflow-hidden`}>
           <div className="metric-card-pattern absolute inset-0 rounded-2xl pointer-events-none" />
           
           {/* Accent line at top */}
