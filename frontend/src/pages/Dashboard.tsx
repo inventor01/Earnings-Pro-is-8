@@ -189,7 +189,12 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const element = document.getElementById('performance-overview');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
