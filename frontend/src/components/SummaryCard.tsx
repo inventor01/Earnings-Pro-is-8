@@ -215,24 +215,24 @@ export function SummaryCard({
             }
           }
 
-          /* Light gradients - Enhanced with more sophisticated colors */
+          /* Light gradients - Subtle, matching eggshell theme */
           .metric-gradient-lime {
-            background: linear-gradient(135deg, #ffffff 0%, #f7fee7 35%, #e4fdce 100%);
+            background: #fafaf7;
           }
           .metric-gradient-red {
-            background: linear-gradient(135deg, #ffffff 0%, #fef5f5 35%, #fecaca 100%);
+            background: #fafaf7;
           }
           .metric-gradient-green {
-            background: linear-gradient(135deg, #ffffff 0%, #f6fef9 35%, #a7f3d0 100%);
+            background: #fafaf7;
           }
           .metric-gradient-purple {
-            background: linear-gradient(135deg, #ffffff 0%, #faf8ff 35%, #e9d5ff 100%);
+            background: #fafaf7;
           }
           .metric-gradient-blue {
-            background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 35%, #bfdbfe 100%);
+            background: #fafaf7;
           }
           .metric-gradient-yellow {
-            background: linear-gradient(135deg, #ffffff 0%, #fffdf7 35%, #fde047 100%);
+            background: #fafaf7;
           }
 
           /* Dark gradients - Enhanced with color-coded depth */
