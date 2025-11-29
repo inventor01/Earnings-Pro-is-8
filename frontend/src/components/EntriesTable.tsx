@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { Entry } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
 import { formatDateEST } from '../lib/dateUtils';
-import { CompanyLogos } from './CompanyLogos';
+import doordashLogo from '../assets/doordash-logo.png';
+import ubereatsLogo from '../assets/ubereats-logo.png';
+import instacartLogo from '../assets/instacart-logo.png';
+import grubhubLogo from '../assets/grubhub-logo.png';
+import shiptLogo from '../assets/shipt-logo.png';
 
 interface EntriesTableProps {
   entries: Entry[];
@@ -116,8 +120,21 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
     }
   };
 
-  const getAppLogo = (app: string): React.ComponentType<any> | null => {
-    return (CompanyLogos as any)[app] || null;
+  const getAppLogo = (app: string): string | null => {
+    switch (app) {
+      case 'DOORDASH':
+        return doordashLogo;
+      case 'UBEREATS':
+        return ubereatsLogo;
+      case 'INSTACART':
+        return instacartLogo;
+      case 'GRUBHUB':
+        return grubhubLogo;
+      case 'SHIPT':
+        return shiptLogo;
+      default:
+        return null;
+    }
   };
 
   const getAppColor = (app: string) => {
@@ -332,8 +349,12 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                   ) : (
                     <div className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-flex items-center justify-center ${getAppColor(entry.app)}`}>
                       {(() => {
-                        const LogoComponent = getAppLogo(entry.app);
-                        return LogoComponent ? <div className="h-6 w-6"><LogoComponent /></div> : <span>{entry.app}</span>;
+                        const logoSrc = getAppLogo(entry.app);
+                        return logoSrc ? (
+                          <img src={logoSrc} alt={entry.app} className="h-5 w-auto max-w-[70px] object-contain" />
+                        ) : (
+                          <span>{entry.app}</span>
+                        );
                       })()}
                     </div>
                   )}
