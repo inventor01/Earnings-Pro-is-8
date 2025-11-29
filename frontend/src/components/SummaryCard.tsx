@@ -138,10 +138,10 @@ export function SummaryCard({
       `}</style>
       <div className={`relative p-4 md:p-5 lg:p-6 rounded-xl transition-all duration-300 group/card ${
         themeConfig.name === 'dark-neon'
-          ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/40 border border-slate-700/50 hover:border-slate-600/80 hover:from-slate-800/80 hover:to-slate-900/60 hover:shadow-lg hover:shadow-slate-900/50'
+          ? 'bg-slate-800 border border-slate-700/50 hover:border-slate-600/80 hover:shadow-lg hover:shadow-slate-900/50'
           : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
           ? 'bg-white border border-lime-500 hover:border-lime-600 hover:shadow-md hover:shadow-lime-300/50'
-          : 'bg-slate-800/60 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg'
+          : 'bg-slate-800 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg'
       }`}>
         {/* Top accent line */}
         <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r rounded-t-xl opacity-50 ${color}`} />
@@ -209,7 +209,7 @@ export function SummaryCard({
                     onClick={() => onDayChange(dayOffset - 1)}
                     className={`p-1.5 md:p-2 rounded-lg transition-all ${
                       isDarkTheme
-                        ? 'bg-gradient-to-r from-lime-900 to-lime-800 text-lime-400 hover:from-lime-800 hover:to-lime-700 hover:shadow-lg hover:shadow-lime-500/20'
+                        ? 'bg-lime-700 text-lime-100 hover:bg-lime-600 hover:shadow-lg hover:shadow-lime-500/20'
                         : 'bg-lime-500 text-white hover:bg-lime-600'
                     } font-bold text-sm md:text-base`}
                     title="Previous day"
@@ -227,7 +227,7 @@ export function SummaryCard({
                     onClick={() => onDayChange(dayOffset + 1)}
                     className={`p-1.5 md:p-2 rounded-lg transition-all ${
                       isDarkTheme
-                        ? 'bg-gradient-to-r from-lime-900 to-lime-800 text-lime-400 hover:from-lime-800 hover:to-lime-700 hover:shadow-lg hover:shadow-lime-500/20'
+                        ? 'bg-lime-700 text-lime-100 hover:bg-lime-600 hover:shadow-lg hover:shadow-lime-500/20'
                         : 'bg-lime-500 text-white hover:bg-lime-600'
                     } font-bold text-sm md:text-base`}
                     title="Next day"
@@ -328,9 +328,9 @@ export function SummaryCard({
             onClick={onShare}
             className={`px-3 py-1 rounded-lg transition-all text-xs md:text-sm font-medium opacity-70 hover:opacity-100 ${
               themeConfig.name === 'dark-neon'
-                ? 'text-lime-400 hover:text-lime-300 hover:bg-lime-400/10'
+                ? 'text-lime-400 hover:text-lime-300 hover:bg-lime-700'
                 : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
-                ? 'text-lime-600 hover:text-lime-700 hover:bg-lime-50'
+                ? 'text-lime-600 hover:text-lime-700 hover:bg-lime-100'
                 : 'text-gray-600 hover:text-black hover:bg-gray-100'
             }`}
             title="Share performance"

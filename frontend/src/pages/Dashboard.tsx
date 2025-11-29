@@ -770,7 +770,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                 className={`p-2 rounded-lg transition-all ${
                   isDarkTheme
                     ? 'text-slate-400 hover:text-lime-300 hover:bg-slate-700/50'
-                    : 'text-green-700 hover:text-lime-600 hover:bg-lime-200'
+                    : 'text-green-700 hover:text-green-900 hover:bg-lime-100'
                 }`}
                 title={showPerformanceOverview ? 'Collapse' : 'Expand'}
               >
@@ -818,11 +818,11 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                         className={`w-full px-6 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-lg md:text-xl transition-all flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95 duration-200 shadow-lg hover:shadow-2xl ${
                           isDarkTheme
                             ? showCalendar
-                              ? 'bg-gradient-to-r from-lime-400 to-lime-300 text-black border-2 border-lime-200 shadow-lg shadow-lime-500/30 hover:shadow-lime-500/50'
-                              : 'bg-gradient-to-r from-slate-700 to-slate-800 text-lime-300 border-2 border-lime-500/50 hover:from-slate-600 hover:to-slate-700 hover:text-lime-200 hover:border-lime-400'
+                              ? 'bg-lime-400 text-black border-2 border-lime-200 shadow-lg shadow-lime-500/30 hover:shadow-lime-500/50 hover:bg-lime-500'
+                              : 'bg-slate-700 text-lime-300 border-2 border-lime-500/50 hover:bg-slate-600 hover:text-lime-200 hover:border-lime-400'
                             : showCalendar
-                            ? 'bg-gradient-to-r from-lime-400 to-green-800 text-white border-2 border-lime-500 hover:from-lime-500 hover:to-green-900'
-                            : 'bg-gradient-to-r from-lime-400 to-green-700 text-white border-2 border-lime-500 hover:from-lime-500 hover:to-green-800 hover:border-lime-600'
+                            ? 'bg-yellow-400 text-black border-2 border-yellow-500 hover:bg-yellow-500'
+                            : 'bg-lime-500 text-white border-2 border-lime-600 hover:bg-lime-600 hover:border-lime-700'
                         }`}
                       >
                         <span className="text-2xl md:text-3xl">{showCalendar ? '📆' : '📅'}</span>
