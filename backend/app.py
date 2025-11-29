@@ -40,7 +40,11 @@ app.include_router(points.router, prefix="/api", tags=["points"])
 app.include_router(leaderboard_routes.router, prefix="/api", tags=["leaderboard"])
 
 # Serve frontend static files (must be after all API routes)
-dist_path = os.path.join(os.path.dirname(__file__), "dist")
+# In production (Docker), dist is at /app/dist
+# In development, it might be at backend/../frontend/dist
+dist_path = os.path.join(os.path.dirname(__file__), "..", "dist")
+dist_path = os.path.abspath(dist_path)
+
 if os.path.exists(dist_path):
     app.mount("/", StaticFiles(directory=dist_path, html=True), name="static")
 else:
