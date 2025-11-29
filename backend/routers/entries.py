@@ -177,10 +177,19 @@ async def delete_entry(entry_id: int, db: Session = Depends(get_db), current_use
 @router.delete("/entries")
 async def delete_all_entries(db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
     try:
-        db.query(Entry).filter(Entry.user_id == current_user.id).delete(synchronize_session=False)
-        db.query(Goal).filter(Goal.user_id == current_user.id).delete(synchronize_session=False)
+        # Delete entries
+        entry_delete_count = db.query(Entry).filter(Entry.user_id == current_user.id).delete(synchronize_session=False)
+        # Delete goals
+        goal_delete_count = db.query(Goal).filter(Goal.user_id == current_user.id).delete(synchronize_session=False)
+        # Commit both deletes
         db.commit()
-        return {"message": "All entries and goals deleted successfully"}
+        return {"message": f"Deleted {entry_delete_count} entries and {goal_delete_count} goals"}
     except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to delete entries: {str(e)}")
+        try:
+            db.rollback()
+        except:
+            pass
+        import traceback
+        print(f"ERROR in delete_all_entries: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to delete data")
