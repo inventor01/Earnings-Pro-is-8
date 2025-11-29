@@ -230,9 +230,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
               <span className="hidden md:inline">${currentProfit.toFixed(2)}</span>
               <span className={`hidden md:inline ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>/</span>
               <span>${goalAmount}</span>
-              <div key={percentageKey} className={`flex items-center justify-center w-6 h-6 md:w-7 md:h-7 rounded-full border-2 transition-all ${isDarkTheme ? 'border-lime-500 bg-slate-700/50' : 'border-lime-500 bg-lime-50/50'}`}>
-                <span className={`text-xs font-bold ${isDarkTheme ? 'text-lime-400' : 'text-lime-700'}`}>{displayPercentage === 100 ? '✓' : `${displayPercentage < 10 ? displayPercentage : Math.round(displayPercentage / 10)}`}</span>
-              </div>
+              {isGoalReached && <span className={`text-xs md:text-sm font-bold ${isDarkTheme ? 'text-lime-400' : 'text-green-700'}`}>✓</span>}
             </span>
           </div>
 
