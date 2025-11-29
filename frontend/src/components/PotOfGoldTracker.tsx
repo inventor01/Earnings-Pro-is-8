@@ -283,7 +283,7 @@ export function PotOfGoldTracker() {
                 position: 'relative',
                 animation: 'spin-coin 1.2s linear forwards',
               }}>
-                ⭐
+                💵
               </div>
             </div>
           );
