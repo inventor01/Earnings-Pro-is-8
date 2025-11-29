@@ -135,7 +135,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
         case 'GRUBHUB':
           return 'border-2 border-yellow-500 text-yellow-600 bg-transparent';
         case 'SHIPT':
-          return 'border-2 border-blue-500 text-blue-600 bg-transparent';
+          return 'border-2 border-lime-500 text-lime-600 bg-transparent';
         default:
           return 'border-2 border-gray-500 text-gray-600 bg-transparent';
       }
@@ -152,7 +152,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
       case 'GRUBHUB':
         return 'border border-yellow-500 text-white bg-yellow-500';
       case 'SHIPT':
-        return 'border border-blue-500 text-white bg-blue-500';
+        return 'border border-lime-500 text-white bg-lime-500';
       default:
         return 'border border-gray-500 text-white bg-gray-500';
     }
@@ -170,13 +170,13 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
     if (isLightTheme) {
       switch (category) {
         case 'GAS':
-          return 'border-2 border-blue-500 text-blue-600 bg-transparent';
+          return 'border-2 border-lime-500 text-lime-600 bg-transparent';
         case 'PARKING':
-          return 'border-2 border-purple-500 text-purple-600 bg-transparent';
+          return 'border-2 border-green-500 text-green-600 bg-transparent';
         case 'TOLLS':
-          return 'border-2 border-indigo-500 text-indigo-600 bg-transparent';
+          return 'border-2 border-green-600 text-green-700 bg-transparent';
         case 'MAINTENANCE':
-          return 'border-2 border-cyan-500 text-cyan-600 bg-transparent';
+          return 'border-2 border-lime-500 text-lime-600 bg-transparent';
         case 'PHONE':
           return 'border-2 border-pink-500 text-pink-600 bg-transparent';
         case 'SUBSCRIPTION':
@@ -193,13 +193,13 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
     // Dark theme uses filled style
     switch (category) {
       case 'GAS':
-        return 'border border-blue-500 text-white bg-blue-500';
+        return 'border border-lime-500 text-white bg-lime-500';
       case 'PARKING':
-        return 'border border-purple-500 text-white bg-purple-500';
+        return 'border border-green-500 text-white bg-green-500';
       case 'TOLLS':
-        return 'border border-indigo-500 text-white bg-indigo-500';
+        return 'border border-green-600 text-white bg-green-600';
       case 'MAINTENANCE':
-        return 'border border-cyan-500 text-white bg-cyan-500';
+        return 'border border-lime-500 text-white bg-lime-500';
       case 'PHONE':
         return 'border border-pink-500 text-white bg-pink-500';
       case 'SUBSCRIPTION':
@@ -256,7 +256,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   if (entries.length === 0) {
     const isDarkTheme = config.name !== 'simple-light';
     return (
-      <div className={`rounded-lg shadow p-8 text-center ${config.tableBg} ${isDarkTheme ? 'text-cyan-400' : 'text-blue-600'}`}>
+      <div className={`rounded-lg shadow p-8 text-center ${config.tableBg} ${isDarkTheme ? 'text-lime-400' : 'text-lime-600'}`}>
         No entries yet. Add your first entry using the calculator below!
       </div>
     );

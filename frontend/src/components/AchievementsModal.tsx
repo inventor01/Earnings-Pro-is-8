@@ -76,10 +76,10 @@ export function AchievementsModal({ entries, rollup, monthlyGoal, onClose }: Ach
   }, [entries, rollup, monthlyGoal]);
 
   const levelColors = {
-    'Beginner': { bg: 'from-blue-600 to-blue-500', glow: 'shadow-blue-500/50', border: 'border-blue-500' },
-    'Hustler': { bg: 'from-purple-600 to-purple-500', glow: 'shadow-purple-500/50', border: 'border-purple-500' },
+    'Beginner': { bg: 'from-lime-600 to-lime-500', glow: 'shadow-lime-500/50', border: 'border-lime-500' },
+    'Hustler': { bg: 'from-green-600 to-green-500', glow: 'shadow-green-500/50', border: 'border-green-500' },
     'Boss': { bg: 'from-yellow-600 to-orange-500', glow: 'shadow-yellow-500/50', border: 'border-yellow-500' },
-    'Legendary': { bg: 'from-pink-600 to-red-500', glow: 'shadow-pink-500/50', border: 'border-pink-500' }
+    'Legendary': { bg: 'from-lime-600 to-lime-500', glow: 'shadow-lime-500/50', border: 'border-lime-500' }
   };
 
   const colors = levelColors[achievements.level as keyof typeof levelColors] || levelColors['Beginner'];
@@ -88,17 +88,17 @@ export function AchievementsModal({ entries, rollup, monthlyGoal, onClose }: Ach
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className={`rounded-2xl max-w-2xl w-full max-h-96 overflow-y-auto ${
         isDarkTheme
-          ? 'bg-gradient-to-br from-slate-900 to-slate-800 border border-cyan-500/30'
-          : 'bg-white border border-blue-300'
+          ? 'bg-gradient-to-br from-slate-900 to-slate-800 border border-lime-500/30'
+          : 'bg-white border border-lime-300'
       }`}>
         {/* Header */}
         <div className={`sticky top-0 flex items-center justify-between p-6 border-b ${
-          isDarkTheme ? 'border-slate-700 bg-slate-900/80' : 'border-blue-200 bg-white/80'
+          isDarkTheme ? 'border-slate-700 bg-slate-900/80' : 'border-lime-200 bg-white/80'
         } backdrop-blur-sm`}>
           <div className="flex items-center gap-3">
             <span className="text-4xl">🏆</span>
             <div>
-              <h2 className={`text-2xl font-black ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>
+              <h2 className={`text-2xl font-black ${isDarkTheme ? 'text-lime-300' : 'text-lime-600'}`}>
                 Achievements
               </h2>
               <p className={`text-sm ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
@@ -112,8 +112,8 @@ export function AchievementsModal({ entries, rollup, monthlyGoal, onClose }: Ach
             onClick={onClose}
             className={`p-2 rounded-lg transition-all ${
               isDarkTheme
-                ? 'hover:bg-slate-700 text-cyan-400'
-                : 'hover:bg-blue-100 text-blue-600'
+                ? 'hover:bg-slate-700 text-lime-400'
+                : 'hover:bg-lime-100 text-lime-600'
             }`}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,20 +129,20 @@ export function AchievementsModal({ entries, rollup, monthlyGoal, onClose }: Ach
             <div className={`p-4 rounded-lg ${isDarkTheme ? 'bg-slate-800/60 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}>
               <div className="text-3xl font-black text-red-500 mb-1">🔥</div>
               <p className={`text-xs font-bold opacity-75 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>Green Streak</p>
-              <p className={`text-2xl font-black ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>{achievements.streaks.green}</p>
+              <p className={`text-2xl font-black ${isDarkTheme ? 'text-lime-300' : 'text-lime-600'}`}>{achievements.streaks.green}</p>
               <p className={`text-xs mt-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>days in a row</p>
             </div>
             <div className={`p-4 rounded-lg ${isDarkTheme ? 'bg-slate-800/60 border border-yellow-500/30' : 'bg-yellow-50 border border-yellow-200'}`}>
               <div className="text-3xl font-black text-yellow-400 mb-1">🎯</div>
               <p className={`text-xs font-bold opacity-75 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>Goals Met</p>
-              <p className={`text-2xl font-black ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>{achievements.streaks.goal}</p>
+              <p className={`text-2xl font-black ${isDarkTheme ? 'text-lime-300' : 'text-lime-600'}`}>{achievements.streaks.goal}</p>
               <p className={`text-xs mt-1 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>month(s)</p>
             </div>
           </div>
 
           {/* Badges */}
           <div>
-            <h3 className={`text-lg font-bold mb-3 ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}`}>Badges</h3>
+            <h3 className={`text-lg font-bold mb-3 ${isDarkTheme ? 'text-lime-300' : 'text-lime-600'}`}>Badges</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {achievements.allBadges.map((badge, idx) => (
                 <div
@@ -150,8 +150,8 @@ export function AchievementsModal({ entries, rollup, monthlyGoal, onClose }: Ach
                   className={`p-4 rounded-lg text-center transition-all ${
                     badge.unlocked
                       ? isDarkTheme
-                        ? 'bg-gradient-to-br from-slate-700/80 to-slate-800/40 border-2 border-cyan-400/60 shadow-lg shadow-cyan-400/20'
-                        : 'bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-400 shadow-md shadow-blue-200'
+                        ? 'bg-gradient-to-br from-slate-700/80 to-slate-800/40 border-2 border-lime-400/60 shadow-lg shadow-lime-400/20'
+                        : 'bg-gradient-to-br from-lime-50 to-green-50 border-2 border-lime-400 shadow-md shadow-lime-200'
                       : isDarkTheme
                       ? 'bg-slate-800/30 border-2 border-slate-700/50 opacity-50'
                       : 'bg-gray-50 border-2 border-gray-300 opacity-50'
@@ -161,14 +161,14 @@ export function AchievementsModal({ entries, rollup, monthlyGoal, onClose }: Ach
                   <div className="text-3xl mb-1 opacity-100">{badge.icon}</div>
                   <p className={`text-xs font-bold leading-tight ${
                     badge.unlocked
-                      ? isDarkTheme ? 'text-cyan-300' : 'text-blue-600'
+                      ? isDarkTheme ? 'text-lime-300' : 'text-lime-600'
                       : isDarkTheme ? 'text-slate-500' : 'text-gray-500'
                   }`}>
                     {badge.label}
                   </p>
                   <p className={`text-xs mt-1 leading-tight ${
                     badge.unlocked
-                      ? isDarkTheme ? 'text-cyan-400/70' : 'text-blue-500/70'
+                      ? isDarkTheme ? 'text-lime-400/70' : 'text-lime-500/70'
                       : isDarkTheme ? 'text-slate-600' : 'text-gray-400'
                   }`}>
                     {badge.condition}

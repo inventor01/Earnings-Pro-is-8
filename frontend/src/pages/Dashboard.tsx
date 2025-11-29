@@ -630,8 +630,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               onClick={() => onNavigateToLeaderboard?.()}
               className={`relative p-2 md:p-2.5 rounded-lg transition-all ${
                 isDarkTheme
-                  ? 'hover:bg-cyan-500/20 text-cyan-400'
-                  : 'hover:bg-blue-100 text-blue-600'
+                  ? 'hover:bg-lime-500/20 text-lime-400'
+                  : 'hover:bg-lime-100 text-lime-600'
               }`}
               title="View leaderboard"
             >
@@ -698,8 +698,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         <div className="mb-4 md:mb-8 lg:mb-10" data-tour="search">
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
             isDarkTheme
-              ? 'bg-slate-800 border-slate-700 focus-within:border-cyan-400'
-              : 'bg-white border-gray-300 focus-within:border-blue-500'
+              ? 'bg-slate-800 border-slate-700 focus-within:border-lime-400'
+              : 'bg-white border-gray-300 focus-within:border-lime-500'
           }`}>
             <svg className={`w-5 h-5 ${isDarkTheme ? 'text-slate-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -930,8 +930,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         )}
 
         {selectedIds.length > 0 && (
-          <div className="mb-4 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <span className="text-blue-900 font-medium">
+          <div className="mb-4 flex items-center justify-between bg-lime-50 border border-lime-200 rounded-lg p-4">
+            <span className="text-green-900 font-medium">
               {selectedIds.length} {selectedIds.length === 1 ? 'entry' : 'entries'} selected
             </span>
             <button
@@ -1001,7 +1001,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               <div className="flex gap-3 mt-4 mb-6">
                 <button
                   onClick={() => setEntryFormStep(0)}
-                  className="flex-1 bg-gray-400 hover:bg-gray-500 text-white py-4 rounded-lg text-lg font-bold"
+                  className="flex-1 bg-lime-500 hover:bg-lime-600 text-white py-4 rounded-lg text-lg font-bold"
                 >
                   ← Back
                 </button>
