@@ -5,15 +5,18 @@ import os
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./driver_ledger.db")
 
-# Configure engine with proper connection pooling for Neon
+# Configure connect_args based on database type
+connect_args = {}
+if "postgresql" in DATABASE_URL:
+    connect_args["connect_timeout"] = 10
+
+# Configure engine with proper connection pooling
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,  # Test connections before using them (reconnects if closed)
-    pool_size=5,  # Neon recommends smaller pools
-    max_overflow=10,  # Allow overflow connections
-    connect_args={
-        "connect_timeout": 10,  # Connection timeout in seconds
-    }
+    pool_size=5 if "postgresql" in DATABASE_URL else 1,  # Smaller pools for Neon, 1 for SQLite
+    max_overflow=10 if "postgresql" in DATABASE_URL else 0,  # No overflow for SQLite
+    connect_args=connect_args
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
