@@ -863,6 +863,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                       ? 'text-slate-400 hover:text-lime-300 hover:bg-slate-700/50'
                       : 'text-green-700 hover:text-green-900 hover:bg-lime-100'
                   }`}
+                  style={hideAccountData && !isDarkTheme ? {backgroundImage: 'radial-gradient(circle, rgba(200, 200, 200, 0.3) 1px, transparent 1px)', backgroundSize: '20px 20px'} : {}}
                   title={hideAccountData ? 'Show data' : 'Hide data'}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
