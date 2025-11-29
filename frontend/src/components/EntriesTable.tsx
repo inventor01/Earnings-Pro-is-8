@@ -118,15 +118,15 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
   };
 
   const getAppLogo = (app: string): string | null => {
-    const isDarkTheme = config.name !== 'simple-light';
+    const isLightTheme = config.name === 'simple-light';
     
     switch (app) {
       case 'DOORDASH':
         return doordashLogo;
       case 'UBEREATS':
-        return isDarkTheme ? null : ubereatsLogo;
+        return isLightTheme ? ubereatsLogo : null;
       case 'INSTACART':
-        return isDarkTheme ? instacartLogoDark : instacartLogo;
+        return isLightTheme ? instacartLogo : instacartLogoDark;
       case 'GRUBHUB':
         return grubhubLogo;
       case 'SHIPT':
