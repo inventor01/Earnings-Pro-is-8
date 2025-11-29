@@ -1,5 +1,3 @@
-import chaChinSound from '../assets/cha-ching.wav';
-
 /**
  * Check if sounds are muted
  */
@@ -50,19 +48,35 @@ export function playSquishySound(): void {
 }
 
 /**
- * Play a cha-ching sound effect
+ * Play a soft coin drop sound effect using Web Audio API
  */
 export function playChaChing(): void {
   if (isSoundMuted()) return;
   
   try {
-    const audio = new Audio(chaChinSound);
-    audio.volume = 0.5; // Set volume to 50%
-    audio.play().catch((error) => {
-      console.debug('Could not play sound effect:', error);
-    });
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const now = audioContext.currentTime;
+    
+    // Create oscillator for coin drop sound
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    
+    // Coin drop - descending frequency sweep
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(400, now + 0.15);
+    osc.frequency.exponentialRampToValueAtTime(200, now + 0.3);
+    
+    // Quiet volume with gentle fade out
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.02, now + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    
+    osc.start(now);
+    osc.stop(now + 0.3);
   } catch (error) {
-    // Silently fail if audio not available
     console.debug('Sound effect not available:', error);
   }
 }
