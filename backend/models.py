@@ -83,6 +83,7 @@ class Goal(Base):
     user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
     timeframe = Column(SQLEnum(TimeframeType), nullable=False)
     target_profit = Column(Numeric(10, 2), nullable=False)
+    goal_name = Column(String, default="Savings Goal", nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     

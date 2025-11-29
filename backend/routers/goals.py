@@ -50,6 +50,8 @@ def create_goal(goal: GoalCreate, db: Session = Depends(get_db), current_user: A
     existing = db.query(Goal).filter(Goal.timeframe == goal.timeframe, Goal.user_id == current_user.id).first()
     if existing:
         setattr(existing, 'target_profit', goal.target_profit)
+        if hasattr(goal, 'goal_name') and goal.goal_name:
+            setattr(existing, 'goal_name', goal.goal_name)
         db.commit()
         db.refresh(existing)
     else:

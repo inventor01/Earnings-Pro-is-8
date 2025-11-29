@@ -62,6 +62,7 @@ class SettingsUpdate(BaseModel):
 class GoalCreate(BaseModel):
     timeframe: TimeframeType
     target_profit: Decimal
+    goal_name: Optional[str] = "Savings Goal"
 
 class GoalUpdate(BaseModel):
     target_profit: Decimal
@@ -70,6 +71,7 @@ class GoalResponse(BaseModel):
     id: int
     timeframe: TimeframeType
     target_profit: Decimal
+    goal_name: str
     created_at: datetime
     updated_at: datetime
     

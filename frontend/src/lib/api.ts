@@ -182,11 +182,11 @@ export const api = {
     return res.json();
   },
 
-  async createGoal(timeframe: TimeframeType, target_profit: number): Promise<Goal> {
+  async createGoal(timeframe: TimeframeType, target_profit: number, goal_name?: string): Promise<Goal> {
     const res = await fetch(`${API_BASE}/api/goals`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ timeframe, target_profit }),
+      body: JSON.stringify({ timeframe, target_profit, goal_name: goal_name || 'Savings Goal' }),
     });
     if (!res.ok) throw new Error('Failed to create goal');
     return res.json();

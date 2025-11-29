@@ -7,6 +7,7 @@ export function PotOfGoldTracker() {
   const { config: themeConfig } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [tempGoal, setTempGoal] = useState('');
+  const [tempGoalName, setTempGoalName] = useState('Savings Goal');
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [floatingShuriken, setFloatingShuriken] = useState<number[]>([]);
@@ -33,6 +34,7 @@ export function PotOfGoldTracker() {
 
   const handleEditClick = () => {
     setTempGoal(goalAmount.toString());
+    setTempGoalName(monthlyGoal?.goal_name || 'Savings Goal');
     setIsEditing(true);
     setError('');
   };
@@ -46,7 +48,7 @@ export function PotOfGoldTracker() {
         setIsSaving(false);
         return;
       }
-      await api.createGoal('THIS_MONTH', parseFloat(tempGoal));
+      await api.createGoal('THIS_MONTH', parseFloat(tempGoal), tempGoalName || 'Savings Goal');
       await refetchGoal();
       setIsEditing(false);
     } catch (e) {
@@ -114,7 +116,25 @@ export function PotOfGoldTracker() {
           <label className={`block text-sm font-bold ${
             themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-yellow-900' : 'text-yellow-300'
           }`}>
-            Monthly Earnings Target
+            Goal Name
+          </label>
+          <input
+            type="text"
+            value={tempGoalName}
+            onChange={(e) => setTempGoalName(e.target.value)}
+            placeholder="e.g. New Car, Emergency Fund"
+            className={`w-full px-3 py-2 rounded-xl border-2 outline-none font-medium ${
+              themeConfig.name === 'dark-neon'
+                ? 'bg-yellow-900/30 border-yellow-400/60 focus:border-yellow-400 text-yellow-300'
+                : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
+                ? 'bg-white border-yellow-400 focus:border-yellow-500 text-yellow-900'
+                : 'bg-gray-900 border-yellow-500/60 focus:border-yellow-400 text-yellow-300'
+            }`}
+          />
+          <label className={`block text-sm font-bold mt-3 ${
+            themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green' ? 'text-yellow-900' : 'text-yellow-300'
+          }`}>
+            Target Amount
           </label>
           <div className={`flex gap-2 p-3 rounded-xl border-2 transition-all ${
             themeConfig.name === 'dark-neon'
@@ -330,14 +350,14 @@ export function PotOfGoldTracker() {
             themeConfig.name === 'ninja-green' ? 'text-green-800' :
             'text-white'
           }`}>
-            Monthly Earnings Target
+            {monthlyGoal?.goal_name || 'Savings Goal'}
           </h3>
           <p className={`text-xs md:text-sm font-semibold ${
             themeConfig.name === 'simple-light' ? 'text-blue-600' :
             themeConfig.name === 'ninja-green' ? 'text-green-700' :
             'text-slate-300'
           }`}>
-            {Math.min(100, Math.round(progressPercent))}% mission complete
+            {Math.min(100, Math.round(progressPercent))}% complete
           </p>
         </div>
         <div 
