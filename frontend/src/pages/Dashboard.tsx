@@ -1006,6 +1006,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </div>
         )}
 
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">📜 Transaction History</h2>
         <div className="mb-6" data-tour="entries">
           <EntriesTable 
             entries={filteredEntries} 
