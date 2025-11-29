@@ -8,17 +8,16 @@ export const Icons = {
   
   Expenses: (props: React.SVGProps<SVGSVGElement>) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
-      {/* Main tag rectangle */}
-      <rect x="3" y="8" width="14" height="12" rx="1.5" ry="1.5" />
-      {/* Diagonal cut corner */}
-      <line x1="17" y1="8" x2="20" y2="5" strokeLinecap="round" />
-      <line x1="17" y1="8" x2="17" y2="8" />
-      {/* Hanging hole */}
-      <circle cx="17.5" cy="5.5" r="1.2" fill="currentColor" stroke="none" />
-      {/* Price/dollar sign */}
-      <path d="M8 12h4M10 10v4" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Accent line */}
-      <line x1="3" y1="14" x2="17" y2="14" strokeOpacity="0.5" strokeLinecap="round" />
+      {/* Tag body - rounded rectangle */}
+      <path d="M4 7h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
+      {/* Folded corner cut */}
+      <path d="M18 7l2-2v2" />
+      {/* Hanging string hole - small circle at top right */}
+      <circle cx="19" cy="6" r="1" fill="currentColor" />
+      {/* Price divider line */}
+      <line x1="4" y1="13" x2="18" y2="13" strokeOpacity="0.4" />
+      {/* Dollar symbol */}
+      <path d="M10 10.5h3M11.5 9v3M10 14.5h3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   
