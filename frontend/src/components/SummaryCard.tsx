@@ -218,21 +218,27 @@ export function SummaryCard({
           /* Light gradients - Subtle, matching eggshell theme */
           .metric-gradient-lime {
             background: #fafaf7;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           }
           .metric-gradient-red {
             background: #fafaf7;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           }
           .metric-gradient-green {
             background: #fafaf7;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           }
           .metric-gradient-purple {
             background: #fafaf7;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           }
           .metric-gradient-blue {
             background: #fafaf7;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           }
           .metric-gradient-yellow {
             background: #fafaf7;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           }
 
           /* Dark gradients - Enhanced with color-coded depth */
