@@ -25,23 +25,25 @@ export function playSquishySound(): void {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const now = audioContext.currentTime;
     
-    // Create oscillator for squishy sound
+    // Create oscillator for squishy sound - brighter, more playful
     const osc = audioContext.createOscillator();
     const gain = audioContext.createGain();
     
     osc.connect(gain);
     gain.connect(audioContext.destination);
     
-    // Squishy sound - quick downward frequency sweep
-    osc.frequency.setValueAtTime(400, now);
-    osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+    // Squishy sound - upward then downward frequency sweep for more character
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.linearRampToValueAtTime(500, now + 0.05);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.12);
     
-    // Quick fade out
-    gain.gain.setValueAtTime(0.15, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+    // Quick envelope with punch
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.linearRampToValueAtTime(0.12, now + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
     
     osc.start(now);
-    osc.stop(now + 0.08);
+    osc.stop(now + 0.12);
   } catch (error) {
     console.debug('Squishy sound not available:', error);
   }
