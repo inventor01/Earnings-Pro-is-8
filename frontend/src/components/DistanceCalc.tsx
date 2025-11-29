@@ -21,13 +21,6 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
     });
   };
 
-  const handleBackspace = () => {
-    setDisplay((prev) => {
-      if (prev.length <= 1) return '0';
-      return prev.slice(0, -1);
-    });
-  };
-
   const handleClear = () => {
     setDisplay('0');
   };
@@ -113,13 +106,6 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
           </button>
         </div>
 
-        {/* Row 5: Backspace */}
-        <button
-          onClick={handleBackspace}
-          className="w-full bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 p-4 md:p-6 rounded-lg md:rounded-xl text-base md:text-xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
-        >
-          ⌫ Backspace
-        </button>
       </div>
     </div>
   );
