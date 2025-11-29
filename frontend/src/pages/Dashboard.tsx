@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, Entry, EntryCreate, EntryType, TimeframeType } from '../lib/api';
 import { useAuth } from '../lib/authContext';
 import { PeriodChips, Period } from '../components/PeriodChips';
-import ninjaLogo from '../assets/logo-ninja.png';
+import ninjaLogo from '../assets/logo-ninja-official.png';
 import { KpiCard } from '../components/KpiCard';
 import { SummaryCard, MetricVisibility } from '../components/SummaryCard';
 import { CalcPad, CalcMode } from '../components/CalcPad';
