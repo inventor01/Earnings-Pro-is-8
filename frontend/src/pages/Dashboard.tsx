@@ -720,21 +720,30 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             {/* Fixed Search Icon on Left */}
             <button
               onClick={() => {
-                setShowSearchBar(true);
-                setTimeout(() => {
-                  const searchBar = document.querySelector('#search-bar-input') as HTMLInputElement;
-                  if (searchBar) {
-                    searchBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    searchBar.focus();
-                  }
-                }, 0);
+                if (showSearchBar) {
+                  setShowSearchBar(false);
+                  setSearchQuery('');
+                } else {
+                  setShowSearchBar(true);
+                  setTimeout(() => {
+                    const searchBar = document.querySelector('#search-bar-input') as HTMLInputElement;
+                    if (searchBar) {
+                      searchBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      searchBar.focus();
+                    }
+                  }, 0);
+                }
               }}
               className={`p-2 rounded-full touch-manipulation transition-all flex-shrink-0 ${
-                isDarkTheme
+                showSearchBar
+                  ? isDarkTheme
+                    ? 'bg-lime-500/30 text-lime-300 shadow-lg shadow-lime-500/30'
+                    : 'bg-lime-200 text-lime-700 shadow-lg shadow-lime-400/40'
+                  : isDarkTheme
                   ? 'bg-slate-700/50 text-lime-400 hover:bg-slate-600 hover:text-lime-300'
                   : 'bg-gray-100 text-green-700 hover:bg-gray-200 hover:text-green-900'
               }`}
-              title="Search transactions"
+              title={showSearchBar ? "Close search" : "Search transactions"}
             >
               <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
