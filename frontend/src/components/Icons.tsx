@@ -8,10 +8,9 @@ export const Icons = {
   
   Expenses: (props: React.SVGProps<SVGSVGElement>) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
-      <path d="M6 9h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z" />
-      <circle cx="18" cy="8" r="1.5" fill="currentColor" />
-      <path d="M9 14h6" strokeLinecap="round" />
-      <path d="M10 12v4M14 12v4" strokeLinecap="round" />
+      <path d="M3 10c0-1.657 1.343-3 3-3h9V4.5c0-.828.672-1.5 1.5-1.5.828 0 1.5.672 1.5 1.5V7h2c1.657 0 3 1.343 3 3v9c0 1.657-1.343 3-3 3H6c-1.657 0-3-1.343-3-3v-9z" />
+      <circle cx="8" cy="10" r="1" fill="currentColor" />
+      <path d="M12 16h2" strokeLinecap="round" />
     </svg>
   ),
   
