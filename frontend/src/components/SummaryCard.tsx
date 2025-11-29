@@ -122,12 +122,12 @@ export function SummaryCard({
   const MetricCard = ({ icon: Icon, label, value, color, secondary, subtext, isNegative }: any) => {
     // Determine colors based on label and theme
     const lightColorMap: { [key: string]: { icon: string; accent: string; bg: string; shadow: string } } = {
-      'Revenue': { icon: 'text-lime-600', accent: 'text-lime-700', bg: 'metric-gradient-lime', shadow: 'hover:shadow-2xl hover:shadow-lime-500/40' },
-      'Expenses': { icon: 'text-red-600', accent: 'text-red-700', bg: 'metric-gradient-red', shadow: 'hover:shadow-2xl hover:shadow-red-500/40' },
-      'Profit': { icon: 'text-green-600', accent: 'text-green-700', bg: 'metric-gradient-green', shadow: 'hover:shadow-2xl hover:shadow-green-500/40' },
-      'Miles': { icon: 'text-purple-600', accent: 'text-purple-700', bg: 'metric-gradient-purple', shadow: 'hover:shadow-2xl hover:shadow-purple-500/40' },
-      'Orders': { icon: 'text-blue-600', accent: 'text-blue-700', bg: 'metric-gradient-blue', shadow: 'hover:shadow-2xl hover:shadow-blue-500/40' },
-      'Avg Order': { icon: 'text-yellow-600', accent: 'text-yellow-700', bg: 'metric-gradient-yellow', shadow: 'hover:shadow-2xl hover:shadow-yellow-500/40' }
+      'Revenue': { icon: 'text-lime-600', accent: 'text-lime-700', bg: 'metric-gradient-lime', shadow: 'shadow-none' },
+      'Expenses': { icon: 'text-red-600', accent: 'text-red-700', bg: 'metric-gradient-red', shadow: 'shadow-none' },
+      'Profit': { icon: 'text-green-600', accent: 'text-green-700', bg: 'metric-gradient-green', shadow: 'shadow-none' },
+      'Miles': { icon: 'text-purple-600', accent: 'text-purple-700', bg: 'metric-gradient-purple', shadow: 'shadow-none' },
+      'Orders': { icon: 'text-blue-600', accent: 'text-blue-700', bg: 'metric-gradient-blue', shadow: 'shadow-none' },
+      'Avg Order': { icon: 'text-yellow-600', accent: 'text-yellow-700', bg: 'metric-gradient-yellow', shadow: 'shadow-none' }
     };
 
     const darkColorMap: { [key: string]: { icon: string; accent: string; bg: string; shadow: string } } = {
@@ -266,8 +266,7 @@ export function SummaryCard({
             box-shadow: 
               inset 0 1px 0 rgba(255, 255, 255, 0.15),
               inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-              0 10px 30px rgba(0, 0, 0, 0.4),
-              0 0 60px var(--glow-color);
+              0 10px 30px rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.08);
           }
 
