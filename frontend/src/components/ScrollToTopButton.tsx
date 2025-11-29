@@ -8,18 +8,24 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
   const { theme } = useTheme();
   const isDarkTheme = theme === 'dark-neon';
 
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
+  const scrollToSearchBar = () => {
+    const searchBar = document.getElementById('search-bar');
+    if (searchBar) {
+      searchBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      // Fallback to top if search bar not found
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }
   };
 
   return (
     <>
         {!isFormOpen && (
         <button
-          onClick={scrollToTop}
+          onClick={scrollToSearchBar}
           className={`fixed right-3 md:right-5 bottom-24 md:bottom-32 z-50 p-2 md:p-3 rounded-full shadow-lg transition-all active:scale-95 active:opacity-100 hover:opacity-100 opacity-40 md:hover:scale-110 touch-action-manipulation ${
             isDarkTheme
               ? 'bg-gradient-to-br from-cyan-400 to-cyan-500 text-slate-900 border-2 border-cyan-300'
