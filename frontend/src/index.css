@@ -65,22 +65,6 @@
   animation: pulse-glow-orange 2s ease-in-out infinite;
 }
 
-/* Logo glow and pulsate animation */
-@keyframes logo-glow-pulsate {
-  0%, 100% {
-    filter: drop-shadow(0 0 12px rgba(234, 179, 8, 0.4)) drop-shadow(0 0 24px rgba(234, 179, 8, 0.2));
-    transform: scale(1);
-  }
-  50% {
-    filter: drop-shadow(0 0 24px rgba(234, 179, 8, 0.8)) drop-shadow(0 0 40px rgba(234, 179, 8, 0.5));
-    transform: scale(1.02);
-  }
-}
-
-.logo-glow-pulsate {
-  animation: logo-glow-pulsate 3s ease-in-out infinite;
-}
-
 /* Shimmer animation for holographic effect */
 @keyframes shimmer {
   0% {
