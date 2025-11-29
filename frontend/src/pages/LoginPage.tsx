@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/authContext';
 import { useTheme } from '../lib/themeContext';
+import ninjaLogo from '../assets/logo-ninja-official.png';
 
 export function LoginPage() {
   const [credential, setCredential] = useState('');
@@ -54,7 +55,11 @@ export function LoginPage() {
       }`}>
         {/* Header */}
         <div className="text-center mb-6 md:mb-8">
-          <div className="text-5xl md:text-6xl mb-3 md:mb-4">🚗</div>
+          <img 
+            src={ninjaLogo} 
+            alt="Earnings Ninja" 
+            className="h-32 md:h-48 w-auto mx-auto mb-3 md:mb-4 drop-shadow-lg"
+          />
           <h1 className={`text-2xl md:text-3xl font-black mb-2 ${config.titleColor}`}>
             Earnings Ninja
           </h1>
