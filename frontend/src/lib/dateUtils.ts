@@ -65,3 +65,31 @@ export function getESTDateString(dateStr: string): string {
   const [month, day, year] = dateOnlyStr.split('/');
   return `${year}-${month}-${day}`;
 }
+
+/**
+ * Get current date in EST timezone as YYYY-MM-DD
+ * @returns Current date in EST as YYYY-MM-DD string
+ */
+export function getTodayEST(): string {
+  return getESTDateString(new Date().toISOString());
+}
+
+/**
+ * Add/subtract days from a date in EST timezone
+ * @param dateStr Date in YYYY-MM-DD format
+ * @param daysOffset Number of days to add (positive) or subtract (negative)
+ * @returns New date in YYYY-MM-DD format
+ */
+export function addDaysEST(dateStr: string, daysOffset: number): string {
+  // Parse the date string as a naive local date
+  const [year, month, day] = dateStr.split('-').map(Number);
+  // Create a date object (will be interpreted as local date)
+  const date = new Date(year, month - 1, day);
+  // Add offset
+  date.setDate(date.getDate() + daysOffset);
+  // Convert back to YYYY-MM-DD
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
