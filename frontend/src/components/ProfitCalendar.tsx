@@ -5,9 +5,10 @@ import { getESTDateString } from '../lib/dateUtils';
 interface ProfitCalendarProps {
   entries: any[];
   onDayClick?: (dateStr: string) => void;
+  selectedDateStr?: string;
 }
 
-export function ProfitCalendar({ entries, onDayClick }: ProfitCalendarProps) {
+export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitCalendarProps) {
   const { config: themeConfig } = useTheme();
   const isDarkTheme = themeConfig.name === 'dark-neon';
   const [metricView, setMetricView] = useState<'profit' | 'expenses' | 'revenue'>('profit');
@@ -252,6 +253,7 @@ export function ProfitCalendar({ entries, onDayClick }: ProfitCalendarProps) {
           const numericValue = Number(value) || 0;
           const color = getColor(numericValue);
           const textColor = getTextColor(numericValue);
+          const isSelected = dayData?.dateStr === selectedDateStr;
           
           return (
             <div
@@ -260,17 +262,19 @@ export function ProfitCalendar({ entries, onDayClick }: ProfitCalendarProps) {
               className={`aspect-square rounded-lg flex items-center justify-center text-sm font-bold transition-all ${
                 dayData === null
                   ? ''
+                  : isSelected
+                  ? `bg-yellow-400 border-2 border-yellow-600 ${isDarkTheme ? 'text-black' : 'text-black'} hover:scale-105 cursor-pointer ring-2 ring-yellow-300 ring-offset-2`
                   : `${color} ${isDarkTheme ? 'border border-slate-600' : 'border border-gray-300'} hover:scale-105 cursor-pointer`
               }`}
-              title={dayData ? `${dayData.day}: $${numericValue.toFixed(2)}` : ''}
+              title={dayData ? `${dayData.day}: $${numericValue.toFixed(2)}${isSelected ? ' (selected)' : ''}` : ''}
             >
               {dayData && (
                 <div className="text-center">
-                  <div className={`text-xs ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>
+                  <div className={`text-xs ${isSelected ? 'text-black font-black' : isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>
                     {dayData.day}
                   </div>
                   {dayData.hasData && (
-                    <div className={`text-xs font-black ${textColor}`}>
+                    <div className={`text-xs font-black ${isSelected ? 'text-black' : textColor}`}>
                       {'$' + (numericValue < 0 ? '-' : '') + Math.abs(numericValue).toFixed(0)}
                     </div>
                   )}

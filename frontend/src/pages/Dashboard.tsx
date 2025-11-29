@@ -866,6 +866,14 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                               setPeriod('today');
                             }
                           }}
+                          selectedDateStr={getDateLabel(dayOffset) === 'Today' ? new Date().toISOString().split('T')[0] : 
+                            getDateLabel(dayOffset) === 'Yesterday' ? new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0] :
+                            (() => {
+                              const d = new Date();
+                              d.setDate(d.getDate() + dayOffset);
+                              return d.toISOString().split('T')[0];
+                            })()
+                          }
                         />
                       </div>
                     )}
