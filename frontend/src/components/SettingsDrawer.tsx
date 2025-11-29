@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Settings } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
 import { MetricVisibility } from './SummaryCard';
 import { Icons } from './Icons';
 import { useQuery } from '@tanstack/react-query';
+import { isSoundMuted, setSoundMuted } from '../lib/soundEffects';
 
 interface UserInfo {
   id: string;
@@ -27,6 +29,8 @@ interface SettingsDrawerProps {
 
 export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, onLogout, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
   const { config } = useTheme();
+  const [soundMuted, setSoundMutedState] = useState(isSoundMuted());
+  
   const { data: userInfo } = useQuery<UserInfo>({
     queryKey: ['userInfo'],
     queryFn: async () => {
@@ -39,6 +43,12 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
       return res.json();
     },
   });
+
+  const handleSoundToggle = () => {
+    const newMuted = !soundMuted;
+    setSoundMutedState(newMuted);
+    setSoundMuted(newMuted);
+  };
 
   if (!isOpen) return null;
 
@@ -91,6 +101,30 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             </div>
           )}
           
+          <div className="py-6 border-t border-gray-200/50">
+            <h3 className="text-sm font-semibold mb-4 text-gray-900">Audio Settings</h3>
+            <button
+              onClick={handleSoundToggle}
+              className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-3 border ${
+                !soundMuted
+                  ? 'bg-lime-100 border-lime-200 text-gray-900'
+                  : 'bg-gray-50 border-gray-200 text-gray-400 opacity-60'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={!soundMuted}
+                onChange={() => {}}
+                className="w-4 h-4 cursor-pointer accent-lime-600"
+              />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width={16} height={16} strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a7 7 0 0 1 0 9.9M19.07 4.93a11 11 0 0 1 0 15.66" />
+              </svg>
+              <span>Sound Effects</span>
+            </button>
+          </div>
+
           <div className="py-6 border-t border-gray-200/50">
             <h3 className="text-sm font-semibold mb-4 text-gray-900">Performance Overview Metrics</h3>
             <div className="space-y-3">
