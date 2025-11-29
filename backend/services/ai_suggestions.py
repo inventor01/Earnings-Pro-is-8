@@ -5,10 +5,19 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional
 
-client = OpenAI(
-    api_key=os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY"),
-    base_url=os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
-)
+# Initialize OpenAI client lazily - only if API key is available
+_client = None
+_api_key = os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY")
+_base_url = os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
+
+def get_client():
+    global _client
+    if _client is None and _api_key:
+        try:
+            _client = OpenAI(api_key=_api_key, base_url=_base_url)
+        except Exception as e:
+            print(f"Warning: Failed to initialize OpenAI client: {e}")
+    return _client
 
 def get_ai_suggestions(
     db: Session,
@@ -97,6 +106,20 @@ Provide 2-3 specific, actionable tips to help this driver earn more. Focus on:
 Keep response concise, practical, and directly applicable.
 """
     
+    # Try to get AI suggestions if OpenAI is configured
+    client = get_client()
+    
+    if client is None:
+        # OpenAI not configured - return statistical analysis
+        return {
+            "suggestion": f"Keep working during peak hours ({peak_hour}:00 if peak_hour else 'business hours') and aim for orders above ${min_viable_order:.2f}",
+            "minimum_order": round(min_viable_order, 2),
+            "peak_time": f"{peak_hour}:00 - {peak_hour+1}:00" if peak_hour else None,
+            "average_order": round(avg_order, 2),
+            "total_orders": len(order_amounts),
+            "reasoning": f"Statistical analysis of {len(entries)} entries (AI suggestions unavailable)"
+        }
+    
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -133,7 +156,7 @@ Keep response concise, practical, and directly applicable.
     except Exception as e:
         # Fallback if AI call fails
         return {
-            "suggestion": f"Keep working during peak hours ({peak_hour}:00) and aim for orders above ${min_viable_order:.2f}",
+            "suggestion": f"Keep working during peak hours ({peak_hour}:00 if peak_hour else 'business hours') and aim for orders above ${min_viable_order:.2f}",
             "minimum_order": round(min_viable_order, 2),
             "peak_time": f"{peak_hour}:00 - {peak_hour+1}:00" if peak_hour else None,
             "average_order": round(avg_order, 2),
