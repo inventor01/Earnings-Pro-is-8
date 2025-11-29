@@ -371,7 +371,7 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
             <button
               type="button"
               onClick={() => setShowMoreOptions(!showMoreOptions)}
-              className="w-full py-1 md:py-2 px-2 md:px-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold text-xs md:text-sm text-gray-700 transition-colors"
+              className="w-full py-1 md:py-2 px-2 md:px-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold text-xs md:text-sm text-gray-700 transition-colors -mb-3 md:-mb-4"
             >
               {showMoreOptions ? '▼ Hide More Options' : '▶ More Options'}
             </button>
