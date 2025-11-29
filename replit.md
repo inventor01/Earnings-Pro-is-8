@@ -63,6 +63,18 @@ The application provides a calculator-style input with add/subtract modes, real-
 - **APScheduler**: Background job scheduler for periodic order syncing.
 - **httpx**: Async HTTP client for making API calls to Uber and Shipt platforms.
 
+## Tour Feature Removed (November 29, 2025)
+
+Disabled the interactive feature tour to streamline the user experience:
+- Removed FeatureTour component import and rendering
+- Removed all tour state management (showFeatureTour, tour handlers)
+- Removed tour event listeners for calculator interaction
+- Removed all data-tour attributes from JSX elements
+- Removed onRestartTour prop from SettingsDrawer
+- Removed hasCompletedFeatureTour localStorage references
+
+**File Modified**: `frontend/src/pages/Dashboard.tsx`
+
 ## Performance Overview Visual Enhancements (November 29, 2025)
 
 ### Visual Upgrades

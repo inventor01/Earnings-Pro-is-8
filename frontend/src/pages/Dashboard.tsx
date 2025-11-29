@@ -15,7 +15,6 @@ import { Toast } from '../components/Toast';
 import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
 import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
-import { FeatureTour } from '../components/FeatureTour';
 // import { PointsCard } from '../components/PointsCard';
 import { ShareCard } from '../components/ShareCard';
 import { ScrollToTopButton } from '../components/ScrollToTopButton';
@@ -121,11 +120,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showFeatureTour, setShowFeatureTour] = useState(() => {
-    const hasCompletedTour = localStorage.getItem('hasCompletedFeatureTour');
-    // Show tour on first load only - when hasCompletedTour is not set
-    return hasCompletedTour === null;
-  });
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   
@@ -149,16 +143,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     }
   }, [calcExpanded]);
 
-  const handleCloseTour = () => {
-    localStorage.setItem('hasCompletedFeatureTour', 'true');
-    setShowFeatureTour(false);
-  };
-  
-  const handleRestartTour = () => {
-    localStorage.removeItem('hasCompletedFeatureTour');
-    setShowFeatureTour(true);
-  };
-
   const handleMetricVisibilityChange = (visibility: Partial<MetricVisibility>) => {
     setMetricVisibility(visibility);
     localStorage.setItem('metricVisibility', JSON.stringify(visibility));
@@ -177,24 +161,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     }
     
     localStorage.setItem('lastVisitDate', today);
-  }, []);
-
-  // Listen for tour events to expand/close calculator
-  useEffect(() => {
-    const handleTourCalculatorStep = () => {
-      setCalcExpanded(true);
-    };
-    
-    const handleTourCalculatorClose = () => {
-      setCalcExpanded(false);
-    };
-    
-    window.addEventListener('tour-calculator-step', handleTourCalculatorStep);
-    window.addEventListener('tour-calculator-close', handleTourCalculatorClose);
-    return () => {
-      window.removeEventListener('tour-calculator-step', handleTourCalculatorStep);
-      window.removeEventListener('tour-calculator-close', handleTourCalculatorClose);
-    };
   }, []);
 
   // Handle scroll to show/hide button
@@ -761,7 +727,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               <button
                 onClick={() => setShowSettings(true)}
                 className={`p-2 md:p-2.5 transition-colors ${config.textPrimary} hover:opacity-80`}
-                data-tour="settings"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -776,7 +741,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             </div>
           </div>
 
-          <div className="max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 w-full pb-4 md:pb-8 lg:pb-10 flex items-center gap-2" data-tour="periods">
+          <div className="max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 w-full pb-4 md:pb-8 lg:pb-10 flex items-center gap-2">
             {/* Fixed Search Icon on Left */}
             <button
               onClick={() => {
@@ -894,7 +859,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         {/* Dashboard Grid - Everything in One View */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8 lg:gap-10 mb-4 md:mb-8 lg:mb-10">
           {/* Left Column - Performance Overview */}
-          <div className="lg:col-span-3 space-y-6 md:space-y-8 lg:space-y-10 scroll-smooth" data-tour="performance">
+          <div className="lg:col-span-3 space-y-6 md:space-y-8 lg:space-y-10 scroll-smooth">
             {/* Performance Overview Header with Toggle */}
             <div className="flex items-center justify-between gap-2" id="performance-overview">
               <h2 className={`flex items-center gap-3 text-lg md:text-xl font-black tracking-tight drop-shadow-lg ${isDarkTheme ? 'text-white' : 'text-green-900'}`} style={{fontFamily: '"Trebuchet MS", "Arial Black", sans-serif'}}>
@@ -1120,7 +1085,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           </svg>
           <h2 className={`text-2xl md:text-3xl font-bold ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>Transaction History</h2>
         </div>
-        <div className="mb-6" data-tour="entries">
+        <div className="mb-6">
           <EntriesTable 
             entries={filteredEntries} 
             onDelete={handleDelete}
@@ -1132,7 +1097,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
       </div>
 
-      <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 z-50 ${calcExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`} data-tour="calculator">
+      <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 z-50 ${calcExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`}>
         <button
           onClick={() => setCalcExpanded(!calcExpanded)}
           className="w-full py-4 px-4 flex items-center justify-between bg-yellow-400 text-gray-900 font-bold text-lg hover:bg-yellow-500 opacity-100 shadow-lg"
@@ -1279,7 +1244,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           onSave={(s) => updateSettingsMutation.mutate(s)}
           onResetAll={() => setResetAllConfirm(true)}
           onExport={() => handleExport()}
-          onRestartTour={handleRestartTour}
           onLogout={logout}
           metricVisibility={metricVisibility}
           onMetricVisibilityChange={handleMetricVisibilityChange}
@@ -1364,9 +1328,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-
-      {/* Feature Tour - Interactive tour guide */}
-      {showFeatureTour && <FeatureTour onClose={handleCloseTour} />}
 
       {/* Floating Scroll to Search Button - Mobile optimized, positioned at right side */}
       <ScrollToTopButton isFormOpen={calcExpanded} />
