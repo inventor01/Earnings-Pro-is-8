@@ -69,7 +69,7 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
     textPrimary: 'text-green-900',
     textSecondary: 'text-lime-600',
     
-    chipInactive: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50',
+    chipInactive: 'bg-lime-100 text-gray-700 border border-lime-300 hover:bg-lime-200',
     chipActive: 'text-gray-900',
     chipActiveBg: 'bg-yellow-400',
     
