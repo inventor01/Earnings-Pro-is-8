@@ -5,6 +5,7 @@ import { MetricVisibility } from './SummaryCard';
 import { Icons } from './Icons';
 import { useQuery } from '@tanstack/react-query';
 import { isSoundMuted, setSoundMuted } from '../lib/soundEffects';
+import { getAllThemes, type ThemeName } from '../lib/themes';
 
 interface UserInfo {
   id: string;
@@ -28,8 +29,9 @@ interface SettingsDrawerProps {
 }
 
 export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, onLogout, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
-  const { config } = useTheme();
+  const { config, setTheme, themeName } = useTheme();
   const [soundMuted, setSoundMutedState] = useState(isSoundMuted());
+  const themes = getAllThemes();
   
   const { data: userInfo } = useQuery<UserInfo>({
     queryKey: ['userInfo'],
@@ -101,6 +103,31 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             </div>
           )}
           
+          <div className="py-6 border-t border-gray-200/50">
+            <h3 className="text-sm font-semibold mb-4 text-gray-900">Appearance</h3>
+            <div className="space-y-2">
+              {themes.map((theme) => (
+                <button
+                  key={theme.name}
+                  onClick={() => setTheme(theme.name as ThemeName)}
+                  className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-3 border ${
+                    themeName === theme.name
+                      ? 'bg-lime-100 border-lime-300 text-gray-900 ring-2 ring-lime-400'
+                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    checked={themeName === theme.name}
+                    onChange={() => {}}
+                    className="w-4 h-4 cursor-pointer accent-lime-600"
+                  />
+                  <span>{theme.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="py-6 border-t border-gray-200/50">
             <h3 className="text-sm font-semibold mb-4 text-gray-900">Audio Settings</h3>
             <button

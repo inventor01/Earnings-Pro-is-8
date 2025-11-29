@@ -3,6 +3,7 @@ import { ThemeName, getTheme, THEMES } from './themes';
 
 interface ThemeContextType {
   theme: ThemeName;
+  themeName: ThemeName;
   setTheme: (name: ThemeName) => void;
   config: ReturnType<typeof getTheme>;
 }
@@ -25,6 +26,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     theme,
+    themeName: theme,
     setTheme,
     config: getTheme(theme),
   };
