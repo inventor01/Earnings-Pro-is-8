@@ -18,6 +18,7 @@ import { EntryViewer } from '../components/EntryViewer';
 import { FeatureTour } from '../components/FeatureTour';
 // import { PointsCard } from '../components/PointsCard';
 import { ShareCard } from '../components/ShareCard';
+import { ScrollToTopButton } from '../components/ScrollToTopButton';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { AchievementsModal } from '../components/AchievementsModal';
 import { ProfitCalendar } from '../components/ProfitCalendar';
@@ -1241,17 +1242,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       {/* Feature Tour - Interactive tour guide */}
       {showFeatureTour && <FeatureTour onClose={handleCloseTour} />}
 
-      {/* Floating Scroll to Top Button */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-5 md:bottom-6 right-5 md:right-6 z-50 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-2 md:py-3 px-4 md:px-5 text-sm md:text-base rounded-full shadow-lg hover:shadow-2xl transition-all transform hover:scale-110 active:scale-95"
-          title="Scroll to top"
-          aria-label="Scroll to top"
-        >
-          ↑ Top
-        </button>
-      )}
+      {/* Floating Scroll to Top Button - Mobile optimized, positioned at right-center */}
+      <ScrollToTopButton />
     </div>
   );
 }
