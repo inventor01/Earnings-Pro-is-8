@@ -38,7 +38,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend source
-COPY backend .
+COPY backend ./backend
 
 # Copy frontend build output to dist directory
 COPY --from=frontend-builder /app/frontend/dist ./dist
