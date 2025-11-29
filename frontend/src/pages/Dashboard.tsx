@@ -642,10 +642,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               <img 
                 src={ninjaLogo} 
                 alt="Earnings Ninja" 
-                className="h-28 md:h-44 lg:h-56 w-auto drop-shadow-lg logo-animate"
-                style={{
-                  filter: 'drop-shadow(0 0 12px rgba(234, 179, 8, 0.8))',
-                }}
+                className="h-28 md:h-44 lg:h-56 w-auto drop-shadow-lg logo-glow-pulsate"
               />
             </div>
             <div className="flex gap-1 md:gap-2">
