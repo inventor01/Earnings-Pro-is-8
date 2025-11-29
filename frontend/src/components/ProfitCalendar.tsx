@@ -256,15 +256,16 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
           const isSelected = dayData?.dateStr === selectedDateStr;
           
           return (
-            <div
+            <button
               key={idx}
               onClick={() => dayData && onDayClick?.(dayData.dateStr)}
+              disabled={dayData === null}
               className={`aspect-square rounded-lg flex items-center justify-center text-sm font-bold transition-all transform ${
                 dayData === null
-                  ? ''
+                  ? 'cursor-default'
                   : isSelected
-                  ? `bg-gradient-to-br from-yellow-300 to-yellow-500 border-2 border-yellow-700 text-black hover:scale-110 cursor-pointer ring-2 ring-yellow-200 ring-offset-2 shadow-xl shadow-yellow-400/60 animate-pulse`
-                  : `${color} ${isDarkTheme ? 'border border-slate-600 hover:shadow-md hover:shadow-slate-500/30' : 'border border-gray-300 hover:shadow-md hover:shadow-gray-300/40'} hover:scale-105 cursor-pointer transition-shadow`
+                  ? `bg-gradient-to-br from-yellow-300 to-yellow-500 border-2 border-yellow-700 text-black hover:scale-110 active:scale-100 cursor-pointer ring-2 ring-yellow-200 ring-offset-2 shadow-xl shadow-yellow-400/60 animate-pulse`
+                  : `${color} ${isDarkTheme ? 'border border-slate-600 hover:shadow-md hover:shadow-slate-500/30' : 'border border-gray-300 hover:shadow-md hover:shadow-gray-300/40'} hover:scale-105 active:scale-100 cursor-pointer transition-shadow`
               }`}
               title={dayData ? `${dayData.day}: $${numericValue.toFixed(2)}${isSelected ? ' (selected)' : ''}` : ''}
             >
@@ -280,7 +281,7 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
                   )}
                 </div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
