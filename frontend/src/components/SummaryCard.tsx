@@ -113,17 +113,17 @@ export function SummaryCard({
   };
 
   const MetricCard = ({ icon: Icon, label, value, color, secondary, subtext, isNegative }: any) => {
-    // Determine background color based on label
-    const bgColorMap: { [key: string]: string } = {
-      'Revenue': 'bg-lime-50 border-lime-400',
-      'Expenses': 'bg-red-50 border-red-300',
-      'Profit': 'bg-green-50 border-green-400',
-      'Miles': 'bg-purple-50 border-purple-300',
-      'Orders': 'bg-blue-50 border-blue-300',
-      'Avg Order': 'bg-yellow-50 border-yellow-400'
+    // Determine colors based on label
+    const colorMap: { [key: string]: { icon: string; accent: string; bg: string; shadow: string } } = {
+      'Revenue': { icon: 'text-lime-600', accent: 'text-lime-700', bg: 'bg-gradient-to-br from-white to-lime-50', shadow: 'hover:shadow-lg hover:shadow-lime-500/20' },
+      'Expenses': { icon: 'text-red-600', accent: 'text-red-700', bg: 'bg-gradient-to-br from-white to-red-50', shadow: 'hover:shadow-lg hover:shadow-red-500/20' },
+      'Profit': { icon: 'text-green-600', accent: 'text-green-700', bg: 'bg-gradient-to-br from-white to-green-50', shadow: 'hover:shadow-lg hover:shadow-green-500/20' },
+      'Miles': { icon: 'text-purple-600', accent: 'text-purple-700', bg: 'bg-gradient-to-br from-white to-purple-50', shadow: 'hover:shadow-lg hover:shadow-purple-500/20' },
+      'Orders': { icon: 'text-blue-600', accent: 'text-blue-700', bg: 'bg-gradient-to-br from-white to-blue-50', shadow: 'hover:shadow-lg hover:shadow-blue-500/20' },
+      'Avg Order': { icon: 'text-yellow-600', accent: 'text-yellow-700', bg: 'bg-gradient-to-br from-white to-yellow-50', shadow: 'hover:shadow-lg hover:shadow-yellow-500/20' }
     };
     
-    const bgStyle = bgColorMap[label] || 'bg-lime-50 border-lime-400';
+    const colors = colorMap[label] || colorMap['Revenue'];
     
     return (
       <>
@@ -161,9 +161,9 @@ export function SummaryCard({
             }
           }
         `}</style>
-        <div className={`relative p-4 md:p-5 lg:p-6 rounded-xl transition-all duration-300 group/card border-2 ${bgStyle} hover:shadow-lg hover:shadow-lime-300/30`}>
-          {/* Top accent line - solid color */}
-          <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-xl ${
+        <div className={`relative p-5 md:p-6 lg:p-7 rounded-2xl transition-all duration-300 group/card ${colors.bg} border border-gray-200/50 ${colors.shadow} backdrop-blur-sm`}>
+          {/* Accent line at top */}
+          <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-2xl ${
             label === 'Revenue' ? 'bg-lime-500' :
             label === 'Expenses' ? 'bg-red-500' :
             label === 'Profit' ? 'bg-green-600' :
@@ -173,34 +173,35 @@ export function SummaryCard({
           }`} />
           
           <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 text-lime-600 drop-shadow-lg group-hover/card:scale-125 transition-transform">
-                <Icon width="100%" height="100%" />
+            <div className="flex items-center justify-between gap-3">
+              <div className={`w-14 h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 ${colors.icon} group-hover/card:scale-110 group-hover/card:rotate-6 transition-all duration-300`}>
+                <Icon width="100%" height="100%" strokeWidth={1.5} />
               </div>
-              <div className={`text-xs md:text-sm lg:text-base font-bold uppercase tracking-wider leading-none ${
-                label === 'Expenses' ? 'text-red-700' :
-                label === 'Profit' ? 'text-green-700' :
-                label === 'Miles' ? 'text-purple-700' :
-                label === 'Orders' ? 'text-blue-700' :
-                'text-green-700'
-              }`}>{label}</div>
+              <div className={`text-xs md:text-sm lg:text-base font-semibold uppercase tracking-wide ${colors.accent} opacity-90`}>{label}</div>
             </div>
             
-            <div className="space-y-2">
-              <div className={`text-4xl md:text-6xl lg:text-7xl font-black font-mono transition-all duration-300 group-hover/card:scale-110 cursor-pointer leading-none whitespace-nowrap overflow-hidden text-ellipsis ${
-                isNegative ? 'text-red-600' : 'text-lime-700'
+            <div className="space-y-2.5">
+              <div className={`text-4xl md:text-6xl lg:text-7xl font-black font-mono transition-all duration-300 group-hover/card:scale-105 cursor-pointer leading-tight whitespace-nowrap overflow-hidden text-ellipsis ${
+                isNegative ? 'text-red-600' : colors.accent
               }`}
               style={isNegative ? {
                 animation: 'blink-red 0.8s ease-in-out infinite'
               } : {
                 animation: 'subtle-glow 2s ease-in-out infinite',
-                filter: 'drop-shadow(0 0 8px rgba(132, 204, 22, 0.3))'
+                filter: `drop-shadow(0 0 8px ${
+                  label === 'Revenue' ? 'rgba(132, 204, 22, 0.3)' :
+                  label === 'Expenses' ? 'rgba(239, 68, 68, 0.2)' :
+                  label === 'Profit' ? 'rgba(34, 197, 94, 0.3)' :
+                  label === 'Miles' ? 'rgba(147, 51, 234, 0.2)' :
+                  label === 'Orders' ? 'rgba(59, 130, 246, 0.2)' :
+                  'rgba(202, 138, 4, 0.2)'
+                })`
               }}>
                 <CountUpNumber value={value} />
               </div>
               
-              {/* Visual indicator bar */}
-              <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+              {/* Modern indicator bar */}
+              <div className="h-1.5 bg-gray-200/60 rounded-full overflow-hidden">
                 <div 
                   className={`h-full rounded-full transition-all duration-700 ${
                     label === 'Revenue' ? 'bg-lime-500' :
@@ -218,7 +219,7 @@ export function SummaryCard({
               </div>
               
               {subtext && (
-                <div className="text-xs md:text-sm lg:text-base font-medium text-gray-700">
+                <div className="text-xs md:text-sm font-medium text-gray-600 pt-1">
                   {subtext}
                 </div>
               )}

@@ -60,55 +60,57 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose} />
-      <div className="fixed right-0 top-0 h-full w-full md:w-80 shadow-xl z-50 flex flex-col bg-white text-gray-900 border-l-2 border-lime-500">
-        <div className="flex justify-between items-center mb-6 p-6 border-b border-lime-400 flex-shrink-0">
-          <h2 className="text-xl font-bold text-green-800 flex items-center gap-2">
-            <Icons.Settings width={24} height={24} className="text-lime-600" />
+      <div className="fixed right-0 top-0 h-full w-full md:w-80 shadow-2xl z-50 flex flex-col bg-gradient-to-b from-white to-gray-50 text-gray-900 border-l border-lime-500/20">
+        <div className="flex justify-between items-center px-6 py-5 border-b border-gray-200/50 flex-shrink-0 backdrop-blur-sm">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-3">
+            <div className="p-2 bg-lime-100 rounded-lg">
+              <Icons.Settings width={18} height={18} className="text-lime-700" strokeWidth={2} />
+            </div>
             Settings
           </h2>
-          <button onClick={onClose} className="text-green-700 hover:text-green-900 w-6 h-6">
-            <Icons.X width="100%" height="100%" />
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center transition-colors">
+            <Icons.X width="100%" height="100%" strokeWidth={2} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6">
           {userInfo && (
-            <div className="mb-6 p-4 rounded-lg bg-lime-50 border-2 border-lime-400">
-              <h3 className="text-sm font-medium mb-3 text-green-800 flex items-center gap-2">
-                <Icons.User width={16} height={16} className="text-green-800" />
+            <div className="mb-6 mt-4 p-4 rounded-xl bg-gradient-to-br from-lime-50 to-white border border-lime-200/60">
+              <h3 className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                <Icons.User width={16} height={16} className="text-lime-600" strokeWidth={2} />
                 Account Information
               </h3>
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2.5 text-sm">
                 <div>
-                  <p className="text-green-700">Username</p>
-                  <p className="font-semibold text-gray-900">{userInfo.first_name}</p>
+                  <p className="text-gray-600 text-xs font-medium">Username</p>
+                  <p className="font-semibold text-gray-900 mt-0.5">{userInfo.first_name}</p>
                 </div>
                 <div>
-                  <p className="text-green-700">Email</p>
-                  <p className="font-semibold break-all text-gray-900">{userInfo.email}</p>
+                  <p className="text-gray-600 text-xs font-medium">Email</p>
+                  <p className="font-semibold break-all text-gray-900 mt-0.5 text-sm">{userInfo.email}</p>
                 </div>
               </div>
             </div>
           )}
           
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-2 text-green-800">
+          <div className="mb-6 mt-6">
+            <label className="block text-sm font-semibold mb-3 text-gray-900">
               View Mode
             </label>
             <button
               onClick={() => setIsSimple(!isSimple)}
-              className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all mb-3 border-2 ${
+              className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
                 isSimple
-                  ? 'bg-lime-500 border-lime-600 text-white'
-                  : 'bg-lime-100 border-lime-400 text-green-900 hover:bg-lime-200'
+                  ? 'bg-lime-500 border-lime-600 text-white shadow-md'
+                  : 'bg-gray-50 border-gray-200 text-gray-900 hover:bg-gray-100'
               }`}
             >
-              {isSimple ? '✓ Simple Mode' : '◯ Simple Mode'}
+              {isSimple ? '✓ Simple Mode' : '○ Simple Mode'}
             </button>
           </div>
 
-          <div className="py-6 border-t border-lime-400">
-            <h3 className="text-sm font-medium mb-4 text-green-800">Performance Overview Metrics</h3>
+          <div className="py-6 border-t border-gray-200/50">
+            <h3 className="text-sm font-semibold mb-4 text-gray-900">Performance Overview Metrics</h3>
             <div className="space-y-3">
               {[
                 { key: 'revenue' as const, label: 'Revenue', icon: Icons.Revenue },
@@ -121,19 +123,19 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                 <button
                   key={key}
                   onClick={() => handleMetricToggle(key)}
-                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-3 border-2 ${
+                  className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-3 border ${
                     metricVisibility[key] !== false
-                      ? 'bg-lime-200 border-lime-500 text-green-900'
-                      : 'bg-gray-100 border-gray-300 text-gray-500 opacity-50'
+                      ? 'bg-lime-100 border-lime-200 text-gray-900'
+                      : 'bg-gray-50 border-gray-200 text-gray-400 opacity-60'
                   }`}
                 >
                   <input
                     type="checkbox"
                     checked={metricVisibility[key] !== false}
                     onChange={() => {}}
-                    className="w-4 h-4 cursor-pointer"
+                    className="w-4 h-4 cursor-pointer accent-lime-600"
                   />
-                  <IconComponent width={16} height={16} />
+                  <IconComponent width={16} height={16} strokeWidth={1.5} />
                   {label}
                 </button>
               ))}
@@ -141,10 +143,10 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
           </div>
         </div>
 
-        <div className="border-t border-lime-400 p-4 flex-shrink-0 space-y-2">
+        <div className="border-t border-gray-200/50 p-4 flex-shrink-0 space-y-3">
           <div>
-            <h3 className="text-xs font-medium mb-1 text-green-800 flex items-center gap-1">
-              <Icons.HelpCircle width={14} height={14} />
+            <h3 className="text-xs font-semibold mb-2 text-gray-900 flex items-center gap-1.5">
+              <Icons.HelpCircle width={14} height={14} className="text-gray-600" strokeWidth={2} />
               Help & Tutorial
             </h3>
             <button
@@ -152,57 +154,57 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
                 onRestartTour?.();
                 onClose();
               }}
-              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-600 flex items-center justify-center gap-2"
+              className="w-full py-2 px-3 rounded-lg text-sm font-medium transition-all bg-yellow-500 hover:bg-yellow-600 text-white border border-yellow-600 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
             >
-              <Icons.HelpCircle width={16} height={16} />
+              <Icons.HelpCircle width={16} height={16} strokeWidth={2} />
               Restart Tour
             </button>
-            <p className="text-xs mt-0.5 text-green-600">
-              See the interactive tour again to learn all features.
+            <p className="text-xs mt-1 text-gray-600">
+              Learn all features with the interactive tour.
             </p>
           </div>
 
           <div data-tour="export">
-            <h3 className="text-xs font-medium mb-1 text-green-800 flex items-center gap-1">
-              <Icons.Download width={14} height={14} />
+            <h3 className="text-xs font-semibold mb-2 text-gray-900 flex items-center gap-1.5">
+              <Icons.Download width={14} height={14} className="text-gray-600" strokeWidth={2} />
               Export
             </h3>
             <button
               onClick={onExport}
-              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-lime-500 hover:bg-lime-600 text-white border-2 border-lime-600 flex items-center justify-center gap-2"
+              className="w-full py-2 px-3 rounded-lg text-sm font-medium transition-all bg-lime-500 hover:bg-lime-600 text-white border border-lime-600 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
             >
-              <Icons.Download width={16} height={16} />
+              <Icons.Download width={16} height={16} strokeWidth={2} />
               Export to CSV
             </button>
-            <p className="text-xs mt-0.5 text-green-600">
-              Download all entries as a CSV file.
+            <p className="text-xs mt-1 text-gray-600">
+              Download all entries as CSV.
             </p>
           </div>
 
           <div>
-            <h3 className="text-xs font-medium mb-1 text-green-800">Danger Zone</h3>
+            <h3 className="text-xs font-semibold mb-2 text-red-700">Danger Zone</h3>
             <button
               onClick={handleResetAll}
-              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all bg-red-500 hover:bg-red-600 text-white border-2 border-red-600 flex items-center justify-center gap-2"
+              className="w-full py-2 px-3 rounded-lg text-sm font-medium transition-all bg-red-500 hover:bg-red-600 text-white border border-red-600 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
             >
-              <Icons.Trash2 width={16} height={16} />
+              <Icons.Trash2 width={16} height={16} strokeWidth={2} />
               Reset All Data
             </button>
-            <p className="text-xs mt-0.5 text-green-600">
-              Permanently delete all entries. This action cannot be undone.
+            <p className="text-xs mt-1.5 text-gray-600">
+              Permanently delete all entries. Cannot be undone.
             </p>
             <button
               onClick={() => {
                 onLogout?.();
                 onClose();
               }}
-              className="w-full py-1.5 px-3 rounded text-sm font-medium transition-all mt-3 bg-red-500 hover:bg-red-600 text-white border-2 border-red-600 flex items-center justify-center gap-2"
+              className="w-full py-2 px-3 rounded-lg text-sm font-medium transition-all mt-2 bg-red-500 hover:bg-red-600 text-white border border-red-600 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
             >
-              <Icons.LogOut width={16} height={16} />
+              <Icons.LogOut width={16} height={16} strokeWidth={2} />
               Sign Out
             </button>
-            <p className="text-xs mt-0.5 text-green-600">
-              End your session and sign out.
+            <p className="text-xs mt-1.5 text-gray-600">
+              End your session.
             </p>
           </div>
         </div>
