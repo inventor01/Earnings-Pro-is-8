@@ -2,7 +2,9 @@ export const Icons = {
   Revenue: (props: React.SVGProps<SVGSVGElement>) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
       <circle cx="12" cy="12" r="10" />
-      <path d="M12 7v10M9.5 9.5h5a1.5 1.5 0 0 1 0 3h-5m0 2h5a1.5 1.5 0 0 1 0 3h-5" />
+      <line x1="12" y1="7" x2="12" y2="17" />
+      <path d="M9 9h6" />
+      <path d="M9 15h6" />
     </svg>
   ),
   
