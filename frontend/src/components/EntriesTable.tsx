@@ -5,7 +5,7 @@ import { formatDateEST } from '../lib/dateUtils';
 import doordashLogo from '../assets/doordash-logo.png';
 import ubereatsLogo from '../assets/ubereats-logo.png';
 import ubereatsLogoDark from '../assets/ubereats-dark.png';
-import instacartLogo from '../assets/instacart-logo.png';
+import instacartLogo from '../assets/instacart-logo.jpg';
 import instacartLogoDark from '../assets/instacart-dark.png';
 import grubhubLogo from '../assets/grubhub-logo.png';
 import shiptLogo from '../assets/shipt-logo.png';
@@ -359,7 +359,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                         const isDarkTheme = config.name !== 'simple-light';
                         const logoSrc = getAppLogo(entry.app);
                         return logoSrc ? (
-                          <img src={logoSrc} alt={entry.app} className="h-4 md:h-5 w-auto max-w-[60px] md:max-w-[80px] object-contain" />
+                          <img src={logoSrc} alt={entry.app} className="h-4 md:h-5 w-auto max-w-[100px] md:max-w-[120px] object-contain" />
                         ) : (
                           <span className={isDarkTheme && entry.app === 'UBEREATS' ? 'text-white font-bold' : ''} style={isDarkTheme && entry.app === 'UBEREATS' ? { fontFamily: 'Montserrat, sans-serif', letterSpacing: '-0.02em', fontWeight: 700 } : {}}>{getFormattedAppName(entry.app)}</span>
                         );
