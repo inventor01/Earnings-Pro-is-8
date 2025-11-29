@@ -352,45 +352,6 @@ export function PotOfGoldTracker() {
         </div>
       </div>
 
-      {/* Mission milestone progress */}
-      <div className="relative z-10 mb-8">
-        <div className="flex items-start justify-between gap-1">
-          {[...Array(5)].map((_, i) => {
-            const milestoneTrigger = (i + 1) * 20;
-            const isReached = progressPercent >= milestoneTrigger;
-            return (
-              <div key={i} className="flex flex-col items-center flex-1">
-                <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs md:text-sm transition-all duration-500 ${
-                    isReached
-                      ? themeConfig.name === 'ninja-green'
-                        ? 'bg-lime-500 text-white shadow-lg shadow-lime-500/50'
-                        : 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/50'
-                      : themeConfig.name === 'ninja-green'
-                      ? 'bg-lime-100 text-green-700 border-2 border-lime-300'
-                      : 'bg-slate-200 text-slate-600 border-2 border-slate-300'
-                  }`}
-                >
-                  {milestoneTrigger}%
-                </div>
-                {i < 4 && (
-                  <div
-                    className={`flex-1 h-1 transition-all duration-500 mt-3 -mb-3 ${
-                      progressPercent > milestoneTrigger
-                        ? themeConfig.name === 'ninja-green'
-                          ? 'bg-lime-500 shadow-md shadow-lime-500/50'
-                          : 'bg-cyan-400 shadow-md shadow-cyan-400/50'
-                        : themeConfig.name === 'ninja-green'
-                        ? 'bg-lime-200'
-                        : 'bg-slate-300'
-                    }`}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Progress bar with glow */}
       <div className={`relative z-10 h-4 rounded-full overflow-hidden mb-4 border-2 border-opacity-50 ${
