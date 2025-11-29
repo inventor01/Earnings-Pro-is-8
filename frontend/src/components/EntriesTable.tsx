@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { Entry } from '../lib/api';
 import { useTheme } from '../lib/themeContext';
 import { formatDateEST } from '../lib/dateUtils';
+import doordashLogo from '../assets/doordash-logo.jpg';
+import ubereatsLogo from '../assets/ubereats-logo.jpg';
+import instacartLogo from '../assets/instacart-logo.jpg';
+import grubhubLogo from '../assets/grubhub-logo.jpg';
+import shiptLogo from '../assets/shipt-logo.jpg';
 
 interface EntriesTableProps {
   entries: Entry[];
@@ -112,6 +117,23 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
         return '❌';
       default:
         return '•';
+    }
+  };
+
+  const getAppLogo = (app: string) => {
+    switch (app) {
+      case 'DOORDASH':
+        return doordashLogo;
+      case 'UBEREATS':
+        return ubereatsLogo;
+      case 'INSTACART':
+        return instacartLogo;
+      case 'GRUBHUB':
+        return grubhubLogo;
+      case 'SHIPT':
+        return shiptLogo;
+      default:
+        return null;
     }
   };
 
@@ -325,9 +347,13 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                       {getCategoryEmoji(entry.category || 'OTHER')} {entry.category || 'OTHER'}
                     </span>
                   ) : (
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block ${getAppColor(entry.app)}`}>
-                      {entry.app}
-                    </span>
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block ${getAppColor(entry.app)}`}>
+                      {getAppLogo(entry.app) ? (
+                        <img src={getAppLogo(entry.app)!} alt={entry.app} className="h-6 w-auto max-w-[80px] object-contain" />
+                      ) : (
+                        <span>{entry.app}</span>
+                      )}
+                    </div>
                   )}
                 </td>
                 <td className={`px-4 py-3 text-sm ${config.textSecondary}`}>
