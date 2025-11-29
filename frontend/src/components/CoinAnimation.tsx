@@ -2,8 +2,19 @@ import { useEffect, useState } from 'react';
 
 export function CoinAnimation() {
   const [isVisible, setIsVisible] = useState(false);
+  const [logoPosition, setLogoPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
+    // Find the ninja logo and get its center position
+    const logoImg = document.querySelector('img[alt="Earnings Ninja"]') as HTMLImageElement;
+    if (logoImg) {
+      const rect = logoImg.getBoundingClientRect();
+      setLogoPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      });
+    }
+
     // Trigger animation on component mount
     setIsVisible(true);
   }, []);
@@ -11,7 +22,7 @@ export function CoinAnimation() {
   const coins = Array.from({ length: 8 }, (_, i) => {
     // Calculate angle for each coin (spread evenly around 360 degrees)
     const angle = (i / 8) * Math.PI * 2;
-    const distance = 300;
+    const distance = 280;
     const x = Math.cos(angle) * distance;
     const y = Math.sin(angle) * distance;
     return { id: i, x, y, angle };
@@ -27,6 +38,8 @@ export function CoinAnimation() {
             '--coin-delay': `${coin.id * 0.08}s`,
             '--tx': `${coin.x}px`,
             '--ty': `${coin.y}px`,
+            '--logo-x': `${logoPosition.x}px`,
+            '--logo-y': `${logoPosition.y}px`,
           } as React.CSSProperties}
         >
           <svg
@@ -69,24 +82,12 @@ export function CoinAnimation() {
 
         .coin-animation {
           position: fixed;
-          top: 50px;
-          left: 50%;
-          transform: translateX(-50%);
+          top: var(--logo-y);
+          left: var(--logo-x);
+          transform: translate(-50%, -50%);
           animation: coinBurst 1.4s ease-out forwards;
           animation-delay: var(--coin-delay);
           filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.9));
-        }
-
-        @media (min-width: 768px) {
-          .coin-animation {
-            top: 100px;
-          }
-        }
-
-        @media (min-width: 1024px) {
-          .coin-animation {
-            top: 140px;
-          }
         }
       `}</style>
     </div>
