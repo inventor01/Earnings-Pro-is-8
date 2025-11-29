@@ -167,7 +167,7 @@ export function LoginPage() {
         {/* Demo Mode */}
         <div className={`mt-6 pt-6 border-t ${isDarkTheme ? 'border-slate-700' : 'border-gray-200'}`}>
           <p className={`text-xs text-center mb-3 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
-            Or continue as guest (limited features)
+            Or view demo account
           </p>
           <button
             type="button"
@@ -178,7 +178,7 @@ export function LoginPage() {
                 : 'bg-lime-100 hover:bg-lime-200 text-green-700 border border-lime-400'
             }`}
           >
-            Continue as Guest
+            View Demo Account
           </button>
         </div>
       </div>
