@@ -261,7 +261,7 @@ export function SummaryCard({
                   >
                     ←
                   </button>
-                  <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-yellow-400 text-gray-900 border border-yellow-500">
+                  <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-yellow-300 text-gray-900 border border-yellow-400">
                     {getDateLabel(dayOffset)}
                   </div>
                   <button
@@ -274,7 +274,7 @@ export function SummaryCard({
                 </>
               )}
               {!showDayNav && periodLabel && (
-                <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-yellow-400 text-gray-900 border border-yellow-500">
+                <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap bg-yellow-300 text-gray-900 border border-yellow-400">
                   {periodLabel}
                 </div>
               )}
