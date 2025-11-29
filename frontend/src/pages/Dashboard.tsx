@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, Entry, EntryCreate, EntryType, TimeframeType } from '../lib/api';
 import { useAuth } from '../lib/authContext';
 import { PeriodChips, Period } from '../components/PeriodChips';
+import ninjaLogo from '../assets/logo-ninja.png';
 import { KpiCard } from '../components/KpiCard';
 import { SummaryCard, MetricVisibility } from '../components/SummaryCard';
 import { CalcPad, CalcMode } from '../components/CalcPad';
@@ -623,13 +624,14 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       <div className={contentClass}>
         <div className="flex justify-between items-center mb-4 md:mb-8 lg:mb-10 gap-2">
           <div className="flex items-center gap-1 md:gap-3 lg:gap-4">
-            <span className="text-4xl md:text-6xl lg:text-7xl drop-shadow-lg" style={{
-              textShadow: isDarkTheme ? '0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)' : 'none',
-              filter: isDarkTheme ? 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))' : 'none',
-              animation: 'car-drive 2s ease-in-out infinite'
-            }}>
-              🚗
-            </span>
+            <img 
+              src={ninjaLogo} 
+              alt="Earnings Ninja" 
+              className="h-16 md:h-24 lg:h-28 w-auto drop-shadow-lg"
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))',
+              }}
+            />
             <div className="flex items-center gap-0">
               <h1 className={`text-lg md:text-5xl lg:text-6xl font-black ${config.titleColor}`}>EARNINGS</h1>
               <h1 

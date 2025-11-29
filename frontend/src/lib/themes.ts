@@ -1,4 +1,4 @@
-export type ThemeName = 'dark-neon' | 'simple-light';
+export type ThemeName = 'dark-neon' | 'simple-light' | 'ninja-green';
 
 export interface ThemeConfig {
   name: ThemeName;
@@ -126,6 +126,46 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
     textGreen: 'text-green-600',
     textRed: 'text-red-600',
     textCyan: 'text-blue-600',
+  },
+
+  'ninja-green': {
+    name: 'ninja-green',
+    label: 'Ninja Green',
+    dashBg: 'bg-gradient-to-br',
+    dashFrom: 'from-slate-950',
+    dashTo: 'to-green-950',
+    dashVia: 'via-green-900',
+    
+    kpiColors: {
+      green: { glow: 'from-lime-300 to-green-500', accent: 'text-lime-300', border: 'border-lime-400', bg: 'bg-green-950/40' },
+      red: { glow: 'from-red-400 to-red-600', accent: 'text-red-400', border: 'border-red-500', bg: 'bg-red-950/30' },
+      blue: { glow: 'from-blue-400 to-blue-600', accent: 'text-blue-400', border: 'border-blue-500', bg: 'bg-blue-950/30' },
+      purple: { glow: 'from-purple-400 to-purple-600', accent: 'text-purple-400', border: 'border-purple-500', bg: 'bg-purple-950/30' },
+      orange: { glow: 'from-yellow-400 to-yellow-600', accent: 'text-yellow-400', border: 'border-yellow-500', bg: 'bg-yellow-950/30' },
+      gray: { glow: 'from-gray-400 to-gray-600', accent: 'text-gray-400', border: 'border-gray-500', bg: 'bg-gray-900/30' },
+    },
+    
+    titleColor: 'text-transparent bg-clip-text bg-gradient-to-r from-lime-300 via-green-400 to-emerald-400',
+    textPrimary: 'text-lime-300',
+    textSecondary: 'text-green-400',
+    
+    chipInactive: 'bg-slate-800 text-slate-300 border border-slate-700',
+    chipActive: 'text-slate-950',
+    chipActiveBg: 'bg-gradient-to-r from-lime-300 to-yellow-400',
+    
+    tableBg: 'bg-slate-900/50 border border-green-800',
+    tableHeader: 'bg-green-950/60 border-b border-green-800',
+    tableHeaderText: 'text-lime-300',
+    tableRow: 'text-green-100',
+    tableRowHover: 'hover:bg-green-900/30',
+    tableRowSelected: 'bg-lime-300/10 border-l-2 border-lime-300',
+    
+    buttonPrimary: 'bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-300 hover:to-green-600',
+    buttonPrimaryText: 'text-slate-950 font-bold',
+    
+    textGreen: 'text-lime-300',
+    textRed: 'text-red-400',
+    textCyan: 'text-lime-300',
   },
 };
 
