@@ -269,7 +269,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     queryFn: () => api.getEntries('THIS_MONTH'),
   });
 
-  const { data: monthlyGoal } = useQuery({
+  const { data: monthlyGoal, refetch: refetchMonthlyGoal } = useQuery({
     queryKey: ['goal', 'THIS_MONTH'],
     queryFn: () => api.getGoal('THIS_MONTH'),
   });
@@ -313,6 +313,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
+      refetchRollup();
+      refetchEntries();
+      refetchMonthlyGoal();
       setSelectedIds([]);
       setToast({ message: `${selectedIds.length} entries deleted successfully!`, type: 'success' });
     },
@@ -344,6 +347,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
+      refetchRollup();
+      refetchEntries();
+      refetchMonthlyGoal();
       setResetConfirm(false);
       setToast({ message: "Today's data has been reset!", type: 'success' });
     },
@@ -358,6 +364,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
+      refetchRollup();
+      refetchEntries();
+      refetchMonthlyGoal();
       setResetAllConfirm(false);
       setToast({ message: 'All data has been reset!', type: 'success' });
     },
