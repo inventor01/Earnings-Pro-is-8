@@ -349,17 +349,17 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                 </td>
                 <td className="px-4 py-3">
                   {entry.type === 'EXPENSE' ? (
-                    <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center gap-1 ${getCategoryColor(entry.category || 'OTHER')}`}>
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d={getCategoryIcon(entry.category || 'OTHER')}/></svg>
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center justify-center gap-1.5 h-7 ${getCategoryColor(entry.category || 'OTHER')}`}>
+                      <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d={getCategoryIcon(entry.category || 'OTHER')}/></svg>
                       {entry.category || 'OTHER'}
                     </span>
                   ) : (
-                    <div className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center justify-center ${getAppColor(entry.app)}`}>
+                    <div className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap inline-flex items-center justify-center h-7 ${getAppColor(entry.app)}`}>
                       {(() => {
                         const isDarkTheme = config.name !== 'ninja-green';
                         const logoSrc = getAppLogo(entry.app);
                         return logoSrc ? (
-                          <img src={logoSrc} alt={entry.app} className="h-4 md:h-5 w-auto max-w-[100px] md:max-w-[120px] object-contain" />
+                          <img src={logoSrc} alt={entry.app} className="h-5 w-auto max-w-[90px] object-contain flex-shrink-0" />
                         ) : (
                           <span className={isDarkTheme && entry.app === 'UBEREATS' ? 'text-white font-bold' : ''} style={isDarkTheme && entry.app === 'UBEREATS' ? { fontFamily: 'Montserrat, sans-serif', letterSpacing: '-0.02em', fontWeight: 700 } : {}}>{getFormattedAppName(entry.app)}</span>
                         );
