@@ -244,10 +244,6 @@ export function SummaryCard({
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3 md:mb-4 px-2">
-        <div className="text-xs md:text-sm font-bold uppercase tracking-widest text-gray-700 opacity-80 font-mono">
-          Performance Overview
-        </div>
-        
         {/* Date/Period Display with Navigation */}
         <div className="flex items-center gap-2">
           {(showDayNav || periodLabel) && (
