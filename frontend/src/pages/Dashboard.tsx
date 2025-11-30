@@ -828,14 +828,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               </svg>
             </button>
 
-            {/* Visual Divider */}
-            <div className={`w-px h-6 md:h-8 ${isDarkTheme ? 'bg-slate-600/50' : 'bg-gray-300/50'}`}></div>
-
-            {/* Timeframe Label */}
-            <span className={`text-xs md:text-sm font-semibold px-1 flex-shrink-0 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
-              📅 Period:
-            </span>
-
             {/* Scrollable Period Chips */}
             <div className="overflow-x-auto scrollbar-hide">
               <PeriodChips selected={period} onSelect={setPeriod} />
