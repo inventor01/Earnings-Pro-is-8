@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, Entry, EntryCreate, EntryType, TimeframeType } from '../lib/api';
+import { api, Entry, EntryCreate, EntryType, TimeframeType, Goal } from '../lib/api';
 import { useAuth } from '../lib/authContext';
 import { PeriodChips, Period } from '../components/PeriodChips';
 import ninjaLogo from '../assets/logo-ninja-official.png';
@@ -242,8 +242,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     staleTime: 30000,
     gcTime: 60000,
     refetchOnMount: true,
-    refetchOnWindowFocus: 'stale',
-    refetchOnReconnect: 'stale',
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const rollup = dashboardData?.rollup;
@@ -252,21 +252,21 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const refetchRollup = refetchDashboard;
   const refetchEntries = refetchDashboard;
 
-  const { data: monthlyEntries = [] } = useQuery({
+  const { data: monthlyEntries = [] } = useQuery<Entry[]>({
     queryKey: ['entries', 'THIS_MONTH'],
     queryFn: () => api.getEntries('THIS_MONTH'),
     staleTime: 60000,
     gcTime: 120000,
-    refetchOnMount: 'stale',
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
-  const { data: monthlyGoal, refetch: refetchMonthlyGoal } = useQuery({
+  const { data: monthlyGoal, refetch: refetchMonthlyGoal } = useQuery<Goal | null>({
     queryKey: ['goal', 'THIS_MONTH'],
     queryFn: () => api.getGoal('THIS_MONTH'),
     staleTime: 300000,
     gcTime: 600000,
-    refetchOnMount: 'stale',
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
@@ -281,12 +281,12 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     'custom': 'TODAY',
   };
   const currentTimeframe = timeframeMapping[period];
-  const { data: currentGoal } = useQuery({
+  const { data: currentGoal } = useQuery<Goal | null>({
     queryKey: ['goal', currentTimeframe],
     queryFn: () => api.getGoal(currentTimeframe),
     staleTime: 300000,
     gcTime: 600000,
-    refetchOnMount: 'stale',
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
@@ -511,7 +511,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     return mapping[p] || 'TODAY';
   };
 
-  const timeframeLabels: Record<TimeframeType, string> = {
+  const timeframeLabels: Partial<Record<TimeframeType, string>> = {
     TODAY: 'Today',
     YESTERDAY: 'Yesterday',
     THIS_WEEK: 'This Week',
@@ -521,8 +521,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   };
 
   const handleGoalReached = (tf: TimeframeType) => {
+    const label = timeframeLabels[tf] || tf;
     setToast({
-      message: `🎉 Congratulations! You've reached your ${timeframeLabels[tf].toLowerCase()} profit goal!`,
+      message: `🎉 Congratulations! You've reached your ${label.toLowerCase()} profit goal!`,
       type: 'success',
     });
   };
@@ -663,7 +664,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       });
 
   const { config } = useTheme();
-  const isDarkTheme = config.name !== 'simple-light' && config.name !== 'ninja-green';
+  const isDarkTheme = config.name !== 'ninja-green';
 
   const dashboardClass = `min-h-screen ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''} flex flex-col`;
 
@@ -681,7 +682,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             timeframe={getTimeframeFromPeriod(period)}
             currentProfit={rollup.profit}
             goalProgress={rollup.goal_progress || 0}
-            goalAmount={currentGoal?.target_profit.toString()}
+            goalAmount={currentGoal?.target_profit?.toString()}
             onGoalReached={handleGoalReached}
             onToggle={handleToggleGoalBanner}
           />
@@ -1005,10 +1006,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                 {showCalendar && (
                   <div>
                     <ProfitCalendar 
-                      entries={monthlyEntries}
+                      entries={monthlyEntries as Entry[]}
                       onDayClick={(dateStr) => {
                         const todayEst = getESTDateString(new Date().toISOString());
-                        const offset = Math.floor((new Date(dateStr) - new Date(todayEst)) / (1000 * 60 * 60 * 24));
+                        const offset = Math.floor((new Date(dateStr).getTime() - new Date(todayEst).getTime()) / (1000 * 60 * 60 * 24));
                         setDayOffset(offset);
                         if (period !== 'today') {
                           setPeriod('today');

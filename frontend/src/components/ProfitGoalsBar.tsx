@@ -11,7 +11,7 @@ interface ProfitGoalsBarProps {
   onToggle?: () => void;
 }
 
-const TIMEFRAME_LABELS: Record<TimeframeType, string> = {
+const TIMEFRAME_LABELS: Partial<Record<TimeframeType, string>> = {
   TODAY: "Today's",
   YESTERDAY: "Yesterday's",
   THIS_WEEK: "This Week's",
@@ -22,7 +22,7 @@ const TIMEFRAME_LABELS: Record<TimeframeType, string> = {
 
 export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goalAmount: initialGoalAmount, onGoalReached, onToggle }: ProfitGoalsBarProps) {
   const { config } = useTheme();
-  const isDarkTheme = config.name !== 'simple-light' && config.name !== 'ninja-green';
+  const isDarkTheme = config.name !== 'ninja-green';
   
   const [goalAmount, setGoalAmount] = useState(initialGoalAmount || '');
   const [isEditing, setIsEditing] = useState(false);
