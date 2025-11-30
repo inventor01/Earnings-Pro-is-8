@@ -69,7 +69,7 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg md:rounded-2xl shadow-xl p-4 md:p-6">
       <div className="mb-2 md:mb-3">
         <div className="text-4xl md:text-6xl font-black text-right mb-2 md:mb-3 p-3 md:p-6 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg md:rounded-xl border-4 border-blue-300">
-          {display} mi
+          {display} miles
         </div>
       </div>
 
