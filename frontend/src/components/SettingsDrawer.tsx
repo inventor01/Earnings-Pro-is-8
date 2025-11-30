@@ -71,32 +71,32 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose} />
-      <div className={`fixed right-0 top-0 h-full w-full md:w-80 shadow-2xl z-50 flex flex-col ${
+      <div className={`fixed inset-y-0 right-0 w-full sm:w-96 shadow-2xl z-50 flex flex-col overflow-hidden ${
         isDarkTheme
           ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white border-l border-green-500/20'
           : 'bg-gradient-to-b from-white to-gray-50 text-gray-900 border-l border-lime-500/20'
       }`}>
-        <div className={`flex justify-between items-center px-6 py-5 border-b flex-shrink-0 backdrop-blur-sm ${
+        <div className={`flex justify-between items-center px-4 sm:px-6 py-4 sm:py-5 border-b flex-shrink-0 backdrop-blur-sm ${
           isDarkTheme
             ? 'border-slate-700 bg-slate-900/50'
             : 'border-gray-200/50'
         }`}>
-          <h2 className={`text-lg font-bold flex items-center gap-3 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
+          <h2 className={`text-base sm:text-lg font-bold flex items-center gap-2 sm:gap-3 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
             <div className={`p-2 rounded-lg ${isDarkTheme ? 'bg-green-500/20' : 'bg-lime-100'}`}>
               <Icons.Settings width={18} height={18} className={isDarkTheme ? 'text-green-400' : 'text-lime-700'} strokeWidth={2} />
             </div>
-            Settings
+            <span className="hidden sm:inline">Settings</span>
           </h2>
-          <button onClick={onClose} className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+          <button onClick={onClose} className={`w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ${
             isDarkTheme
               ? 'text-slate-400 hover:text-white hover:bg-slate-700'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-          }`}>
-            <Icons.X width="100%" height="100%" strokeWidth={2} />
+          }`} aria-label="Close settings">
+            <Icons.X width={20} height={20} strokeWidth={2.5} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           {userInfo && (
             <div className={`mb-6 mt-4 p-4 rounded-xl border ${
               isDarkTheme
@@ -215,7 +215,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
           </div>
         </div>
 
-        <div className={`border-t p-3 flex-shrink-0 space-y-2 ${isDarkTheme ? 'border-slate-700 bg-slate-900/50' : 'border-gray-200/50'}`}>
+        <div className={`border-t p-3 sm:p-4 flex-shrink-0 space-y-2 ${isDarkTheme ? 'border-slate-700 bg-slate-900/50' : 'border-gray-200/50'}`}>
           <div>
             <h3 className={`text-xs font-semibold mb-1.5 flex items-center gap-1 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
               <Icons.HelpCircle width={12} height={12} className={isDarkTheme ? 'text-slate-400' : 'text-gray-600'} strokeWidth={2} />
