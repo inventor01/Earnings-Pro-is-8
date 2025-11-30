@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, Entry, EntryCreate, EntryType, TimeframeType } from '../lib/api';
 import { useAuth } from '../lib/authContext';
@@ -13,24 +13,19 @@ import { SettingsDrawer } from '../components/SettingsDrawer';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Toast } from '../components/Toast';
 import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
+import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
+import { ShareCard } from '../components/ShareCard';
 import { ScrollToTopButton } from '../components/ScrollToTopButton';
 import { CoinAnimation } from '../components/CoinAnimation';
+import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
+import { AchievementsModal } from '../components/AchievementsModal';
+import { ProfitCalendar } from '../components/ProfitCalendar';
 import { useTheme } from '../lib/themeContext';
 import { Icons } from '../components/Icons';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
 import { playChaChing, playKaChing } from '../lib/soundEffects';
-
-// Lazy load non-critical components
-const AISuggestions = lazy(() => import('../components/AISuggestions').then(m => ({ default: m.AISuggestions })));
-const ShareCard = lazy(() => import('../components/ShareCard').then(m => ({ default: m.ShareCard })));
-const PotOfGoldTracker = lazy(() => import('../components/PotOfGoldTracker').then(m => ({ default: m.PotOfGoldTracker })));
-const AchievementsModal = lazy(() => import('../components/AchievementsModal').then(m => ({ default: m.AchievementsModal })));
-const ProfitCalendar = lazy(() => import('../components/ProfitCalendar').then(m => ({ default: m.ProfitCalendar })));
-
-// Fallback while loading
-const ComponentFallback = () => <div className="h-20 bg-gray-800 rounded-lg animate-pulse" />;
 
 interface DashboardProps {
   onNavigateToLeaderboard?: () => void;
@@ -967,27 +962,25 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                 </div>
 
                 {showCalendar && (
-                  <Suspense fallback={<ComponentFallback />}>
-                    <div>
-                      <ProfitCalendar 
-                        entries={monthlyEntries}
-                        onDayClick={(dateStr) => {
-                          const todayEst = getESTDateString(new Date().toISOString());
-                          const offset = Math.floor((new Date(dateStr) - new Date(todayEst)) / (1000 * 60 * 60 * 24));
-                          setDayOffset(offset);
-                          if (period !== 'today') {
-                            setPeriod('today');
-                          }
-                        }}
-                        selectedDateStr={(() => {
-                          const now = new Date();
-                          const d = new Date();
-                          d.setDate(d.getDate() + dayOffset);
-                          return getESTDateString(d.toISOString());
-                        })()}
-                      />
-                    </div>
-                  </Suspense>
+                  <div>
+                    <ProfitCalendar 
+                      entries={monthlyEntries}
+                      onDayClick={(dateStr) => {
+                        const todayEst = getESTDateString(new Date().toISOString());
+                        const offset = Math.floor((new Date(dateStr) - new Date(todayEst)) / (1000 * 60 * 60 * 24));
+                        setDayOffset(offset);
+                        if (period !== 'today') {
+                          setPeriod('today');
+                        }
+                      }}
+                      selectedDateStr={(() => {
+                        const now = new Date();
+                        const d = new Date();
+                        d.setDate(d.getDate() + dayOffset);
+                        return getESTDateString(d.toISOString());
+                      })()}
+                    />
+                  </div>
                 )}
               </>
             )}
@@ -995,9 +988,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
           {/* Right Column - Quick Stats & Achievements */}
           <div className="lg:col-span-1 space-y-6 md:space-y-8 lg:space-y-10">
-            <Suspense fallback={<ComponentFallback />}>
-              <PotOfGoldTracker />
-            </Suspense>
+            <PotOfGoldTracker />
             
             <div className="grid grid-cols-2 gap-4 md:gap-6">
               <KpiCard
@@ -1020,14 +1011,12 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
         {/* Achievements Modal */}
         {showAchievementsModal && (
-          <Suspense fallback={null}>
-            <AchievementsModal 
-              entries={entries} 
-              rollup={rollup} 
-              monthlyGoal={monthlyGoal}
-              onClose={() => setShowAchievementsModal(false)}
-            />
-          </Suspense>
+          <AchievementsModal 
+            entries={entries} 
+            rollup={rollup} 
+            monthlyGoal={monthlyGoal}
+            onClose={() => setShowAchievementsModal(false)}
+          />
         )}
 
         <div>
@@ -1316,35 +1305,33 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       )}
 
       {showShareCard && (
-        <Suspense fallback={null}>
-          <>
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setShowShareCard(false)} />
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Share Your Performance</h2>
-                  <button
-                    onClick={() => setShowShareCard(false)}
-                    className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <ShareCard
-                  revenue={`${rollup?.revenue.toFixed(2) || '0.00'}`}
-                  expenses={`${rollup?.expenses.toFixed(2) || '0.00'}`}
-                  profit={`${rollup?.profit.toFixed(2) || '0.00'}`}
-                  miles={`${rollup?.miles.toFixed(1) || '0.0'}`}
-                  orders={entries.filter(e => e.type === 'ORDER').length}
-                  avgOrder={`${rollup?.average_order_value.toFixed(2) || '0.00'}`}
-                  periodLabel={getPeriodLabel()}
-                />
+        <>
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setShowShareCard(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Share Your Performance</h2>
+                <button
+                  onClick={() => setShowShareCard(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
+              <ShareCard
+                revenue={`${rollup?.revenue.toFixed(2) || '0.00'}`}
+                expenses={`${rollup?.expenses.toFixed(2) || '0.00'}`}
+                profit={`${rollup?.profit.toFixed(2) || '0.00'}`}
+                miles={`${rollup?.miles.toFixed(1) || '0.0'}`}
+                orders={entries.filter(e => e.type === 'ORDER').length}
+                avgOrder={`${rollup?.average_order_value.toFixed(2) || '0.00'}`}
+                periodLabel={getPeriodLabel()}
+              />
             </div>
-          </>
-        </Suspense>
+          </div>
+        </>
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
