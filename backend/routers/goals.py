@@ -1,36 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
-from datetime import datetime
-from calendar import monthrange
-from decimal import Decimal
 from backend.db import get_db
 from backend.models import Goal, TimeframeType, AuthUser
 from backend.schemas import GoalCreate, GoalUpdate, GoalResponse
 from backend.auth import get_current_user
 
 router = APIRouter()
-
-def calculate_daily_goal(monthly_profit: Decimal) -> Decimal:
-    """Calculate daily goal based on monthly goal divided by days in current month"""
-    now = datetime.utcnow()
-    days_in_month = monthrange(now.year, now.month)[1]
-    daily_goal = monthly_profit / Decimal(days_in_month)
-    return daily_goal.quantize(Decimal('0.01'))
-
-def auto_create_daily_goal(db: Session, monthly_goal: Goal, user_id: str):
-    """Automatically create or update TODAY goal based on monthly goal"""
-    daily_goal_amount = calculate_daily_goal(Decimal(str(monthly_goal.target_profit)))
-    
-    existing_daily = db.query(Goal).filter(Goal.timeframe == TimeframeType.TODAY, Goal.user_id == user_id).first()
-    if existing_daily:
-        existing_daily.target_profit = daily_goal_amount
-    else:
-        existing_daily = Goal(user_id=user_id, timeframe=TimeframeType.TODAY, target_profit=daily_goal_amount)
-        db.add(existing_daily)
-    
-    db.commit()
-    db.refresh(existing_daily)
 
 @router.get("/goals/{timeframe}", response_model=Optional[GoalResponse])
 def get_goal(timeframe: str, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
