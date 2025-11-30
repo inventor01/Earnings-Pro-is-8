@@ -80,10 +80,10 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
     # Get goal data if timeframe provided
     goal_data = None
     goal_progress = None
-    if timeframe:
+    if timeframe and user_id:
         try:
             tf = TimeframeType[timeframe]
-            goal = db.query(Goal).filter(Goal.timeframe == tf).first()
+            goal = db.query(Goal).filter(Goal.timeframe == tf, Goal.user_id == user_id).first()
             if goal:
                 goal_data = {
                     "id": goal.id,
