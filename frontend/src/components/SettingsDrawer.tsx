@@ -96,7 +96,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-24 sm:pb-28 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           {userInfo && (
             <div className={`mb-6 mt-4 p-4 rounded-xl border ${
               isDarkTheme
@@ -215,7 +215,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
           </div>
         </div>
 
-        <div className={`border-t p-3 sm:p-4 flex-shrink-0 space-y-2 ${isDarkTheme ? 'border-slate-700 bg-slate-900/50' : 'border-gray-200/50'}`}>
+        <div className={`border-t p-3 sm:p-4 flex-shrink-0 space-y-2 pb-6 sm:pb-4 ${isDarkTheme ? 'border-slate-700 bg-slate-900/50' : 'border-gray-200/50'}`}>
           <div>
             <h3 className={`text-xs font-semibold mb-1.5 flex items-center gap-1 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
               <Icons.HelpCircle width={12} height={12} className={isDarkTheme ? 'text-slate-400' : 'text-gray-600'} strokeWidth={2} />
