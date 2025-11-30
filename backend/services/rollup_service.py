@@ -56,32 +56,28 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
     average_order_value = Decimal("0")
     dollars_per_hour = Decimal("0")
     
-    if order_count > 0:
+    # Calculate per-hour rate based on earliest and latest entries in timeframe
+    if entries:
         total_order_revenue = Decimal("0")
-        order_total_minutes = 0
         for order in order_entries:
             total_order_revenue += Decimal(str(order.amount))
-            order_total_minutes += order.duration_minutes
-        average_order_value = total_order_revenue / Decimal(str(order_count))
+        if order_count > 0:
+            average_order_value = total_order_revenue / Decimal(str(order_count))
         
-        # Calculate per-hour rate based on actual tracked duration
-        order_hours = order_total_minutes / 60.0 if order_total_minutes > 0 else 0.0
+        # Get earliest and latest timestamps from ALL entries in the timeframe
+        all_timestamps = sorted([e.timestamp for e in entries])
+        first_timestamp = all_timestamps[0]
+        last_timestamp = all_timestamps[-1]
         
-        if order_hours >= (5 / 60):  # 5 minutes minimum
-            dollars_per_hour = profit / Decimal(str(order_hours))
+        hours_first_to_last = (last_timestamp - first_timestamp).total_seconds() / 3600.0
+        # Only calculate if at least 5 minutes has passed, otherwise use 0
+        if hours_first_to_last >= (5 / 60):  # 5 minutes minimum
+            dollars_per_hour = profit / Decimal(str(hours_first_to_last))
         else:
-            # Fallback to timestamp-based calculation if no duration tracked
-            order_timestamps = sorted([e.timestamp for e in order_entries])
-            first_timestamp = order_timestamps[0]
-            last_timestamp = order_timestamps[-1]
-            hours_first_to_last = (last_timestamp - first_timestamp).total_seconds() / 3600.0
-            if hours_first_to_last >= (5 / 60):
-                dollars_per_hour = profit / Decimal(str(hours_first_to_last))
-            else:
-                dollars_per_hour = Decimal("0")
+            dollars_per_hour = Decimal("0")
     else:
-        # If no orders, use total duration-based calculation
-        dollars_per_hour = net_earnings / Decimal(str(hours)) if hours > 0 else Decimal("0")
+        # No entries at all
+        dollars_per_hour = Decimal("0")
     
     # Get goal data if timeframe provided
     goal_data = None
