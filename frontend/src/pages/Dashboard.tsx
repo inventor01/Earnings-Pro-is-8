@@ -302,6 +302,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
+      refetchRollup();
+      refetchEntries();
+      refetchMonthlyGoal();
+      setDeleteConfirm(null);
       setToast({ message: 'Entry deleted successfully!', type: 'success' });
     },
     onError: () => {
@@ -386,6 +390,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
+      refetchRollup();
+      refetchEntries();
+      refetchMonthlyGoal();
       setEditingEntry(null);
       setToast({ message: 'Entry updated successfully!', type: 'success' });
     },
