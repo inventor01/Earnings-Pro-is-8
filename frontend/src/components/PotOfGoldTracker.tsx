@@ -16,12 +16,13 @@ export function PotOfGoldTracker() {
   const [floatingShuriken, setFloatingShuriken] = useState<number[]>([]);
   const [isHidden, setIsHidden] = useState(false);
 
-  const { data: monthlyGoal, refetch: refetchGoal, isLoading: isGoalLoading } = useQuery({
-    queryKey: ['goal', 'THIS_MONTH', user?.id],
-    queryFn: () => api.getGoal('THIS_MONTH'),
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: true,
+  const { data: savingsGoal, refetch: refetchGoal, isLoading: isGoalLoading } = useQuery({
+    queryKey: ['goal', 'SAVINGS_GOAL', user?.id],
+    queryFn: () => api.getGoal('SAVINGS_GOAL'),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const { data: monthlyData, refetch: refetchMonthlyData, isLoading: isRollupLoading } = useQuery({
@@ -32,45 +33,29 @@ export function PotOfGoldTracker() {
       const data = await res.json();
       return data;
     },
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'stale',
-    refetchOnWindowFocus: true,
+    staleTime: 1 * 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   });
 
-  // Force invalidate cache and refetch on component mount
   useEffect(() => {
     if (user?.id) {
-      // NUCLEAR: Clear React Query cache completely
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
-      queryClient.invalidateQueries({ queryKey: ['goal'] });
-      
-      // Force immediate refetch of fresh data
-      setTimeout(() => {
-        refetchGoal().catch(() => {});
-        refetchMonthlyData().catch(() => {});
-      }, 50);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (user?.id) {
-      // Force refetch on user change
       refetchGoal().catch(() => {});
       refetchMonthlyData().catch(() => {});
     }
-  }, [user?.id, refetchGoal, refetchMonthlyData]);
+  }, [user?.id]);
 
   const currentProfit = Math.max(0, parseFloat(String(monthlyData?.profit)) || 0);
-  const goalAmount = monthlyGoal?.target_profit ? parseFloat(String(monthlyGoal.target_profit)) : 0;
+  const goalAmount = savingsGoal?.target_profit ? parseFloat(String(savingsGoal.target_profit)) : 0; // Savings goal - independent from monthly profit goal
   
   const progressPercent = goalAmount > 0 ? Math.round(Math.min(Math.max(0, (currentProfit / goalAmount) * 100), 100) * 100) / 100 : 0;
   const isGoalReached = currentProfit >= goalAmount;
 
   const handleEditClick = () => {
     setTempGoal(goalAmount > 0 ? goalAmount.toString() : '');
-    setTempGoalName(monthlyGoal?.goal_name || 'Savings Goal');
+    setTempGoalName(savingsGoal?.goal_name || 'Savings Goal');
     setIsEditing(true);
     setError('');
   };
@@ -84,16 +69,11 @@ export function PotOfGoldTracker() {
         setIsSaving(false);
         return;
       }
-      await api.createGoal('THIS_MONTH', parseFloat(tempGoal), tempGoalName || 'Savings Goal');
+      await api.createGoal('SAVINGS_GOAL', parseFloat(tempGoal), tempGoalName || 'Savings Goal');
       
-      // NUCLEAR: Clear ALL rollup and goal caches to prevent stale data
-      queryClient.removeQueries({ queryKey: ['rollup'] });
-      queryClient.removeQueries({ queryKey: ['goal'] });
-      queryClient.removeQueries({ queryKey: ['entries'] });
-      
-      // Force immediate refetch of fresh data
+      // Invalidate and refetch savings goal only
+      queryClient.invalidateQueries({ queryKey: ['goal', 'SAVINGS_GOAL'] });
       await refetchGoal();
-      await refetchMonthlyData();
       setIsEditing(false);
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Failed to save goal';
@@ -394,7 +374,7 @@ export function PotOfGoldTracker() {
             themeConfig.name === 'ninja-green' ? 'text-green-800' :
             'text-white'
           }`}>
-            {monthlyGoal?.goal_name || 'Savings Goal'}
+            {savingsGoal?.goal_name || 'Savings Goal'}
           </h3>
           <p className={`text-xs md:text-sm font-semibold ${
             themeConfig.name === 'simple-light' ? 'text-blue-600' :

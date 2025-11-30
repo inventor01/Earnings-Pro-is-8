@@ -75,6 +75,7 @@ class TimeframeType(str, enum.Enum):
     LAST_7_DAYS = "LAST_7_DAYS"
     THIS_MONTH = "THIS_MONTH"
     LAST_MONTH = "LAST_MONTH"
+    SAVINGS_GOAL = "SAVINGS_GOAL"
 
 class Goal(Base):
     __tablename__ = "goals"
