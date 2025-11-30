@@ -170,7 +170,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
           <div className="flex items-center gap-1 md:gap-4 flex-nowrap overflow-x-auto scrollbar-hide">
             {/* Label - very compact on mobile */}
             <span className={`text-xs md:text-base lg:text-lg font-bold transition-colors duration-500 goal-label-animated whitespace-nowrap ${isDarkTheme ? 'text-lime-400' : 'text-green-800'}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
-              {TIMEFRAME_LABELS[timeframe].replace("'s", "")}:
+              {TIMEFRAME_LABELS[timeframe]} Goal:
             </span>
 
             {/* Goal Amount Section */}
@@ -219,8 +219,8 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
 
             {/* Progress Info - very compact on mobile */}
             <span className={`text-xs md:text-base lg:text-lg font-bold transition-colors duration-500 flex items-center gap-0.5 md:gap-2 whitespace-nowrap ${isGoalReached ? (isDarkTheme ? 'text-lime-400' : 'text-green-800') : (isDarkTheme ? 'text-slate-300' : 'text-gray-700')}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
-              <span className="hidden md:inline">${currentProfit.toFixed(2)}</span>
-              <span className={`hidden md:inline ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>/</span>
+              <span>${currentProfit.toFixed(2)}</span>
+              <span className={`${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>/</span>
               <span>${goalAmount}</span>
               <span className={`text-xs md:text-sm font-bold ml-1 md:ml-2 ${isDarkTheme ? 'text-lime-400' : 'text-blue-600'}`}>{Math.round(displayProgress)}%</span>
               {isGoalReached && <span className={`text-xs md:text-sm font-bold ${isDarkTheme ? 'text-lime-400' : 'text-green-700'}`}>✓</span>}
