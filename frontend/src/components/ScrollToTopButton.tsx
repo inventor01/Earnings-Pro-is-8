@@ -59,11 +59,7 @@ export function ScrollToTopButton({ isFormOpen = false }: ScrollToTopButtonProps
           onClick={scrollToPerformanceOverview}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className={`fixed right-3 md:right-5 bottom-20 md:bottom-44 z-50 p-2 md:p-3 rounded-full shadow-lg transition-all active:scale-95 active:opacity-100 hover:opacity-100 opacity-60 md:opacity-40 md:hover:scale-110 touch-action-manipulation cursor-pointer ${
-            isDarkTheme
-              ? 'bg-gradient-to-br from-cyan-400 to-cyan-500 text-slate-900 border-2 border-cyan-300'
-              : 'bg-gradient-to-br from-yellow-300 to-yellow-400 text-slate-900 border-2 border-yellow-200'
-          }`}
+          className={`fixed right-3 md:right-5 bottom-20 md:bottom-44 z-50 p-2 md:p-3 rounded-full shadow-lg transition-all active:scale-95 active:opacity-100 hover:opacity-100 opacity-60 md:opacity-40 md:hover:scale-110 touch-action-manipulation cursor-pointer bg-gradient-to-br from-yellow-300 to-yellow-400 text-slate-900 border-2 border-yellow-200 hover:from-yellow-400 hover:to-yellow-500`}
           aria-label="Scroll to Performance Overview"
           title="Scroll to Performance Overview"
           style={{ touchAction: 'manipulation', WebkitTouchCallout: 'none' }}
