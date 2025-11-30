@@ -11,14 +11,8 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeName>(() => {
-    const saved = localStorage.getItem('theme') as ThemeName | null;
-    return (saved && saved in THEMES) ? saved : 'ninja-green';
-  });
+  const [theme, setThemeState] = useState<ThemeName>('ninja-dark');
 
-  useEffect(() => {
-    localStorage.setItem('theme', theme);
-  }, [theme]);
 
   const setTheme = (name: ThemeName) => {
     setThemeState(name);

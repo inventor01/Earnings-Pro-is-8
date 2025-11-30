@@ -46,7 +46,7 @@ export function LoginPage() {
     }
   };
 
-  const isDarkTheme = false;
+  const isDarkTheme = true;
 
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''}`}>
