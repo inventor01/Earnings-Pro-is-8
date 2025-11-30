@@ -172,7 +172,7 @@ export function TripTracker({ onTripComplete }: TripTrackerProps) {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-white bg-opacity-20 rounded-lg p-3">
           <div className="text-sm opacity-90">Distance</div>
-          <div className="text-2xl font-bold">{distance.toFixed(2)} mi</div>
+          <div className="text-2xl font-bold">{distance.toFixed(2)} miles</div>
         </div>
         <div className="bg-white bg-opacity-20 rounded-lg p-3">
           <div className="text-sm opacity-90">Duration</div>

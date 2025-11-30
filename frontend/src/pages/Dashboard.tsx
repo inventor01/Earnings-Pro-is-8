@@ -991,7 +991,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               <KpiCard
                 title="$/Mile"
                 value={`$${rollup?.dollars_per_mile.toFixed(2) || '0.00'}`}
-                detail1={{ label: 'Efficiency', value: rollup?.miles ? `${(rollup.revenue / rollup.miles).toFixed(2)}/mi` : '-' }}
+                detail1={{ label: 'Efficiency', value: rollup?.miles ? `${(rollup.revenue / rollup.miles).toFixed(2)}/miles` : '-' }}
                 color="orange"
               />
               <KpiCard

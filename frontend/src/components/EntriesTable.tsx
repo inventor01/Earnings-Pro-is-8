@@ -376,7 +376,7 @@ export function EntriesTable({ entries, onDelete, onEdit, onView, selectedIds = 
                   ${Math.abs(entry.amount).toFixed(2)}
                 </td>
                 <td className={`px-4 py-3 text-right text-sm font-bold ${config.textSecondary}`}>
-                  {entry.distance_miles > 0 ? `${entry.distance_miles.toFixed(1)} mi` : '-'}
+                  {entry.distance_miles > 0 ? `${entry.distance_miles.toFixed(1)} miles` : '-'}
                 </td>
                 <td className={`px-4 py-3 text-sm font-bold ${config.textSecondary}`}>
                   <div className="flex flex-col gap-1">

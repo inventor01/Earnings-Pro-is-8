@@ -100,7 +100,7 @@ export function EntryViewer({ entry, onClose }: EntryViewerProps) {
               <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 md:p-5">
                 <p className="text-xs md:text-sm font-medium text-gray-600 mb-1">Distance</p>
                 <p className="text-2xl md:text-3xl font-bold text-orange-600">
-                  {entry.distance_miles.toFixed(1)} mi
+                  {entry.distance_miles.toFixed(1)} miles
                 </p>
               </div>
             )}
