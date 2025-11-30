@@ -59,7 +59,7 @@ export function LoginPage() {
           <img 
             src={ninjaLogo} 
             alt="Earnings Ninja" 
-            className="h-32 md:h-48 w-auto mx-auto mb-3 md:mb-4 drop-shadow-lg"
+            className="h-48 md:h-72 w-auto mx-auto mb-3 md:mb-4 drop-shadow-lg"
           />
           <p className={`text-xs md:text-sm font-semibold ${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
             Grow your earnings with Earnings Ninja
