@@ -31,46 +31,8 @@ interface SettingsDrawerProps {
 export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, onLogout, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
   const { config, setTheme, themeName } = useTheme();
   const [soundMuted, setSoundMutedState] = useState(isSoundMuted());
-  const [dailyGoal, setDailyGoal] = useState('');
-  const [weeklyGoal, setWeeklyGoal] = useState('');
-  const [monthlyGoal, setMonthlyGoal] = useState('');
-  const [goalsLoading, setGoalsLoading] = useState(true);
   const themes = getAllThemes();
   const isDarkTheme = config.name !== 'ninja-green';
-  
-  useEffect(() => {
-    // Load all goals on mount
-    if (isOpen) {
-      Promise.all([
-        api.getGoal('TODAY').then(g => setDailyGoal(g?.target_profit?.toString() || '')),
-        api.getGoal('THIS_WEEK').then(g => setWeeklyGoal(g?.target_profit?.toString() || '')),
-        api.getGoal('THIS_MONTH').then(g => setMonthlyGoal(g?.target_profit?.toString() || '')),
-      ]).finally(() => setGoalsLoading(false));
-    }
-  }, [isOpen]);
-
-  const saveGoalMutation = useMutation({
-    mutationFn: (data: { timeframe: string; amount: number }) => api.createGoal(data.timeframe as any, data.amount),
-  });
-
-  const handleSaveGoal = async (timeframe: string, amount: string) => {
-    if (!amount || parseFloat(amount) <= 0) return;
-    try {
-      await saveGoalMutation.mutateAsync({ timeframe, amount: parseFloat(amount) });
-    } catch (e) {
-      console.error('Failed to save goal:', e);
-    }
-  };
-
-  const handleGoalChange = (setter: (val: string) => void, timeframe: string) => (value: string) => {
-    setter(value);
-  };
-
-  const handleGoalBlur = (timeframe: string, amount: string) => {
-    if (amount && parseFloat(amount) > 0) {
-      handleSaveGoal(timeframe, amount);
-    }
-  };
   
   const { data: userInfo } = useQuery<UserInfo>({
     queryKey: ['userInfo'],
@@ -158,34 +120,6 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             </div>
           )}
 
-          <div className={`py-6 border-t ${isDarkTheme ? 'border-slate-700' : 'border-gray-200/50'}`}>
-            <h3 className={`text-sm font-semibold mb-3 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>💰 Profit Goals</h3>
-            <div className="space-y-3">
-              {[
-                { label: 'Daily Goal', value: dailyGoal, onChange: (v: string) => setDailyGoal(v), onBlur: () => handleGoalBlur('TODAY', dailyGoal) },
-                { label: 'Weekly Goal', value: weeklyGoal, onChange: (v: string) => setWeeklyGoal(v), onBlur: () => handleGoalBlur('THIS_WEEK', weeklyGoal) },
-                { label: 'Monthly Goal', value: monthlyGoal, onChange: (v: string) => setMonthlyGoal(v), onBlur: () => handleGoalBlur('THIS_MONTH', monthlyGoal) },
-              ].map(({ label, value, onChange, onBlur }) => (
-                <div key={label}>
-                  <p className={`text-xs font-medium mb-1.5 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>{label}</p>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>$</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={value}
-                      onChange={(e) => onChange(e.target.value)}
-                      onBlur={onBlur}
-                      placeholder="0.00"
-                      className={`flex-1 px-3 py-2 rounded-lg text-sm border-2 transition-all ${isDarkTheme ? 'bg-slate-700 border-slate-600 text-white focus:border-lime-500 focus:ring-lime-500/20' : 'bg-white border-gray-200 text-gray-900 focus:border-lime-500 focus:ring-lime-500/20'} focus:ring-2 focus:outline-none`}
-                    />
-                  </div>
-                </div>
-              ))}
-              <p className={`text-xs mt-2 ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>💡 Set independent profit targets for daily, weekly, and monthly tracking.</p>
-            </div>
-          </div>
-          
           <div className={`py-6 border-t ${isDarkTheme ? 'border-slate-700' : 'border-gray-200/50'}`}>
             <h3 className={`text-sm font-semibold mb-4 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>Appearance</h3>
             <div className="space-y-2">
