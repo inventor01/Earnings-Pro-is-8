@@ -175,18 +175,30 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Play intro sound on dashboard load
+  // Play intro sound on dashboard load (with delay for browser autoplay policy)
   useEffect(() => {
     const introPlayed = sessionStorage.getItem('introDashboardSoundPlayed');
     if (!introPlayed && !isSoundMuted()) {
-      try {
-        const audio = new Audio('/sounds/intro-sound.wav');
-        audio.volume = 0.7;
-        audio.play().catch(err => console.debug('Intro sound playback prevented:', err));
-        sessionStorage.setItem('introDashboardSoundPlayed', 'true');
-      } catch (err) {
-        console.debug('Intro sound error:', err);
-      }
+      // Small delay to ensure audio context is ready and browser allows playback
+      const timer = setTimeout(() => {
+        try {
+          const audio = new Audio('/sounds/intro-sound.wav');
+          audio.volume = 0.7;
+          audio.play()
+            .then(() => {
+              console.debug('Intro sound played successfully');
+              sessionStorage.setItem('introDashboardSoundPlayed', 'true');
+            })
+            .catch(err => {
+              console.debug('Intro sound playback prevented:', err);
+              // If playback fails, don't mark as played - user might enable sound later
+            });
+        } catch (err) {
+          console.debug('Intro sound error:', err);
+        }
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
   }, []);
 
