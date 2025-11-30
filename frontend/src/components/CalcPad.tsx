@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { playButtonClickSound } from '../lib/buttonSoundEffects';
 
 export type CalcMode = 'add' | 'subtract';
 
@@ -15,6 +16,7 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
   const cTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleNumber = (num: string) => {
+    playButtonClickSound();
     if (amount === '0') {
       onAmountChange(num);
     } else {
@@ -23,12 +25,14 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
   };
 
   const handleDecimal = () => {
+    playButtonClickSound();
     if (!amount.includes('.')) {
       onAmountChange(amount + '.');
     }
   };
 
   const handleBackspace = () => {
+    playButtonClickSound();
     if (amount.length > 1) {
       onAmountChange(amount.slice(0, -1));
     } else {
@@ -37,6 +41,7 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
   };
 
   const handleClearFull = () => {
+    playButtonClickSound();
     onAmountChange('0');
   };
 
@@ -69,7 +74,7 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
 
         <div className="flex gap-2 md:gap-3 mb-4 md:mb-6">
           <button
-            onClick={() => onModeChange('add')}
+            onClick={() => { playButtonClickSound(); onModeChange('add'); }}
             className={`flex-1 py-3 md:py-4 rounded-lg md:rounded-xl font-bold text-base md:text-lg transition-all transform hover:scale-105 active:scale-95 ${
               mode === 'add'
                 ? 'bg-gradient-to-r from-green-400 to-green-500 text-white shadow-lg'
@@ -79,7 +84,7 @@ export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep
             ➕ Revenue
           </button>
           <button
-            onClick={() => onModeChange('subtract')}
+            onClick={() => { playButtonClickSound(); onModeChange('subtract'); }}
             className={`flex-1 py-3 md:py-4 rounded-lg md:rounded-xl font-bold text-base md:text-lg transition-all transform hover:scale-105 active:scale-95 ${
               mode === 'subtract'
                 ? 'bg-gradient-to-r from-red-400 to-red-500 text-white shadow-lg'

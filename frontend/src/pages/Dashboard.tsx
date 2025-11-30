@@ -27,6 +27,7 @@ import { Icons } from '../components/Icons';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
 import { playChaChing, playKaChing } from '../lib/soundEffects';
+import { playButtonClickSound } from '../lib/buttonSoundEffects';
 
 interface DashboardProps {
   onNavigateToLeaderboard?: () => void;
@@ -779,7 +780,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               </button>
               <button
                 type="button"
-                onClick={() => setShowSettings(true)}
+                onClick={() => { playButtonClickSound(); setShowSettings(true)}
                 className={`p-2 md:p-2.5 rounded-lg transition-colors pointer-events-auto z-50 ${config.textPrimary} hover:opacity-80 ${
                   isDarkTheme ? '' : 'hover:bg-yellow-100'
                 }`}
