@@ -790,7 +790,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             </div>
           </div>
 
-          <div className={`max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 w-full pt-4 md:pt-6 lg:pt-8 pb-4 md:pb-6 lg:pb-8 flex items-center justify-center gap-3 md:gap-4 rounded-xl md:rounded-2xl transition-all ${
+          <div className={`max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 w-full mt-6 md:mt-8 lg:mt-10 pt-4 md:pt-6 lg:pt-8 pb-4 md:pb-6 lg:pb-8 flex items-center justify-center gap-3 md:gap-4 rounded-xl md:rounded-2xl transition-all ${
             isDarkTheme
               ? 'bg-gradient-to-r from-slate-800/60 to-slate-700/40 border border-slate-700/50 shadow-lg backdrop-blur-sm'
               : 'bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200/80 shadow-md'
