@@ -29,9 +29,10 @@ interface SettingsDrawerProps {
 }
 
 export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, onLogout, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
-  const { config } = useTheme();
+  const { config, setTheme, themeName } = useTheme();
   const [soundMuted, setSoundMutedState] = useState(isSoundMuted());
-  const isDarkTheme = true;
+  const themes = getAllThemes();
+  const isDarkTheme = config.name !== 'ninja-green';
   
   const { data: userInfo } = useQuery<UserInfo>({
     queryKey: ['userInfo'],
@@ -119,6 +120,34 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
             </div>
           )}
           
+          <div className={`py-6 border-t ${isDarkTheme ? 'border-slate-700' : 'border-gray-200/50'}`}>
+            <h3 className={`text-sm font-semibold mb-4 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>Appearance</h3>
+            <div className="space-y-2">
+              {themes.map((theme) => (
+                <button
+                  key={theme.name}
+                  onClick={() => setTheme(theme.name as ThemeName)}
+                  className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-3 border ${
+                    themeName === theme.name
+                      ? isDarkTheme
+                        ? 'bg-green-500/20 border-green-400 text-white ring-2 ring-green-400'
+                        : 'bg-lime-100 border-lime-300 text-gray-900 ring-2 ring-lime-400'
+                      : isDarkTheme
+                      ? 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    checked={themeName === theme.name}
+                    onChange={() => {}}
+                    className={`w-4 h-4 cursor-pointer ${isDarkTheme ? 'accent-green-400' : 'accent-lime-600'}`}
+                  />
+                  <span>{theme.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className={`py-6 border-t ${isDarkTheme ? 'border-slate-700' : 'border-gray-200/50'}`}>
             <h3 className={`text-sm font-semibold mb-4 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>Audio Settings</h3>
