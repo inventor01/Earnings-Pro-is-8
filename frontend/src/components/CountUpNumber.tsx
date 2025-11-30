@@ -33,7 +33,9 @@ export function CountUpNumber({ value, duration = 800 }: CountUpNumberProps) {
       // Format based on original format
       let formatted = '';
       if (prefix === '$') {
-        formatted = `$${currentValue.toFixed(2)}`;
+        // Don't show .00 for whole dollar amounts
+        const fixed = currentValue.toFixed(2);
+        formatted = fixed.endsWith('.00') ? `$${Math.round(currentValue)}` : `$${fixed}`;
       } else {
         formatted = String(currentValue.toFixed(1));
       }
