@@ -71,9 +71,14 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
         
         hours_first_to_last = (last_timestamp - first_timestamp).total_seconds() / 3600.0
         
-        # Calculate hourly rate if any time has passed
+        # Calculate hourly rate
         if hours_first_to_last > 0:
-            dollars_per_hour = profit / Decimal(str(hours_first_to_last))
+            # If under 1 hour, use total revenue as the $/hour rate
+            if hours_first_to_last < 1.0:
+                dollars_per_hour = revenue
+            else:
+                # If 1+ hours, calculate based on profit / time elapsed
+                dollars_per_hour = profit / Decimal(str(hours_first_to_last))
         else:
             dollars_per_hour = Decimal("0")
     else:
