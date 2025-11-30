@@ -265,10 +265,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const { data: monthlyGoal, refetch: refetchMonthlyGoal } = useQuery({
     queryKey: ['goal', 'THIS_MONTH'],
     queryFn: () => api.getGoal('THIS_MONTH'),
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: 300000,
+    gcTime: 600000,
+    refetchOnMount: 'stale',
+    refetchOnWindowFocus: false,
   });
 
   const createMutation = useMutation({
@@ -641,6 +641,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             timeframe={getTimeframeFromPeriod(period)}
             currentProfit={rollup.profit}
             goalProgress={rollup.goal_progress || 0}
+            goalAmount={monthlyGoal?.target_profit.toString()}
             onGoalReached={handleGoalReached}
             onToggle={handleToggleGoalBanner}
           />

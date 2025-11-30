@@ -6,6 +6,7 @@ interface ProfitGoalsBarProps {
   timeframe: TimeframeType;
   currentProfit: number;
   goalProgress?: number;
+  goalAmount?: string;
   onGoalReached?: (timeframe: TimeframeType) => void;
   onToggle?: () => void;
 }
@@ -19,11 +20,11 @@ const TIMEFRAME_LABELS: Record<TimeframeType, string> = {
   LAST_MONTH: "Last Month's",
 };
 
-export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onGoalReached, onToggle }: ProfitGoalsBarProps) {
+export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goalAmount: initialGoalAmount, onGoalReached, onToggle }: ProfitGoalsBarProps) {
   const { config } = useTheme();
   const isDarkTheme = config.name !== 'simple-light' && config.name !== 'ninja-green';
   
-  const [goalAmount, setGoalAmount] = useState('');
+  const [goalAmount, setGoalAmount] = useState(initialGoalAmount || '');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [tempGoal, setTempGoal] = useState('');
@@ -32,17 +33,13 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
   const goalReachedRef = useRef<boolean>(false);
 
   useEffect(() => {
-    // Load current goal on mount and when timeframe changes
-    api.getGoal(timeframe).then(goal => {
-      if (goal) {
-        setGoalAmount(goal.target_profit.toString());
-      } else {
-        setGoalAmount('');
-      }
-    });
+    // Update goal amount when prop changes
+    if (initialGoalAmount) {
+      setGoalAmount(initialGoalAmount);
+    }
     // Reset goal reached flag when timeframe changes
     goalReachedRef.current = false;
-  }, [timeframe]);
+  }, [timeframe, initialGoalAmount]);
 
   useEffect(() => {
     // Show success message when goal is reached for the first time
