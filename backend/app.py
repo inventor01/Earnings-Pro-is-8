@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes
+from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard
 from backend.db import engine, Base
 from backend.services.background_jobs import start_background_jobs, stop_background_jobs
 import os
@@ -40,6 +40,7 @@ async def add_cache_headers(request, call_next):
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(auth_routes.router, prefix="/api", tags=["auth"])
 app.include_router(settings.router, prefix="/api", tags=["settings"])
+app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
 app.include_router(entries.router, prefix="/api", tags=["entries"])
 app.include_router(rollup.router, prefix="/api", tags=["rollup"])
 app.include_router(goals.router, prefix="/api", tags=["goals"])

@@ -172,7 +172,6 @@ export const api = {
 
   async getRollup(timeframe?: string, dayOffset?: number): Promise<Rollup> {
     const params = new URLSearchParams();
-    // Always use timeframe - let backend handle date calculations to avoid timezone issues
     if (timeframe) params.append('timeframe', timeframe);
     if (dayOffset !== undefined && dayOffset !== 0) params.append('day_offset', dayOffset.toString());
     
@@ -180,6 +179,18 @@ export const api = {
       headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error('Failed to fetch rollup');
+    return res.json();
+  },
+
+  async getDashboardOverview(timeframe?: string, dayOffset?: number): Promise<{ entries: Entry[]; rollup: Rollup; timeframe: string }> {
+    const params = new URLSearchParams();
+    if (timeframe) params.append('timeframe', timeframe);
+    if (dayOffset !== undefined && dayOffset !== 0) params.append('day_offset', dayOffset.toString());
+    
+    const res = await fetch(`${API_BASE}/api/dashboard/overview?${params}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to fetch dashboard overview');
     return res.json();
   },
 

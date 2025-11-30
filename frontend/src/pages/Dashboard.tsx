@@ -234,31 +234,24 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   // Use backend's date calculation to avoid timezone issues
   const rollupTimeframe = getTimeframe(period);
 
-  const { data: rollup, refetch: refetchRollup } = useQuery({
-    queryKey: ['rollup', period, dayOffset],
-    queryFn: () => api.getRollup(
+  const { data: dashboardData, refetch: refetchDashboard } = useQuery({
+    queryKey: ['dashboard', period, dayOffset],
+    queryFn: () => api.getDashboardOverview(
       rollupTimeframe,
       period === 'today' ? dayOffset : undefined
     ),
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 30000,
+    gcTime: 60000,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: 'stale',
+    refetchOnReconnect: 'stale',
   });
 
-  const { data: entries = [], refetch: refetchEntries } = useQuery({
-    queryKey: ['entries', period, dayOffset],
-    queryFn: () => api.getEntries(
-      rollupTimeframe,
-      period === 'today' ? dayOffset : undefined
-    ),
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-  });
+  const rollup = dashboardData?.rollup;
+  const entries = dashboardData?.entries || [];
+  
+  const refetchRollup = refetchDashboard;
+  const refetchEntries = refetchDashboard;
 
   const { data: monthlyEntries = [] } = useQuery({
     queryKey: ['entries', 'THIS_MONTH'],
