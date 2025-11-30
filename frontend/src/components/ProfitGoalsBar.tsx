@@ -8,6 +8,7 @@ interface ProfitGoalsBarProps {
   goalProgress?: number;
   goalAmount?: string;
   onGoalReached?: (timeframe: TimeframeType) => void;
+  onMilestoneReached?: (milestone: 25 | 50 | 75 | 100) => void;
   onToggle?: () => void;
 }
 
@@ -20,7 +21,7 @@ const TIMEFRAME_LABELS: Partial<Record<TimeframeType, string>> = {
   LAST_MONTH: "Last Month's",
 };
 
-export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goalAmount: initialGoalAmount, onGoalReached, onToggle }: ProfitGoalsBarProps) {
+export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goalAmount: initialGoalAmount, onGoalReached, onMilestoneReached, onToggle }: ProfitGoalsBarProps) {
   const { config } = useTheme();
   const isDarkTheme = config.name !== 'ninja-green';
   
@@ -31,6 +32,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goa
   const [isGoalReached, setIsGoalReached] = useState(false);
   const [error, setError] = useState('');
   const goalReachedRef = useRef<boolean>(false);
+  const milestonesReachedRef = useRef<Set<25 | 50 | 75 | 100>>(new Set());
 
   useEffect(() => {
     // Update goal amount when prop changes
@@ -39,9 +41,19 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goa
     }
     // Reset goal reached flag when timeframe changes
     goalReachedRef.current = false;
+    milestonesReachedRef.current.clear();
   }, [timeframe, initialGoalAmount]);
 
   useEffect(() => {
+    // Check milestone achievements
+    const milestones: (25 | 50 | 75 | 100)[] = [25, 50, 75, 100];
+    for (const milestone of milestones) {
+      if (goalProgress >= milestone && !milestonesReachedRef.current.has(milestone)) {
+        milestonesReachedRef.current.add(milestone);
+        onMilestoneReached?.(milestone);
+      }
+    }
+
     // Show success message when goal is reached for the first time
     if (goalProgress >= 100 && !goalReachedRef.current && goalAmount) {
       goalReachedRef.current = true;
@@ -52,9 +64,13 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goa
     if (goalProgress < 100) {
       goalReachedRef.current = false;
       setIsGoalReached(false);
+      // Also reset milestones if progress drops significantly
+      if (goalProgress < 25) {
+        milestonesReachedRef.current.clear();
+      }
     }
 
-  }, [goalProgress, goalAmount, timeframe, onGoalReached]);
+  }, [goalProgress, goalAmount, timeframe, onGoalReached, onMilestoneReached]);
 
   const handleEditClick = () => {
     setTempGoal(goalAmount);

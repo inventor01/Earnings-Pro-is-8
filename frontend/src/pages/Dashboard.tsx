@@ -21,6 +21,7 @@ import { CoinAnimation } from '../components/CoinAnimation';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { AchievementsModal } from '../components/AchievementsModal';
 import { ProfitCalendar } from '../components/ProfitCalendar';
+import { MilestoneAlert } from '../components/MilestoneAlert';
 import { useTheme } from '../lib/themeContext';
 import { Icons } from '../components/Icons';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
@@ -105,6 +106,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showPerformanceOverview, setShowPerformanceOverview] = useState(true);
   const [hideAccountData, setHideAccountData] = useState(false);
+  const [visibleMilestone, setVisibleMilestone] = useState<25 | 50 | 75 | 100 | null>(null);
   
   const [metricVisibility, setMetricVisibility] = useState<Partial<MetricVisibility>>(() => {
     const saved = localStorage.getItem('metricVisibility');
@@ -528,6 +530,10 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     });
   };
 
+  const handleMilestoneReached = (milestone: 25 | 50 | 75 | 100) => {
+    setVisibleMilestone(milestone);
+  };
+
   const handleModeChange = (newMode: CalcMode) => {
     setMode(newMode);
     // Auto-select entry type based on mode
@@ -684,6 +690,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             goalProgress={rollup.goal_progress || 0}
             goalAmount={currentGoal?.target_profit?.toString()}
             onGoalReached={handleGoalReached}
+            onMilestoneReached={handleMilestoneReached}
             onToggle={handleToggleGoalBanner}
           />
         )}
@@ -1377,6 +1384,15 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             </div>
           </div>
         </>
+      )}
+
+      {/* Milestone alerts */}
+      {visibleMilestone && (
+        <MilestoneAlert
+          milestone={visibleMilestone}
+          isVisible={true}
+          onClose={() => setVisibleMilestone(null)}
+        />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
