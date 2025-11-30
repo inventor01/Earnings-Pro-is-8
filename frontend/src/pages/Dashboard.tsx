@@ -270,6 +270,27 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     refetchOnWindowFocus: false,
   });
 
+  // Initialize default goals on first load if they don't exist
+  useEffect(() => {
+    const initializeDefaultGoals = async () => {
+      try {
+        const existingMonthlyGoal = await api.getGoal('THIS_MONTH');
+        if (!existingMonthlyGoal) {
+          await api.createGoal('THIS_MONTH', 2000);
+          refetchMonthlyGoal();
+        }
+      } catch (err) {
+        console.error('Failed to initialize default goals:', err);
+      }
+    };
+
+    const hasInitialized = localStorage.getItem('goals_initialized');
+    if (!hasInitialized) {
+      initializeDefaultGoals();
+      localStorage.setItem('goals_initialized', 'true');
+    }
+  }, [refetchMonthlyGoal]);
+
   const createMutation = useMutation({
     mutationFn: api.createEntry,
     onSuccess: () => {
