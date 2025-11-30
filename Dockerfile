@@ -15,8 +15,7 @@ COPY backend/ ./backend/
 COPY --from=frontend-builder /app/frontend/dist ./dist
 
 # Copy sound files from builder to ensure they're available at /sounds
-RUN mkdir -p ./dist/sounds
-COPY --from=frontend-builder /app/frontend/public/sounds/* ./dist/sounds/ 2>/dev/null || true
+RUN mkdir -p ./dist/sounds && cp -r /app/frontend/public/sounds/* ./dist/sounds/ 2>/dev/null || true
 
 EXPOSE 8000
 ENV PYTHONUNBUFFERED=1
