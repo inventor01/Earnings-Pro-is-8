@@ -21,7 +21,7 @@ const TIMEFRAME_LABELS: Record<TimeframeType, string> = {
 
 export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onGoalReached, onToggle }: ProfitGoalsBarProps) {
   const { config } = useTheme();
-  const isDarkTheme = config.name === 'dark-neon';
+  const isDarkTheme = config.name !== 'simple-light' && config.name !== 'ninja-green';
   
   const [goalAmount, setGoalAmount] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -222,6 +222,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, onG
               <span className="hidden md:inline">${currentProfit.toFixed(2)}</span>
               <span className={`hidden md:inline ${isDarkTheme ? 'text-slate-500' : 'text-gray-500'}`}>/</span>
               <span>${goalAmount}</span>
+              <span className={`text-xs md:text-sm font-bold ml-1 md:ml-2 ${isDarkTheme ? 'text-lime-400' : 'text-blue-600'}`}>{Math.round(displayProgress)}%</span>
               {isGoalReached && <span className={`text-xs md:text-sm font-bold ${isDarkTheme ? 'text-lime-400' : 'text-green-700'}`}>✓</span>}
             </span>
           </div>
