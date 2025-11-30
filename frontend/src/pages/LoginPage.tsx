@@ -61,9 +61,6 @@ export function LoginPage() {
             alt="Earnings Ninja" 
             className="h-32 md:h-48 w-auto mx-auto mb-3 md:mb-4 drop-shadow-lg"
           />
-          <h1 className={`text-2xl md:text-3xl font-black mb-2 ${isDarkTheme ? 'text-yellow-300' : 'text-gray-900'}`}>
-            Earnings Ninja
-          </h1>
           <p className={`text-xs md:text-sm font-semibold ${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
             Grow your earnings with Earnings Ninja
           </p>
