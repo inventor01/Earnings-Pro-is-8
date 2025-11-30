@@ -62,3 +62,16 @@ Added automatic form closure after successful entry creation:
 - Works seamlessly with success toast notification
 
 **File Modified**: `frontend/src/pages/Dashboard.tsx` - Added `setCalcExpanded(false)` to createMutation onSuccess callback
+
+## Dashboard Intro Sound (November 30, 2025)
+
+### Implementation
+Added audio intro sound that plays when user logs into the dashboard:
+- Sound file: `/frontend/public/sounds/intro-sound.wav`
+- Plays automatically on first dashboard load per session
+- Respects user's sound mute setting (won't play if muted)
+- Uses sessionStorage to prevent replay on page refresh
+- Gracefully handles browser playback restrictions with try-catch
+- Volume set to 0.7 for pleasant listening
+
+**File Modified**: `frontend/src/pages/Dashboard.tsx` - Added useEffect hook on component mount to trigger intro sound playback

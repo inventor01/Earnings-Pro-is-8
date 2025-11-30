@@ -26,7 +26,7 @@ import { useTheme } from '../lib/themeContext';
 import { Icons } from '../components/Icons';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
-import { playChaChing, playKaChing } from '../lib/soundEffects';
+import { playChaChing, playKaChing, isSoundMuted } from '../lib/soundEffects';
 
 interface DashboardProps {
   onNavigateToLeaderboard?: () => void;
@@ -173,6 +173,21 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Play intro sound on dashboard load
+  useEffect(() => {
+    const introPlayed = sessionStorage.getItem('introDashboardSoundPlayed');
+    if (!introPlayed && !isSoundMuted()) {
+      try {
+        const audio = new Audio('/sounds/intro-sound.wav');
+        audio.volume = 0.7;
+        audio.play().catch(err => console.debug('Intro sound playback prevented:', err));
+        sessionStorage.setItem('introDashboardSoundPlayed', 'true');
+      } catch (err) {
+        console.debug('Intro sound error:', err);
+      }
+    }
   }, []);
 
   const scrollToTop = () => {
