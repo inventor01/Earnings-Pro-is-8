@@ -270,6 +270,26 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     refetchOnWindowFocus: false,
   });
 
+  // Fetch the goal for the current timeframe being viewed
+  const timeframeMapping: Record<Period, TimeframeType> = {
+    'today': 'TODAY',
+    'yesterday': 'YESTERDAY',
+    'week': 'THIS_WEEK',
+    'last7': 'LAST_7_DAYS',
+    'month': 'THIS_MONTH',
+    'lastMonth': 'LAST_MONTH',
+    'custom': 'TODAY',
+  };
+  const currentTimeframe = timeframeMapping[period];
+  const { data: currentGoal } = useQuery({
+    queryKey: ['goal', currentTimeframe],
+    queryFn: () => api.getGoal(currentTimeframe),
+    staleTime: 300000,
+    gcTime: 600000,
+    refetchOnMount: 'stale',
+    refetchOnWindowFocus: false,
+  });
+
   // Initialize default goals on first load if they don't exist
   useEffect(() => {
     const initializeDefaultGoals = async () => {
@@ -661,7 +681,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             timeframe={getTimeframeFromPeriod(period)}
             currentProfit={rollup.profit}
             goalProgress={rollup.goal_progress || 0}
-            goalAmount={monthlyGoal?.target_profit.toString()}
+            goalAmount={currentGoal?.target_profit.toString()}
             onGoalReached={handleGoalReached}
             onToggle={handleToggleGoalBanner}
           />
