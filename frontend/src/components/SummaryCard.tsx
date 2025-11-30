@@ -343,7 +343,7 @@ export function SummaryCard({
             <div className="space-y-2.5">
               <div className={`text-4xl md:text-6xl lg:text-7xl font-black font-mono transition-all duration-300 group-hover/card:scale-105 cursor-pointer leading-tight whitespace-nowrap overflow-hidden text-ellipsis ${
                 isNegative ? 'text-red-600' : colors.accent
-              }`}
+              } ${parseFloat(value.toString().replace('$', '').replace(',', '')) === 0 ? 'text-center' : ''}`}
               style={isNegative ? {
                 animation: 'blink-red 0.8s ease-in-out infinite'
               } : {}}>
