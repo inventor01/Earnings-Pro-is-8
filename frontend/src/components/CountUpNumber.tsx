@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 interface CountUpNumberProps {
   value: string | number;
   duration?: number;
+  wholeNumberOnly?: boolean;
 }
 
-export function CountUpNumber({ value, duration = 800 }: CountUpNumberProps) {
+export function CountUpNumber({ value, duration = 800, wholeNumberOnly = false }: CountUpNumberProps) {
   const [displayValue, setDisplayValue] = useState(value);
   
   useEffect(() => {
@@ -33,11 +34,11 @@ export function CountUpNumber({ value, duration = 800 }: CountUpNumberProps) {
       // Format based on original format
       let formatted = '';
       if (prefix === '$') {
-        // Don't show .00 for whole dollar amounts
-        const fixed = currentValue.toFixed(2);
-        formatted = fixed.endsWith('.00') ? `$${Math.round(currentValue)}` : `$${fixed}`;
+        // Always show whole numbers only (no decimals)
+        formatted = `$${Math.round(currentValue)}`;
       } else {
-        formatted = String(currentValue.toFixed(1));
+        // For non-currency values, use whole number if requested
+        formatted = wholeNumberOnly ? String(Math.round(currentValue)) : String(currentValue.toFixed(1));
       }
 
       setDisplayValue(isNegative ? `-${formatted}` : formatted);
@@ -49,7 +50,7 @@ export function CountUpNumber({ value, duration = 800 }: CountUpNumberProps) {
 
     animationFrameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [value, duration]);
+  }, [value, duration, wholeNumberOnly]);
 
   return <>{displayValue}</>;
 }
