@@ -533,7 +533,19 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   };
 
   const handleMilestoneReached = (milestone: 25 | 50 | 75 | 100) => {
-    setVisibleMilestone(milestone);
+    // Check if this milestone was already shown for this timeframe today
+    const today = new Date().toDateString();
+    const shownKey = `milestonesShown_${today}`;
+    const shownMilestones = JSON.parse(localStorage.getItem(shownKey) || '{}');
+    const milestoneKey = `${period}_${milestone}`;
+    
+    if (!shownMilestones[milestoneKey]) {
+      // Mark this milestone as shown
+      shownMilestones[milestoneKey] = true;
+      localStorage.setItem(shownKey, JSON.stringify(shownMilestones));
+      // Show the alert only if it hasn't been shown before
+      setVisibleMilestone(milestone);
+    }
   };
 
   const handleModeChange = (newMode: CalcMode) => {
