@@ -61,10 +61,6 @@ def create_goal(goal: GoalCreate, db: Session = Depends(get_db), current_user: A
         db.refresh(db_goal)
         existing = db_goal
     
-    # If monthly goal is updated, auto-create daily goal
-    if existing.timeframe == TimeframeType.THIS_MONTH:
-        auto_create_daily_goal(db, existing, current_user.id)
-    
     return existing
 
 @router.put("/goals/{timeframe}", response_model=GoalResponse)
@@ -85,10 +81,6 @@ def update_goal(timeframe: str, goal: GoalUpdate, db: Session = Depends(get_db),
         setattr(db_goal, 'target_profit', goal.target_profit)
         db.commit()
         db.refresh(db_goal)
-    
-    # If monthly goal is updated, auto-create daily goal
-    if db_goal.timeframe == TimeframeType.THIS_MONTH:
-        auto_create_daily_goal(db, db_goal, current_user.id)
     
     return db_goal
 
