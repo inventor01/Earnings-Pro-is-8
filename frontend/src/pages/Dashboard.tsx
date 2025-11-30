@@ -230,6 +230,19 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     return period.charAt(0).toUpperCase() + period.slice(1);
   };
 
+  const getTimeframeFromPeriod = (p: Period): TimeframeType => {
+    const mapping: Record<Period, TimeframeType> = {
+      'today': 'TODAY',
+      'yesterday': 'YESTERDAY',
+      'week': 'THIS_WEEK',
+      'last7': 'LAST_7_DAYS',
+      'month': 'THIS_MONTH',
+      'lastMonth': 'LAST_MONTH',
+      'custom': 'TODAY',
+    };
+    return mapping[p] || 'TODAY';
+  };
+
   // Use backend's date calculation to avoid timezone issues
   const rollupTimeframe = getTimeframe(period);
 
@@ -496,19 +509,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
   const confirmResetAll = () => {
     resetAllMutation.mutate();
-  };
-
-  const getTimeframeFromPeriod = (p: Period): TimeframeType => {
-    const mapping: Record<Period, TimeframeType> = {
-      'today': 'TODAY',
-      'yesterday': 'YESTERDAY',
-      'week': 'THIS_WEEK',
-      'last7': 'LAST_7_DAYS',
-      'month': 'THIS_MONTH',
-      'lastMonth': 'LAST_MONTH',
-      'custom': 'TODAY',
-    };
-    return mapping[p] || 'TODAY';
   };
 
   const timeframeLabels: Partial<Record<TimeframeType, string>> = {
