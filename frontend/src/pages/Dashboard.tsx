@@ -780,7 +780,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               </button>
               <button
                 type="button"
-                onClick={() => { playButtonClickSound(); setShowSettings(true)}
+                onClick={() => { playButtonClickSound(); setShowSettings(true); }}
                 className={`p-2 md:p-2.5 rounded-lg transition-colors pointer-events-auto z-50 ${config.textPrimary} hover:opacity-80 ${
                   isDarkTheme ? '' : 'hover:bg-yellow-100'
                 }`}

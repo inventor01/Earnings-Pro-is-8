@@ -13,7 +13,7 @@ interface CalcPadProps {
 
 export function CalcPad({ amount, mode, onAmountChange, onModeChange, onNextStep }: CalcPadProps) {
   const [isCHeld, setIsCHeld] = useState(false);
-  const cTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleNumber = (num: string) => {
     playButtonClickSound();
