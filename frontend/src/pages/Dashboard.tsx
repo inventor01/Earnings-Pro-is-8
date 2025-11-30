@@ -837,7 +837,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             </span>
 
             {/* Scrollable Period Chips */}
-            <div className="overflow-x-auto flex-1 scrollbar-hide">
+            <div className="overflow-x-auto scrollbar-hide">
               <PeriodChips selected={period} onSelect={setPeriod} />
             </div>
           </div>
