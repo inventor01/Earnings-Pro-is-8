@@ -634,7 +634,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
   const dashboardClass = `min-h-screen ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''} flex flex-col`;
 
-  const contentClass = `flex-1 overflow-y-auto max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 pt-40 md:pt-48 lg:pt-56 py-4 md:py-8 lg:py-10 pb-24 w-full ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''}`;
+  const contentClass = `flex-1 overflow-y-auto max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 pt-80 md:pt-72 lg:pt-80 py-4 md:py-8 lg:py-10 pb-24 w-full ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''}`;
 
   return (
     <div className={dashboardClass}>
