@@ -75,3 +75,46 @@ Added audio intro sound that plays when user logs into the dashboard:
 - Volume set to 0.7 for pleasant listening
 
 **File Modified**: `frontend/src/pages/Dashboard.tsx` - Added useEffect hook on component mount to trigger intro sound playback
+
+## Performance & Deployment Optimizations (November 30, 2025)
+
+### Frontend Optimizations
+**Vite Build Configuration:**
+- Code splitting: React vendors, Query vendors separated for better caching
+- Terser minification with console/debugger removal for production
+- CSS code splitting enabled
+- ES2020 target for modern browsers
+- GZIP compression ready
+
+**Environment Files:**
+- `.env.production` for production API endpoints
+- Separate build command for production mode
+
+### Backend Optimizations
+**FastAPI Configuration:**
+- GZIP middleware for response compression
+- Disabled OpenAPI docs in production (saves memory)
+- Improved logging configuration (WARNING level for production)
+- Error handling for background jobs startup/shutdown
+- Graceful shutdown support for Railway
+
+**Deployment Files:**
+- Multi-stage Docker build for minimal image size
+- Frontend pre-built into dist folder
+- Gunicorn with 4 workers + Uvicorn for production ASGI
+- Health checks configured for Railway
+
+### Railway Deployment Setup
+**Features:**
+- Dockerfile for containerized deployment
+- railway.json with health checks and restart policies
+- CPU/Memory monitoring thresholds
+- Automatic restart on failure (max 3 retries)
+
+### Expected Improvements
+- Faster initial page load (code splitting + compression)
+- Better caching (separate vendor chunks)
+- Reduced server resource usage (GZIP, optimized build)
+- More stable deployments (graceful shutdown, health checks)
+- Faster deployment cycles (optimized Docker build)
+

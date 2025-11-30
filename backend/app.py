@@ -6,19 +6,32 @@ from backend.routers import health, settings, entries, rollup, goals, suggestion
 from backend.db import engine, Base
 from backend.services.background_jobs import start_background_jobs, stop_background_jobs
 import os
+import logging
+
+# Configure logging for production
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Delivery Driver Earnings API")
+app = FastAPI(title="Delivery Driver Earnings API", docs_url=None, redoc_url=None)
 
 # Start background jobs on startup
 @app.on_event("startup")
 async def startup_event():
-    start_background_jobs()
+    try:
+        start_background_jobs()
+        logger.info("Background jobs started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start background jobs: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    stop_background_jobs()
+    try:
+        stop_background_jobs()
+        logger.info("Background jobs stopped successfully")
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")
 
 app.add_middleware(
     CORSMiddleware,
