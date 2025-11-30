@@ -929,22 +929,21 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                 </svg>
                 PERFORMANCE OVERVIEW
               </h2>
-              <div className="flex gap-2">
+              <div className="flex gap-4 md:gap-5">
                 <button
                   onClick={() => setHideAccountData(!hideAccountData)}
-                  className={`p-2 rounded-lg transition-all ${
+                  className={`p-1 transition-all hover:scale-110 ${
                     hideAccountData
                       ? isDarkTheme
-                        ? 'text-slate-500 hover:text-slate-400 hover:bg-slate-700/50'
-                        : 'text-gray-400 hover:text-gray-500 hover:bg-gray-100'
+                        ? 'text-slate-500 hover:text-slate-300'
+                        : 'text-gray-400 hover:text-gray-600'
                       : isDarkTheme
-                      ? 'text-slate-400 hover:text-lime-300 hover:bg-slate-700/50'
-                      : 'text-green-700 hover:text-green-900 hover:bg-lime-100'
+                      ? 'text-slate-400 hover:text-lime-300'
+                      : 'text-green-700 hover:text-green-900'
                   }`}
-                  style={hideAccountData && !isDarkTheme ? {backgroundImage: 'radial-gradient(circle, rgba(200, 200, 200, 0.3) 1px, transparent 1px)', backgroundSize: '20px 20px'} : {}}
                   title={hideAccountData ? 'Show data' : 'Hide data'}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {hideAccountData ? (
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 0c0 1.657-.672 3.157-1.757 4.243A6 6 0 0121 12a9.75 9.75 0 00-14.976-8.28M9 12a3 3 0 106 0 3 3 0 00-6 0z" />
                     ) : (
@@ -954,14 +953,14 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                 </button>
                 <button
                   onClick={() => setShowPerformanceOverview(!showPerformanceOverview)}
-                  className={`p-2 rounded-lg transition-all ${
+                  className={`p-1 transition-all hover:scale-110 ${
                     isDarkTheme
-                      ? 'text-slate-400 hover:text-lime-300 hover:bg-slate-700/50'
-                      : 'text-green-700 hover:text-green-900 hover:bg-lime-100'
+                      ? 'text-slate-400 hover:text-lime-300'
+                      : 'text-green-700 hover:text-green-900'
                   }`}
                   title={showPerformanceOverview ? 'Collapse' : 'Expand'}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {showPerformanceOverview ? (
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                     ) : (
