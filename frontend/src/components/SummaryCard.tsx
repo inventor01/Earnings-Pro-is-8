@@ -1,7 +1,7 @@
 import { useTheme } from '../lib/themeContext';
 import { CountUpNumber } from './CountUpNumber';
 import { Icons } from './Icons';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 export interface MetricVisibility {
   revenue: boolean;
@@ -55,6 +55,27 @@ export function SummaryCard({
     orders: visibilityConfig.orders !== false,
     avgOrder: visibilityConfig.avgOrder !== false,
   };
+  
+  // Parse profit to check if negative early for sound effect
+  const profitValue = parseFloat(profit.replace('$', '').replace(',', ''));
+  const isProfitNegative = profitValue < 0;
+  
+  // Sound effect for negative account
+  const soundPlayedRef = useRef(false);
+  
+  useEffect(() => {
+    if (isProfitNegative && !soundPlayedRef.current) {
+      soundPlayedRef.current = true;
+      try {
+        const audio = new Audio('/sounds/negative-account.wav');
+        audio.play().catch(err => console.log('Sound playback prevented:', err));
+      } catch (err) {
+        console.log('Sound effect error:', err);
+      }
+    } else if (!isProfitNegative) {
+      soundPlayedRef.current = false;
+    }
+  }, [isProfitNegative]);
   
   // Swipe detection for mobile day navigation
   const touchStartX = useRef<number | null>(null);
@@ -379,10 +400,6 @@ export function SummaryCard({
       </>
     );
   };
-
-  // Parse profit to check if negative
-  const profitValue = parseFloat(profit.replace('$', '').replace(',', ''));
-  const isProfitNegative = profitValue < 0;
 
   return (
     <div 
