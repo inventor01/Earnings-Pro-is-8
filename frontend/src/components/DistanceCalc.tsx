@@ -16,22 +16,25 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
 
   const handleNumber = (num: string) => {
     setDisplay((prev) => {
-      if (prev === '0') return num;
-      if (prev.includes('.') && num === '.') return prev;
-      if (prev.length >= 5) return prev;
-      return prev + num;
+      const newDisplay = prev === '0' ? num : prev.includes('.') && num === '.' ? prev : prev.length >= 5 ? prev : prev + num;
+      const numValue = parseFloat(newDisplay) || 0;
+      onValueChange(numValue.toString());
+      return newDisplay;
     });
   };
 
   const handleBackspace = () => {
     setDisplay((prev) => {
-      if (prev.length <= 1) return '0';
-      return prev.slice(0, -1);
+      const newDisplay = prev.length <= 1 ? '0' : prev.slice(0, -1);
+      const numValue = parseFloat(newDisplay) || 0;
+      onValueChange(numValue.toString());
+      return newDisplay;
     });
   };
 
   const handleClearFull = () => {
     setDisplay('0');
+    onValueChange('0');
   };
 
   const handleCTouchStart = () => {
@@ -56,13 +59,13 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
 
   const handleDecimal = () => {
     if (!display.includes('.')) {
-      setDisplay((prev) => prev + '.');
+      setDisplay((prev) => {
+        const newDisplay = prev + '.';
+        const numValue = parseFloat(newDisplay) || 0;
+        onValueChange(numValue.toString());
+        return newDisplay;
+      });
     }
-  };
-
-  const handleSubmit = () => {
-    const num = parseFloat(display) || 0;
-    onValueChange(num.toString());
   };
 
   return (
@@ -142,14 +145,6 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
             .
           </button>
         </div>
-
-        {/* Submit Button */}
-        <button
-          onClick={handleSubmit}
-          className="w-full bg-gradient-to-br from-lime-400 to-lime-500 hover:from-lime-500 hover:to-lime-600 text-gray-900 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation mt-2 md:mt-3"
-        >
-          ✓ Set Miles
-        </button>
 
       </div>
     </div>
