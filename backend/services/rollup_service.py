@@ -70,6 +70,9 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
         last_timestamp = all_timestamps[-1]
         
         hours_first_to_last = (last_timestamp - first_timestamp).total_seconds() / 3600.0
+        minutes_first_to_last = (last_timestamp - first_timestamp).total_seconds() / 60.0
+        
+        
         # Only calculate if at least 5 minutes has passed, otherwise use 0
         if hours_first_to_last >= (5 / 60):  # 5 minutes minimum
             dollars_per_hour = profit / Decimal(str(hours_first_to_last))
