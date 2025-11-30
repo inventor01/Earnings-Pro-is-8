@@ -14,6 +14,7 @@ export function LoginPage() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { login } = useAuth();
   const { config } = useTheme();
+  const isDarkTheme = config.name === 'ninja-dark';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,13 +47,11 @@ export function LoginPage() {
     }
   };
 
-  const isDarkTheme = false;
-
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''}`}>
       <div className={`w-full max-w-md rounded-xl shadow-2xl p-4 md:p-8 ${
         isDarkTheme
-          ? 'bg-slate-900 border border-slate-700'
+          ? 'bg-gray-800 border border-gray-700'
           : 'bg-white border border-gray-200'
       }`}>
         {/* Header */}
@@ -62,13 +61,13 @@ export function LoginPage() {
             alt="Earnings Ninja" 
             className="h-32 md:h-48 w-auto mx-auto mb-3 md:mb-4 drop-shadow-lg"
           />
-          <h1 className={`text-2xl md:text-3xl font-black mb-2 ${config.titleColor}`}>
+          <h1 className={`text-2xl md:text-3xl font-black mb-2 ${isDarkTheme ? 'text-yellow-300' : 'text-gray-900'}`}>
             Earnings Ninja
           </h1>
-          <p className={`text-xs md:text-sm font-semibold ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'} mb-1`}>
+          <p className={`text-xs md:text-sm font-semibold ${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
             Grow your earnings with Earnings Ninja
           </p>
-          <p className={`text-xs ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
+          <p className={`text-xs ${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}`}>
             Track your delivery driver earnings
           </p>
         </div>
@@ -78,7 +77,7 @@ export function LoginPage() {
           {mode === 'signup' && (
             <div>
               <label className={`block text-sm font-medium mb-2 ${
-                isDarkTheme ? 'text-slate-300' : 'text-gray-700'
+                isDarkTheme ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 Username
               </label>
@@ -89,7 +88,7 @@ export function LoginPage() {
                 placeholder="deliverydriver99"
                 className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
                   isDarkTheme
-                    ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-lime-400'
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500 focus:border-lime-400'
                     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-lime-500'
                 }`}
               />
@@ -98,7 +97,7 @@ export function LoginPage() {
           
           <div>
             <label className={`block text-sm font-medium mb-2 ${
-              isDarkTheme ? 'text-slate-300' : 'text-gray-700'
+              isDarkTheme ? 'text-gray-300' : 'text-gray-700'
             }`}>
               {mode === 'login' ? 'Email or Username' : 'Email'}
             </label>
@@ -109,7 +108,7 @@ export function LoginPage() {
               placeholder={mode === 'login' ? 'you@example.com or deliverydriver99' : 'you@example.com'}
               className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
                 isDarkTheme
-                  ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-lime-400'
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500 focus:border-lime-400'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-lime-500'
               }`}
               required
@@ -118,7 +117,7 @@ export function LoginPage() {
 
           <div>
             <label className={`block text-sm font-medium mb-2 ${
-              isDarkTheme ? 'text-slate-300' : 'text-gray-700'
+              isDarkTheme ? 'text-gray-300' : 'text-gray-700'
             }`}>
               Password
             </label>
@@ -129,7 +128,7 @@ export function LoginPage() {
               placeholder="••••••••"
               className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
                 isDarkTheme
-                  ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-lime-400'
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500 focus:border-lime-400'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-lime-500'
               }`}
               required
@@ -149,7 +148,11 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full py-3 rounded-lg font-bold transition-all ${config.buttonPrimary} ${config.buttonPrimaryText} disabled:opacity-50`}
+            className={`w-full py-3 rounded-lg font-bold transition-all ${
+              isDarkTheme
+                ? 'bg-lime-600 hover:bg-lime-700 text-white disabled:opacity-50'
+                : 'bg-lime-500 hover:bg-lime-600 text-white disabled:opacity-50'
+            }`}
           >
             {isLoading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>
@@ -173,7 +176,7 @@ export function LoginPage() {
         )}
 
         {/* Mode Toggle */}
-        <div className={`mt-6 text-center text-sm ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
+        <div className={`mt-6 text-center text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}`}>
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
           <button
             type="button"
@@ -189,8 +192,8 @@ export function LoginPage() {
         </div>
 
         {/* Demo Mode */}
-        <div className={`mt-6 pt-6 border-t ${isDarkTheme ? 'border-slate-700' : 'border-gray-200'}`}>
-          <p className={`text-xs text-center mb-3 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
+        <div className={`mt-6 pt-6 border-t ${isDarkTheme ? 'border-gray-700' : 'border-gray-200'}`}>
+          <p className={`text-xs text-center mb-3 ${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}`}>
             Or view demo account
           </p>
           <button
@@ -198,7 +201,7 @@ export function LoginPage() {
             onClick={() => login('guest-token')}
             className={`w-full py-2 rounded-lg font-medium transition-all text-sm ${
               isDarkTheme
-                ? 'bg-lime-900/30 hover:bg-lime-900/50 text-lime-600 border border-lime-500'
+                ? 'bg-lime-600/30 hover:bg-lime-600/50 text-lime-400 border border-lime-600'
                 : 'bg-lime-100 hover:bg-lime-200 text-green-700 border border-lime-400'
             }`}
           >
