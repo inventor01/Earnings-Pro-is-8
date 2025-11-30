@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/authContext';
 import { useTheme } from '../lib/themeContext';
 import { ForgotPasswordModal } from '../components/ForgotPasswordModal';
+import { isSoundMuted } from '../lib/soundEffects';
 import ninjaLogo from '../assets/logo-ninja-official.png';
 
 export function LoginPage() {
@@ -15,6 +16,32 @@ export function LoginPage() {
   const { login } = useAuth();
   const { config } = useTheme();
   const isDarkTheme = config.name === 'ninja-dark';
+
+  // Play intro sound on login page load (with delay for browser autoplay policy)
+  useEffect(() => {
+    const introPlayed = sessionStorage.getItem('introLoginSoundPlayed');
+    if (!introPlayed && !isSoundMuted()) {
+      // Small delay to ensure audio context is ready and browser allows playback
+      const timer = setTimeout(() => {
+        try {
+          const audio = new Audio('/sounds/intro-sound.wav');
+          audio.volume = 0.7;
+          audio.play()
+            .then(() => {
+              console.debug('Intro sound played successfully');
+              sessionStorage.setItem('introLoginSoundPlayed', 'true');
+            })
+            .catch(err => {
+              console.debug('Intro sound playback prevented:', err);
+            });
+        } catch (err) {
+          console.debug('Intro sound error:', err);
+        }
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

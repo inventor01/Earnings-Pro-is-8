@@ -26,7 +26,7 @@ import { useTheme } from '../lib/themeContext';
 import { Icons } from '../components/Icons';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
 import { exportToCSV } from '../lib/csvExport';
-import { playChaChing, playKaChing, isSoundMuted } from '../lib/soundEffects';
+import { playChaChing, playKaChing } from '../lib/soundEffects';
 
 interface DashboardProps {
   onNavigateToLeaderboard?: () => void;
@@ -173,33 +173,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Play intro sound on dashboard load (with delay for browser autoplay policy)
-  useEffect(() => {
-    const introPlayed = sessionStorage.getItem('introDashboardSoundPlayed');
-    if (!introPlayed && !isSoundMuted()) {
-      // Small delay to ensure audio context is ready and browser allows playback
-      const timer = setTimeout(() => {
-        try {
-          const audio = new Audio('/sounds/intro-sound.wav');
-          audio.volume = 0.7;
-          audio.play()
-            .then(() => {
-              console.debug('Intro sound played successfully');
-              sessionStorage.setItem('introDashboardSoundPlayed', 'true');
-            })
-            .catch(err => {
-              console.debug('Intro sound playback prevented:', err);
-              // If playback fails, don't mark as played - user might enable sound later
-            });
-        } catch (err) {
-          console.debug('Intro sound error:', err);
-        }
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
   }, []);
 
   const scrollToTop = () => {
