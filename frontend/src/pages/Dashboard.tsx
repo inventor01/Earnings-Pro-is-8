@@ -1309,19 +1309,17 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </>
       )}
 
-      {settings && (
-        <SettingsDrawer
-          isOpen={showSettings}
-          onClose={() => setShowSettings(false)}
-          settings={settings}
-          onSave={(s) => updateSettingsMutation.mutate(s)}
-          onResetAll={() => setResetAllConfirm(true)}
-          onExport={() => handleExport()}
-          onLogout={logout}
-          metricVisibility={metricVisibility}
-          onMetricVisibilityChange={handleMetricVisibilityChange}
-        />
-      )}
+      <SettingsDrawer
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={settings || {}}
+        onSave={(s) => updateSettingsMutation.mutate(s)}
+        onResetAll={() => setResetAllConfirm(true)}
+        onExport={() => handleExport()}
+        onLogout={logout}
+        metricVisibility={metricVisibility}
+        onMetricVisibilityChange={handleMetricVisibilityChange}
+      />
 
       {deleteConfirm && (
         <ConfirmDialog
