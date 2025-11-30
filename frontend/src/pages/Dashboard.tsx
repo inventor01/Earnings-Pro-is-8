@@ -1312,7 +1312,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       <SettingsDrawer
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
-        settings={settings || {}}
+        settings={settings || { cost_per_mile: 0 }}
         onSave={(s) => updateSettingsMutation.mutate(s)}
         onResetAll={() => setResetAllConfirm(true)}
         onExport={() => handleExport()}

@@ -14,7 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 COPY backend/ ./backend/
 COPY --from=frontend-builder /app/frontend/dist ./dist
 
-COPY frontend/public/sounds ./dist/sounds
+# Copy sound files from builder to ensure they're available at /sounds
+RUN mkdir -p ./dist/sounds
+COPY --from=frontend-builder /app/frontend/public/sounds/* ./dist/sounds/ 2>/dev/null || true
 
 EXPOSE 8000
 ENV PYTHONUNBUFFERED=1
