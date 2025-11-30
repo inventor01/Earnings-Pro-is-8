@@ -338,6 +338,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       setAmount('0');
       playKaChing(); // Play ka-ching sound
       setToast({ message: 'Entry added successfully!', type: 'success' });
+      setCalcExpanded(false); // Auto-close the form after successful save
     },
     onError: () => {
       setToast({ message: 'Failed to add entry', type: 'error' });

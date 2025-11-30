@@ -52,3 +52,13 @@ Added celebratory milestone alerts for daily goal progress at 25%, 50%, 75%, and
 **Files Modified**: 
 - `frontend/src/components/ProfitGoalsBar.tsx` - Added milestone tracking and onMilestoneReached callback
 - `frontend/src/pages/Dashboard.tsx` - Imported MilestoneAlert, added state and handlers
+
+## Auto-Close Entry Form (November 30, 2025)
+
+### Implementation
+Added automatic form closure after successful entry creation:
+- When user clicks "Save Entry," the form automatically closes
+- Closes the add entry panel and returns to main dashboard view
+- Works seamlessly with success toast notification
+
+**File Modified**: `frontend/src/pages/Dashboard.tsx` - Added `setCalcExpanded(false)` to createMutation onSuccess callback
