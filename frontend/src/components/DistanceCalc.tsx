@@ -143,6 +143,14 @@ export function DistanceCalc({ value, onValueChange }: DistanceCalcProps) {
           </button>
         </div>
 
+        {/* Submit Button */}
+        <button
+          onClick={handleSubmit}
+          className="w-full bg-gradient-to-br from-lime-400 to-lime-500 hover:from-lime-500 hover:to-lime-600 text-gray-900 p-4 md:p-6 rounded-lg md:rounded-xl text-lg md:text-2xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 touch-manipulation mt-2 md:mt-3"
+        >
+          ✓ Set Miles
+        </button>
+
       </div>
     </div>
   );
