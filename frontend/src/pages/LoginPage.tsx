@@ -19,8 +19,7 @@ export function LoginPage() {
 
   // Play intro sound on login page load (with delay for browser autoplay policy)
   useEffect(() => {
-    const introPlayed = sessionStorage.getItem('introLoginSoundPlayed');
-    if (!introPlayed && !isSoundMuted()) {
+    if (!isSoundMuted()) {
       // Small delay to ensure audio context is ready and browser allows playback
       const timer = setTimeout(() => {
         try {
@@ -29,7 +28,6 @@ export function LoginPage() {
           audio.play()
             .then(() => {
               console.debug('Intro sound played successfully');
-              sessionStorage.setItem('introLoginSoundPlayed', 'true');
             })
             .catch(err => {
               console.debug('Intro sound playback prevented:', err);
