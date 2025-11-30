@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTheme } from '../lib/themeContext';
 import { getESTDateString } from '../lib/dateUtils';
+import { playButtonClickSound } from '../lib/buttonSoundEffects';
 
 interface ProfitCalendarProps {
   entries: any[];
@@ -195,7 +196,7 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
         {/* Toggle buttons */}
         <div className="flex gap-2 justify-center flex-wrap">
           <button
-            onClick={() => setMetricView('profit')}
+            onClick={() => { playButtonClickSound(); setMetricView('profit'); }}
             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all transform hover:scale-105 shadow-md ${
               metricView === 'profit'
                 ? isDarkTheme
@@ -209,7 +210,7 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
             💰 Profit
           </button>
           <button
-            onClick={() => setMetricView('revenue')}
+            onClick={() => { playButtonClickSound(); setMetricView('revenue'); }}
             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all transform hover:scale-105 shadow-md ${
               metricView === 'revenue'
                 ? isDarkTheme
@@ -223,7 +224,7 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
             📈 Revenue
           </button>
           <button
-            onClick={() => setMetricView('expenses')}
+            onClick={() => { playButtonClickSound(); setMetricView('expenses'); }}
             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all transform hover:scale-105 shadow-md ${
               metricView === 'expenses'
                 ? isDarkTheme
@@ -258,7 +259,7 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
           return (
             <button
               key={idx}
-              onClick={() => dayData && onDayClick?.(dayData.dateStr)}
+              onClick={() => { playButtonClickSound(); dayData && onDayClick?.(dayData.dateStr); }}
               disabled={dayData === null}
               className={`aspect-square rounded-lg flex items-center justify-center text-sm font-bold transition-all transform ${
                 dayData === null
