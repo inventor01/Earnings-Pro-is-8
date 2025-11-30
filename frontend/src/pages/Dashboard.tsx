@@ -13,6 +13,7 @@ import { SettingsDrawer } from '../components/SettingsDrawer';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Toast } from '../components/Toast';
 import { ProfitGoalsBar } from '../components/ProfitGoalsBar';
+import { TimeframeGoals } from '../components/TimeframeGoals';
 import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
 // import { PointsCard } from '../components/PointsCard';
@@ -633,6 +634,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     <div className={dashboardClass}>
       {/* Coin burst animation on page load */}
       <CoinAnimation />
+
+      {/* Timeframe Goals at Top */}
+      {rollup && <TimeframeGoals rollup={rollup} />}
 
       {rollup && showGoalBanner && (
         <ProfitGoalsBar
