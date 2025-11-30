@@ -10,7 +10,7 @@ interface ProfitCalendarProps {
 
 export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitCalendarProps) {
   const { config: themeConfig } = useTheme();
-  const isDarkTheme = themeConfig.name === 'dark-neon';
+  const isDarkTheme = themeConfig.name === 'ninja-dark';
   const [metricView, setMetricView] = useState<'profit' | 'expenses' | 'revenue'>('profit');
 
   const calendarData = useMemo(() => {
@@ -184,7 +184,7 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
   return (
     <div className={`rounded-2xl border-2 p-6 transition-all shadow-2xl ${
       isDarkTheme
-        ? 'bg-gradient-to-br from-slate-800/80 via-slate-900/60 to-slate-950/80 border-lime-500/40 shadow-xl shadow-lime-500/10'
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-lime-500/50 shadow-xl shadow-lime-500/20'
         : 'bg-gradient-to-br from-white to-lime-50 border-lime-400 shadow-lg shadow-lime-300/20'
     }`}>
       <div className="mb-4 space-y-3">
