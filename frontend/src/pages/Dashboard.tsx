@@ -634,29 +634,32 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       {/* Coin burst animation on page load */}
       <CoinAnimation />
 
-      {rollup && showGoalBanner && (
-        <ProfitGoalsBar
-          timeframe={getTimeframeFromPeriod(period)}
-          currentProfit={rollup.profit}
-          goalProgress={rollup.goal_progress ?? 0}
-          onGoalReached={handleGoalReached}
-          onToggle={handleToggleGoalBanner}
-        />
-      )}
-      {rollup && !showGoalBanner && (
-        <div className="w-full bg-gray-200 border-b border-gray-300 px-4 py-2">
-          <div className="max-w-6xl mx-auto flex justify-end">
-            <button
-              onClick={handleToggleGoalBanner}
-              className="text-xs md:text-sm text-gray-600 hover:text-gray-800 font-medium underline transition-colors"
-              title="Show goal banner"
-            >
-              Show Goal
-            </button>
+      <div id="header" className={`fixed top-0 left-0 right-0 z-40 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''} shadow-md flex flex-col`}>
+        {/* Progress Bar - at the very top on mobile */}
+        {rollup && showGoalBanner && (
+          <ProfitGoalsBar
+            timeframe={getTimeframeFromPeriod(period)}
+            currentProfit={rollup.profit}
+            goalProgress={rollup.goal_progress ?? 0}
+            onGoalReached={handleGoalReached}
+            onToggle={handleToggleGoalBanner}
+          />
+        )}
+        {rollup && !showGoalBanner && (
+          <div className="w-full bg-gray-200 border-b border-gray-300 px-4 py-2">
+            <div className="max-w-6xl mx-auto flex justify-end">
+              <button
+                onClick={handleToggleGoalBanner}
+                className="text-xs md:text-sm text-gray-600 hover:text-gray-800 font-medium underline transition-colors"
+                title="Show goal banner"
+              >
+                Show Goal
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-      <div id="header" className={`fixed top-0 left-0 right-0 z-40 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''} shadow-md`}>
+        )}
+        
+        {/* Logo and controls */}
         <div className="max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 w-full">
           <div className="flex justify-between items-center py-4 md:py-8 lg:py-10 gap-2">
             <div className="flex items-center gap-1 md:gap-3 lg:gap-4">
@@ -787,7 +790,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         </div>
       </div>
 
-      <div className={`${contentClass} pt-40 md:pt-48 lg:pt-40`}>
+      <div className={`${contentClass} pt-48 md:pt-56 lg:pt-48`}>
 
         {/* Search Bar - Collapsible */}
         {showSearchBar && (
