@@ -704,7 +704,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         {/* Logo and controls */}
         <div className="max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 w-full">
           <div className="flex justify-between items-center py-4 md:py-8 lg:py-10 gap-2">
-            <div className="flex items-center gap-1 md:gap-3 lg:gap-4">
+            <div className="flex items-center gap-1 md:gap-3 lg:gap-4 pt-1 md:pt-2 lg:pt-2">
               <img 
                 src={ninjaLogo} 
                 alt="Earnings Ninja" 
