@@ -790,7 +790,11 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             </div>
           </div>
 
-          <div className="max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 w-full pb-4 md:pb-8 lg:pb-10 flex items-center gap-2">
+          <div className={`max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 w-full pb-4 md:pb-6 lg:pb-8 flex items-center gap-3 md:gap-4 rounded-xl md:rounded-2xl transition-all ${
+            isDarkTheme
+              ? 'bg-gradient-to-r from-slate-800/60 to-slate-700/40 border border-slate-700/50 shadow-lg backdrop-blur-sm'
+              : 'bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200/80 shadow-md'
+          }`}>
             {/* Fixed Search Icon on Left */}
             <button
               onClick={() => {
@@ -808,14 +812,14 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                   }, 0);
                 }
               }}
-              className={`p-2 rounded-full touch-manipulation transition-all flex-shrink-0 ${
+              className={`p-2.5 md:p-3 rounded-lg touch-manipulation transition-all flex-shrink-0 ${
                 showSearchBar
                   ? isDarkTheme
-                    ? 'bg-lime-500/30 text-lime-300 shadow-lg shadow-lime-500/30'
-                    : 'bg-lime-200 text-lime-700 shadow-lg shadow-lime-400/40'
+                    ? 'bg-lime-500/40 text-lime-300 shadow-lg shadow-lime-500/30 scale-105'
+                    : 'bg-lime-200 text-lime-700 shadow-lg shadow-lime-400/40 scale-105'
                   : isDarkTheme
-                  ? 'bg-slate-700/50 text-lime-400 hover:bg-slate-600 hover:text-lime-300'
-                  : 'bg-gray-100 text-green-700 hover:bg-gray-200 hover:text-green-900'
+                  ? 'bg-slate-700/70 text-lime-400 hover:bg-slate-600 hover:text-lime-300 hover:shadow-md'
+                  : 'bg-white/80 text-green-700 hover:bg-green-50 hover:text-green-900 hover:shadow-md'
               }`}
               title={showSearchBar ? "Close search" : "Search transactions"}
             >
@@ -824,8 +828,16 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               </svg>
             </button>
 
+            {/* Visual Divider */}
+            <div className={`w-px h-6 md:h-8 ${isDarkTheme ? 'bg-slate-600/50' : 'bg-gray-300/50'}`}></div>
+
+            {/* Timeframe Label */}
+            <span className={`text-xs md:text-sm font-semibold px-1 flex-shrink-0 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
+              📅 Period:
+            </span>
+
             {/* Scrollable Period Chips */}
-            <div className="overflow-x-auto flex-1">
+            <div className="overflow-x-auto flex-1 scrollbar-hide">
               <PeriodChips selected={period} onSelect={setPeriod} />
             </div>
           </div>
