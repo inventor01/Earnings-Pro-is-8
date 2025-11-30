@@ -20,22 +20,30 @@ export function LoginPage() {
   // Play intro sound on login page load (with delay for browser autoplay policy)
   useEffect(() => {
     if (!isSoundMuted()) {
-      // Small delay to ensure audio context is ready and browser allows playback
+      // Longer delay for HTTPS/production autoplay policies
       const timer = setTimeout(() => {
         try {
           const audio = new Audio('/sounds/intro-sound.wav');
           audio.volume = 0.7;
-          audio.play()
-            .then(() => {
-              console.debug('Intro sound played successfully');
-            })
-            .catch(err => {
-              console.debug('Intro sound playback prevented:', err);
-            });
+          
+          // Create promise to handle autoplay policy restrictions
+          const playPromise = audio.play();
+          
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.debug('Intro sound played successfully');
+              })
+              .catch(err => {
+                // Autoplay was prevented, log for debugging
+                console.debug('Intro sound autoplay prevented (likely due to browser policy):', err.name);
+                // On HTTPS/production, browsers often block autoplay - this is expected
+              });
+          }
         } catch (err) {
           console.debug('Intro sound error:', err);
         }
-      }, 500);
+      }, 800);
       
       return () => clearTimeout(timer);
     }
