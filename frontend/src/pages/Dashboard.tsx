@@ -640,7 +640,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           <ProfitGoalsBar
             timeframe={getTimeframeFromPeriod(period)}
             currentProfit={rollup.profit}
-            goalProgress={0}
+            goalProgress={rollup.goal_progress || 0}
             onGoalReached={handleGoalReached}
             onToggle={handleToggleGoalBanner}
           />
