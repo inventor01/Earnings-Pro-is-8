@@ -277,12 +277,12 @@ textarea {
 }
 
 .progress-bar-fill {
-  background: #a3e635;
+  background: linear-gradient(to right, #1f2937, #111827);
   background-size: 120px 100%;
   position: relative;
   overflow: hidden;
   animation: slideInLeft 1s ease-out;
-  box-shadow: 0 0 15px rgba(199, 255, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.1);
 }
 
 .progress-bar-fill::before {
@@ -296,8 +296,8 @@ textarea {
     45deg,
     transparent,
     transparent 12px,
-    rgba(255, 255, 255, 0.2) 12px,
-    rgba(255, 255, 255, 0.2) 24px
+    rgba(255, 255, 255, 0.1) 12px,
+    rgba(255, 255, 255, 0.1) 24px
   );
   background-size: 60px 60px;
   animation: stripe-animation 3s linear infinite;
@@ -305,9 +305,9 @@ textarea {
 }
 
 .progress-bar-fill.shimmer-effect {
-  background: #65a30d;
+  background: linear-gradient(to right, #1f2937, #111827);
   background-size: 120px 100%;
-  box-shadow: 0 0 20px rgba(199, 255, 0, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.15);
   animation: slideInLeft 1s ease-out;
 }
 
@@ -316,8 +316,8 @@ textarea {
     45deg,
     transparent,
     transparent 12px,
-    rgba(255, 255, 255, 0.35) 12px,
-    rgba(255, 255, 255, 0.35) 24px
+    rgba(255, 255, 255, 0.15) 12px,
+    rgba(255, 255, 255, 0.15) 24px
   );
   background-size: 60px 60px;
   animation: stripe-animation 2s linear infinite;
@@ -325,7 +325,7 @@ textarea {
 
 .goal-pulse {
   animation: pulse-glow 2s infinite !important;
-  box-shadow: 0 0 20px rgba(199, 255, 0, 0.8) !important;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5) !important;
 }
 
 .percentage-bounce {
