@@ -4,15 +4,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    // Optimize build for production
     target: 'ES2020',
     minify: 'esbuild',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
     // Code splitting for better caching and loading
     rollupOptions: {
       output: {

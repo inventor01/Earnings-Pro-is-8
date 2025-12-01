@@ -117,8 +117,7 @@ export function MilestoneAlert({ milestone, isVisible, onClose }: MilestoneAlert
               style={{
                 left: `${Math.random() * 100}%`,
                 top: '50%',
-                animation: `confetti-fall ${1.5 + Math.random() * 0.5}s ease-out forwards`,
-                animationDelay: `${i * 0.05}s`,
+                animation: `confetti-fall ${1.5 + Math.random() * 0.5}s ease-out ${i * 0.05}s forwards`,
               }}
             >
               <div
