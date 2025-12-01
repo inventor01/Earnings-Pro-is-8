@@ -16,7 +16,9 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
   const { config: themeConfig } = useTheme();
   const isDarkTheme = themeConfig.name === 'ninja-dark';
   const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const datePickerRef = useRef<HTMLInputElement>(null);
 
   // Helper to get date range for period
   const getDateRange = () => {
@@ -156,6 +158,25 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
     setTouchStart(null);
   };
 
+  const handleDateClick = () => {
+    playButtonClickSound();
+    setShowDatePicker(true);
+    setTimeout(() => datePickerRef.current?.click(), 0);
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDate = new Date(e.target.value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    const diffTime = selectedDate.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    onDayOffsetChange(diffDays);
+    setShowDatePicker(false);
+  };
+
   return (
     <div 
       ref={containerRef}
@@ -165,7 +186,10 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
     >
       <div className="flex items-center justify-center">
         {/* Date Display - Full Width */}
-        <div className="flex-1 text-center min-w-0 select-none py-0.5 md:py-1">
+        <div 
+          onClick={handleDateClick}
+          className="flex-1 text-center min-w-0 select-none py-0.5 md:py-1 cursor-pointer hover:opacity-80 transition-opacity"
+        >
           <div className={`text-xs font-semibold leading-tight ${isDarkTheme ? 'text-gray-500' : 'text-gray-600'}`}>
             {label}
           </div>
@@ -174,6 +198,15 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
           </div>
         </div>
       </div>
+      
+      {/* Hidden Date Input */}
+      <input
+        ref={datePickerRef}
+        type="date"
+        onChange={handleDateChange}
+        className="hidden"
+        style={{ display: 'none' }}
+      />
     </div>
   );
 }
