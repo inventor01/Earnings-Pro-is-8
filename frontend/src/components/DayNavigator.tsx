@@ -113,8 +113,8 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
           onClick={handleToday}
           className={`w-full mt-1 px-2 py-0.5 rounded text-xs font-semibold transition-all ${
             isDarkTheme
-              ? 'bg-yellow-500/15 text-yellow-400 hover:bg-yellow-500/30'
-              : 'bg-yellow-200/30 text-yellow-700 hover:bg-yellow-300/50'
+              ? 'bg-lime-600/20 text-lime-400 hover:bg-lime-600/40'
+              : 'bg-lime-200/50 text-lime-700 hover:bg-lime-300/60'
           }`}
         >
           ← Back to Today
