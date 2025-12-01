@@ -12,9 +12,9 @@ def get_day_offset(offset_days: int = 0):
     # Calculate target day in EST
     target_day_est = now_est + timedelta(days=offset_days)
     
-    # Create start and end times in EST
-    start_est = est.localize(datetime(target_day_est.year, target_day_est.month, target_day_est.day, 0, 0, 0))
-    end_est = est.localize(datetime(target_day_est.year, target_day_est.month, target_day_est.day, 23, 59, 59))
+    # Create start and end times by using replace() to avoid re-localization issues
+    start_est = target_day_est.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_est = target_day_est.replace(hour=23, minute=59, second=59, microsecond=999999)
     
     # Convert to UTC (naive datetime for database comparison)
     start_utc = start_est.astimezone(timezone.utc).replace(tzinfo=None)
