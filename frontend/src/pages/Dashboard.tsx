@@ -21,6 +21,7 @@ import { CoinAnimation } from '../components/CoinAnimation';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { AchievementsModal } from '../components/AchievementsModal';
 import { ProfitCalendar } from '../components/ProfitCalendar';
+import { DayNavigator } from '../components/DayNavigator';
 import { MilestoneAlert } from '../components/MilestoneAlert';
 import { useTheme } from '../lib/themeContext';
 import { Icons } from '../components/Icons';
@@ -999,6 +1000,17 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                   onShare={() => setShowShareCard(true)}
                   hideData={hideAccountData}
                 />
+
+                {/* Day Navigator - Navigate through exact dates */}
+                {period === 'today' && (
+                  <DayNavigator 
+                    dayOffset={dayOffset}
+                    onDayOffsetChange={(offset) => {
+                      setDayOffset(offset);
+                    }}
+                    label={getPeriodLabel()}
+                  />
+                )}
 
                 {/* Profit Calendar Toggle and Display */}
                 <div className="w-full px-2 md:px-0">
