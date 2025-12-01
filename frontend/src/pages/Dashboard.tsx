@@ -957,7 +957,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                 onDayOffsetChange={(offset) => {
                   setDayOffset(offset);
                 }}
-                label={getDateLabel(dayOffset)}
+                label={period === 'today' ? getDateLabel(dayOffset) : getPeriodLabel()}
                 period={period}
               />
             </div>
