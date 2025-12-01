@@ -952,13 +952,15 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
           <div className="lg:col-span-3 space-y-6 md:space-y-8 lg:space-y-10 scroll-smooth">
             {/* Day Navigator - Navigate through exact dates */}
             {period === 'today' && (
-              <DayNavigator 
-                dayOffset={dayOffset}
-                onDayOffsetChange={(offset) => {
-                  setDayOffset(offset);
-                }}
-                label={getPeriodLabel()}
-              />
+              <div className="-mt-4 md:-mt-6">
+                <DayNavigator 
+                  dayOffset={dayOffset}
+                  onDayOffsetChange={(offset) => {
+                    setDayOffset(offset);
+                  }}
+                  label={getPeriodLabel()}
+                />
+              </div>
             )}
 
             {/* Performance Overview Header with Toggle */}
