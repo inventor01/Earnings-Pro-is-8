@@ -190,12 +190,8 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
         : 'bg-gradient-to-br from-white to-lime-50 border-lime-400 shadow-lg shadow-lime-300/20'
     }`}>
       <div className="mb-4 space-y-3">
-        <h3 className={`text-2xl font-black text-center ${isDarkTheme ? 'text-yellow-400' : 'text-green-900'} drop-shadow-lg`}>
-          {monthNames[calendarData.month]} {calendarData.year}
-        </h3>
-
-        {/* Month and Year Selector */}
-        <div className="flex justify-center items-center gap-3 flex-wrap">
+        {/* Month and Year Selector - Integrated as Title */}
+        <div className="flex justify-center items-center gap-2">
           {/* Previous Month Button */}
           <button
             onClick={() => {
@@ -216,10 +212,10 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
           <select
             value={selectedMonth}
             onChange={(e) => { playButtonClickSound(); setSelectedMonth(parseInt(e.target.value)); }}
-            className={`px-3 py-2 rounded-lg font-bold border transition-all ${
+            className={`px-4 py-2 rounded-lg font-black text-lg border transition-all ${
               isDarkTheme
-                ? 'bg-slate-700/50 border-slate-600 text-slate-300'
-                : 'bg-gray-200 text-gray-700 border-gray-300'
+                ? 'bg-slate-700/50 border-slate-600 text-yellow-400'
+                : 'bg-lime-100 text-green-900 border-lime-400'
             }`}
           >
             {monthNames.map((month, idx) => (
@@ -231,10 +227,10 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
           <select
             value={selectedYear}
             onChange={(e) => { playButtonClickSound(); setSelectedYear(parseInt(e.target.value)); }}
-            className={`px-3 py-2 rounded-lg font-bold border transition-all ${
+            className={`px-4 py-2 rounded-lg font-black text-lg border transition-all ${
               isDarkTheme
-                ? 'bg-slate-700/50 border-slate-600 text-slate-300'
-                : 'bg-gray-200 text-gray-700 border-gray-300'
+                ? 'bg-slate-700/50 border-slate-600 text-yellow-400'
+                : 'bg-lime-100 text-green-900 border-lime-400'
             }`}
           >
             {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
