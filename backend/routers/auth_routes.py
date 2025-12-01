@@ -135,7 +135,10 @@ async def validate_token(current_user: AuthUser = Depends(get_current_user)) -> 
     }
 
 def create_demo_transactions(db: Session, user_id: str):
-    """Generate realistic demo transactions for the past 60 days (EST timezone aware)"""
+    """Generate realistic demo transactions for the past 60 days (EST timezone aware)
+    
+    Each day guaranteed to have minimum $200 profit with varying amounts ($200-$500)
+    """
     apps = [AppType.DOORDASH, AppType.UBEREATS, AppType.INSTACART, AppType.GRUBHUB]
     expense_categories = [ExpenseCategory.GAS, ExpenseCategory.PARKING, ExpenseCategory.FOOD]
     
@@ -149,8 +152,13 @@ def create_demo_transactions(db: Session, user_id: str):
         # Calculate target EST date
         target_est_date = today_est - timedelta(days=day_offset)
         
-        # 5-10 orders per day
-        num_orders = random.randint(5, 10)
+        # Determine target daily profit: minimum $200, varying up to $500
+        target_daily_profit = random.uniform(200.00, 500.00)
+        
+        # Generate 6-12 orders to hit revenue targets
+        num_orders = random.randint(6, 12)
+        total_revenue = 0
+        
         for _ in range(num_orders):
             # Create time in EST timezone
             hour = random.randint(7, 22)
@@ -159,32 +167,53 @@ def create_demo_transactions(db: Session, user_id: str):
             # Convert to UTC for storage
             utc_datetime = est_datetime.astimezone(pytz.UTC)
             
+            # Order amounts between $12-$45 for realistic earnings
+            order_amount = round(random.uniform(12.00, 45.00), 2)
+            total_revenue += order_amount
+            
             entry = Entry(
                 user_id=user_id,
                 timestamp=utc_datetime,
                 type=EntryType.ORDER,
                 app=random.choice(apps),
-                amount=Decimal(str(round(random.uniform(8.00, 35.00), 2))),
+                amount=Decimal(str(order_amount)),
                 distance_miles=round(random.uniform(0.5, 8.0), 1),
                 duration_minutes=random.randint(10, 60),
                 order_id=str(uuid.uuid4())[:12]
             )
             db.add(entry)
         
-        # 1-2 expenses per day
-        num_expenses = random.randint(1, 2)
-        for _ in range(num_expenses):
+        # Calculate expenses to hit target profit
+        # Expenses should be: revenue - target_profit
+        ideal_expenses = total_revenue - target_daily_profit
+        
+        # Generate 2-4 realistic expenses that sum to ideal_expenses (with some variation)
+        num_expenses = random.randint(2, 4)
+        remaining_expenses = max(1, ideal_expenses)  # Ensure at least $1 in expenses
+        
+        for i in range(num_expenses):
             hour = random.randint(7, 22)
             minute = random.randint(0, 59)
             est_datetime = est.localize(datetime(target_est_date.year, target_est_date.month, target_est_date.day, hour, minute, 0))
             utc_datetime = est_datetime.astimezone(pytz.UTC)
+            
+            if i == num_expenses - 1:
+                # Last expense gets remaining amount to hit target
+                expense_amount = remaining_expenses
+            else:
+                # Distribute expenses across multiple entries
+                expense_amount = round(remaining_expenses / (num_expenses - i) * random.uniform(0.7, 1.3), 2)
+                expense_amount = min(expense_amount, remaining_expenses - 1)  # Leave some for final entry
+            
+            expense_amount = max(1.00, min(expense_amount, 25.00))  # Cap between $1-$25 per expense
+            remaining_expenses -= expense_amount
             
             entry = Entry(
                 user_id=user_id,
                 timestamp=utc_datetime,
                 type=EntryType.EXPENSE,
                 app=AppType.OTHER,
-                amount=Decimal(str(-round(random.uniform(3.00, 15.00), 2))),
+                amount=Decimal(str(-expense_amount)),
                 category=random.choice(expense_categories),
                 note="Demo expense"
             )
