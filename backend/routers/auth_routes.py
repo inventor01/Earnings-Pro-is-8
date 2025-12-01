@@ -187,13 +187,19 @@ def create_demo_transactions(db: Session, user_id: str):
         # Expenses should be: revenue - target_profit
         ideal_expenses = total_revenue - target_daily_profit
         
-        # Ensure minimum expense requirements
-        min_daily_expenses = 20.00
-        if target_daily_profit > 200.00:
+        # Ensure minimum expense requirements based on profit level
+        if target_daily_profit > 320.00:
+            # If profit > $320, ensure $60 minimum for total expenses
+            min_daily_expenses = 60.00
+            min_gas_expense = 50.00  # Gas should be $50-$70
+        elif target_daily_profit > 200.00:
             # If profit > $200, ensure $45 minimum for gas
+            min_daily_expenses = 20.00
             min_gas_expense = 45.00
         else:
-            min_gas_expense = 5.00  # Regular minimum for gas
+            # Regular: $5-$15 for gas, $20 minimum total
+            min_daily_expenses = 20.00
+            min_gas_expense = 5.00
         
         # Ensure we meet minimum expense requirements
         if ideal_expenses < min_daily_expenses:
@@ -211,7 +217,10 @@ def create_demo_transactions(db: Session, user_id: str):
             
             # First expense is always GAS with minimum requirement
             if i == 0:
-                if target_daily_profit > 200.00:
+                if target_daily_profit > 320.00:
+                    # Profit > $320: gas should be $50-$70
+                    expense_amount = round(random.uniform(50.00, 70.00), 2)
+                elif target_daily_profit > 200.00:
                     # Profit > $200: gas should be $45-$60
                     expense_amount = round(random.uniform(45.00, 60.00), 2)
                 else:
