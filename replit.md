@@ -192,10 +192,14 @@ Added realistic preloaded demo transactions to demo accounts:
 - 1-2 expenses per day (gas, parking, food)
 - Realistic order amounts ($8-$35) with distance and duration data
 - Demo account shows immediately populated dashboard with AI tips, KPI calculations, and full transaction history
-- Calendar displays colored profit/revenue bars on every day with data
+- Calendar displays colored profit/revenue bars on every day with data across all months
 
 **Technical Details:**
 - New `create_demo_transactions()` helper function generates fake entries
+- **CRITICAL FIX (Dec 1)**: Uses EST timezone for date generation to ensure calendar alignment
+  - Entries are created with EST dates, then converted to UTC for storage
+  - When frontend converts back to EST using `getESTDateString()`, dates align perfectly
+  - Prevents timezone offset issues where UTC midnight could shift dates by a day
 - Transaction timestamps spread across past 60 days, 7am-10pm working hours
 - Each demo user gets unique randomized data (5-10 orders per day, varying amounts daily)
 - Expenses include GAS, PARKING, FOOD categories
@@ -203,6 +207,7 @@ Added realistic preloaded demo transactions to demo accounts:
 - Generates 300-600 transactions per demo session for a rich data experience
 
 **Files Modified:**
-- `backend/routers/auth_routes.py` - Added `create_demo_transactions()` function and preload logic to `/auth/demo` endpoint
+- `backend/routers/auth_routes.py` - Added `create_demo_transactions()` function with EST timezone handling and preload logic to `/auth/demo` endpoint
 - Demo endpoint now creates user, settings, AND preloaded transactions across 60 days in one call
+- Uses pytz library for accurate timezone conversions
 

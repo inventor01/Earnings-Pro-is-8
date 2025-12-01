@@ -135,26 +135,33 @@ async def validate_token(current_user: AuthUser = Depends(get_current_user)) -> 
     }
 
 def create_demo_transactions(db: Session, user_id: str):
-    """Generate realistic demo transactions for the past 60 days"""
+    """Generate realistic demo transactions for the past 60 days (EST timezone aware)"""
     apps = [AppType.DOORDASH, AppType.UBEREATS, AppType.INSTACART, AppType.GRUBHUB]
     expense_categories = [ExpenseCategory.GAS, ExpenseCategory.PARKING, ExpenseCategory.FOOD]
     
-    now = datetime.utcnow()
+    # Get today's date in EST (frontend's reference timezone)
+    import pytz
+    est = pytz.timezone('America/New_York')
+    today_est = datetime.now(est).date()
     
-    # Create transactions for the past 60 days (fills multiple calendar months with data)
+    # Create transactions for the past 60 days (EST dates)
     for day_offset in range(60):
-        day = now - timedelta(days=day_offset)
-        # Reset to start of day
-        day = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Calculate target EST date
+        target_est_date = today_est - timedelta(days=day_offset)
         
         # 5-10 orders per day
         num_orders = random.randint(5, 10)
         for _ in range(num_orders):
-            order_time = day + timedelta(hours=random.randint(7, 22), minutes=random.randint(0, 59))
+            # Create time in EST timezone
+            hour = random.randint(7, 22)
+            minute = random.randint(0, 59)
+            est_datetime = est.localize(datetime(target_est_date.year, target_est_date.month, target_est_date.day, hour, minute, 0))
+            # Convert to UTC for storage
+            utc_datetime = est_datetime.astimezone(pytz.UTC)
             
             entry = Entry(
                 user_id=user_id,
-                timestamp=order_time,
+                timestamp=utc_datetime,
                 type=EntryType.ORDER,
                 app=random.choice(apps),
                 amount=Decimal(str(round(random.uniform(8.00, 35.00), 2))),
@@ -167,11 +174,14 @@ def create_demo_transactions(db: Session, user_id: str):
         # 1-2 expenses per day
         num_expenses = random.randint(1, 2)
         for _ in range(num_expenses):
-            expense_time = day + timedelta(hours=random.randint(7, 22), minutes=random.randint(0, 59))
+            hour = random.randint(7, 22)
+            minute = random.randint(0, 59)
+            est_datetime = est.localize(datetime(target_est_date.year, target_est_date.month, target_est_date.day, hour, minute, 0))
+            utc_datetime = est_datetime.astimezone(pytz.UTC)
             
             entry = Entry(
                 user_id=user_id,
-                timestamp=expense_time,
+                timestamp=utc_datetime,
                 type=EntryType.EXPENSE,
                 app=AppType.OTHER,
                 amount=Decimal(str(-round(random.uniform(3.00, 15.00), 2))),
