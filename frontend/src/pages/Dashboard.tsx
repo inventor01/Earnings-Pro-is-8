@@ -176,10 +176,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Play intro sound when dashboard loads
-  useEffect(() => {
-    playIntroSound();
-  }, []);
 
   const scrollToTop = () => {
     const element = document.getElementById('performance-overview');
@@ -260,11 +256,11 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       rollupTimeframe,
       period === 'today' ? dayOffset : undefined
     ),
-    staleTime: 30000,
-    gcTime: 60000,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes - reduce unnecessary refetches
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: false, // Don't refetch on remount if data is fresh
+    refetchOnWindowFocus: false, // Don't refetch when user clicks - causes performance issues
+    refetchOnReconnect: true, // Only refetch on actual network reconnect
   });
 
   const rollup = dashboardData?.rollup;
@@ -276,18 +272,18 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const { data: monthlyEntries = [] } = useQuery<Entry[]>({
     queryKey: ['entries', 'THIS_MONTH'],
     queryFn: () => api.getEntries('THIS_MONTH'),
-    staleTime: 60000,
-    gcTime: 120000,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 20 * 60 * 1000, // 20 minutes
+    refetchOnMount: false, // Cached data is already fresh
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   const { data: monthlyGoal, refetch: refetchMonthlyGoal } = useQuery<Goal | null>({
     queryKey: ['goal', 'THIS_MONTH'],
     queryFn: () => api.getGoal('THIS_MONTH'),
-    staleTime: 300000,
-    gcTime: 600000,
-    refetchOnMount: true,
+    staleTime: 30 * 60 * 1000, // 30 minutes - goals rarely change
+    gcTime: 60 * 60 * 1000, // 1 hour
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 
@@ -305,9 +301,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const { data: currentGoal } = useQuery<Goal | null>({
     queryKey: ['goal', currentTimeframe],
     queryFn: () => api.getGoal(currentTimeframe),
-    staleTime: 300000,
-    gcTime: 600000,
-    refetchOnMount: true,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 

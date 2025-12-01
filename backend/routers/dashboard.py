@@ -41,12 +41,12 @@ async def get_dashboard_overview(
     else:
         from_dt, to_dt = get_today()
     
-    # Get entries
+    # Get entries - limited to 100 most recent for performance
     entries = db.query(Entry).filter(
         Entry.user_id == current_user.id,
         Entry.timestamp >= from_dt,
         Entry.timestamp <= to_dt
-    ).order_by(Entry.timestamp.desc()).limit(100).all()
+    ).order_by(Entry.timestamp.desc()).limit(100).all()  # Limited result set for faster queries
     
     # Get rollup (includes goal data)
     rollup = calculate_rollup(db, from_dt, to_dt, timeframe, current_user.id)

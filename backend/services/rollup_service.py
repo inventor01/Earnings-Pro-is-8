@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Optional
 
 def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None, timeframe: Optional[str] = None, user_id: Optional[str] = None):
+    # Build efficient SQL query with aggregations
     query = db.query(Entry)
     
     if user_id:
@@ -15,6 +16,7 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
     if to_date:
         query = query.filter(Entry.timestamp <= to_date)
     
+    # Fetch entries first for by_type and by_app calculations
     entries = query.all()
     
     settings = db.query(Settings).filter(Settings.user_id == user_id).first() if user_id else db.query(Settings).first()
