@@ -99,3 +99,20 @@ export function playKaChing(): void {
     console.debug('Ka-ching sound error:', error);
   }
 }
+
+/**
+ * Play intro sound effect from audio file
+ */
+export function playIntroSound(): void {
+  if (isSoundMuted()) return;
+  
+  try {
+    const audio = new Audio('/sounds/intro-sound.wav');
+    audio.volume = 0.7;
+    audio.play().catch((err) => {
+      console.debug('Intro sound not available:', err);
+    });
+  } catch (error) {
+    console.debug('Intro sound error:', error);
+  }
+}

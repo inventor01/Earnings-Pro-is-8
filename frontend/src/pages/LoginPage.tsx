@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../lib/authContext';
 import { useTheme } from '../lib/themeContext';
 import { ForgotPasswordModal } from '../components/ForgotPasswordModal';
-import { isSoundMuted } from '../lib/soundEffects';
 import ninjaLogo from '../assets/logo-ninja-official.png';
 
 export function LoginPage() {
@@ -16,38 +15,6 @@ export function LoginPage() {
   const { login } = useAuth();
   const { config } = useTheme();
   const isDarkTheme = config.name === 'ninja-dark';
-
-  // Play intro sound on login page load (with delay for browser autoplay policy)
-  useEffect(() => {
-    if (!isSoundMuted()) {
-      // Longer delay for HTTPS/production autoplay policies
-      const timer = setTimeout(() => {
-        try {
-          const audio = new Audio('/sounds/intro-sound.wav');
-          audio.volume = 0.7;
-          
-          // Create promise to handle autoplay policy restrictions
-          const playPromise = audio.play();
-          
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                console.debug('Intro sound played successfully');
-              })
-              .catch(err => {
-                // Autoplay was prevented, log for debugging
-                console.debug('Intro sound autoplay prevented (likely due to browser policy):', err.name);
-                // On HTTPS/production, browsers often block autoplay - this is expected
-              });
-          }
-        } catch (err) {
-          console.debug('Intro sound error:', err);
-        }
-      }, 800);
-      
-      return () => clearTimeout(timer);
-    }
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
