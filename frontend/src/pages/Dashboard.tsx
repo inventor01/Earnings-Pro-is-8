@@ -195,15 +195,17 @@ export function Dashboard({}: DashboardProps) {
 
   useEffect(() => {
     setSelectedIds([]);
-    // Reset day offset when period changes
-    if (period === 'yesterday') {
-      // For 'yesterday' period, ensure dayOffset stays at 0 to show yesterday's data
+    // Sync dayOffset with period changes
+    if (period === 'today') {
+      // For 'today', reset to current day (dayOffset = 0)
       setDayOffset(0);
-    } else if (period !== 'today') {
+    } else if (period === 'yesterday') {
+      // For 'yesterday', set dayOffset to -1 to show previous day
+      setDayOffset(-1);
+    } else {
       // For other periods (week, month, etc), reset dayOffset
       setDayOffset(0);
     }
-    // For 'today', keep the existing dayOffset as user might be navigating between days
   }, [period]);
 
   const { data: settings } = useQuery({
