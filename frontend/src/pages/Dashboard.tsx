@@ -176,6 +176,15 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Play intro sound only on first login (not on page refresh)
+  useEffect(() => {
+    const justLoggedIn = sessionStorage.getItem('justLoggedIn');
+    if (justLoggedIn === 'true') {
+      playIntroSound();
+      sessionStorage.removeItem('justLoggedIn'); // Clear flag so it only plays once
+    }
+  }, []);
+
 
   const scrollToTop = () => {
     const element = document.getElementById('performance-overview');

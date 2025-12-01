@@ -26,6 +26,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = (newToken: string) => {
     setToken(newToken);
     localStorage.setItem('auth_token', newToken);
+    // Flag to play intro sound on first login (sessionStorage expires on page refresh)
+    sessionStorage.setItem('justLoggedIn', 'true');
   };
 
   const logout = () => {
