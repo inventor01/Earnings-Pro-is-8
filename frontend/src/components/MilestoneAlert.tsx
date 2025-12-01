@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../lib/themeContext';
-import { playKaChing } from '../lib/soundEffects';
 
 interface MilestoneAlertProps {
   milestone: 25 | 50 | 75 | 100;
@@ -38,7 +37,6 @@ export function MilestoneAlert({ milestone, isVisible, onClose }: MilestoneAlert
 
   useEffect(() => {
     if (isVisible) {
-      playKaChing();
       setIsAnimating(true);
       const timer = setTimeout(() => {
         setIsAnimating(false);
