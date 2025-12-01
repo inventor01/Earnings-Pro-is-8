@@ -347,6 +347,17 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       refetchEntries();
       refetchRollup();
       setAmount('0');
+      // Reset form data completely after successful save
+      setFormData({
+        type: 'ORDER',
+        app: 'UBEREATS',
+        distance_miles: '',
+        category: 'GAS',
+        note: '',
+        receipt_url: undefined,
+        date: getDefaultDate(),
+        time: getDefaultTime(),
+      });
       playKaChing(); // Play ka-ching sound
       setToast({ message: 'Entry added successfully!', type: 'success' });
       setCalcExpanded(false); // Auto-close the form after successful save
@@ -484,18 +495,9 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       receipt_url: formData.receipt_url || undefined,
     };
 
+    // Don't reset form here - let createMutation.onSuccess handle it
+    // This fixes mobile network issues where form was reset before request completed
     createMutation.mutate(entry);
-    
-    setFormData({
-      type: formData.type,
-      app: formData.app,
-      distance_miles: '',
-      category: 'GAS',
-      note: '',
-      receipt_url: undefined,
-      date: getDefaultDate(),
-      time: getDefaultTime(),
-    });
   };
 
   const handleDelete = (id: number) => {
