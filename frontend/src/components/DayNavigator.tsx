@@ -73,7 +73,7 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
         {/* Previous Day Button */}
         <button
           onClick={handlePrevDay}
-          className={`px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs font-semibold transition-all transform hover:scale-105 active:scale-95 ${
+          className={`px-3 md:px-4 py-1.5 md:py-2 rounded text-sm md:text-base font-semibold transition-all transform hover:scale-105 active:scale-95 ${
             isDarkTheme
               ? 'bg-lime-600/20 text-lime-400 hover:bg-lime-600/40'
               : 'bg-lime-200/50 text-lime-700 hover:bg-lime-300/60'
@@ -96,7 +96,7 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
         {/* Next Day Button */}
         <button
           onClick={handleNextDay}
-          className={`px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs font-semibold transition-all transform hover:scale-105 active:scale-95 ${
+          className={`px-3 md:px-4 py-1.5 md:py-2 rounded text-sm md:text-base font-semibold transition-all transform hover:scale-105 active:scale-95 ${
             isDarkTheme
               ? 'bg-lime-600/20 text-lime-400 hover:bg-lime-600/40'
               : 'bg-lime-200/50 text-lime-700 hover:bg-lime-300/60'
