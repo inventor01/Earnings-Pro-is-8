@@ -259,7 +259,7 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goa
         {/* Progress bar - bigger */}
         <div className="w-full rounded-full h-2.5 md:h-4 overflow-hidden shadow-inner transition-all duration-500 progress-section mt-2 md:mt-2.5 bg-yellow-200">
           <div
-            className={`h-2.5 md:h-4 rounded-full transition-all duration-500 ease-out progress-bar-fill ${goalProgress > 50 ? 'shimmer-effect' : ''} ${isGoalReached ? 'goal-pulse shadow-lg' : ''} bg-gradient-to-r from-green-500 to-green-600`}
+            className={`h-2.5 md:h-4 rounded-full transition-all duration-500 ease-out progress-bar-fill ${goalProgress > 50 ? 'shimmer-effect' : ''} ${isGoalReached ? 'goal-pulse shadow-lg' : ''} bg-gradient-to-r from-gray-800 to-gray-900`}
             style={{ width: `${displayProgress}%` }}
           />
         </div>
