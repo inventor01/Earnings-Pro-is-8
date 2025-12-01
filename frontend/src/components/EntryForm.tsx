@@ -290,6 +290,18 @@ export function EntryForm({ onTypeChange, formData, onFormDataChange, period = '
                       <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${formData.is_business_expense ? 'translate-x-6' : 'translate-x-0'}`} />
                     </div>
                   </label>
+
+                  {/* Notes Field for Expenses */}
+                  <div>
+                    <label className="block text-sm md:text-base font-bold text-gray-800 mb-1 md:mb-2">📝 Notes (optional)</label>
+                    <textarea
+                      value={formData.note}
+                      onChange={(e) => onFormDataChange({ ...formData, note: e.target.value })}
+                      placeholder="Add details about this expense..."
+                      className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base font-semibold resize-none"
+                      rows={2}
+                    />
+                  </div>
                 </>
               )}
 
