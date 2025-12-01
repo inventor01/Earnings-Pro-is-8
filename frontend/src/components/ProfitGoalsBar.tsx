@@ -106,49 +106,53 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goa
   // Round to avoid floating point issues - if progress is 99.5% or higher, show 100%
   const displayProgress = goalProgress >= 99.5 ? 100 : Math.max(0, Math.min(goalProgress, 100));
 
-  if (!goalAmount) {
-    // Show edit form if editing, otherwise show "Set Goal" button
-    if (isEditing) {
-      return (
-        <div className={`w-full px-4 py-3 ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700' : 'bg-gradient-to-r from-lime-50 to-yellow-50 border-b border-lime-200'}`}>
-          <div className="max-w-6xl mx-auto space-y-2">
-            <div className="flex items-center gap-2">
-              <span className={`text-sm font-medium ${isDarkTheme ? 'text-slate-300' : 'text-gray-600'}`}>{TIMEFRAME_LABELS[timeframe]} Goal:</span>
-              <input
-                type="number"
-                step="0.01"
-                value={tempGoal}
-                onChange={(e) => setTempGoal(e.target.value)}
-                placeholder="Enter goal amount"
-                className={`px-3 py-2 border-2 rounded-lg text-sm w-32 focus:outline-none focus:ring-2 transition-all font-medium ${isDarkTheme ? 'bg-slate-700 border-lime-500 text-lime-300 focus:ring-lime-500 focus:border-lime-500' : 'bg-white border-lime-400 text-gray-800 focus:ring-lime-500 focus:border-lime-500'}`}
-                autoFocus
-              />
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className={`px-3 py-2 text-white text-xs font-bold rounded-lg hover:scale-105 disabled:bg-gray-400 transition-all duration-200 uppercase tracking-wide ${isDarkTheme ? 'bg-gradient-to-r from-lime-600 to-green-700 hover:from-lime-700 hover:to-green-800' : 'bg-gradient-to-r from-lime-500 to-green-700 hover:from-lime-600 hover:to-green-800 hover:shadow-lg'}`}
-              >
-                {isSaving ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={handleCancel}
-                className="px-3 py-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white text-xs font-bold rounded-lg hover:from-gray-500 hover:to-gray-600 hover:scale-105 transition-all duration-200 uppercase tracking-wide"
-              >
-                Cancel
-              </button>
-            </div>
-            {error && (
-              <div className="text-red-600 text-sm font-medium">
-                ⚠️ {error}
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
+  // Always render the progress bar, even without a goal
+  const hasGoal = !!goalAmount;
 
+  // Edit form - shown when editing even without goal
+  if (isEditing) {
     return (
-      <div className={`w-full px-4 py-3 animate-pulse ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700' : 'bg-gradient-to-r from-lime-50 to-yellow-50 border-b border-lime-200'}`}>
+      <div className={`w-full px-4 py-3 ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700' : 'bg-gradient-to-r from-lime-50 to-yellow-50 border-b border-lime-200'}`}>
+        <div className="max-w-6xl mx-auto space-y-2">
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-medium ${isDarkTheme ? 'text-slate-300' : 'text-gray-600'}`}>{TIMEFRAME_LABELS[timeframe]} Goal:</span>
+            <input
+              type="number"
+              step="0.01"
+              value={tempGoal}
+              onChange={(e) => setTempGoal(e.target.value)}
+              placeholder="Enter goal amount"
+              className={`px-3 py-2 border-2 rounded-lg text-sm w-32 focus:outline-none focus:ring-2 transition-all font-medium ${isDarkTheme ? 'bg-slate-700 border-lime-500 text-lime-300 focus:ring-lime-500 focus:border-lime-500' : 'bg-white border-lime-400 text-gray-800 focus:ring-lime-500 focus:border-lime-500'}`}
+              autoFocus
+            />
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`px-3 py-2 text-white text-xs font-bold rounded-lg hover:scale-105 disabled:bg-gray-400 transition-all duration-200 uppercase tracking-wide ${isDarkTheme ? 'bg-gradient-to-r from-lime-600 to-green-700 hover:from-lime-700 hover:to-green-800' : 'bg-gradient-to-r from-lime-500 to-green-700 hover:from-lime-600 hover:to-green-800 hover:shadow-lg'}`}
+            >
+              {isSaving ? 'Saving...' : 'Save'}
+            </button>
+            <button
+              onClick={handleCancel}
+              className="px-3 py-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white text-xs font-bold rounded-lg hover:from-gray-500 hover:to-gray-600 hover:scale-105 transition-all duration-200 uppercase tracking-wide"
+            >
+              Cancel
+            </button>
+          </div>
+          {error && (
+            <div className="text-red-600 text-sm font-medium">
+              ⚠️ {error}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // No goal set - show placeholder with Set Goal button
+  if (!hasGoal) {
+    return (
+      <div className={`w-full px-4 py-3 ${isDarkTheme ? 'bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700' : 'bg-gradient-to-r from-lime-50 to-yellow-50 border-b border-lime-200'}`}>
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className={`text-sm ${isDarkTheme ? 'text-slate-300' : 'text-gray-600'}`}>
             <span className="font-medium">{TIMEFRAME_LABELS[timeframe]} Goal:</span> Set a target to track progress
