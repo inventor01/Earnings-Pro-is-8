@@ -19,7 +19,6 @@ import { ShareCard } from '../components/ShareCard';
 import { ScrollToTopButton } from '../components/ScrollToTopButton';
 import { CoinAnimation } from '../components/CoinAnimation';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
-import { AchievementsModal } from '../components/AchievementsModal';
 import { ProfitCalendar } from '../components/ProfitCalendar';
 import { DayNavigator } from '../components/DayNavigator';
 import { MilestoneAlert } from '../components/MilestoneAlert';
@@ -104,7 +103,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
   const [showGoalBanner, setShowGoalBanner] = useState(true);
   
   const [showNegativeAlert, setShowNegativeAlert] = useState(true);
-  const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showPerformanceOverview, setShowPerformanceOverview] = useState(true);
   const [hideAccountData, setHideAccountData] = useState(false);
@@ -1078,17 +1076,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
           </div>
         </div>
-
-
-        {/* Achievements Modal */}
-        {showAchievementsModal && (
-          <AchievementsModal 
-            entries={entries} 
-            rollup={rollup} 
-            monthlyGoal={monthlyGoal}
-            onClose={() => setShowAchievementsModal(false)}
-          />
-        )}
 
         <div>
           {/* Only show AI suggestions if there is data */}
