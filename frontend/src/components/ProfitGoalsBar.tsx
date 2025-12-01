@@ -45,8 +45,8 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goa
   }, [timeframe, initialGoalAmount]);
 
   useEffect(() => {
-    // Check milestone achievements
-    const milestones: (25 | 50 | 75 | 100)[] = [25, 50, 75, 100];
+    // Check milestone achievements (exclude 100% - that gets its own goal reached message)
+    const milestones: (25 | 50 | 75)[] = [25, 50, 75];
     for (const milestone of milestones) {
       if (goalProgress >= milestone && !milestonesReachedRef.current.has(milestone)) {
         milestonesReachedRef.current.add(milestone);
@@ -54,10 +54,15 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goa
       }
     }
 
-    // Show success message when goal is reached for the first time
+    // Show success message when goal is reached for the first time (100% completion)
     if (goalProgress >= 100 && !goalReachedRef.current && goalAmount) {
       goalReachedRef.current = true;
       setIsGoalReached(true);
+      // Trigger 100% milestone message as the single completion alert
+      if (!milestonesReachedRef.current.has(100)) {
+        milestonesReachedRef.current.add(100);
+        onMilestoneReached?.(100);
+      }
       onGoalReached?.(timeframe);
     }
     // Reset when goal progress drops below 100 (e.g., after deleting entries)
