@@ -13,11 +13,12 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
   const { config: themeConfig } = useTheme();
   const isDarkTheme = themeConfig.name === 'ninja-dark';
   const [metricView, setMetricView] = useState<'profit' | 'expenses' | 'revenue'>('profit');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const calendarData = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const currentMonth = selectedMonth;
+    const currentYear = selectedYear;
     
     const firstDay = new Date(currentYear, currentMonth, 1);
     const lastDay = new Date(currentYear, currentMonth + 1, 0);
@@ -126,7 +127,7 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
     }
 
     return { days, month: currentMonth, year: currentYear };
-  }, [entries]);
+  }, [entries, selectedMonth, selectedYear]);
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
@@ -192,6 +193,71 @@ export function ProfitCalendar({ entries, onDayClick, selectedDateStr }: ProfitC
         <h3 className={`text-2xl font-black text-center ${isDarkTheme ? 'text-yellow-400' : 'text-green-900'} drop-shadow-lg`}>
           {monthNames[calendarData.month]} {calendarData.year}
         </h3>
+
+        {/* Month and Year Selector */}
+        <div className="flex justify-center items-center gap-3 flex-wrap">
+          {/* Previous Month Button */}
+          <button
+            onClick={() => {
+              playButtonClickSound();
+              setSelectedMonth(prev => prev === 0 ? 11 : prev - 1);
+              if (selectedMonth === 0) setSelectedYear(prev => prev - 1);
+            }}
+            className={`px-3 py-2 rounded-lg font-bold transition-all transform hover:scale-110 ${
+              isDarkTheme
+                ? 'bg-slate-700/50 border border-slate-600 text-slate-300 hover:bg-slate-600/50'
+                : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300'
+            }`}
+          >
+            ◀
+          </button>
+
+          {/* Month Selector */}
+          <select
+            value={selectedMonth}
+            onChange={(e) => { playButtonClickSound(); setSelectedMonth(parseInt(e.target.value)); }}
+            className={`px-3 py-2 rounded-lg font-bold border transition-all ${
+              isDarkTheme
+                ? 'bg-slate-700/50 border-slate-600 text-slate-300'
+                : 'bg-gray-200 text-gray-700 border-gray-300'
+            }`}
+          >
+            {monthNames.map((month, idx) => (
+              <option key={idx} value={idx}>{month}</option>
+            ))}
+          </select>
+
+          {/* Year Selector */}
+          <select
+            value={selectedYear}
+            onChange={(e) => { playButtonClickSound(); setSelectedYear(parseInt(e.target.value)); }}
+            className={`px-3 py-2 rounded-lg font-bold border transition-all ${
+              isDarkTheme
+                ? 'bg-slate-700/50 border-slate-600 text-slate-300'
+                : 'bg-gray-200 text-gray-700 border-gray-300'
+            }`}
+          >
+            {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
+
+          {/* Next Month Button */}
+          <button
+            onClick={() => {
+              playButtonClickSound();
+              setSelectedMonth(prev => prev === 11 ? 0 : prev + 1);
+              if (selectedMonth === 11) setSelectedYear(prev => prev + 1);
+            }}
+            className={`px-3 py-2 rounded-lg font-bold transition-all transform hover:scale-110 ${
+              isDarkTheme
+                ? 'bg-slate-700/50 border border-slate-600 text-slate-300 hover:bg-slate-600/50'
+                : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300'
+            }`}
+          >
+            ▶
+          </button>
+        </div>
         
         {/* Toggle buttons */}
         <div className="flex gap-2 justify-center flex-wrap">
