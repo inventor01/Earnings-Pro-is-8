@@ -1305,6 +1305,15 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         onSave={(s) => updateSettingsMutation.mutate(s)}
         onResetAll={() => setResetAllConfirm(true)}
         onExport={() => handleExport()}
+        onImport={(entries) => {
+          api.importEntries(entries).then(() => {
+            setToast({ message: `Imported ${entries.length} entries successfully!`, type: 'success' });
+            queryClient.invalidateQueries({ queryKey: ['entries'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            queryClient.invalidateQueries({ queryKey: ['rollup'] });
+            setShowSettings(false);
+          }).catch(() => setToast({ message: 'Failed to import entries', type: 'error' }));
+        }}
         onLogout={logout}
         metricVisibility={metricVisibility}
         onMetricVisibilityChange={handleMetricVisibilityChange}

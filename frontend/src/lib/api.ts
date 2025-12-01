@@ -308,4 +308,14 @@ export const api = {
     const res = await fetch(`${API_BASE}/api/points/rewards`);
     return res.json();
   },
+
+  async importEntries(entries: EntryCreate[]): Promise<{ message: string; count: number; entries: Entry[] }> {
+    const res = await fetch(`${API_BASE}/api/entries/import`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(entries),
+    });
+    if (!res.ok) throw new Error('Failed to import entries');
+    return res.json();
+  },
 };

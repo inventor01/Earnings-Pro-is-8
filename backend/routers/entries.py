@@ -191,3 +191,62 @@ async def delete_all_entries(db: Session = Depends(get_db), current_user: AuthUs
         except:
             pass
         raise HTTPException(status_code=500, detail="Failed to delete data")
+
+@router.post("/entries/import")
+async def import_entries(entries_data: List[EntryCreate], db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
+    from pytz import timezone as pytz_timezone
+    
+    imported_entries = []
+    
+    for entry in entries_data:
+        try:
+            amount = entry.amount
+            
+            if entry.type in [EntryType.EXPENSE, EntryType.CANCELLATION]:
+                amount = -abs(amount)
+            else:
+                amount = abs(amount)
+            
+            # Calculate timestamp - prefer date/time components over timestamp (for proper timezone handling)
+            if entry.date and entry.time:
+                try:
+                    est = pytz_timezone('US/Eastern')
+                    datetime_str = f"{entry.date}T{entry.time}:00"
+                    naive_dt = datetime.fromisoformat(datetime_str)
+                    est_dt = est.localize(naive_dt)
+                    timestamp = est_dt.astimezone(timezone.utc).replace(tzinfo=None)
+                except Exception:
+                    timestamp = entry.timestamp or datetime.utcnow()
+            else:
+                timestamp = entry.timestamp or datetime.utcnow()
+            
+            db_entry = Entry(
+                user_id=current_user.id,
+                timestamp=timestamp,
+                type=entry.type,
+                app=entry.app,
+                order_id=entry.order_id,
+                amount=amount,
+                distance_miles=entry.distance_miles or 0.0,
+                duration_minutes=entry.duration_minutes or 0,
+                category=entry.category,
+                note=entry.note,
+                receipt_url=entry.receipt_url
+            )
+            db.add(db_entry)
+            imported_entries.append(db_entry)
+        except Exception as e:
+            continue
+    
+    try:
+        db.commit()
+        for entry in imported_entries:
+            db.refresh(entry)
+        return {
+            "message": f"Successfully imported {len(imported_entries)} entries",
+            "count": len(imported_entries),
+            "entries": imported_entries
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to import entries")

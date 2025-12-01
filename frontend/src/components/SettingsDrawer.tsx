@@ -22,15 +22,17 @@ interface SettingsDrawerProps {
   onSave: (settings: Settings) => void;
   onResetAll?: () => void;
   onExport?: () => void;
+  onImport?: (entries: any[]) => void;
   onRestartTour?: () => void;
   onLogout?: () => void;
   metricVisibility?: Partial<MetricVisibility>;
   onMetricVisibilityChange?: (visibility: Partial<MetricVisibility>) => void;
 }
 
-export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestartTour, onLogout, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
+export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onImport, onRestartTour, onLogout, metricVisibility = {}, onMetricVisibilityChange }: SettingsDrawerProps) {
   const { config, setTheme, themeName } = useTheme();
   const [soundMuted, setSoundMutedState] = useState(isSoundMuted());
+  const [importLoading, setImportLoading] = useState(false);
   const themes = getAllThemes();
   const isDarkTheme = config.name !== 'ninja-green';
   
@@ -66,6 +68,46 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
       [metric]: !(metricVisibility[metric] !== false)
     };
     onMetricVisibilityChange?.(newVisibility);
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setImportLoading(true);
+    try {
+      const text = await file.text();
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) throw new Error('CSV file is empty');
+      
+      const headers = lines[0].split(',').map(h => h.trim());
+      const entries = lines.slice(1).map(line => {
+        const values = line.split(',').map(v => v.trim());
+        const row: any = {};
+        headers.forEach((header, idx) => {
+          row[header] = values[idx];
+        });
+        return {
+          type: row.type || 'ORDER',
+          app: row.app || 'UBEREATS',
+          amount: parseFloat(row.amount) || 0,
+          distance_miles: parseFloat(row.distance_miles) || 0,
+          duration_minutes: parseInt(row.duration_minutes) || 0,
+          date: row.date || new Date().toISOString().split('T')[0],
+          time: row.time || '12:00',
+          category: row.category || 'OTHER',
+          note: row.note || '',
+          order_id: row.order_id
+        };
+      });
+      
+      onImport?.(entries);
+    } catch (error) {
+      alert('Failed to import CSV: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setImportLoading(false);
+      if (e.target) e.target.value = '';
+    }
   };
 
   return (
@@ -239,21 +281,32 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onRestar
           <div data-tour="export">
             <h3 className={`text-xs font-semibold mb-1.5 flex items-center gap-1 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
               <Icons.Download width={12} height={12} className={isDarkTheme ? 'text-slate-400' : 'text-gray-600'} strokeWidth={2} />
-              Export
+              Export / Import
             </h3>
-            <button
-              onClick={onExport}
-              className={`w-full py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all border flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg ${
-                isDarkTheme
-                  ? 'bg-green-600 hover:bg-green-700 text-white border-green-700'
-                  : 'bg-lime-500 hover:bg-lime-600 text-white border-lime-600'
-              }`}
-            >
-              <Icons.Download width={14} height={14} strokeWidth={2} />
-              Export to CSV
-            </button>
+            <div className="space-y-1.5">
+              <button
+                onClick={onExport}
+                className={`w-full py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all border flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg ${
+                  isDarkTheme
+                    ? 'bg-green-600 hover:bg-green-700 text-white border-green-700'
+                    : 'bg-lime-500 hover:bg-lime-600 text-white border-lime-600'
+                }`}
+              >
+                <Icons.Download width={14} height={14} strokeWidth={2} />
+                Export to CSV
+              </button>
+              <label className={`w-full py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all border flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg cursor-pointer ${
+                importLoading
+                  ? isDarkTheme ? 'bg-blue-600/50' : 'bg-blue-400/50'
+                  : isDarkTheme ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
+              } text-white ${isDarkTheme ? 'border-blue-700' : 'border-blue-600'}`}>
+                <svg width={14} height={14} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                {importLoading ? 'Importing...' : 'Import CSV'}
+                <input type="file" accept=".csv" onChange={handleImportFile} className="hidden" disabled={importLoading} />
+              </label>
+            </div>
             <p className={`text-xs mt-0.5 ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
-              Download all entries as CSV.
+              Download or import entries as CSV.
             </p>
           </div>
 
