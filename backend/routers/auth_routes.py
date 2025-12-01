@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from backend.db import get_db
-from backend.models import AuthUser, Settings
+from backend.models import AuthUser, Settings, Entry, EntryType, AppType, ExpenseCategory
 from backend.auth import get_current_user
 import jwt
 import os
@@ -10,6 +10,8 @@ from pydantic import BaseModel
 import bcrypt
 import uuid
 from decimal import Decimal
+from datetime import datetime, timedelta
+import random
 
 router = APIRouter()
 
@@ -132,12 +134,60 @@ async def validate_token(current_user: AuthUser = Depends(get_current_user)) -> 
         "email": current_user.email
     }
 
+def create_demo_transactions(db: Session, user_id: str):
+    """Generate realistic demo transactions for the last 7 days"""
+    apps = [AppType.DOORDASH, AppType.UBEREATS, AppType.INSTACART, AppType.GRUBHUB]
+    expense_categories = [ExpenseCategory.GAS, ExpenseCategory.PARKING, ExpenseCategory.FOOD]
+    
+    now = datetime.utcnow()
+    
+    # Create transactions for the past 7 days
+    for day_offset in range(7):
+        day = now - timedelta(days=day_offset)
+        # Reset to start of day
+        day = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # 5-10 orders per day
+        num_orders = random.randint(5, 10)
+        for _ in range(num_orders):
+            order_time = day + timedelta(hours=random.randint(7, 22), minutes=random.randint(0, 59))
+            
+            entry = Entry(
+                user_id=user_id,
+                timestamp=order_time,
+                type=EntryType.ORDER,
+                app=random.choice(apps),
+                amount=Decimal(str(round(random.uniform(8.00, 35.00), 2))),
+                distance_miles=round(random.uniform(0.5, 8.0), 1),
+                duration_minutes=random.randint(10, 60),
+                order_id=str(uuid.uuid4())[:12]
+            )
+            db.add(entry)
+        
+        # 1-2 expenses per day
+        num_expenses = random.randint(1, 2)
+        for _ in range(num_expenses):
+            expense_time = day + timedelta(hours=random.randint(7, 22), minutes=random.randint(0, 59))
+            
+            entry = Entry(
+                user_id=user_id,
+                timestamp=expense_time,
+                type=EntryType.EXPENSE,
+                app=AppType.OTHER,
+                amount=Decimal(str(-round(random.uniform(3.00, 15.00), 2))),
+                category=random.choice(expense_categories),
+                note="Demo expense"
+            )
+            db.add(entry)
+    
+    db.commit()
+
 @router.post("/auth/demo", response_model=AuthResponse)
 async def create_demo_session(db: Session = Depends(get_db)):
-    """Create a unique demo session with isolated data
+    """Create a unique demo session with isolated data and preloaded transactions
     
-    Each demo session gets its own temporary user ID, so changes made
-    by one demo user won't be visible to other demo users.
+    Each demo session gets its own temporary user ID with realistic demo data
+    showing the last 7 days of delivery driver transactions.
     """
     demo_session_id = str(uuid.uuid4())
     demo_email = f"demo-{demo_session_id[:8]}@demo.local"
@@ -152,8 +202,13 @@ async def create_demo_session(db: Session = Depends(get_db)):
     db.add(user)
     db.flush()
     
-    settings = Settings(user_id=demo_session_id, cost_per_mile=Decimal("0.00"))
+    settings = Settings(user_id=demo_session_id, cost_per_mile=Decimal("0.75"))
     db.add(settings)
+    db.flush()
+    
+    # Create preloaded demo transactions
+    create_demo_transactions(db, demo_session_id)
+    
     db.commit()
     db.refresh(user)
     
