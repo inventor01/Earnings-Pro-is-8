@@ -413,8 +413,8 @@ export function SummaryCard({
       <div className={`relative ${showDayNav ? 'flex items-center gap-3 md:gap-4' : ''}`}>
         {/* Left Arrow Indicator */}
         {showDayNav && (
-          <div className={`hidden lg:flex flex-shrink-0 text-2xl md:text-3xl transition-all duration-300 ${
-            isDarkTheme ? 'text-lime-500/40 group-hover:text-lime-400/60' : 'text-lime-600/40 hover:text-lime-600/60'
+          <div className={`flex flex-shrink-0 text-xl md:text-2xl lg:text-3xl transition-all duration-300 ${
+            isDarkTheme ? 'text-lime-500/60' : 'text-lime-600/60'
           }`}>
             ←
           </div>
@@ -492,8 +492,8 @@ export function SummaryCard({
         
         {/* Right Arrow Indicator */}
         {showDayNav && (
-          <div className={`hidden lg:flex flex-shrink-0 text-2xl md:text-3xl transition-all duration-300 ${
-            isDarkTheme ? 'text-lime-500/40 group-hover:text-lime-400/60' : 'text-lime-600/40 hover:text-lime-600/60'
+          <div className={`flex flex-shrink-0 text-xl md:text-2xl lg:text-3xl transition-all duration-300 ${
+            isDarkTheme ? 'text-lime-500/60' : 'text-lime-600/60'
           }`}>
             →
           </div>
