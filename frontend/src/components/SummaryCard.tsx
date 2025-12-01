@@ -2,6 +2,7 @@ import { useTheme } from '../lib/themeContext';
 import { CountUpNumber } from './CountUpNumber';
 import { Icons } from './Icons';
 import { useRef, useState, useEffect } from 'react';
+import { playButtonClickSound } from '../lib/buttonSoundEffects';
 
 export interface MetricVisibility {
   revenue: boolean;
@@ -411,13 +412,20 @@ export function SummaryCard({
     >
       {/* Metrics Grid - Enhanced with better spacing */}
       <div className="relative">
-        {/* Left Arrow Indicator - Overlapping */}
-        {showDayNav && (
-          <div className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 text-3xl md:text-4xl lg:text-5xl transition-all duration-300 pointer-events-none ${
-            isDarkTheme ? 'text-lime-500/50' : 'text-lime-600/50'
-          }`}>
+        {/* Left Arrow Indicator - Clickable */}
+        {showDayNav && onDayChange && (
+          <button
+            onClick={() => {
+              playButtonClickSound();
+              onDayChange(dayOffset - 1);
+            }}
+            className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 text-4xl md:text-5xl lg:text-6xl transition-all duration-300 cursor-pointer hover:scale-125 active:scale-110 ${
+              isDarkTheme ? 'text-lime-500/50 hover:text-lime-400' : 'text-lime-600/50 hover:text-lime-600'
+            } -ml-4 md:-ml-6 lg:-ml-8 p-2 md:p-3`}
+            title="Previous day"
+          >
             ←
-          </div>
+          </button>
         )}
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-5 lg:gap-6">
@@ -490,13 +498,20 @@ export function SummaryCard({
         )}
       </div>
         
-        {/* Right Arrow Indicator - Overlapping */}
-        {showDayNav && (
-          <div className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 text-3xl md:text-4xl lg:text-5xl transition-all duration-300 pointer-events-none ${
-            isDarkTheme ? 'text-lime-500/50' : 'text-lime-600/50'
-          }`}>
+        {/* Right Arrow Indicator - Clickable */}
+        {showDayNav && onDayChange && (
+          <button
+            onClick={() => {
+              playButtonClickSound();
+              onDayChange(dayOffset + 1);
+            }}
+            className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 text-4xl md:text-5xl lg:text-6xl transition-all duration-300 cursor-pointer hover:scale-125 active:scale-110 ${
+              isDarkTheme ? 'text-lime-500/50 hover:text-lime-400' : 'text-lime-600/50 hover:text-lime-600'
+            } -mr-4 md:-mr-6 lg:-mr-8 p-2 md:p-3`}
+            title="Next day"
+          >
             →
-          </div>
+          </button>
         )}
       </div>
       
