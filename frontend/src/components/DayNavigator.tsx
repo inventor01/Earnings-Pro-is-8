@@ -63,11 +63,7 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
       ref={containerRef}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className={`rounded-md border p-1.5 md:p-2 transition-all ${
-        isDarkTheme
-          ? 'bg-gray-800/30 border-lime-500/20 hover:border-lime-500/40'
-          : 'bg-lime-50/30 border-lime-300/40 hover:border-lime-400/60'
-      } cursor-grab active:cursor-grabbing`}
+      className="cursor-grab active:cursor-grabbing"
     >
       <div className="flex items-center justify-center">
         {/* Date Display - Full Width */}
@@ -80,20 +76,6 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
           </div>
         </div>
       </div>
-
-      {/* Today Button */}
-      {dayOffset !== 0 && (
-        <button
-          onClick={handleToday}
-          className={`w-full mt-1 px-2 py-0.5 rounded text-xs font-semibold transition-all ${
-            isDarkTheme
-              ? 'bg-lime-600/20 text-lime-400 hover:bg-lime-600/40'
-              : 'bg-lime-200/50 text-lime-700 hover:bg-lime-300/60'
-          }`}
-        >
-          ← Back to Today
-        </button>
-      )}
     </div>
   );
 }
