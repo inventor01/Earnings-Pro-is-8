@@ -1,5 +1,10 @@
+import { isSoundMuted } from './soundEffects';
+
 // Play button click sound
 export const playButtonClickSound = () => {
+  // Check if sound is muted before playing
+  if (isSoundMuted()) return;
+  
   try {
     // Create new audio element for each click to allow rapid successive plays
     const audio = new Audio('/sounds/button-click.wav');
