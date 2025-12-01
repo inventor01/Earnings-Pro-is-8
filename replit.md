@@ -162,3 +162,24 @@ Added audio intro sound that plays when user logs into the dashboard:
 9. **Theme System**: Dark Neon, Simple Light, B/W Neon themes
 10. **Mobile-First**: Touch-optimized UI, calculator-style input
 
+## Private Demo Sessions (December 1, 2025)
+
+### Implementation
+Replaced shared demo account with private isolated sessions:
+- Each user clicking "Try Demo" gets their own unique temporary account
+- Demo data is completely private - one person's changes are invisible to others
+- Uses real JWT authentication for demo sessions (not a special guest token)
+- Demo users marked with `is_demo=True` flag for potential cleanup
+
+**Technical Details:**
+- New `/api/auth/demo` endpoint generates unique user ID per session
+- Creates AuthUser with `is_demo=True` and Settings record
+- Frontend calls demo endpoint instead of using hardcoded 'guest-token'
+- All tokens (including demo) now properly sent with Authorization header
+
+**Files Modified:**
+- `backend/routers/auth_routes.py` - Added `/auth/demo` endpoint
+- `backend/models.py` - Added `is_demo` column to AuthUser
+- `frontend/src/pages/LoginPage.tsx` - Added handleDemoLogin function
+- `frontend/src/lib/api.ts` - Removed 'guest-token' special case
+
