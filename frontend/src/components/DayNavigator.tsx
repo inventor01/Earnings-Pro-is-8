@@ -84,7 +84,7 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
         </button>
 
         {/* Date Display */}
-        <div className="flex-1 text-center min-w-0 select-none">
+        <div className="flex-1 text-center min-w-0 select-none py-2 md:py-3">
           <div className={`text-xs font-semibold ${isDarkTheme ? 'text-gray-500' : 'text-gray-600'}`}>
             {label}
           </div>
