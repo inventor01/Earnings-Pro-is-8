@@ -277,12 +277,12 @@ textarea {
 }
 
 .progress-bar-fill {
-  background: linear-gradient(to right, #1f2937, #111827);
+  background: linear-gradient(to right, #166534, #14532d);
   background-size: 120px 100%;
   position: relative;
   overflow: hidden;
   animation: slideInLeft 1s ease-out;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 10px rgba(22, 101, 52, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.1);
 }
 
 .progress-bar-fill::before {
@@ -305,9 +305,9 @@ textarea {
 }
 
 .progress-bar-fill.shimmer-effect {
-  background: linear-gradient(to right, #1f2937, #111827);
+  background: linear-gradient(to right, #166534, #14532d);
   background-size: 120px 100%;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 15px rgba(22, 101, 52, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.15);
   animation: slideInLeft 1s ease-out;
 }
 
@@ -325,7 +325,7 @@ textarea {
 
 .goal-pulse {
   animation: pulse-glow 2s infinite !important;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 0 15px rgba(22, 101, 52, 0.6) !important;
 }
 
 .percentage-bounce {
