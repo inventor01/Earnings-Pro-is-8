@@ -61,7 +61,7 @@ async def get_entries(
     day_offset: Optional[int] = None,
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
-    limit: int = 100,
+    limit: int = 500,
     cursor: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user: AuthUser = Depends(get_current_user)
