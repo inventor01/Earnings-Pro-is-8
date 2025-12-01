@@ -135,14 +135,14 @@ async def validate_token(current_user: AuthUser = Depends(get_current_user)) -> 
     }
 
 def create_demo_transactions(db: Session, user_id: str):
-    """Generate realistic demo transactions for the last 7 days"""
+    """Generate realistic demo transactions for the past 60 days"""
     apps = [AppType.DOORDASH, AppType.UBEREATS, AppType.INSTACART, AppType.GRUBHUB]
     expense_categories = [ExpenseCategory.GAS, ExpenseCategory.PARKING, ExpenseCategory.FOOD]
     
     now = datetime.utcnow()
     
-    # Create transactions for the past 7 days
-    for day_offset in range(7):
+    # Create transactions for the past 60 days (fills multiple calendar months with data)
+    for day_offset in range(60):
         day = now - timedelta(days=day_offset)
         # Reset to start of day
         day = day.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -187,7 +187,7 @@ async def create_demo_session(db: Session = Depends(get_db)):
     """Create a unique demo session with isolated data and preloaded transactions
     
     Each demo session gets its own temporary user ID with realistic demo data
-    showing the last 7 days of delivery driver transactions.
+    showing the last 60 days of delivery driver transactions (fills multiple calendar months).
     """
     demo_session_id = str(uuid.uuid4())
     demo_email = f"demo-{demo_session_id[:8]}@demo.local"
