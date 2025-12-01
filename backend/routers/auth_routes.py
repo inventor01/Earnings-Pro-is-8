@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from backend.db import get_db
-from backend.models import AuthUser, Settings, Entry, EntryType, AppType, ExpenseCategory
+from backend.models import AuthUser, Settings, Entry, EntryType, AppType, ExpenseCategory, Goal, TimeframeType
 from backend.auth import get_current_user
 import jwt
 import os
@@ -214,6 +214,15 @@ async def create_demo_session(db: Session = Depends(get_db)):
     
     settings = Settings(user_id=demo_session_id, cost_per_mile=Decimal("0.75"))
     db.add(settings)
+    db.flush()
+    
+    # Create default goals for demo account
+    daily_goal = Goal(user_id=demo_session_id, timeframe=TimeframeType.TODAY, target_profit=Decimal("200.00"), goal_name="Daily Goal")
+    weekly_goal = Goal(user_id=demo_session_id, timeframe=TimeframeType.THIS_WEEK, target_profit=Decimal("1400.00"), goal_name="Weekly Goal")
+    monthly_goal = Goal(user_id=demo_session_id, timeframe=TimeframeType.THIS_MONTH, target_profit=Decimal("6000.00"), goal_name="Monthly Goal")
+    db.add(daily_goal)
+    db.add(weekly_goal)
+    db.add(monthly_goal)
     db.flush()
     
     # Create preloaded demo transactions
