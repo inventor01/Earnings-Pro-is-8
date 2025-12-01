@@ -57,7 +57,8 @@ def get_ai_suggestions(
     
     for entry in entries:
         amount = float(entry.amount)
-        if entry.type == EntryType.ORDER:
+        if entry.type == EntryType.ORDER and amount > 0:
+            # Only count positive ORDER amounts (exclude cancellations)
             total_revenue += amount
             order_amounts.append(amount)
             hour = entry.timestamp.hour

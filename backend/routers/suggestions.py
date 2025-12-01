@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from backend.db import get_db
 from backend.services.ai_suggestions import get_ai_suggestions
+from backend.auth import get_current_user
 from typing import Optional
 from datetime import datetime, timezone
 
@@ -11,7 +12,8 @@ router = APIRouter()
 async def get_suggestions(
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """Get AI-powered suggestions for earning optimization"""
     from_dt = None
@@ -22,5 +24,6 @@ async def get_suggestions(
     if to_date:
         to_dt = datetime.fromisoformat(to_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
     
-    suggestions = get_ai_suggestions(db, from_dt, to_dt)
+    user_id = current_user.id if current_user else None
+    suggestions = get_ai_suggestions(db, from_dt, to_dt, user_id)
     return suggestions
