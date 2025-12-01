@@ -825,8 +825,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
           <div className={`max-w-7xl lg:max-w-8xl mx-auto px-3 md:px-6 lg:px-8 w-full mt-2 md:mt-3 lg:mt-4 pt-4 md:pt-6 lg:pt-8 pb-4 md:pb-6 lg:pb-8 flex items-center justify-center gap-3 md:gap-4 rounded-xl md:rounded-2xl transition-all ${
             isDarkTheme
-              ? 'bg-gradient-to-r from-slate-800/60 to-slate-700/40 border border-slate-700/50 shadow-lg backdrop-blur-sm'
-              : 'bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200/80 shadow-md'
+              ? 'bg-gradient-to-r from-slate-800/60 to-slate-700/40 border border-slate-700/50 backdrop-blur-sm'
+              : 'bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200/80'
           }`}>
             {/* Fixed Search Icon on Left */}
             <button
