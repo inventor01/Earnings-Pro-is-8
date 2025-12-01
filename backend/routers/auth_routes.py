@@ -58,10 +58,20 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
     if not request.email or not request.password:
         raise HTTPException(status_code=400, detail="Email and password are required")
     
-    # Check if user exists
-    existing_user = db.query(AuthUser).filter(AuthUser.email == request.email).first()
-    if existing_user:
+    # Check if email already exists
+    existing_email = db.query(AuthUser).filter(AuthUser.email == request.email).first()
+    if existing_email:
         raise HTTPException(status_code=409, detail="Email already registered")
+    
+    # Check if username already exists (if username provided)
+    username = request.username.strip() if request.username else ""
+    if username:
+        existing_username = db.query(AuthUser).filter(
+            AuthUser.first_name == username,
+            AuthUser.is_demo == False
+        ).first()
+        if existing_username:
+            raise HTTPException(status_code=409, detail="Username already taken")
     
     # Create new user
     user_id = str(uuid.uuid4())
@@ -69,7 +79,7 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
         id=user_id,
         email=request.email,
         password_hash=hash_password(request.password),
-        first_name=request.username or "",
+        first_name=username,
         last_name=""
     )
     db.add(user)
@@ -95,10 +105,18 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
     if not request.credential or not request.password:
         raise HTTPException(status_code=400, detail="Email/username and password are required")
     
-    # Try to find user by email OR username (username is stored in first_name)
-    user = db.query(AuthUser).filter(
-        (AuthUser.email == request.credential) | (AuthUser.first_name == request.credential)
-    ).first()
+    credential = request.credential.strip()
+    
+    # Try to find user by email first
+    user = db.query(AuthUser).filter(AuthUser.email == credential).first()
+    
+    # If not found by email, try by username (first_name) - only for non-empty usernames
+    if not user:
+        user = db.query(AuthUser).filter(
+            AuthUser.first_name == credential,
+            AuthUser.first_name != "",
+            AuthUser.is_demo == False
+        ).first()
     
     if not user or not user.password_hash:
         raise HTTPException(status_code=401, detail="Invalid email, username, or password")
