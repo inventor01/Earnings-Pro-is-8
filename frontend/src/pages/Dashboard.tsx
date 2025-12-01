@@ -712,7 +712,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             timeframe={getTimeframeFromPeriod(period)}
             currentProfit={rollup.profit}
             goalProgress={rollup.goal_progress || 0}
-            goalAmount={currentGoal?.target_profit?.toString()}
+            goalAmount={rollup.goal?.target_profit?.toString() || currentGoal?.target_profit?.toString()}
             onGoalReached={handleGoalReached}
             onMilestoneReached={handleMilestoneReached}
             onToggle={handleToggleGoalBanner}
