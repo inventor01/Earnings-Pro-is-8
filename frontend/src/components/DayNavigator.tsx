@@ -195,25 +195,33 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
 
       {/* Calendar Picker */}
       {showCalendar && (
-        <div className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50 rounded-xl shadow-2xl border-2 p-4 ${
+        <div className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50 rounded-xl shadow-2xl border-2 p-4 w-80 ${
           isDarkTheme 
-            ? 'bg-slate-800 border-cyan-400/50' 
+            ? 'bg-slate-900/95 border-cyan-400/60 shadow-cyan-500/20' 
             : 'bg-white border-gray-300'
         }`}>
           {/* Month/Year Navigation */}
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-4 gap-2">
             <button
               onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1))}
-              className={`px-2 py-1 rounded ${isDarkTheme ? 'text-cyan-300 hover:bg-cyan-500/20' : 'text-gray-700 hover:bg-gray-100'}`}
+              className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                isDarkTheme 
+                  ? 'text-cyan-300 hover:bg-cyan-500/30 hover:text-cyan-200' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
             >
               ←
             </button>
-            <div className={`font-bold ${isDarkTheme ? 'text-cyan-300' : 'text-gray-800'}`}>
+            <div className={`font-bold flex-1 text-center ${isDarkTheme ? 'text-cyan-300' : 'text-gray-800'}`}>
               {calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </div>
             <button
               onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1))}
-              className={`px-2 py-1 rounded ${isDarkTheme ? 'text-cyan-300 hover:bg-cyan-500/20' : 'text-gray-700 hover:bg-gray-100'}`}
+              className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                isDarkTheme 
+                  ? 'text-cyan-300 hover:bg-cyan-500/30 hover:text-cyan-200' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
             >
               →
             </button>
@@ -222,7 +230,7 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
           {/* Weekday Headers */}
           <div className="grid grid-cols-7 gap-1 mb-2">
             {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-              <div key={d} className={`text-xs font-bold text-center ${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}`}>
+              <div key={d} className={`text-xs font-bold text-center py-1 ${isDarkTheme ? 'text-cyan-500/70' : 'text-gray-600'}`}>
                 {d}
               </div>
             ))}
@@ -235,13 +243,15 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
                 key={idx}
                 onClick={() => date && handleDateSelect(date)}
                 disabled={!date}
-                className={`w-8 h-8 rounded text-sm font-semibold transition-all ${
+                className={`w-full aspect-square rounded-lg text-sm font-semibold transition-all ${
                   !date 
                     ? 'invisible'
                     : isSelectedDate(date)
-                    ? 'bg-lime-500 text-white shadow-lg'
+                    ? isDarkTheme
+                      ? 'bg-lime-500/90 text-slate-900 shadow-lg shadow-lime-500/50 font-bold'
+                      : 'bg-lime-500 text-white shadow-lg'
                     : isDarkTheme
-                    ? 'text-cyan-300 hover:bg-cyan-500/30'
+                    ? 'text-cyan-300 hover:bg-cyan-500/25 active:bg-cyan-500/40'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
