@@ -175,6 +175,7 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
         ref={datePickerRef}
         type="date"
         onChange={handleDateChange}
+        value={dateStr}
         className="hidden"
         style={{ display: 'none' }}
       />
