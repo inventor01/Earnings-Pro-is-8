@@ -281,7 +281,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
 
   const { data: monthlyEntries = [] } = useQuery<Entry[]>({
     queryKey: ['entries', 'all'],
-    queryFn: () => api.getEntries(), // Fetch all entries so calendar can show any month
+    queryFn: () => api.getEntries(undefined, undefined, 1000), // Fetch up to 1000 entries for full calendar history
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 20 * 60 * 1000, // 20 minutes
     refetchOnMount: false, // Cached data is already fresh
