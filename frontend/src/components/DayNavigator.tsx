@@ -16,32 +16,26 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
   const { config: themeConfig } = useTheme();
   const isDarkTheme = themeConfig.name === 'ninja-dark';
   const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLInputElement>(null);
 
-  // Helper to get date range for period
-  const getDateRange = () => {
-    const today = new Date();
-    
+  // Calculate the displayed date
+  const displayDate = new Date();
+  displayDate.setDate(displayDate.getDate() + dayOffset);
+  const dateStr = getESTDateString(displayDate.toISOString());
+  const [year, month, day] = dateStr.split('-');
+  
+  const weekday = displayDate.toLocaleDateString('en-US', { weekday: 'short' });
+  const monthName = displayDate.toLocaleDateString('en-US', { month: 'short' });
+
+  // Helper to get date range for period display
+  const getDisplayFormat = (): string => {
     if (period === 'today' || period === 'yesterday') {
-      const displayDate = new Date();
-      displayDate.setDate(displayDate.getDate() + dayOffset);
-      const dateStr = getESTDateString(displayDate.toISOString());
-      const [year, month, day] = dateStr.split('-');
-      const weekday = displayDate.toLocaleDateString('en-US', { weekday: 'short' });
-      const monthName = displayDate.toLocaleDateString('en-US', { month: 'short' });
-      return {
-        startDate: displayDate,
-        endDate: displayDate,
-        formatSingle: `${weekday}, ${monthName} ${day}`,
-        format: `${weekday}, ${monthName} ${day}`
-      };
+      return `${weekday}, ${monthName} ${day}`;
     } else if (period === 'week') {
       const curr = new Date();
       const first = curr.getDate() - curr.getDay();
-      const startDate = new Date(curr.setDate(first));
-      const endDate = new Date(curr.setDate(first + 6));
+      const startDate = new Date(curr.getFullYear(), curr.getMonth(), first);
+      const endDate = new Date(curr.getFullYear(), curr.getMonth(), first + 6);
       
       const startWD = startDate.toLocaleDateString('en-US', { weekday: 'short' });
       const startMN = startDate.toLocaleDateString('en-US', { month: 'short' });
@@ -51,12 +45,7 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
       const endMN = endDate.toLocaleDateString('en-US', { month: 'short' });
       const endD = endDate.getDate();
       
-      return {
-        startDate,
-        endDate,
-        formatSingle: '',
-        format: `${startWD}, ${startMN} ${startD} - ${endWD}, ${endMN} ${endD}`
-      };
+      return `${startWD}, ${startMN} ${startD} - ${endWD}, ${endMN} ${endD}`;
     } else if (period === 'last7') {
       const endDate = new Date();
       const startDate = new Date(endDate.getTime() - 6 * 24 * 60 * 60 * 1000);
@@ -69,17 +58,13 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
       const endMN = endDate.toLocaleDateString('en-US', { month: 'short' });
       const endD = endDate.getDate();
       
-      return {
-        startDate,
-        endDate,
-        formatSingle: '',
-        format: `${startWD}, ${startMN} ${startD} - ${endWD}, ${endMN} ${endD}`
-      };
+      return `${startWD}, ${startMN} ${startD} - ${endWD}, ${endMN} ${endD}`;
     } else if (period === 'month') {
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const startDate = new Date(year, month, 1);
-      const endDate = new Date(year, month + 1, 0);
+      const today = new Date();
+      const yr = today.getFullYear();
+      const mth = today.getMonth();
+      const startDate = new Date(yr, mth, 1);
+      const endDate = new Date(yr, mth + 1, 0);
       
       const startWD = startDate.toLocaleDateString('en-US', { weekday: 'short' });
       const startMN = startDate.toLocaleDateString('en-US', { month: 'short' });
@@ -89,18 +74,13 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
       const endMN = endDate.toLocaleDateString('en-US', { month: 'short' });
       const endD = endDate.getDate();
       
-      return {
-        startDate,
-        endDate,
-        formatSingle: '',
-        format: `${startWD}, ${startMN} ${startD} - ${endWD}, ${endMN} ${endD}`
-      };
+      return `${startWD}, ${startMN} ${startD} - ${endWD}, ${endMN} ${endD}`;
     } else if (period === 'lastMonth') {
       const now = new Date();
-      const year = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-      const month = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-      const startDate = new Date(year, month, 1);
-      const endDate = new Date(year, month + 1, 0);
+      const yr = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+      const mth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+      const startDate = new Date(yr, mth, 1);
+      const endDate = new Date(yr, mth + 1, 0);
       
       const startWD = startDate.toLocaleDateString('en-US', { weekday: 'short' });
       const startMN = startDate.toLocaleDateString('en-US', { month: 'short' });
@@ -110,19 +90,12 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
       const endMN = endDate.toLocaleDateString('en-US', { month: 'short' });
       const endD = endDate.getDate();
       
-      return {
-        startDate,
-        endDate,
-        formatSingle: '',
-        format: `${startWD}, ${startMN} ${startD} - ${endWD}, ${endMN} ${endD}`
-      };
+      return `${startWD}, ${startMN} ${startD} - ${endWD}, ${endMN} ${endD}`;
     }
-    
-    return { startDate: today, endDate: today, formatSingle: '', format: '' };
+    return `${weekday}, ${monthName} ${day}`;
   };
 
-  const dateRange = getDateRange();
-  const displayFormat = dateRange.format || dateRange.formatSingle;
+  const displayFormat = getDisplayFormat();
 
   const handlePrevDay = () => {
     playButtonClickSound();
@@ -160,7 +133,6 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
 
   const handleDateClick = () => {
     playButtonClickSound();
-    setShowDatePicker(true);
     setTimeout(() => datePickerRef.current?.click(), 0);
   };
 
@@ -174,12 +146,11 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
     onDayOffsetChange(diffDays);
-    setShowDatePicker(false);
   };
 
   return (
     <div 
-      ref={containerRef}
+      ref={(el) => {}}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       className="cursor-grab active:cursor-grabbing"
