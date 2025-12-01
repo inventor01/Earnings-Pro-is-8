@@ -5,7 +5,8 @@ import kaChingSound from '../assets/ka-ching.wav';
  */
 export function isSoundMuted(): boolean {
   const muted = localStorage.getItem('soundMuted');
-  return muted === 'true';
+  // Default to muted (true) if not set
+  return muted === null ? true : muted === 'true';
 }
 
 /**
