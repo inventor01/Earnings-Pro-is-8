@@ -1055,7 +1055,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
             )}
           </div>
 
-          {/* Right Column - Quick Stats & Achievements */}
+          {/* Right Column - Quick Stats */}
           <div className="lg:col-span-1 space-y-6 md:space-y-8 lg:space-y-10">
             <PotOfGoldTracker />
             
