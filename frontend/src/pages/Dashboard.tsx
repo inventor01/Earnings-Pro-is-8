@@ -29,11 +29,9 @@ import { exportToCSV } from '../lib/csvExport';
 import { playChaChing, playKaChing, playIntroSound } from '../lib/soundEffects';
 import { playButtonClickSound } from '../lib/buttonSoundEffects';
 
-interface DashboardProps {
-  onNavigateToLeaderboard?: () => void;
-}
+interface DashboardProps {}
 
-export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
+export function Dashboard({}: DashboardProps) {
   const { logout } = useAuth();
   const [period, setPeriod] = useState<Period>('today');
   const [amount, setAmount] = useState('0');
@@ -755,24 +753,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
               />
             </div>
             <div className="flex gap-1 md:gap-2">
-              <button
-                onClick={() => onNavigateToLeaderboard?.()}
-                className={`relative p-2 md:p-2.5 rounded-lg transition-all mr-auto ${
-                  isDarkTheme
-                    ? 'hover:bg-lime-500/20 text-lime-400'
-                    : 'hover:bg-lime-100 text-lime-600'
-                }`}
-                title="View leaderboard"
-              >
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-                <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center p-0.5">
-                  <svg fill="currentColor" viewBox="0 0 24 24" className="w-3 h-3">
-                    <path d="M12 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
-                  </svg>
-                </span>
-              </button>
               <button
                 onClick={() => setResetConfirm(true)}
                 className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-bold whitespace-nowrap shadow-lg transition-all ${
