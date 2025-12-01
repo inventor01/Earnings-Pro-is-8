@@ -16,7 +16,9 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
   const { config: themeConfig } = useTheme();
   const isDarkTheme = themeConfig.name === 'ninja-dark';
   const [touchStart, setTouchStart] = useState<number | null>(null);
-  const datePickerRef = useRef<HTMLInputElement>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate the displayed date
   const displayDate = new Date();
@@ -107,11 +109,6 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
     onDayOffsetChange(dayOffset + 1);
   };
 
-  const handleToday = () => {
-    playButtonClickSound();
-    onDayOffsetChange(0);
-  };
-
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX);
   };
@@ -121,11 +118,11 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
     const touchEnd = e.changedTouches[0].clientX;
     const diff = touchStart - touchEnd;
     
-    if (Math.abs(diff) > 30) { // Minimum swipe distance
+    if (Math.abs(diff) > 30) {
       if (diff > 0) {
-        handleNextDay(); // Swiped left = next day
+        handleNextDay();
       } else {
-        handlePrevDay(); // Swiped right = previous day
+        handlePrevDay();
       }
     }
     setTouchStart(null);
@@ -133,11 +130,10 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
 
   const handleDateClick = () => {
     playButtonClickSound();
-    setTimeout(() => datePickerRef.current?.click(), 0);
+    setShowCalendar(!showCalendar);
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedDate = new Date(e.target.value);
+  const handleDateSelect = (selectedDate: Date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     selectedDate.setHours(0, 0, 0, 0);
@@ -146,14 +142,41 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
     onDayOffsetChange(diffDays);
+    setShowCalendar(false);
+  };
+
+  // Generate calendar days
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const calendarDays = [];
+  const daysInMonth = getDaysInMonth(calendarMonth);
+  const firstDay = getFirstDayOfMonth(calendarMonth);
+
+  for (let i = 0; i < firstDay; i++) {
+    calendarDays.push(null);
+  }
+
+  for (let i = 1; i <= daysInMonth; i++) {
+    calendarDays.push(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), i));
+  }
+
+  const isSelectedDate = (checkDate: Date | null) => {
+    if (!checkDate) return false;
+    return checkDate.toDateString() === displayDate.toDateString();
   };
 
   return (
     <div 
-      ref={(el) => {}}
+      ref={containerRef}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="cursor-grab active:cursor-grabbing"
+      className="cursor-grab active:cursor-grabbing relative"
     >
       <div className="flex items-center justify-center">
         {/* Date Display - Full Width */}
@@ -169,16 +192,65 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
           </div>
         </div>
       </div>
-      
-      {/* Hidden Date Input */}
-      <input
-        ref={datePickerRef}
-        type="date"
-        onChange={handleDateChange}
-        value={dateStr}
-        className="hidden"
-        style={{ display: 'none' }}
-      />
+
+      {/* Calendar Picker */}
+      {showCalendar && (
+        <div className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50 rounded-xl shadow-2xl border-2 p-4 ${
+          isDarkTheme 
+            ? 'bg-slate-800 border-cyan-400/50' 
+            : 'bg-white border-gray-300'
+        }`}>
+          {/* Month/Year Navigation */}
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1))}
+              className={`px-2 py-1 rounded ${isDarkTheme ? 'text-cyan-300 hover:bg-cyan-500/20' : 'text-gray-700 hover:bg-gray-100'}`}
+            >
+              ←
+            </button>
+            <div className={`font-bold ${isDarkTheme ? 'text-cyan-300' : 'text-gray-800'}`}>
+              {calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </div>
+            <button
+              onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1))}
+              className={`px-2 py-1 rounded ${isDarkTheme ? 'text-cyan-300 hover:bg-cyan-500/20' : 'text-gray-700 hover:bg-gray-100'}`}
+            >
+              →
+            </button>
+          </div>
+
+          {/* Weekday Headers */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+              <div key={d} className={`text-xs font-bold text-center ${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}`}>
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {calendarDays.map((date, idx) => (
+              <button
+                key={idx}
+                onClick={() => date && handleDateSelect(date)}
+                disabled={!date}
+                className={`w-8 h-8 rounded text-sm font-semibold transition-all ${
+                  !date 
+                    ? 'invisible'
+                    : isSelectedDate(date)
+                    ? 'bg-lime-500 text-white shadow-lg'
+                    : isDarkTheme
+                    ? 'text-cyan-300 hover:bg-cyan-500/30'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {date?.getDate()}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
