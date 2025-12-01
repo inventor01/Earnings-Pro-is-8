@@ -99,6 +99,15 @@ export interface Rollup {
   goal_progress?: number | null;
 }
 
+export interface SuggestionResponse {
+  suggestion: string;
+  minimum_order: number | null;
+  peak_time: string | null;
+  average_order: number;
+  total_orders: number;
+  reasoning: string;
+}
+
 export const api = {
   async getHealth() {
     const res = await fetch(`${API_BASE}/api/health`);
@@ -234,7 +243,7 @@ export const api = {
     if (!res.ok) throw new Error('Failed to delete goal');
   },
 
-  async getSuggestions(from?: string, to?: string): Promise<any[]> {
+  async getSuggestions(from?: string, to?: string): Promise<SuggestionResponse> {
     const params = new URLSearchParams();
     if (from) params.append('from_date', from);
     if (to) params.append('to_date', to);

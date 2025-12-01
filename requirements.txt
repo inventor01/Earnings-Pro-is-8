@@ -17,3 +17,5 @@ oauthlib
 pyjwt
 psycopg2-binary
 pytz
+bcrypt
+bcrypt

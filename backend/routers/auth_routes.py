@@ -7,8 +7,7 @@ import jwt
 import os
 from typing import Dict, Optional
 from pydantic import BaseModel
-import hashlib
-import hmac
+import bcrypt
 import uuid
 from decimal import Decimal
 
@@ -32,12 +31,16 @@ class AuthResponse(BaseModel):
     email: str
 
 def hash_password(password: str) -> str:
-    """Hash password using SHA256"""
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Hash password using bcrypt (secure)"""
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
 def verify_password(password: str, hash_value: str) -> bool:
-    """Verify password against hash"""
-    return hash_password(password) == hash_value
+    """Verify password against bcrypt hash"""
+    try:
+        return bcrypt.checkpw(password.encode('utf-8'), hash_value.encode('utf-8'))
+    except Exception:
+        return False
 
 def create_access_token(user_id: str, email: str) -> str:
     """Create JWT token"""
