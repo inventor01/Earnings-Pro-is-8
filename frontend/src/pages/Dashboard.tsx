@@ -427,6 +427,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['suggestions'], exact: false });
       refetchRollup();
       refetchEntries();
       refetchMonthlyGoal();
@@ -444,6 +445,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
       queryClient.invalidateQueries({ queryKey: ['entries'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['rollup'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['goal'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['suggestions'], exact: false });
       refetchRollup();
       refetchEntries();
       refetchMonthlyGoal();
@@ -1075,8 +1077,8 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         )}
 
         <div>
-          {/* Calculate date range for AI suggestions based on current period */}
-          {(() => {
+          {/* Only show AI suggestions if there is data */}
+          {entries.length > 0 && (() => {
               let fromDate = '';
               let toDate = '';
               
