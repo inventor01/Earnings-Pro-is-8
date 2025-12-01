@@ -187,9 +187,21 @@ def create_demo_transactions(db: Session, user_id: str):
         # Expenses should be: revenue - target_profit
         ideal_expenses = total_revenue - target_daily_profit
         
-        # Generate 2-4 realistic expenses that sum to ideal_expenses (with some variation)
+        # Ensure minimum expense requirements
+        min_daily_expenses = 20.00
+        if target_daily_profit > 200.00:
+            # If profit > $200, ensure $45 minimum for gas
+            min_gas_expense = 45.00
+        else:
+            min_gas_expense = 5.00  # Regular minimum for gas
+        
+        # Ensure we meet minimum expense requirements
+        if ideal_expenses < min_daily_expenses:
+            ideal_expenses = min_daily_expenses
+        
+        # Generate 2-4 realistic expenses
         num_expenses = random.randint(2, 4)
-        remaining_expenses = max(1, ideal_expenses)  # Ensure at least $1 in expenses
+        remaining_expenses = ideal_expenses
         
         for i in range(num_expenses):
             hour = random.randint(7, 22)
@@ -197,15 +209,29 @@ def create_demo_transactions(db: Session, user_id: str):
             est_datetime = est.localize(datetime(target_est_date.year, target_est_date.month, target_est_date.day, hour, minute, 0))
             utc_datetime = est_datetime.astimezone(pytz.UTC)
             
-            if i == num_expenses - 1:
-                # Last expense gets remaining amount to hit target
-                expense_amount = remaining_expenses
+            # First expense is always GAS with minimum requirement
+            if i == 0:
+                if target_daily_profit > 200.00:
+                    # Profit > $200: gas should be $45-$60
+                    expense_amount = round(random.uniform(45.00, 60.00), 2)
+                else:
+                    # Regular: gas can be $5-$15
+                    expense_amount = round(random.uniform(5.00, 15.00), 2)
+                category = ExpenseCategory.GAS
             else:
-                # Distribute expenses across multiple entries
-                expense_amount = round(remaining_expenses / (num_expenses - i) * random.uniform(0.7, 1.3), 2)
-                expense_amount = min(expense_amount, remaining_expenses - 1)  # Leave some for final entry
+                # Remaining expenses distributed among other categories
+                remaining_for_others = remaining_expenses - expense_amount
+                if i == num_expenses - 1:
+                    # Last expense gets remaining amount
+                    expense_amount = remaining_for_others
+                else:
+                    # Distribute remaining expenses
+                    expense_amount = round(remaining_for_others / (num_expenses - i) * random.uniform(0.8, 1.2), 2)
+                    expense_amount = min(expense_amount, remaining_for_others - 1)
+                
+                expense_amount = max(1.00, min(expense_amount, 20.00))
+                category = random.choice([ExpenseCategory.PARKING, ExpenseCategory.FOOD])
             
-            expense_amount = max(1.00, min(expense_amount, 25.00))  # Cap between $1-$25 per expense
             remaining_expenses -= expense_amount
             
             entry = Entry(
@@ -214,7 +240,7 @@ def create_demo_transactions(db: Session, user_id: str):
                 type=EntryType.EXPENSE,
                 app=AppType.OTHER,
                 amount=Decimal(str(-expense_amount)),
-                category=random.choice(expense_categories),
+                category=category,
                 note="Demo expense"
             )
             db.add(entry)
