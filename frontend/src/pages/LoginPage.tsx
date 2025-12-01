@@ -9,6 +9,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -44,6 +45,29 @@ export function LoginPage() {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setError('');
+    setIsDemoLoading(true);
+    
+    try {
+      const res = await fetch('/api/auth/demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to create demo session');
+      }
+
+      const data = await res.json();
+      login(data.access_token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start demo');
+    } finally {
+      setIsDemoLoading(false);
     }
   };
 
@@ -191,19 +215,23 @@ export function LoginPage() {
         {/* Demo Mode */}
         <div className={`mt-6 pt-6 border-t ${isDarkTheme ? 'border-gray-700' : 'border-gray-200'}`}>
           <p className={`text-xs text-center mb-3 ${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}`}>
-            Or view demo account
+            Or try it out first
           </p>
           <button
             type="button"
-            onClick={() => login('guest-token')}
+            onClick={handleDemoLogin}
+            disabled={isDemoLoading}
             className={`w-full py-2 rounded-lg font-medium transition-all text-sm ${
               isDarkTheme
-                ? 'bg-lime-600/30 hover:bg-lime-600/50 text-lime-400 border border-lime-600'
-                : 'bg-lime-100 hover:bg-lime-200 text-green-700 border border-lime-400'
+                ? 'bg-lime-600/30 hover:bg-lime-600/50 text-lime-400 border border-lime-600 disabled:opacity-50'
+                : 'bg-lime-100 hover:bg-lime-200 text-green-700 border border-lime-400 disabled:opacity-50'
             }`}
           >
-            View Demo Account
+            {isDemoLoading ? 'Starting Demo...' : 'Try Demo (Private Session)'}
           </button>
+          <p className={`text-xs text-center mt-2 ${isDarkTheme ? 'text-gray-500' : 'text-gray-400'}`}>
+            Your demo data is private and won't be shared
+          </p>
         </div>
 
         <ForgotPasswordModal 

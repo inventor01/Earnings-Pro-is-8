@@ -38,6 +38,7 @@ class AuthUser(Base):
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     profile_image_url = Column(String, nullable=True)
+    is_demo = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

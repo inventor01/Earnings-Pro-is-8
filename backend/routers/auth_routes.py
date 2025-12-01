@@ -131,3 +131,36 @@ async def validate_token(current_user: AuthUser = Depends(get_current_user)) -> 
         "user_id": current_user.id,
         "email": current_user.email
     }
+
+@router.post("/auth/demo", response_model=AuthResponse)
+async def create_demo_session(db: Session = Depends(get_db)):
+    """Create a unique demo session with isolated data
+    
+    Each demo session gets its own temporary user ID, so changes made
+    by one demo user won't be visible to other demo users.
+    """
+    demo_session_id = str(uuid.uuid4())
+    demo_email = f"demo-{demo_session_id[:8]}@demo.local"
+    
+    user = AuthUser(
+        id=demo_session_id,
+        email=demo_email,
+        first_name="Demo User",
+        last_name="",
+        is_demo=True
+    )
+    db.add(user)
+    db.flush()
+    
+    settings = Settings(user_id=demo_session_id, cost_per_mile=Decimal("0.00"))
+    db.add(settings)
+    db.commit()
+    db.refresh(user)
+    
+    token = create_access_token(user.id, user.email)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "email": user.email
+    }

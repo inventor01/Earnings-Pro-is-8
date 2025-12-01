@@ -9,7 +9,7 @@ function getAuthToken(): string | null {
 function getAuthHeaders(): Record<string, string> {
   const token = getAuthToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token && token !== 'guest-token') {
+  if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
