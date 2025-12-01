@@ -312,7 +312,7 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
     queryFn: () => api.getGoal(currentTimeframe),
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 60 * 60 * 1000, // 1 hour
-    refetchOnMount: false,
+    refetchOnMount: true, // Force fetch on mount to ensure progress bar shows on mobile
     refetchOnWindowFocus: false,
   });
 
