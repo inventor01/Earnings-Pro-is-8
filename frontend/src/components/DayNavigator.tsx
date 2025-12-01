@@ -67,11 +67,11 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
     >
       <div className="flex items-center justify-center">
         {/* Date Display - Full Width */}
-        <div className="flex-1 text-center min-w-0 select-none py-2 md:py-3">
-          <div className={`text-xs font-semibold ${isDarkTheme ? 'text-gray-500' : 'text-gray-600'}`}>
+        <div className="flex-1 text-center min-w-0 select-none py-0.5 md:py-1">
+          <div className={`text-xs font-semibold leading-tight ${isDarkTheme ? 'text-gray-500' : 'text-gray-600'}`}>
             {label}
           </div>
-          <div className={`text-xs md:text-sm font-bold ${isDarkTheme ? 'text-gray-300' : 'text-gray-700'}`}>
+          <div className={`text-xs md:text-sm font-bold leading-tight ${isDarkTheme ? 'text-gray-300' : 'text-gray-700'}`}>
             {weekday}, {monthName} {day}
           </div>
         </div>
