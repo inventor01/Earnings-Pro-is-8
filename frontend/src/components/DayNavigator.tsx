@@ -39,8 +39,8 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
   return (
     <div className={`rounded-lg border-2 p-2 md:p-3 transition-all ${
       isDarkTheme
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/50 shadow-md shadow-cyan-500/15'
-        : 'bg-gradient-to-br from-white to-cyan-50 border-cyan-400 shadow-sm shadow-cyan-300/15'
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-lime-500/50 shadow-md shadow-lime-500/15'
+        : 'bg-gradient-to-br from-white to-lime-50 border-lime-400 shadow-sm shadow-lime-300/15'
     }`}>
       <div className="flex items-center justify-between gap-2">
         {/* Previous Day Button */}
@@ -48,8 +48,8 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
           onClick={handlePrevDay}
           className={`px-2 md:px-3 py-1 md:py-2 rounded-md text-sm font-bold transition-all transform hover:scale-105 active:scale-95 ${
             isDarkTheme
-              ? 'bg-cyan-600/40 border border-cyan-500/60 text-cyan-300 hover:bg-cyan-600/60'
-              : 'bg-cyan-200 text-cyan-700 border border-cyan-400 hover:bg-cyan-300'
+              ? 'bg-lime-600/40 border border-lime-500/60 text-lime-300 hover:bg-lime-600/60'
+              : 'bg-lime-200 text-lime-700 border border-lime-400 hover:bg-lime-300'
           }`}
           title="Previous day"
         >
@@ -61,7 +61,7 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
           <div className={`text-xs font-semibold ${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}`}>
             {label}
           </div>
-          <div className={`text-sm md:text-base font-black ${isDarkTheme ? 'text-cyan-300' : 'text-cyan-700'}`}>
+          <div className={`text-sm md:text-base font-black ${isDarkTheme ? 'text-yellow-300' : 'text-lime-700'}`}>
             {weekday}, {monthName} {day}
           </div>
           <div className={`text-xs font-medium ${isDarkTheme ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -74,8 +74,8 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
           onClick={handleNextDay}
           className={`px-2 md:px-3 py-1 md:py-2 rounded-md text-sm font-bold transition-all transform hover:scale-105 active:scale-95 ${
             isDarkTheme
-              ? 'bg-cyan-600/40 border border-cyan-500/60 text-cyan-300 hover:bg-cyan-600/60'
-              : 'bg-cyan-200 text-cyan-700 border border-cyan-400 hover:bg-cyan-300'
+              ? 'bg-lime-600/40 border border-lime-500/60 text-lime-300 hover:bg-lime-600/60'
+              : 'bg-lime-200 text-lime-700 border border-lime-400 hover:bg-lime-300'
           }`}
           title="Next day"
         >
