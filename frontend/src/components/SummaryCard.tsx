@@ -410,7 +410,17 @@ export function SummaryCard({
       style={{ cursor: showDayNav ? 'grab' : 'default' }}
     >
       {/* Metrics Grid - Enhanced with better spacing */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-5 lg:gap-6">
+      <div className={`relative ${showDayNav ? 'flex items-center gap-3 md:gap-4' : ''}`}>
+        {/* Left Arrow Indicator */}
+        {showDayNav && (
+          <div className={`hidden lg:flex flex-shrink-0 text-2xl md:text-3xl transition-all duration-300 ${
+            isDarkTheme ? 'text-lime-500/40 group-hover:text-lime-400/60' : 'text-lime-600/40 hover:text-lime-600/60'
+          }`}>
+            ←
+          </div>
+        )}
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-5 lg:gap-6 flex-1">
         {/* Revenue */}
         {visibility.revenue && (
           <MetricCard
@@ -479,7 +489,16 @@ export function SummaryCard({
           />
         )}
       </div>
-      
+        
+        {/* Right Arrow Indicator */}
+        {showDayNav && (
+          <div className={`hidden lg:flex flex-shrink-0 text-2xl md:text-3xl transition-all duration-300 ${
+            isDarkTheme ? 'text-lime-500/40 group-hover:text-lime-400/60' : 'text-lime-600/40 hover:text-lime-600/60'
+          }`}>
+            →
+          </div>
+        )}
+      </div>
       
       {/* Share Button */}
       {onShare && (

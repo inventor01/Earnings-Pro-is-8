@@ -69,21 +69,8 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
           : 'bg-lime-50/30 border-lime-300/40 hover:border-lime-400/60'
       } cursor-grab active:cursor-grabbing`}
     >
-      <div className="flex items-center justify-between gap-1.5">
-        {/* Previous Day Button */}
-        <button
-          onClick={handlePrevDay}
-          className={`px-3 md:px-4 py-1.5 md:py-2 rounded text-sm md:text-base font-semibold transition-all transform hover:scale-105 active:scale-95 ${
-            isDarkTheme
-              ? 'bg-lime-600/20 text-lime-400 hover:bg-lime-600/40'
-              : 'bg-lime-200/50 text-lime-700 hover:bg-lime-300/60'
-          }`}
-          title="Previous day (swipe right)"
-        >
-          ←
-        </button>
-
-        {/* Date Display */}
+      <div className="flex items-center justify-center">
+        {/* Date Display - Full Width */}
         <div className="flex-1 text-center min-w-0 select-none py-2 md:py-3">
           <div className={`text-xs font-semibold ${isDarkTheme ? 'text-gray-500' : 'text-gray-600'}`}>
             {label}
@@ -92,19 +79,6 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label }: DayNavigat
             {weekday}, {monthName} {day}
           </div>
         </div>
-
-        {/* Next Day Button */}
-        <button
-          onClick={handleNextDay}
-          className={`px-3 md:px-4 py-1.5 md:py-2 rounded text-sm md:text-base font-semibold transition-all transform hover:scale-105 active:scale-95 ${
-            isDarkTheme
-              ? 'bg-lime-600/20 text-lime-400 hover:bg-lime-600/40'
-              : 'bg-lime-200/50 text-lime-700 hover:bg-lime-300/60'
-          }`}
-          title="Next day (swipe left)"
-        >
-          →
-        </button>
       </div>
 
       {/* Today Button */}
