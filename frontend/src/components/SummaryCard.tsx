@@ -420,7 +420,7 @@ export function SummaryCard({
               onDayChange(dayOffset - 1);
             }}
             className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 text-4xl md:text-5xl lg:text-6xl transition-all duration-300 cursor-pointer hover:scale-125 active:scale-110 ${
-              isDarkTheme ? 'text-lime-500/50 hover:text-lime-400' : 'text-lime-600/50 hover:text-lime-600'
+              isDarkTheme ? 'text-yellow-500/50 hover:text-yellow-400' : 'text-yellow-600/50 hover:text-yellow-600'
             } -ml-4 md:-ml-6 lg:-ml-8 p-2 md:p-3`}
             title="Previous day"
           >
@@ -506,7 +506,7 @@ export function SummaryCard({
               onDayChange(dayOffset + 1);
             }}
             className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 text-4xl md:text-5xl lg:text-6xl transition-all duration-300 cursor-pointer hover:scale-125 active:scale-110 ${
-              isDarkTheme ? 'text-lime-500/50 hover:text-lime-400' : 'text-lime-600/50 hover:text-lime-600'
+              isDarkTheme ? 'text-yellow-500/50 hover:text-yellow-400' : 'text-yellow-600/50 hover:text-yellow-600'
             } -mr-4 md:-mr-6 lg:-mr-8 p-2 md:p-3`}
             title="Next day"
           >
