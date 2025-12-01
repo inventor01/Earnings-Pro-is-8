@@ -218,51 +218,9 @@ export function PotOfGoldTracker() {
     );
   }
 
-  // Show "Set Your Goal" prompt when no goal is set
+  // Hide "Set Your Goal" prompt when no goal is set (for now)
   if (goalAmount === 0) {
-    return (
-      <div className={`rounded-2xl p-5 md:p-6 border-2 transition-all ${
-        themeConfig.name === 'dark-neon'
-          ? 'bg-slate-900 border-cyan-400/60'
-          : themeConfig.name === 'simple-light'
-          ? 'bg-white border-blue-300'
-          : themeConfig.name === 'ninja-green'
-          ? 'bg-white border-lime-500'
-          : 'bg-slate-900 border-cyan-500/60'
-      }`}>
-        <div className="space-y-4">
-          <div className="text-center">
-            <div className="text-5xl md:text-6xl mb-3">💵</div>
-            <h3 className={`font-black text-lg md:text-xl mb-2 ${
-              themeConfig.name === 'simple-light' ? 'text-blue-700' : 
-              themeConfig.name === 'ninja-green' ? 'text-green-800' :
-              'text-white'
-            }`}>
-              Launch Your Mission
-            </h3>
-            <p className={`text-sm ${
-              themeConfig.name === 'simple-light' ? 'text-blue-600' :
-              themeConfig.name === 'ninja-green' ? 'text-green-700' :
-              'text-slate-300'
-            }`}>
-              Name your savings goal and set a target to track your progress
-            </p>
-          </div>
-          <button
-            onClick={handleEditClick}
-            className={`w-full py-3 rounded-xl font-bold transition-all ${
-              themeConfig.name === 'dark-neon'
-                ? 'bg-yellow-400 hover:bg-yellow-500 text-black shadow-lg'
-                : themeConfig.name === 'simple-light' || themeConfig.name === 'ninja-green'
-                ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                : 'bg-yellow-400 hover:bg-yellow-500 text-black shadow-lg'
-            }`}
-          >
-            Create Savings Goal
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
