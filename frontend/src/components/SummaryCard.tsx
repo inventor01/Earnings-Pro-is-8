@@ -329,7 +329,7 @@ export function SummaryCard({
             transform: translateY(-12px) perspective(1000px) rotateX(2deg);
           }
         `}</style>
-        <div className={`relative p-5 md:p-6 lg:p-7 rounded-2xl transition-all duration-400 group/card ${colors.bg} ${
+        <div className={`relative p-6 md:p-8 lg:p-10 rounded-2xl transition-all duration-400 group/card ${colors.bg} ${
           isDarkTheme 
             ? `${colors.shadow} dark-metric-card metric-card-hover ${
               label === 'Revenue' ? 'glow-lime' :
@@ -410,17 +410,17 @@ export function SummaryCard({
       style={{ cursor: showDayNav ? 'grab' : 'default' }}
     >
       {/* Metrics Grid - Enhanced with better spacing */}
-      <div className={`relative ${showDayNav ? 'flex items-center gap-3 md:gap-4' : ''}`}>
-        {/* Left Arrow Indicator */}
+      <div className="relative">
+        {/* Left Arrow Indicator - Overlapping */}
         {showDayNav && (
-          <div className={`flex flex-shrink-0 text-xl md:text-2xl lg:text-3xl transition-all duration-300 ${
-            isDarkTheme ? 'text-lime-500/60' : 'text-lime-600/60'
+          <div className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 text-3xl md:text-4xl lg:text-5xl transition-all duration-300 pointer-events-none ${
+            isDarkTheme ? 'text-lime-500/50' : 'text-lime-600/50'
           }`}>
             ←
           </div>
         )}
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-5 lg:gap-6 flex-1">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-5 lg:gap-6">
         {/* Revenue */}
         {visibility.revenue && (
           <MetricCard
@@ -490,10 +490,10 @@ export function SummaryCard({
         )}
       </div>
         
-        {/* Right Arrow Indicator */}
+        {/* Right Arrow Indicator - Overlapping */}
         {showDayNav && (
-          <div className={`flex flex-shrink-0 text-xl md:text-2xl lg:text-3xl transition-all duration-300 ${
-            isDarkTheme ? 'text-lime-500/60' : 'text-lime-600/60'
+          <div className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 text-3xl md:text-4xl lg:text-5xl transition-all duration-300 pointer-events-none ${
+            isDarkTheme ? 'text-lime-500/50' : 'text-lime-600/50'
           }`}>
             →
           </div>
