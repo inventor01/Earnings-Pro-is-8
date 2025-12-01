@@ -950,6 +950,17 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8 lg:gap-10 mb-4 md:mb-8 lg:mb-10">
           {/* Left Column - Performance Overview */}
           <div className="lg:col-span-3 space-y-6 md:space-y-8 lg:space-y-10 scroll-smooth">
+            {/* Day Navigator - Navigate through exact dates */}
+            {period === 'today' && (
+              <DayNavigator 
+                dayOffset={dayOffset}
+                onDayOffsetChange={(offset) => {
+                  setDayOffset(offset);
+                }}
+                label={getPeriodLabel()}
+              />
+            )}
+
             {/* Performance Overview Header with Toggle */}
             <div className="flex flex-col gap-2 relative z-30" id="performance-overview">
               <div className="flex items-center justify-between gap-2">
@@ -972,17 +983,6 @@ export function Dashboard({ onNavigateToLeaderboard }: DashboardProps) {
                   </button>
                 </div>
               </div>
-              
-              {/* Day Navigator - Navigate through exact dates */}
-              {period === 'today' && (
-                <DayNavigator 
-                  dayOffset={dayOffset}
-                  onDayOffsetChange={(offset) => {
-                    setDayOffset(offset);
-                  }}
-                  label={getPeriodLabel()}
-                />
-              )}
               
               {selectedCalendarDate && <div className={`text-sm md:text-base font-semibold px-2 ${isDarkTheme ? 'text-yellow-300' : 'text-lime-700'}`}>📅 Viewing: {new Date(selectedCalendarDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>}
             </div>
