@@ -237,6 +237,38 @@ export function SummaryCard({
             }
           }
 
+          @keyframes arrow-bounce {
+            0%, 100% {
+              transform: translateX(0);
+              opacity: 0.5;
+            }
+            50% {
+              opacity: 0.8;
+            }
+          }
+
+          @keyframes arrow-bounce-left {
+            0%, 100% {
+              transform: translateX(-4px);
+              opacity: 0.5;
+            }
+            50% {
+              transform: translateX(0);
+              opacity: 0.8;
+            }
+          }
+
+          @keyframes arrow-bounce-right {
+            0%, 100% {
+              transform: translateX(4px);
+              opacity: 0.5;
+            }
+            50% {
+              transform: translateX(0);
+              opacity: 0.8;
+            }
+          }
+
           /* Light gradients - Subtle, matching eggshell theme */
           .metric-gradient-lime {
             background: #fafaf7;
@@ -422,6 +454,7 @@ export function SummaryCard({
             className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 text-4xl md:text-5xl lg:text-6xl transition-all duration-300 cursor-pointer hover:scale-125 active:scale-110 ${
               isDarkTheme ? 'text-yellow-500/50 hover:text-yellow-400' : 'text-yellow-600/50 hover:text-yellow-600'
             } -ml-4 md:-ml-6 lg:-ml-8 p-2 md:p-3`}
+            style={{ animation: 'arrow-bounce-left 2s ease-in-out infinite' }}
             title="Previous day"
           >
             ←
@@ -508,6 +541,7 @@ export function SummaryCard({
             className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 text-4xl md:text-5xl lg:text-6xl transition-all duration-300 cursor-pointer hover:scale-125 active:scale-110 ${
               isDarkTheme ? 'text-yellow-500/50 hover:text-yellow-400' : 'text-yellow-600/50 hover:text-yellow-600'
             } -mr-4 md:-mr-6 lg:-mr-8 p-2 md:p-3`}
+            style={{ animation: 'arrow-bounce-right 2s ease-in-out infinite' }}
             title="Next day"
           >
             →
