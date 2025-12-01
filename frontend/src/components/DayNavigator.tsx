@@ -1,5 +1,5 @@
 import { useTheme } from '../lib/themeContext';
-import { getESTDateString } from '../lib/dateUtils';
+import { getESTDateString, getTodayEST, addDaysEST } from '../lib/dateUtils';
 import { playButtonClickSound } from '../lib/buttonSoundEffects';
 import { useRef, useState } from 'react';
 
@@ -20,11 +20,13 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Calculate the displayed date
-  const displayDate = new Date();
-  displayDate.setDate(displayDate.getDate() + dayOffset);
-  const dateStr = getESTDateString(displayDate.toISOString());
-  const [year, month, day] = dateStr.split('-');
+  // Calculate the displayed date in EST timezone (not browser local time)
+  const todayEST = getTodayEST();
+  const targetDateEST = addDaysEST(todayEST, dayOffset);
+  const [year, month, day] = targetDateEST.split('-');
+  
+  // Create a Date object for display formatting (parse EST date)
+  const displayDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
   
   const weekday = displayDate.toLocaleDateString('en-US', { weekday: 'short' });
   const monthName = displayDate.toLocaleDateString('en-US', { month: 'short' });
@@ -134,11 +136,18 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
   };
 
   const handleDateSelect = (selectedDate: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    selectedDate.setHours(0, 0, 0, 0);
+    // Calculate day offset using EST timezone (not browser local time)
+    const todayEST = getTodayEST();
+    const selectedDateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
     
-    const diffTime = selectedDate.getTime() - today.getTime();
+    // Parse both dates to calculate difference
+    const [todayY, todayM, todayD] = todayEST.split('-').map(Number);
+    const [selY, selM, selD] = selectedDateStr.split('-').map(Number);
+    
+    const today = new Date(todayY, todayM - 1, todayD);
+    const selected = new Date(selY, selM - 1, selD);
+    
+    const diffTime = selected.getTime() - today.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
     onDayOffsetChange(diffDays);
