@@ -281,7 +281,6 @@ textarea {
   background-size: 120px 100%;
   position: relative;
   overflow: hidden;
-  animation: slideInLeft 1s ease-out;
   box-shadow: 0 0 8px rgba(34, 197, 94, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.2);
 }
 
@@ -300,7 +299,7 @@ textarea {
     rgba(255, 255, 255, 0.15) 24px
   );
   background-size: 60px 60px;
-  animation: stripe-animation 3s linear infinite;
+  animation: stripe-animation 4s linear infinite;
   pointer-events: none;
 }
 
@@ -308,7 +307,6 @@ textarea {
   background: linear-gradient(to right, #22c55e, #16a34a);
   background-size: 120px 100%;
   box-shadow: 0 0 12px rgba(34, 197, 94, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.25);
-  animation: slideInLeft 1s ease-out;
 }
 
 .progress-bar-fill.shimmer-effect::before {
@@ -320,7 +318,7 @@ textarea {
     rgba(255, 255, 255, 0.2) 24px
   );
   background-size: 60px 60px;
-  animation: stripe-animation 2s linear infinite;
+  animation: stripe-animation 4s linear infinite;
 }
 
 .goal-pulse {
