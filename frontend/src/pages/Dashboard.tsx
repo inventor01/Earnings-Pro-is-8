@@ -17,7 +17,6 @@ import { AISuggestions } from '../components/AISuggestions';
 import { EntryViewer } from '../components/EntryViewer';
 import { ShareCard } from '../components/ShareCard';
 import { ScrollToTopButton } from '../components/ScrollToTopButton';
-import { CoinAnimation } from '../components/CoinAnimation';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { ProfitCalendar } from '../components/ProfitCalendar';
 import { DayNavigator } from '../components/DayNavigator';
@@ -663,9 +662,6 @@ export function Dashboard({}: DashboardProps) {
 
   return (
     <div className={dashboardClass}>
-      {/* Coin burst animation on page load */}
-      <CoinAnimation />
-
       <div id="header" className={`fixed top-0 left-0 right-0 z-40 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''} shadow-md flex flex-col`}>
         {/* Progress Bar - at the very top on mobile */}
         {rollup && showGoalBanner && (
