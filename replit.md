@@ -47,3 +47,9 @@ The email service is configured and ready to send password reset emails when use
 - Implemented password reset functionality with secure token-based reset flow
 - Added PasswordResetToken model for secure password recovery
 - Created email service for sending password reset emails (requires SMTP configuration)
+- **Micro Animations Added:**
+  - Revenue cards count up smoothly with animated numbers
+  - Expense card shakes briefly when a big expense is added
+  - Miles card pulses subtly when distance data updates
+  - Goal progress bars transition smoothly with cubic-bezier easing
+  - Ninja logo glows bright yellow/green when profit crosses $50 milestones ($50, $100, $150, etc.)
