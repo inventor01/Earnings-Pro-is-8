@@ -107,10 +107,10 @@ export function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="deliverydriver99"
-                className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
+                className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all focus:border-yellow-500 ${
                   isDarkTheme
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500 focus:border-lime-400'
-                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-lime-500'
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                 }`}
               />
             </div>
@@ -127,10 +127,10 @@ export function LoginPage() {
               value={credential}
               onChange={(e) => setCredential(e.target.value)}
               placeholder={mode === 'login' ? 'you@example.com or deliverydriver99' : 'you@example.com'}
-              className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
+              className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all focus:border-yellow-500 ${
                 isDarkTheme
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500 focus:border-lime-400'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-lime-500'
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
               }`}
               required
             />
@@ -147,10 +147,10 @@ export function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
+              className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all focus:border-yellow-500 ${
                 isDarkTheme
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500 focus:border-lime-400'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-lime-500'
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
               }`}
               required
             />
@@ -169,11 +169,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full py-3 rounded-lg font-bold transition-all ${
-              isDarkTheme
-                ? 'bg-lime-600 hover:bg-lime-700 text-white disabled:opacity-50'
-                : 'bg-lime-500 hover:bg-lime-600 text-white disabled:opacity-50'
-            }`}
+            className="w-full py-3 rounded-lg font-bold transition-all bg-yellow-500 hover:bg-yellow-400 text-gray-900 disabled:opacity-50"
           >
             {isLoading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>
@@ -185,11 +181,7 @@ export function LoginPage() {
             <button
               type="button"
               onClick={() => setShowForgotPassword(true)}
-              className={`text-sm transition-colors ${
-                isDarkTheme
-                  ? 'text-lime-400 hover:text-lime-300'
-                  : 'text-lime-600 hover:text-lime-700'
-              }`}
+              className="text-sm transition-colors text-yellow-500 hover:text-yellow-400"
             >
               Forgot password?
             </button>
@@ -202,11 +194,7 @@ export function LoginPage() {
           <button
             type="button"
             onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-            className={`font-semibold transition-colors ${
-              isDarkTheme
-                ? 'text-lime-400 hover:text-lime-300'
-                : 'text-lime-600 hover:text-lime-700'
-            }`}
+            className="font-semibold transition-colors text-yellow-500 hover:text-yellow-400"
           >
             {mode === 'login' ? 'Sign Up' : 'Sign In'}
           </button>
@@ -221,11 +209,7 @@ export function LoginPage() {
             type="button"
             onClick={handleDemoLogin}
             disabled={isDemoLoading}
-            className={`w-full py-2 rounded-lg font-medium transition-all text-sm ${
-              isDarkTheme
-                ? 'bg-lime-600/30 hover:bg-lime-600/50 text-lime-400 border border-lime-600 disabled:opacity-50'
-                : 'bg-lime-100 hover:bg-lime-200 text-green-700 border border-lime-400 disabled:opacity-50'
-            }`}
+            className="w-full py-2 rounded-lg font-medium transition-all text-sm bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-500 border border-yellow-500 disabled:opacity-50"
           >
             {isDemoLoading ? 'Starting Demo...' : 'Try Demo (Private Session)'}
           </button>
