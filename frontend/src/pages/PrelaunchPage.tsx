@@ -49,12 +49,12 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
               src={ninjaLogo} 
               alt="Earnings Ninja" 
               className="h-40 md:h-56 w-auto mx-auto mb-4 drop-shadow-lg"
-              style={{ filter: 'drop-shadow(0 0 8px rgba(132, 204, 22, 0.4))' }}
+              style={{ filter: 'drop-shadow(0 0 8px rgba(250, 204, 21, 0.4))' }}
             />
             <h1 className="text-3xl md:text-4xl font-black text-white mb-2">
               Coming Soon
             </h1>
-            <p className="text-lg md:text-xl text-lime-400 font-semibold mb-4">
+            <p className="text-lg md:text-xl text-yellow-400 font-semibold mb-4">
               The Ultimate Delivery Driver Earnings Tracker
             </p>
             <p className="text-gray-400 text-sm md:text-base max-w-md mx-auto">
@@ -67,11 +67,11 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
             {submitted ? (
               <div className="text-center py-4">
                 <div className="text-5xl mb-4">🎉</div>
-                <h2 className="text-xl font-bold text-lime-400 mb-2">You're In!</h2>
+                <h2 className="text-xl font-bold text-yellow-400 mb-2">You're In!</h2>
                 <p className="text-gray-300">{message}</p>
                 <button
                   onClick={onGoToLogin}
-                  className="mt-6 text-lime-400 hover:text-lime-300 underline font-medium"
+                  className="mt-6 text-yellow-400 hover:text-yellow-300 underline font-medium"
                 >
                   Already have early access? Sign in
                 </button>
@@ -95,7 +95,7 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Your name"
-                      className="w-full px-4 py-3 rounded-xl bg-slate-700 border-2 border-slate-600 text-white placeholder-gray-500 focus:outline-none focus:border-lime-500 transition-colors"
+                      className="w-full px-4 py-3 rounded-xl bg-slate-700 border-2 border-slate-600 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
                     />
                   </div>
 
@@ -109,7 +109,7 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
                       required
-                      className="w-full px-4 py-3 rounded-xl bg-slate-700 border-2 border-slate-600 text-white placeholder-gray-500 focus:outline-none focus:border-lime-500 transition-colors"
+                      className="w-full px-4 py-3 rounded-xl bg-slate-700 border-2 border-slate-600 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
                     />
                   </div>
 
@@ -122,7 +122,7 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
                   <button
                     type="submit"
                     disabled={isSubmitting || !email}
-                    className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-lime-500 to-green-500 text-white hover:from-lime-600 hover:to-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-lime-500/30 hover:shadow-lime-500/50"
+                    className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-900 hover:from-yellow-500 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center justify-center gap-2">
@@ -141,7 +141,7 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
                 <div className="mt-6 pt-6 border-t border-slate-700 text-center">
                   <button
                     onClick={onGoToLogin}
-                    className="text-lime-400 hover:text-lime-300 underline font-medium text-sm"
+                    className="text-yellow-400 hover:text-yellow-300 underline font-medium text-sm"
                   >
                     Already have early access? Sign in
                   </button>
