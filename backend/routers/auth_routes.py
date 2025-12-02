@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from backend.db import get_db
-from backend.models import AuthUser, Settings, Entry, EntryType, AppType, ExpenseCategory, Goal, TimeframeType
+from backend.models import AuthUser, Settings, Entry, EntryType, AppType, ExpenseCategory, Goal, TimeframeType, PasswordResetToken
+import secrets
 from backend.auth import get_current_user
 import jwt
 import os
@@ -32,6 +33,13 @@ class AuthResponse(BaseModel):
     token_type: str
     user_id: str
     email: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
 
 def hash_password(password: str) -> str:
     """Hash password using bcrypt (secure)"""
@@ -163,6 +171,98 @@ async def validate_token(current_user: AuthUser = Depends(get_current_user)) -> 
         "user_id": current_user.id,
         "email": current_user.email
     }
+
+@router.post("/auth/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Request a password reset link"""
+    email = request.email.strip()
+    
+    # Find user by email case-insensitively (excluding demo users)
+    user = db.query(AuthUser).filter(
+        func.lower(AuthUser.email) == email.lower(),
+        AuthUser.is_demo == False
+    ).first()
+    
+    # Always return success to prevent email enumeration attacks
+    if not user:
+        return {"message": "If an account with that email exists, a password reset link has been sent."}
+    
+    # Invalidate any existing reset tokens for this user
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user.id,
+        PasswordResetToken.used == False
+    ).update({"used": True})
+    
+    # Generate a secure reset token
+    reset_token = secrets.token_urlsafe(32)
+    
+    # Create reset token (expires in 1 hour)
+    token_record = PasswordResetToken(
+        user_id=user.id,
+        token=reset_token,
+        expires_at=datetime.utcnow() + timedelta(hours=1)
+    )
+    db.add(token_record)
+    db.commit()
+    
+    # In production, this would send an email with the reset link
+    # For now, we'll return success and the token can be used directly
+    # The reset link would be: /reset-password?token={reset_token}
+    
+    return {"message": "If an account with that email exists, a password reset link has been sent."}
+
+@router.post("/auth/reset-password")
+async def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Reset password using a valid reset token"""
+    # Find the token
+    token_record = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == request.token,
+        PasswordResetToken.used == False
+    ).first()
+    
+    if not token_record:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check if token is expired
+    if datetime.utcnow() > token_record.expires_at:
+        token_record.used = True
+        db.commit()
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    # Validate new password
+    if len(request.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    # Find the user
+    user = db.query(AuthUser).filter(AuthUser.id == token_record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found")
+    
+    # Update password
+    user.password_hash = hash_password(request.new_password)
+    
+    # Mark token as used
+    token_record.used = True
+    
+    db.commit()
+    
+    return {"message": "Password has been reset successfully"}
+
+@router.get("/auth/verify-reset-token/{token}")
+async def verify_reset_token(token: str, db: Session = Depends(get_db)):
+    """Verify if a reset token is valid"""
+    token_record = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == token,
+        PasswordResetToken.used == False
+    ).first()
+    
+    if not token_record:
+        return {"valid": False, "message": "Invalid reset token"}
+    
+    if datetime.utcnow() > token_record.expires_at:
+        return {"valid": False, "message": "Reset token has expired"}
+    
+    return {"valid": True}
 
 def create_demo_transactions(db: Session, user_id: str):
     """Generate realistic demo transactions for the past 60 days (EST timezone aware)

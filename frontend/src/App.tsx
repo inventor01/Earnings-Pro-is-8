@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './lib/authContext';
 import { Dashboard } from './pages/Dashboard';
 import { LoginPage } from './pages/LoginPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { useState, useEffect } from 'react';
 
 const queryClient = new QueryClient({
@@ -15,9 +16,35 @@ const queryClient = new QueryClient({
   },
 });
 
+function getResetToken(): string | null {
+  const urlParams = new URLSearchParams(window.location.search);
+  const path = window.location.pathname;
+  if (path === '/reset-password' || path.includes('reset-password')) {
+    return urlParams.get('token');
+  }
+  return null;
+}
+
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'leaderboard'>('dashboard');
+  const [resetToken, setResetToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = getResetToken();
+    if (token) {
+      setResetToken(token);
+    }
+  }, []);
+
+  const handleBackFromReset = () => {
+    setResetToken(null);
+    window.history.pushState({}, '', '/');
+  };
+
+  if (resetToken) {
+    return <ResetPasswordPage token={resetToken} onBack={handleBackFromReset} />;
+  }
 
   if (isLoading) {
     return (
@@ -34,7 +61,7 @@ function AppContent() {
 
   return currentPage === 'leaderboard' 
     ? <LeaderboardPage onBack={() => setCurrentPage('dashboard')} />
-    : <Dashboard onNavigateToLeaderboard={() => setCurrentPage('leaderboard')} />;
+    : <Dashboard />;
 }
 
 function App() {
