@@ -212,24 +212,6 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
             )}
           </div>
 
-          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <div className="text-2xl mb-1">📊</div>
-              <div className="text-sm text-gray-400">Real-time KPIs</div>
-            </div>
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <div className="text-2xl mb-1">🎯</div>
-              <div className="text-sm text-gray-400">Goal Tracking</div>
-            </div>
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <div className="text-2xl mb-1">🤖</div>
-              <div className="text-sm text-gray-400">AI Suggestions</div>
-            </div>
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <div className="text-2xl mb-1">📱</div>
-              <div className="text-sm text-gray-400">Mobile First</div>
-            </div>
-          </div>
         </div>
       </div>
 
