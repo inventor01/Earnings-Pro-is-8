@@ -99,12 +99,6 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
                 <div className="text-5xl mb-4">🎉</div>
                 <h2 className="text-xl font-bold text-yellow-400 mb-2">You're In!</h2>
                 <p className="text-gray-300">{message}</p>
-                <button
-                  onClick={onGoToLogin}
-                  className="mt-6 text-yellow-400 hover:text-yellow-300 underline font-medium"
-                >
-                  Already have early access? Sign in
-                </button>
               </div>
             ) : (
               <>
