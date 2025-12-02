@@ -3,10 +3,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+import os
 from backend.db import get_db
 from backend.models import WaitlistSignup
 
 router = APIRouter(prefix="/api/waitlist", tags=["waitlist"])
+
+PRELAUNCH_ACCESS_CODE = os.getenv("PRELAUNCH_ACCESS_CODE", "earningsninja2024")
 
 class WaitlistRequest(BaseModel):
     email: EmailStr
@@ -56,3 +59,17 @@ def signup_waitlist(request: WaitlistRequest, db: Session = Depends(get_db)):
 def get_waitlist_count(db: Session = Depends(get_db)):
     count = db.query(WaitlistSignup).count()
     return {"count": count}
+
+class AccessCodeRequest(BaseModel):
+    access_code: str
+
+class AccessCodeResponse(BaseModel):
+    valid: bool
+    message: Optional[str] = None
+
+@router.post("/verify-access", response_model=AccessCodeResponse)
+def verify_access_code(request: AccessCodeRequest):
+    if request.access_code == PRELAUNCH_ACCESS_CODE:
+        return AccessCodeResponse(valid=True, message="Access granted!")
+    else:
+        return AccessCodeResponse(valid=False, message="Invalid access code")

@@ -12,6 +12,10 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
   const [submitted, setSubmitted] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [accessCode, setAccessCode] = useState('');
+  const [showAccessCode, setShowAccessCode] = useState(false);
+  const [accessError, setAccessError] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +41,32 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
       setError('Failed to connect. Please try again.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleAccessCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAccessError('');
+    setIsVerifying(true);
+
+    try {
+      const res = await fetch('/api/waitlist/verify-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_code: accessCode }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.valid) {
+        onGoToLogin();
+      } else {
+        setAccessError(data.detail || 'Invalid access code');
+      }
+    } catch {
+      setAccessError('Failed to verify. Please try again.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -138,13 +168,45 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
                   </button>
                 </form>
 
-                <div className="mt-6 pt-6 border-t border-slate-700 text-center">
+                <div className="mt-6 pt-6 border-t border-slate-700">
                   <button
-                    onClick={onGoToLogin}
-                    className="text-yellow-400 hover:text-yellow-300 underline font-medium text-sm"
+                    onClick={() => setShowAccessCode(!showAccessCode)}
+                    className="w-full text-center text-yellow-400 hover:text-yellow-300 font-medium text-sm flex items-center justify-center gap-2"
                   >
-                    Already have early access? Sign in
+                    <span>Have an access code?</span>
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${showAccessCode ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </button>
+                  
+                  {showAccessCode && (
+                    <form onSubmit={handleAccessCode} className="mt-4 space-y-3">
+                      <input
+                        type="password"
+                        value={accessCode}
+                        onChange={(e) => setAccessCode(e.target.value)}
+                        placeholder="Enter access code"
+                        className="w-full px-4 py-3 rounded-xl bg-slate-700 border-2 border-slate-600 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors text-center"
+                      />
+                      {accessError && (
+                        <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-2 rounded-lg text-sm text-center">
+                          {accessError}
+                        </div>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={isVerifying || !accessCode}
+                        className="w-full py-3 rounded-xl font-bold bg-slate-600 text-white hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {isVerifying ? 'Verifying...' : 'Enter App'}
+                      </button>
+                    </form>
+                  )}
                 </div>
               </>
             )}
