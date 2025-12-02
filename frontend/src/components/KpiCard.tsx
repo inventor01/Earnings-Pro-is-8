@@ -38,7 +38,10 @@ export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color
     const prevNum = parseFloat(String(prevValueRef.current).replace(/[^0-9.-]/g, ''));
     
     if (!isNaN(currentNum) && !isNaN(prevNum) && currentNum !== prevNum) {
-      if (title === 'Expenses' && currentNum > prevNum) {
+      const difference = Math.abs(currentNum - prevNum);
+      
+      // Expenses: shake only for big expenses (increase of $5 or more)
+      if (title === 'Expenses' && currentNum > prevNum && difference >= 5) {
         setAnimationClass('expense-shake');
       } else if (title === 'Miles' && currentNum !== prevNum) {
         setAnimationClass('miles-pulse');
