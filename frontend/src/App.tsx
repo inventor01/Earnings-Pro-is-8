@@ -26,23 +26,23 @@ function getResetToken(): string | null {
   return null;
 }
 
-function isPrelaunchPage(): boolean {
+function isLoginPage(): boolean {
   const path = window.location.pathname;
-  return path === '/prelaunch' || path === '/coming-soon' || path === '/waitlist';
+  return path === '/login' || path === '/signin' || path === '/signup';
 }
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'leaderboard'>('dashboard');
   const [resetToken, setResetToken] = useState<string | null>(null);
-  const [showPrelaunch, setShowPrelaunch] = useState(isPrelaunchPage());
+  const [showLogin, setShowLogin] = useState(isLoginPage());
 
   useEffect(() => {
     const token = getResetToken();
     if (token) {
       setResetToken(token);
     }
-    setShowPrelaunch(isPrelaunchPage());
+    setShowLogin(isLoginPage());
   }, []);
 
   const handleBackFromReset = () => {
@@ -51,13 +51,9 @@ function AppContent() {
   };
 
   const handleGoToLogin = () => {
-    setShowPrelaunch(false);
-    window.history.pushState({}, '', '/');
+    setShowLogin(true);
+    window.history.pushState({}, '', '/login');
   };
-
-  if (showPrelaunch) {
-    return <PrelaunchPage onGoToLogin={handleGoToLogin} />;
-  }
 
   if (resetToken) {
     return <ResetPasswordPage token={resetToken} onBack={handleBackFromReset} />;
@@ -74,7 +70,12 @@ function AppContent() {
     );
   }
 
-  if (!isAuthenticated) return <LoginPage />;
+  if (!isAuthenticated) {
+    if (showLogin) {
+      return <LoginPage />;
+    }
+    return <PrelaunchPage onGoToLogin={handleGoToLogin} />;
+  }
 
   return currentPage === 'leaderboard' 
     ? <LeaderboardPage onBack={() => setCurrentPage('dashboard')} />
