@@ -484,6 +484,8 @@ export function Dashboard({}: DashboardProps) {
       category: (formData.type === 'EXPENSE' && formData.category) ? formData.category : undefined,
       note: formData.note || undefined,
       receipt_url: formData.receipt_url || undefined,
+      is_business_expense: formData.type === 'EXPENSE' ? (formData.is_business_expense ?? false) : undefined,
+      during_business_hours: formData.type === 'EXPENSE' ? (formData.during_business_hours ?? false) : undefined,
     };
 
     // Don't reset form here - let createMutation.onSuccess handle it
@@ -560,6 +562,8 @@ export function Dashboard({}: DashboardProps) {
       receipt_url: entry.receipt_url,
       date,
       time,
+      is_business_expense: entry.is_business_expense ?? false,
+      during_business_hours: entry.during_business_hours ?? false,
     });
   };
 
@@ -585,6 +589,8 @@ export function Dashboard({}: DashboardProps) {
       category: (editingFormData.type === 'EXPENSE' && editingFormData.category) ? editingFormData.category : undefined,
       note: editingFormData.note || undefined,
       receipt_url: editingFormData.receipt_url || undefined,
+      is_business_expense: editingFormData.type === 'EXPENSE' ? (editingFormData.is_business_expense ?? false) : undefined,
+      during_business_hours: editingFormData.type === 'EXPENSE' ? (editingFormData.during_business_hours ?? false) : undefined,
     };
 
     updateMutation.mutate({ id: editingEntry.id, entry });

@@ -17,6 +17,8 @@ class EntryCreate(BaseModel):
     category: Optional[ExpenseCategory] = None
     note: Optional[str] = None
     receipt_url: Optional[str] = None
+    is_business_expense: Optional[bool] = False
+    during_business_hours: Optional[bool] = False
 
 class EntryUpdate(BaseModel):
     timestamp: Optional[datetime] = None
@@ -31,6 +33,8 @@ class EntryUpdate(BaseModel):
     category: Optional[ExpenseCategory] = None
     note: Optional[str] = None
     receipt_url: Optional[str] = None
+    is_business_expense: Optional[bool] = None
+    during_business_hours: Optional[bool] = None
 
 class EntryResponse(BaseModel):
     id: int
@@ -44,6 +48,8 @@ class EntryResponse(BaseModel):
     category: Optional[ExpenseCategory]
     note: Optional[str]
     receipt_url: Optional[str]
+    is_business_expense: Optional[bool]
+    during_business_hours: Optional[bool]
     created_at: datetime
     updated_at: datetime
     
