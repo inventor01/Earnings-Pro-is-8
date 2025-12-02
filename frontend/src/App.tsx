@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { LoginPage } from './pages/LoginPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { PrelaunchPage } from './pages/PrelaunchPage';
 import { useState, useEffect } from 'react';
 
 const queryClient = new QueryClient({
@@ -25,22 +26,38 @@ function getResetToken(): string | null {
   return null;
 }
 
+function isPrelaunchPage(): boolean {
+  const path = window.location.pathname;
+  return path === '/prelaunch' || path === '/coming-soon' || path === '/waitlist';
+}
+
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'leaderboard'>('dashboard');
   const [resetToken, setResetToken] = useState<string | null>(null);
+  const [showPrelaunch, setShowPrelaunch] = useState(isPrelaunchPage());
 
   useEffect(() => {
     const token = getResetToken();
     if (token) {
       setResetToken(token);
     }
+    setShowPrelaunch(isPrelaunchPage());
   }, []);
 
   const handleBackFromReset = () => {
     setResetToken(null);
     window.history.pushState({}, '', '/');
   };
+
+  const handleGoToLogin = () => {
+    setShowPrelaunch(false);
+    window.history.pushState({}, '', '/');
+  };
+
+  if (showPrelaunch) {
+    return <PrelaunchPage onGoToLogin={handleGoToLogin} />;
+  }
 
   if (resetToken) {
     return <ResetPasswordPage token={resetToken} onBack={handleBackFromReset} />;

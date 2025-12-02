@@ -93,6 +93,15 @@ class Goal(Base):
         __import__('sqlalchemy').UniqueConstraint('user_id', 'timeframe', name='uq_user_timeframe'),
     )
 
+class WaitlistSignup(Base):
+    __tablename__ = "waitlist_signups"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, nullable=False, unique=True, index=True)
+    name = Column(String, nullable=True)
+    referral_source = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
 class PlatformIntegration(str, enum.Enum):
     UBER = "UBER"
     SHIPT = "SHIPT"

@@ -19,3 +19,4 @@ pytz
 bcrypt
 aiosmtplib
 resend
+email-validator

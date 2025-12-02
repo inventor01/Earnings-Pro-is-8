@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard
+from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard, waitlist_routes
 from backend.db import engine, Base
 from backend.services.background_jobs import start_background_jobs, stop_background_jobs
 import os
@@ -61,6 +61,7 @@ app.include_router(suggestions.router, prefix="/api", tags=["suggestions"])
 app.include_router(oauth.router, prefix="/api", tags=["oauth"])
 app.include_router(points.router, prefix="/api", tags=["points"])
 app.include_router(leaderboard_routes.router, prefix="/api", tags=["leaderboard"])
+app.include_router(waitlist_routes.router, tags=["waitlist"])
 
 # Serve frontend static files (must be after all API routes)
 # In production (Docker), dist is at /app/dist
