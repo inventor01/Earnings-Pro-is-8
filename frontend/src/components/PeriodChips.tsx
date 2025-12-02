@@ -1,15 +1,14 @@
 import { useTheme } from '../lib/themeContext';
 
-export type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth' | 'custom';
+export type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth';
 
 interface PeriodChipsProps {
   selected: Period;
   onSelect: (period: Period) => void;
-  onCustomClick?: () => void;
   onSearchClick?: () => void;
 }
 
-export function PeriodChips({ selected, onSelect, onCustomClick, onSearchClick }: PeriodChipsProps) {
+export function PeriodChips({ selected, onSelect, onSearchClick }: PeriodChipsProps) {
   const { config } = useTheme();
   
   const periods: { value: Period; label: string }[] = [
@@ -19,7 +18,6 @@ export function PeriodChips({ selected, onSelect, onCustomClick, onSearchClick }
     { value: 'last7', label: 'Last 7 Days' },
     { value: 'month', label: 'This Month' },
     { value: 'lastMonth', label: 'Last Month' },
-    { value: 'custom', label: 'Custom' },
   ];
 
   return (
@@ -27,13 +25,7 @@ export function PeriodChips({ selected, onSelect, onCustomClick, onSearchClick }
       {periods.map((period) => (
         <button
           key={period.value}
-          onClick={() => {
-            if (period.value === 'custom' && onCustomClick) {
-              onCustomClick();
-            } else {
-              onSelect(period.value);
-            }
-          }}
+          onClick={() => onSelect(period.value)}
           className={`px-2 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-xs md:text-sm whitespace-nowrap touch-manipulation transition-all ${
             selected === period.value
               ? `${config.chipActiveBg} ${config.chipActive} font-bold`

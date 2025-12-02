@@ -3,7 +3,7 @@ import { getESTDateString, getTodayEST, addDaysEST } from '../lib/dateUtils';
 import { playButtonClickSound } from '../lib/buttonSoundEffects';
 import { useRef, useState } from 'react';
 
-type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth' | 'custom';
+type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth';
 
 interface DayNavigatorProps {
   dayOffset: number;
@@ -163,7 +163,7 @@ export function DayNavigator({ dayOffset, onDayOffsetChange, label, period = 'to
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
-  const calendarDays = [];
+  const calendarDays: (Date | null)[] = [];
   const daysInMonth = getDaysInMonth(calendarMonth);
   const firstDay = getFirstDayOfMonth(calendarMonth);
 

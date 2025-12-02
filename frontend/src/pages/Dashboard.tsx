@@ -219,26 +219,20 @@ export function Dashboard({}: DashboardProps) {
       'last7': 'LAST_7_DAYS',
       'month': 'THIS_MONTH',
       'lastMonth': 'LAST_MONTH',
-      'custom': 'TODAY',
     };
     return mapping[p] || 'TODAY';
   };
 
   const getPeriodLabel = (): string => {
-    if (period === 'today') {
-      return 'Today';
-    } else if (period === 'yesterday') {
-      return 'Yesterday';
-    } else if (period === 'week') {
-      return 'This Week';
-    } else if (period === 'last7') {
-      return 'Last 7 Days';
-    } else if (period === 'month') {
-      return 'This Month';
-    } else if (period === 'lastMonth') {
-      return 'Last Month';
-    }
-    return period.charAt(0).toUpperCase() + period.slice(1);
+    const labels: Record<Period, string> = {
+      'today': 'Today',
+      'yesterday': 'Yesterday',
+      'week': 'This Week',
+      'last7': 'Last 7 Days',
+      'month': 'This Month',
+      'lastMonth': 'Last Month',
+    };
+    return labels[period];
   };
 
   const getTimeframeFromPeriod = (p: Period): TimeframeType => {
@@ -249,7 +243,6 @@ export function Dashboard({}: DashboardProps) {
       'last7': 'LAST_7_DAYS',
       'month': 'THIS_MONTH',
       'lastMonth': 'LAST_MONTH',
-      'custom': 'TODAY',
     };
     return mapping[p] || 'TODAY';
   };
@@ -302,7 +295,6 @@ export function Dashboard({}: DashboardProps) {
     'last7': 'LAST_7_DAYS',
     'month': 'THIS_MONTH',
     'lastMonth': 'LAST_MONTH',
-    'custom': 'TODAY',
   };
   const currentTimeframe = timeframeMapping[period];
   const { data: currentGoal } = useQuery<Goal | null>({
