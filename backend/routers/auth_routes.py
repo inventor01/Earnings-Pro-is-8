@@ -5,6 +5,7 @@ from backend.db import get_db
 from backend.models import AuthUser, Settings, Entry, EntryType, AppType, ExpenseCategory, Goal, TimeframeType, PasswordResetToken
 import secrets
 from backend.auth import get_current_user
+from backend.services.email_service import send_password_reset_email
 import jwt
 import os
 from typing import Dict, Optional
@@ -205,9 +206,12 @@ async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(
     db.add(token_record)
     db.commit()
     
-    # In production, this would send an email with the reset link
-    # For now, we'll return success and the token can be used directly
-    # The reset link would be: /reset-password?token={reset_token}
+    # Send password reset email
+    await send_password_reset_email(
+        to_email=user.email,
+        reset_token=reset_token,
+        user_name=user.first_name
+    )
     
     return {"message": "If an account with that email exists, a password reset link has been sent."}
 

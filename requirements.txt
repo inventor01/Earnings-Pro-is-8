@@ -17,3 +17,4 @@ pyjwt
 psycopg2-binary
 pytz
 bcrypt
+aiosmtplib
