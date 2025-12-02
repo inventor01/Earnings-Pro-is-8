@@ -698,9 +698,9 @@ export function Dashboard({}: DashboardProps) {
                   setLogoAnimating(true);
                   setTimeout(() => setLogoAnimating(false), 600);
                 }}
-                className={`h-24 md:h-36 lg:h-48 w-auto drop-shadow-lg logo-animate cursor-pointer transition-transform hover:scale-105 ${logoAnimating ? 'animate-bounce' : ''}`}
+                className={`h-24 md:h-36 lg:h-48 w-auto drop-shadow-md logo-animate cursor-pointer transition-transform hover:scale-105 ${logoAnimating ? 'animate-bounce' : ''}`}
                 style={{
-                  filter: 'drop-shadow(0 0 12px rgba(234, 179, 8, 0.8))',
+                  filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.4))',
                   animation: logoAnimating ? 'pulse-gold 0.6s ease-out' : 'none',
                 }}
               />
