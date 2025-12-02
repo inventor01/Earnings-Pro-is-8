@@ -74,20 +74,20 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-lg">
-          <div className="text-center mb-8">
+          <div className="text-center mb-4 md:mb-8">
             <img 
               src={ninjaLogo} 
               alt="Earnings Ninja" 
-              className="h-40 md:h-56 w-auto mx-auto mb-4 drop-shadow-lg"
+              className="h-28 md:h-56 w-auto mx-auto mb-2 md:mb-4 drop-shadow-lg"
               style={{ filter: 'drop-shadow(0 0 8px rgba(250, 204, 21, 0.4))' }}
             />
-            <h1 className="text-3xl md:text-4xl font-black text-white mb-2">
+            <h1 className="text-2xl md:text-4xl font-black text-white mb-1 md:mb-2">
               Coming Soon
             </h1>
-            <p className="text-lg md:text-xl text-yellow-400 font-semibold mb-4">
+            <p className="text-base md:text-xl text-yellow-400 font-semibold mb-2 md:mb-4">
               The Ultimate Delivery Driver Earnings Tracker
             </p>
-            <p className="text-gray-400 text-sm md:text-base max-w-md mx-auto">
+            <p className="text-gray-400 text-xs md:text-base max-w-md mx-auto leading-tight md:leading-normal">
               Track your earnings across DoorDash, UberEats, Instacart, GrubHub and more. 
               Set goals, analyze profits, and maximize your income like a ninja.
             </p>
