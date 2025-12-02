@@ -7,8 +7,6 @@ interface ProfitGoalsBarProps {
   currentProfit: number;
   goalProgress?: number;
   goalAmount?: string;
-  onGoalReached?: (timeframe: TimeframeType) => void;
-  onMilestoneReached?: (milestone: 25 | 50 | 75 | 100) => void;
   onToggle?: () => void;
 }
 
@@ -21,7 +19,7 @@ const TIMEFRAME_LABELS: Partial<Record<TimeframeType, string>> = {
   LAST_MONTH: "Last Month's",
 };
 
-export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goalAmount: initialGoalAmount, onGoalReached, onMilestoneReached, onToggle }: ProfitGoalsBarProps) {
+export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goalAmount: initialGoalAmount, onToggle }: ProfitGoalsBarProps) {
   const { config } = useTheme();
   const isDarkTheme = config.name !== 'ninja-green';
   
@@ -32,50 +30,24 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goa
   const [isGoalReached, setIsGoalReached] = useState(false);
   const [error, setError] = useState('');
   const goalReachedRef = useRef<boolean>(false);
-  const milestonesReachedRef = useRef<Set<25 | 50 | 75 | 100>>(new Set());
 
   useEffect(() => {
-    // Update goal amount when prop changes
     if (initialGoalAmount) {
       setGoalAmount(initialGoalAmount);
     }
-    // Reset goal reached flag when timeframe changes
     goalReachedRef.current = false;
-    milestonesReachedRef.current.clear();
   }, [timeframe, initialGoalAmount]);
 
   useEffect(() => {
-    // Check milestone achievements (exclude 100% - that gets its own goal reached message)
-    const milestones: (25 | 50 | 75)[] = [25, 50, 75];
-    for (const milestone of milestones) {
-      if (goalProgress >= milestone && !milestonesReachedRef.current.has(milestone)) {
-        milestonesReachedRef.current.add(milestone);
-        onMilestoneReached?.(milestone);
-      }
-    }
-
-    // Show success message when goal is reached for the first time (100% completion)
     if (goalProgress >= 100 && !goalReachedRef.current && goalAmount) {
       goalReachedRef.current = true;
       setIsGoalReached(true);
-      // Trigger 100% milestone message as the single completion alert
-      if (!milestonesReachedRef.current.has(100)) {
-        milestonesReachedRef.current.add(100);
-        onMilestoneReached?.(100);
-      }
-      onGoalReached?.(timeframe);
     }
-    // Reset when goal progress drops below 100 (e.g., after deleting entries)
     if (goalProgress < 100) {
       goalReachedRef.current = false;
       setIsGoalReached(false);
-      // Also reset milestones if progress drops significantly
-      if (goalProgress < 25) {
-        milestonesReachedRef.current.clear();
-      }
     }
-
-  }, [goalProgress, goalAmount, timeframe, onGoalReached, onMilestoneReached]);
+  }, [goalProgress, goalAmount, timeframe]);
 
   const handleEditClick = () => {
     setTempGoal(goalAmount);

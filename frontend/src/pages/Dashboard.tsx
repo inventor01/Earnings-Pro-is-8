@@ -21,7 +21,6 @@ import { CoinAnimation } from '../components/CoinAnimation';
 import { PotOfGoldTracker } from '../components/PotOfGoldTracker';
 import { ProfitCalendar } from '../components/ProfitCalendar';
 import { DayNavigator } from '../components/DayNavigator';
-import { MilestoneAlert } from '../components/MilestoneAlert';
 import { useTheme } from '../lib/themeContext';
 import { Icons } from '../components/Icons';
 import { getESTTimeComponents, getESTDateString } from '../lib/dateUtils';
@@ -104,7 +103,6 @@ export function Dashboard({}: DashboardProps) {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showPerformanceOverview, setShowPerformanceOverview] = useState(true);
   const [hideAccountData, setHideAccountData] = useState(false);
-  const [visibleMilestone, setVisibleMilestone] = useState<25 | 50 | 75 | 100 | null>(null);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string>('');
   
   const [metricVisibility, setMetricVisibility] = useState<Partial<MetricVisibility>>(() => {
@@ -529,39 +527,6 @@ export function Dashboard({}: DashboardProps) {
     resetAllMutation.mutate();
   };
 
-  const timeframeLabels: Partial<Record<TimeframeType, string>> = {
-    TODAY: 'Today',
-    YESTERDAY: 'Yesterday',
-    THIS_WEEK: 'This Week',
-    LAST_7_DAYS: 'Last 7 Days',
-    THIS_MONTH: 'This Month',
-    LAST_MONTH: 'Last Month',
-  };
-
-  const handleGoalReached = (tf: TimeframeType) => {
-    const label = timeframeLabels[tf] || tf;
-    setToast({
-      message: `🎉 Congratulations! You've reached your ${label.toLowerCase()} profit goal!`,
-      type: 'success',
-    });
-  };
-
-  const handleMilestoneReached = (milestone: 25 | 50 | 75 | 100) => {
-    // Check if this milestone was already shown for this timeframe today
-    const today = new Date().toDateString();
-    const shownKey = `milestonesShown_${today}`;
-    const shownMilestones = JSON.parse(localStorage.getItem(shownKey) || '{}');
-    const milestoneKey = `${period}_${milestone}`;
-    
-    if (!shownMilestones[milestoneKey]) {
-      // Mark this milestone as shown
-      shownMilestones[milestoneKey] = true;
-      localStorage.setItem(shownKey, JSON.stringify(shownMilestones));
-      // Show the alert only if it hasn't been shown before
-      setVisibleMilestone(milestone);
-    }
-  };
-
   const handleModeChange = (newMode: CalcMode) => {
     setMode(newMode);
     // Auto-select entry type based on mode
@@ -717,8 +682,6 @@ export function Dashboard({}: DashboardProps) {
             currentProfit={rollup.profit}
             goalProgress={rollup.goal_progress || 0}
             goalAmount={rollup.goal?.target_profit?.toString() || currentGoal?.target_profit?.toString()}
-            onGoalReached={handleGoalReached}
-            onMilestoneReached={handleMilestoneReached}
             onToggle={handleToggleGoalBanner}
           />
         )}
@@ -1379,15 +1342,6 @@ export function Dashboard({}: DashboardProps) {
             </div>
           </div>
         </>
-      )}
-
-      {/* Milestone alerts */}
-      {visibleMilestone && (
-        <MilestoneAlert
-          milestone={visibleMilestone}
-          isVisible={true}
-          onClose={() => setVisibleMilestone(null)}
-        />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
