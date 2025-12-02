@@ -1,186 +1,81 @@
+# Earnings Ninja - Delivery Driver Earnings Dashboard
 
-# 🥷 Earnings Ninja - Delivery Driver Dashboard
-
-A comprehensive, mobile-first web application for delivery drivers to track earnings, expenses, mileage, and profit across multiple platforms (DoorDash, UberEats, Instacart, GrubHub, Shipt).
+A mobile-first web application designed for delivery drivers to track earnings, expenses, mileage, and profit across multiple gig platforms (DoorDash, UberEats, Instacart, GrubHub, Shipt).
 
 ![Earnings Ninja Logo](frontend/src/assets/logo-ninja-official.png)
 
-## 🌟 Features
+## Features
 
-### 📊 Performance Tracking
-- **Real-Time KPIs**: Revenue, Expenses, Profit, Miles, Orders, Average Order, Profit Margin
+### Real-Time Dashboard
+- **Live KPI Tracking**: Revenue, Expenses, Profit, Miles, Orders, $/Mile, $/Hour
 - **Multiple Time Periods**: Today, Yesterday, This Week, Last 7 Days, This Month, Last Month
-- **Day Navigation**: Navigate between days when viewing "Today" period
-- **Show/Hide Metrics**: Customize which KPIs are visible in Performance Overview
-- **Export Data**: Download entries as CSV for external analysis
+- **Day Navigation**: Browse between days with arrow controls
+- **Customizable Metrics**: Show/hide individual KPIs
+- **CSV Export**: Download your data for external analysis
 
-### 💰 Financial Management
-- **Calculator-Style Input**: Numeric keypad with Add (➕) and Subtract (➖) modes
-- **Multi-Platform Support**: Track entries across DoorDash, UberEats, Instacart, GrubHub, Shipt, and Other
+### Financial Management
+- **Calculator-Style Input**: Intuitive numeric keypad with Add/Subtract modes
+- **Multi-Platform Support**: DoorDash, UberEats, Instacart, GrubHub, Shipt, and Other
 - **Entry Types**: Orders, Bonuses, Expenses, Cancellations
 - **Expense Categories**: Gas, Parking, Tolls, Maintenance, Phone, Subscription, Food, Leisure, Other
-- **Business Expense Tracking**: Mark expenses as business-related for tax purposes
-- **Receipt Upload**: Attach receipt photos to expense entries
-- **Mileage Calculator**: Built-in distance calculator for accurate mileage tracking
-- **Automatic Profit Calculation**: Real-time profit based on cost per mile settings
+- **Business Expense Tracking**: Mark expenses as tax-deductible
+- **Receipt Upload**: Attach photos to expense entries
+- **Mileage Calculator**: Built-in distance tracking
+- **Automatic Profit Calculation**: Real-time profit based on cost per mile
 
-### 🎯 Goal Setting & Progress
-- **Customizable Goals**: Set profit targets for different timeframes
-- **Progress Bar**: Visual representation of goal achievement
-- **Milestone Alerts**: Celebrate 25%, 50%, 75%, and 100% goal completion
-- **Goal Streaks**: Track consecutive months of goal achievement
-- **Multi-Timeframe Goals**: Support for Today, Week, Month, and custom goals
+### Goal Setting & Progress
+- **Customizable Goals**: Set profit targets for Today, Week, and Month
+- **Visual Progress Bars**: Smooth animated progress tracking
+- **Milestone Celebrations**: Alerts at 25%, 50%, 75%, and 100% completion
+- **Default Goals**: New users start with sensible default targets
 
-### 🤖 AI-Powered Insights
-- **Smart Suggestions**: AI analyzes your performance and provides actionable tips
-- **Time Breakdown Analysis**: Calculate required time per order for different hourly rates
+### AI-Powered Insights
+- **Smart Suggestions**: GPT-4o-mini analyzes your performance
+- **Time Breakdown Analysis**: Required time per order for different hourly rates
 - **Peak Time Detection**: Identify your most profitable hours
-- **Minimum Order Recommendations**: Suggested minimum order amounts to accept
-- **Performance Reasoning**: Detailed explanations for AI recommendations
+- **Minimum Order Recommendations**: Suggested minimum amounts to accept
 
-### 📱 User Interface
+### Micro Animations
+- **Revenue Count-Up**: Numbers animate smoothly when values change
+- **Expense Shake**: Card shakes when big expenses ($5+) are added
+- **Miles Pulse**: Subtle pulse when distance updates
+- **Progress Bar Transitions**: Smooth cubic-bezier easing
+- **Ninja Logo Glow**: Bright yellow/green glow on $50 profit milestones
+
+### Prelaunch & Waitlist
+- **Coming Soon Page**: Yellow-themed landing page for new visitors
+- **Email Signup**: Collect emails for launch notifications
+- **Early Access Codes**: Password-protected access for beta testers
+- **Waitlist Database**: Stores signups for launch day
+
+### User Interface
 - **Mobile-First Design**: Optimized for smartphone use
-- **Theme Options**: 
-  - Ninja Green (Light theme)
-  - Dark Neon (Dark theme)
-  - Simple Light (Minimalist theme)
-- **Responsive Layout**: Works seamlessly on desktop, tablet, and mobile
-- **Collapsible Sections**: Expand/collapse Performance Overview and other sections
-- **Search Functionality**: Quickly find transactions by note, app, category, type, or amount
-- **Scroll to Top/Bottom**: Quick navigation buttons for long entry lists
+- **Theme Options**: Dark Neon (default), Simple Light, B/W Neon
+- **Responsive Layout**: Desktop, tablet, and mobile support
+- **Search Functionality**: Find transactions by note, app, category, or amount
+- **Profit Calendar**: Month view with color-coded daily profits
 
-### 📅 Calendar & Scheduling
-- **Profit Calendar**: Month view showing daily profit at a glance
-- **Color-Coded Days**: Green (profit), Red (loss), Gray (no data)
-- **Date Selection**: Click calendar days to view specific date entries
-- **Date/Time Picker**: Accurate timestamp entry with EST timezone support
-
-### 🏆 Achievements & Gamification
-- **Level System**: Progress from Beginner → Hustler → Boss → Legendary
-- **Green Day Streaks**: Track consecutive profitable days (🔥)
-- **Badge System**: Unlock achievements for various milestones
-- **Pot of Gold Tracker**: Visual representation of accumulated savings
-- **Points System**: Daily check-ins and unlockable rewards
-- **Leaderboard**: Compete with other drivers (coming soon)
-
-### 🎨 Customization
-- **Metric Visibility**: Show/hide individual KPIs (Revenue, Expenses, Profit, etc.)
-- **Account Data Privacy**: Toggle to hide sensitive financial information
-- **Sound Effects**: 
-  - Ka-ching on entry save
-  - Cha-ching on goal completion
-  - Button click sounds
-  - Intro sound on login
-  - Mute/unmute option
-- **Theme Persistence**: Saves your theme preference
-
-### 📈 Entry Management
-- **Quick Add**: Fast entry creation with calculator interface
-- **Detailed Form**: Optional fields for distance, notes, receipts, etc.
-- **Edit Entries**: Modify existing entries with full form support
-- **View Entry Details**: Expandable view with all entry information
-- **Bulk Delete**: Select and delete multiple entries at once
-- **Entry Viewer**: Dedicated modal for viewing complete entry details
-- **Platform Icons**: Visual indicators for each delivery app
-
-### ⚙️ Settings & Configuration
-- **Cost Per Mile**: Customize your vehicle operating cost
-- **Account Information**: View username and email
-- **Data Management**:
-  - Reset Today's Data
-  - Reset All Data (with confirmation)
-  - Export to CSV
-- **Tutorial**: Interactive onboarding tour
-- **Sign Out**: Secure session management
-
-### 🔐 Authentication & Security
+### Authentication & Security
 - **User Accounts**: Secure registration and login
-- **Guest Mode**: Try the app without creating an account
-- **Password Reset**: Forgot password functionality
+- **Demo Mode**: Try the app without creating an account
+- **Password Reset**: Email-based password recovery
 - **Session Persistence**: Stay logged in across sessions
-- **OAuth Integration**: Platform sync capabilities (Uber, Shipt)
 
-### 📊 Advanced Analytics
-- **Rollup Statistics**: Aggregated data by timeframe
-- **Hourly Rate Calculation**: Automatic $/hour based on time tracking
-- **Efficiency Metrics**: $/mile for route optimization
-- **Order Average**: Track average order value trends
-- **Expense Breakdown**: Categorized expense analysis
-- **Profit Margin**: Percentage-based profitability tracking
-
-### 🎭 User Experience
-- **Toast Notifications**: Success/error messages for all actions
-- **Confirmation Dialogs**: Prevent accidental data deletion
-- **Loading States**: Visual feedback during operations
-- **Error Handling**: Graceful error messages and recovery
-- **Animated Transitions**: Smooth UI interactions
-- **Coin Burst Animation**: Celebratory effects on page load
-- **Logo Animation**: Interactive click animation
+### Achievements & Gamification
+- **Level System**: Beginner, Hustler, Boss, Legendary
+- **Green Day Streaks**: Track consecutive profitable days
+- **Pot of Gold Tracker**: Visual savings representation
 - **Share Cards**: Generate shareable performance images
 
-### 📱 Mobile Optimizations
-- **Touch-Friendly**: Large tap targets for mobile use
-- **Sticky Bottom Bar**: Calculator always accessible
-- **Swipe Gestures**: Intuitive mobile interactions
-- **Compact Header**: Minimal space usage on mobile
-- **Responsive Tables**: Mobile-optimized entry lists
-- **Auto-Scroll**: Smart scrolling to relevant sections
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- npm or yarn
-
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone <your-repo-url>
-cd earnings-ninja
-```
-
-2. **Install dependencies**
-```bash
-make init
-```
-
-3. **Initialize database**
-```bash
-make migrate
-```
-
-4. **Seed sample data (optional)**
-```bash
-make seed
-```
-
-5. **Run the application**
-
-Start the backend (Terminal 1):
-```bash
-make api
-```
-
-Start the frontend (Terminal 2):
-```bash
-make web
-```
-
-6. **Visit the app**
-```
-http://localhost:5000
-```
-
-## 🛠️ Tech Stack
+## Tech Stack
 
 **Backend:**
 - FastAPI (Python 3.11)
-- SQLite + SQLAlchemy
+- SQLite + SQLAlchemy ORM
 - Pydantic v2
 - APScheduler (background jobs)
-- OpenAI GPT-4o-mini (AI suggestions)
+- OpenAI GPT-4o-mini
+- Resend (email service)
 
 **Frontend:**
 - React 18 + TypeScript
@@ -189,7 +84,43 @@ http://localhost:5000
 - TanStack React Query
 - Theme Context API
 
-## 📁 Project Structure
+## Quick Start
+
+### Prerequisites
+- Python 3.11+
+- Node.js 18+
+- npm
+
+### Running Locally
+
+1. **Start the Backend**
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+2. **Start the Frontend**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+3. **Visit the App**
+```
+http://localhost:5000
+```
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `PRELAUNCH_ACCESS_CODE` | Early access password (default: ep2025) |
+| `RESEND_API_KEY` | API key for password reset emails |
+| `DATABASE_URL` | PostgreSQL connection string (optional) |
+
+## Project Structure
 
 ```
 .
@@ -198,94 +129,71 @@ http://localhost:5000
 │   ├── services/         # Business logic
 │   ├── models.py         # Database models
 │   ├── schemas.py        # Pydantic schemas
-│   └── app.py           # FastAPI application
+│   └── app.py            # FastAPI application
 ├── frontend/
 │   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── pages/       # Page components
-│   │   ├── lib/         # Utilities & context
-│   │   └── styles/      # Tailwind CSS
+│   │   ├── components/   # React components
+│   │   ├── pages/        # Page components
+│   │   ├── lib/          # Utilities & context
+│   │   ├── styles/       # Tailwind CSS
+│   │   └── assets/       # Images & icons
 │   └── index.html
-└── Makefile             # Development commands
+└── README.md
 ```
 
-## 🎯 Usage
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Create account |
+| POST | `/api/auth/login` | User login |
+| POST | `/api/auth/demo` | Demo login |
+| GET | `/api/entries` | List entries |
+| POST | `/api/entries` | Create entry |
+| PUT | `/api/entries/{id}` | Update entry |
+| DELETE | `/api/entries/{id}` | Delete entry |
+| GET | `/api/rollup` | Get aggregated stats |
+| GET | `/api/goals/{timeframe}` | Get goal |
+| POST | `/api/goals/{timeframe}` | Set goal |
+| GET | `/api/suggestions` | Get AI suggestions |
+| POST | `/api/waitlist/signup` | Join waitlist |
+| POST | `/api/waitlist/verify-access` | Verify access code |
+
+## Usage
 
 ### Adding Entries
-1. Click the "Add Entry" button (sticky bottom bar)
-2. Enter amount using calculator keypad
-3. Select Add (➕) for revenue or Subtract (➖) for expenses
-4. Fill optional details (app, distance, notes, etc.)
-5. Click "Save Entry"
+1. Tap the calculator button at the bottom
+2. Enter the amount using the keypad
+3. Select Add (+) for income or Subtract (-) for expenses
+4. Fill in optional details (app, distance, notes)
+5. Tap "Save Entry"
 
 ### Setting Goals
 1. View the goal progress bar at the top
-2. Click "Set Goal" or "Edit" to modify target
-3. Enter your profit goal amount
+2. Tap "Set Goal" or the edit icon
+3. Enter your profit target
 4. Track progress throughout the period
 
-### Viewing Stats
-- Select time period chips (Today, Week, Month, etc.)
-- Navigate between days using arrow buttons
-- Toggle Performance Overview visibility
-- Hide/show specific KPIs in settings
-
 ### Using AI Suggestions
-- Expand the "AI Tips" section
-- Review your stats and suggestions
-- Check time breakdown strategies
-- Implement recommended minimum orders
+1. Expand the "AI Tips" section
+2. Review personalized recommendations
+3. Check time breakdown strategies
+4. Apply suggested minimum order amounts
 
-## 🔧 Development
+## Deployment
 
-### Available Commands
-```bash
-make init      # Install all dependencies
-make migrate   # Initialize database
-make seed      # Add sample data
-make api       # Run backend server
-make web       # Run frontend dev server
-make test      # Run tests
-```
+This app is configured for deployment on Replit. Use the Deploy button to publish your app with a live URL.
 
-### API Endpoints
-- `GET /api/health` - Health check
-- `GET /api/settings` - Get settings
-- `PUT /api/settings` - Update settings
-- `POST /api/entries` - Create entry
-- `GET /api/entries` - List entries
-- `PUT /api/entries/{id}` - Update entry
-- `DELETE /api/entries/{id}` - Delete entry
-- `GET /api/rollup` - Get aggregated stats
-- `GET /api/suggestions` - Get AI suggestions
-- `GET/POST /api/goals/{timeframe}` - Goal management
+## License
 
-## 🌐 Deployment
+MIT License - See LICENSE file for details.
 
-This app is designed to be deployed on Replit with automatic deployment configuration. See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+## Support
 
-## 📄 License
-
-MIT License - See LICENSE file for details
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 💡 Feature Requests
-
-Have an idea for a new feature? Open an issue with the "enhancement" label.
-
-## 🐛 Bug Reports
-
-Found a bug? Please open an issue with detailed reproduction steps.
-
-## 📞 Support
-
-For support, please open an issue on GitHub or contact the development team.
+For support, please open an issue on GitHub.
 
 ---
 
-**Made with ❤️ for delivery drivers everywhere**
+**Made with love for delivery drivers everywhere**
 
-*Grow your earnings with Earnings Ninja* 🥷💰
+*Grow your earnings with Earnings Ninja*
