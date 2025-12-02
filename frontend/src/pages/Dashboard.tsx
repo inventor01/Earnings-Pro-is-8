@@ -662,7 +662,7 @@ export function Dashboard({}: DashboardProps) {
 
   return (
     <div className={dashboardClass}>
-      <div id="header" className={`fixed top-0 left-0 right-0 z-40 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''} shadow-md flex flex-col`}>
+      <div id="header" className={`fixed top-0 left-0 right-0 z-40 ${config.dashBg} ${config.dashFrom} ${config.dashTo} ${config.dashVia ? config.dashVia : ''} flex flex-col`}>
         {/* Progress Bar - at the very top on mobile */}
         {rollup && showGoalBanner && (
           <ProfitGoalsBar
