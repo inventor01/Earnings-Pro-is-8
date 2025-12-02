@@ -88,7 +88,7 @@ export function Dashboard({}: DashboardProps) {
   const [logoAnimating, setLogoAnimating] = useState(false);
   const [logoMilestoneGlow, setLogoMilestoneGlow] = useState(false);
   const prevProfitRef = useRef<number>(0);
-  const milestoneTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const milestoneTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editingFormData, setEditingFormData] = useState<EntryFormData>({
     type: 'ORDER',
     app: 'UBEREATS',
@@ -183,40 +183,6 @@ export function Dashboard({}: DashboardProps) {
     }
   }, []);
 
-  // Ninja logo glow on profit milestones ($50, $100, $150, $200, etc.)
-  useEffect(() => {
-    if (rollup?.profit !== undefined) {
-      const currentProfit = rollup.profit;
-      const prevProfit = prevProfitRef.current;
-      
-      // Check if we crossed a $50 milestone
-      const currentMilestone = Math.floor(currentProfit / 50);
-      const prevMilestone = Math.floor(prevProfit / 50);
-      
-      if (currentMilestone > prevMilestone && currentProfit > 0) {
-        // Clear any existing timeout before setting a new one
-        if (milestoneTimeoutRef.current) {
-          clearTimeout(milestoneTimeoutRef.current);
-        }
-        setLogoMilestoneGlow(true);
-        milestoneTimeoutRef.current = setTimeout(() => {
-          setLogoMilestoneGlow(false);
-          milestoneTimeoutRef.current = null;
-        }, 1500);
-      }
-      
-      prevProfitRef.current = currentProfit;
-    }
-    
-    // Cleanup timeout on unmount
-    return () => {
-      if (milestoneTimeoutRef.current) {
-        clearTimeout(milestoneTimeoutRef.current);
-      }
-    };
-  }, [rollup?.profit]);
-
-
   const scrollToTop = () => {
     const element = document.getElementById('performance-overview');
     if (element) {
@@ -303,6 +269,39 @@ export function Dashboard({}: DashboardProps) {
   
   const refetchRollup = refetchDashboard;
   const refetchEntries = refetchDashboard;
+
+  // Ninja logo glow on profit milestones ($50, $100, $150, $200, etc.)
+  useEffect(() => {
+    if (rollup?.profit !== undefined) {
+      const currentProfit = rollup.profit;
+      const prevProfit = prevProfitRef.current;
+      
+      // Check if we crossed a $50 milestone
+      const currentMilestone = Math.floor(currentProfit / 50);
+      const prevMilestone = Math.floor(prevProfit / 50);
+      
+      if (currentMilestone > prevMilestone && currentProfit > 0) {
+        // Clear any existing timeout before setting a new one
+        if (milestoneTimeoutRef.current) {
+          clearTimeout(milestoneTimeoutRef.current);
+        }
+        setLogoMilestoneGlow(true);
+        milestoneTimeoutRef.current = setTimeout(() => {
+          setLogoMilestoneGlow(false);
+          milestoneTimeoutRef.current = null;
+        }, 1500);
+      }
+      
+      prevProfitRef.current = currentProfit;
+    }
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (milestoneTimeoutRef.current) {
+        clearTimeout(milestoneTimeoutRef.current);
+      }
+    };
+  }, [rollup?.profit]);
 
   const { data: monthlyEntries = [] } = useQuery<Entry[]>({
     queryKey: ['entries', 'all'],
