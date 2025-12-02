@@ -35,19 +35,12 @@ The backend is built with FastAPI (Python 3.11) and SQLite (SQLAlchemy ORM). The
 - **aiosmtplib**: For sending password reset emails asynchronously.
 
 ## Email Configuration (Password Reset)
-To enable password reset emails, set the following environment variables:
-- **SMTP_HOST**: SMTP server hostname (default: smtp.gmail.com)
-- **SMTP_PORT**: SMTP server port (default: 587)
-- **SMTP_USER**: Email address to send from
-- **SMTP_PASSWORD**: Email account password or app-specific password
-- **FROM_EMAIL**: (optional) From email address if different from SMTP_USER
+Password reset emails are sent using **Resend** (https://resend.com).
 
-For Gmail, you'll need to:
-1. Enable 2-Factor Authentication
-2. Generate an App Password at https://myaccount.google.com/apppasswords
-3. Use that App Password as SMTP_PASSWORD
+Required secret:
+- **RESEND_API_KEY**: Your Resend API key (starts with `re_`)
 
-Without SMTP credentials configured, reset links are logged to the console for development purposes.
+The email service is configured and ready to send password reset emails when users click "Forgot password?" on the login page.
 
 ## Recent Changes (December 2, 2025)
 - Added default daily/weekly/monthly goals for new user signups (regular users now get default goals like demo users)

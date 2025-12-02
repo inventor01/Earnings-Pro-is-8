@@ -1,15 +1,11 @@
 import os
-import aiosmtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import resend
 from typing import Optional
 
-SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
-SMTP_USER = os.environ.get("SMTP_USER", "")
-SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
-FROM_EMAIL = os.environ.get("FROM_EMAIL", SMTP_USER)
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 APP_NAME = "Earnings Ninja"
+
+resend.api_key = RESEND_API_KEY
 
 def get_app_url() -> str:
     domain = os.environ.get("REPLIT_DEV_DOMAIN", "")
@@ -21,11 +17,11 @@ def get_app_url() -> str:
     return "http://localhost:5000"
 
 async def send_password_reset_email(to_email: str, reset_token: str, user_name: Optional[str] = None) -> bool:
-    if not SMTP_USER or not SMTP_PASSWORD:
-        print(f"[Email Service] SMTP not configured. Reset link: {get_app_url()}/reset-password?token={reset_token}")
-        return False
-    
     reset_url = f"{get_app_url()}/reset-password?token={reset_token}"
+    
+    if not RESEND_API_KEY:
+        print(f"[Email Service] Resend API key not configured. Reset link: {reset_url}")
+        return False
     
     greeting = f"Hi {user_name}," if user_name else "Hi,"
     
@@ -87,24 +83,17 @@ If you didn't request a password reset, you can safely ignore this email.
 - The {APP_NAME} Team
 """
     
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"Reset Your {APP_NAME} Password"
-    msg["From"] = FROM_EMAIL
-    msg["To"] = to_email
-    
-    msg.attach(MIMEText(text_content, "plain"))
-    msg.attach(MIMEText(html_content, "html"))
-    
     try:
-        await aiosmtplib.send(
-            msg,
-            hostname=SMTP_HOST,
-            port=SMTP_PORT,
-            username=SMTP_USER,
-            password=SMTP_PASSWORD,
-            start_tls=True,
-        )
-        print(f"[Email Service] Password reset email sent to {to_email}")
+        params = {
+            "from": "Earnings Ninja <onboarding@resend.dev>",
+            "to": [to_email],
+            "subject": f"Reset Your {APP_NAME} Password",
+            "html": html_content,
+            "text": text_content,
+        }
+        
+        email_response = resend.Emails.send(params)
+        print(f"[Email Service] Password reset email sent to {to_email}, id: {email_response.get('id', 'unknown')}")
         return True
     except Exception as e:
         print(f"[Email Service] Failed to send email to {to_email}: {e}")
