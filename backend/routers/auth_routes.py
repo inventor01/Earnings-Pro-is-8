@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from backend.db import get_db
 from backend.models import AuthUser, Settings, Entry, EntryType, AppType, ExpenseCategory, Goal, TimeframeType
 from backend.auth import get_current_user
@@ -63,11 +64,11 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
     if existing_email:
         raise HTTPException(status_code=409, detail="Email already registered")
     
-    # Check if username already exists (if username provided)
+    # Check if username already exists (case-insensitive)
     username = request.username.strip() if request.username else ""
     if username:
         existing_username = db.query(AuthUser).filter(
-            AuthUser.first_name == username,
+            func.lower(AuthUser.first_name) == username.lower(),
             AuthUser.is_demo == False
         ).first()
         if existing_username:
@@ -107,13 +108,13 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
     
     credential = request.credential.strip()
     
-    # Try to find user by email first
+    # Try to find user by email first (case-sensitive for email)
     user = db.query(AuthUser).filter(AuthUser.email == credential).first()
     
-    # If not found by email, try by username (first_name) - only for non-empty usernames
+    # If not found by email, try by username (case-insensitive)
     if not user:
         user = db.query(AuthUser).filter(
-            AuthUser.first_name == credential,
+            func.lower(AuthUser.first_name) == credential.lower(),
             AuthUser.first_name != "",
             AuthUser.is_demo == False
         ).first()
