@@ -269,15 +269,18 @@ export function ProfitGoalsBar({ timeframe, currentProfit, goalProgress = 0, goa
           </button>
         </div>
 
-        {/* Progress bar - bigger */}
+        {/* Progress bar - bigger with smooth animation */}
         <div className={`w-full rounded-full h-2.5 md:h-4 overflow-hidden shadow-inner transition-all duration-500 progress-section mt-2 md:mt-2.5 ${isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'}`}>
           <div
-            className={`h-2.5 md:h-4 rounded-full transition-all duration-500 ease-out progress-bar-fill ${goalProgress > 50 ? 'shimmer-effect' : ''} ${isGoalReached ? 'goal-pulse shadow-lg' : ''} ${
+            className={`h-2.5 md:h-4 rounded-full progress-bar-fill progress-bar-smooth ${goalProgress > 50 ? 'shimmer-effect' : ''} ${isGoalReached ? 'goal-pulse shadow-lg' : ''} ${
               isDarkTheme 
                 ? 'bg-gradient-to-r from-yellow-500 to-yellow-400' 
                 : 'bg-gradient-to-r from-green-500 to-lime-400'
             }`}
-            style={{ width: `${displayProgress}%` }}
+            style={{ 
+              width: `${displayProgress}%`,
+              transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
           />
         </div>
       </div>

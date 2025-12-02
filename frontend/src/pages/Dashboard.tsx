@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, Entry, EntryCreate, EntryType, TimeframeType, Goal } from '../lib/api';
 import { useAuth } from '../lib/authContext';
@@ -86,6 +86,9 @@ export function Dashboard({}: DashboardProps) {
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [viewingEntry, setViewingEntry] = useState<Entry | null>(null);
   const [logoAnimating, setLogoAnimating] = useState(false);
+  const [logoMilestoneGlow, setLogoMilestoneGlow] = useState(false);
+  const prevProfitRef = useRef<number>(0);
+  const milestoneTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [editingFormData, setEditingFormData] = useState<EntryFormData>({
     type: 'ORDER',
     app: 'UBEREATS',
@@ -179,6 +182,39 @@ export function Dashboard({}: DashboardProps) {
       sessionStorage.removeItem('justLoggedIn'); // Clear flag so it only plays once
     }
   }, []);
+
+  // Ninja logo glow on profit milestones ($50, $100, $150, $200, etc.)
+  useEffect(() => {
+    if (rollup?.profit !== undefined) {
+      const currentProfit = rollup.profit;
+      const prevProfit = prevProfitRef.current;
+      
+      // Check if we crossed a $50 milestone
+      const currentMilestone = Math.floor(currentProfit / 50);
+      const prevMilestone = Math.floor(prevProfit / 50);
+      
+      if (currentMilestone > prevMilestone && currentProfit > 0) {
+        // Clear any existing timeout before setting a new one
+        if (milestoneTimeoutRef.current) {
+          clearTimeout(milestoneTimeoutRef.current);
+        }
+        setLogoMilestoneGlow(true);
+        milestoneTimeoutRef.current = setTimeout(() => {
+          setLogoMilestoneGlow(false);
+          milestoneTimeoutRef.current = null;
+        }, 1500);
+      }
+      
+      prevProfitRef.current = currentProfit;
+    }
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (milestoneTimeoutRef.current) {
+        clearTimeout(milestoneTimeoutRef.current);
+      }
+    };
+  }, [rollup?.profit]);
 
 
   const scrollToTop = () => {
@@ -704,10 +740,13 @@ export function Dashboard({}: DashboardProps) {
                   setLogoAnimating(true);
                   setTimeout(() => setLogoAnimating(false), 600);
                 }}
-                className={`h-24 md:h-36 lg:h-48 w-auto drop-shadow-md logo-animate cursor-pointer transition-transform hover:scale-105 ${logoAnimating ? 'animate-bounce' : ''}`}
+                className={`h-24 md:h-36 lg:h-48 w-auto drop-shadow-md logo-animate cursor-pointer transition-transform hover:scale-105 ${logoAnimating ? 'animate-bounce' : ''} ${logoMilestoneGlow ? 'ninja-glow-milestone' : ''}`}
                 style={{
-                  filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.4))',
-                  animation: logoAnimating ? 'pulse-gold 0.6s ease-out' : 'none',
+                  filter: logoMilestoneGlow 
+                    ? 'drop-shadow(0 0 20px rgba(250, 204, 21, 0.8)) drop-shadow(0 0 40px rgba(34, 197, 94, 0.6))' 
+                    : 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.4))',
+                  animation: logoAnimating ? 'pulse-gold 0.6s ease-out' : logoMilestoneGlow ? 'ninja-milestone-glow 1.5s ease-in-out' : 'none',
+                  transition: 'filter 0.3s ease-in-out',
                 }}
               />
             </div>

@@ -1,5 +1,6 @@
 import { useTheme } from '../lib/themeContext';
 import { CountUpNumber } from './CountUpNumber';
+import { useState, useEffect, useRef } from 'react';
 
 function getIconElement(title: string) {
   const iconPaths: Record<string, string> = {
@@ -29,6 +30,30 @@ interface KpiCardProps {
 export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color = 'blue' }: KpiCardProps) {
   const { config: themeConfig } = useTheme();
   const colorConfig = themeConfig.kpiColors[color];
+  const [animationClass, setAnimationClass] = useState('');
+  const prevValueRef = useRef<string | number>(value);
+
+  useEffect(() => {
+    const currentNum = parseFloat(String(value).replace(/[^0-9.-]/g, ''));
+    const prevNum = parseFloat(String(prevValueRef.current).replace(/[^0-9.-]/g, ''));
+    
+    if (!isNaN(currentNum) && !isNaN(prevNum) && currentNum !== prevNum) {
+      if (title === 'Expenses' && currentNum > prevNum) {
+        setAnimationClass('expense-shake');
+      } else if (title === 'Miles' && currentNum !== prevNum) {
+        setAnimationClass('miles-pulse');
+      } else if (title === 'Revenue' && currentNum > prevNum) {
+        setAnimationClass('revenue-celebrate');
+      } else if (title === 'Profit' && currentNum > 0) {
+        setAnimationClass('profit-positive-glow');
+      }
+      
+      const timer = setTimeout(() => setAnimationClass(''), 800);
+      prevValueRef.current = value;
+      return () => clearTimeout(timer);
+    }
+    prevValueRef.current = value;
+  }, [value, title]);
 
   const glowClass = 
     color === 'green' ? 'pulse-glow-green' :
@@ -38,7 +63,7 @@ export function KpiCard({ title, value, subtitle, detail1, detail2, trend, color
     'pulse-glow';
 
   return (
-    <div className={`relative p-5 md:p-7 lg:p-8 rounded-2xl overflow-hidden group min-h-max ${themeConfig.name !== 'simple-light' ? glowClass : ''}`}>
+    <div className={`relative p-5 md:p-7 lg:p-8 rounded-2xl overflow-hidden group min-h-max ${themeConfig.name !== 'simple-light' ? glowClass : ''} ${animationClass}`}>
       {/* Background with dark dashboard effect */}
       <div className={`absolute inset-0 ${colorConfig.bg} border-2 ${colorConfig.border} rounded-2xl`} />
       {themeConfig.name !== 'simple-light' && (

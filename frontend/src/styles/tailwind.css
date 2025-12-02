@@ -313,3 +313,79 @@ textarea {
   animation: slide-up-fade 0.7s ease-out 0.1s backwards;
 }
 
+/* Micro Animations for Dashboard Cards */
+
+/* Shake animation for expense card when big expenses added */
+@keyframes expense-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.expense-shake {
+  animation: expense-shake 0.6s ease-in-out;
+}
+
+/* Pulse animation for miles card on update */
+@keyframes miles-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
+  50% { transform: scale(1.02); box-shadow: 0 0 20px 5px rgba(168, 85, 247, 0.3); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+}
+
+.miles-pulse {
+  animation: miles-pulse 0.8s ease-in-out;
+}
+
+/* Revenue card celebration pulse */
+@keyframes revenue-celebrate {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.03); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.revenue-celebrate {
+  animation: revenue-celebrate 0.5s ease-in-out;
+}
+
+/* Ninja logo glow for profit milestones */
+@keyframes ninja-milestone-glow {
+  0% { filter: drop-shadow(0 0 6px rgba(132, 204, 22, 0.4)); }
+  25% { filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0.8)) drop-shadow(0 0 40px rgba(250, 204, 21, 0.5)); }
+  50% { filter: drop-shadow(0 0 30px rgba(34, 197, 94, 0.9)) drop-shadow(0 0 60px rgba(34, 197, 94, 0.6)); }
+  75% { filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0.8)) drop-shadow(0 0 40px rgba(250, 204, 21, 0.5)); }
+  100% { filter: drop-shadow(0 0 6px rgba(132, 204, 22, 0.4)); }
+}
+
+.ninja-glow-milestone {
+  animation: ninja-milestone-glow 1.5s ease-in-out;
+}
+
+/* Smooth progress bar fill animation */
+.progress-bar-smooth {
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Card value update flash */
+@keyframes value-flash {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+.value-update-flash {
+  animation: value-flash 0.3s ease-in-out;
+}
+
+/* Profit card special glow when positive */
+@keyframes profit-glow {
+  0%, 100% { box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
+  50% { box-shadow: 0 0 25px rgba(34, 197, 94, 0.5); }
+}
+
+.profit-positive-glow {
+  animation: profit-glow 2s ease-in-out infinite;
+}
+
