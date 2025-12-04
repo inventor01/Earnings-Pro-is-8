@@ -114,4 +114,4 @@ packages = ["cargo", "imagemagick", "libiconv", "libxcrypt", "rustc"]
 [userenv]
 
 [userenv.shared]
-PRELAUNCH_ACCESS_CODE = "ep2025"
+PRELAUNCH_ACCESS_CODE = "en2025"
