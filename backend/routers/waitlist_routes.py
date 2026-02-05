@@ -9,7 +9,7 @@ from backend.models import WaitlistSignup
 
 router = APIRouter(prefix="/api/waitlist", tags=["waitlist"])
 
-PRELAUNCH_ACCESS_CODE = os.getenv("PRELAUNCH_ACCESS_CODE", "earningsninja2024")
+PRELAUNCH_ACCESS_CODE = os.getenv("PRELAUNCH_ACCESS_CODE", "en2025")
 
 class WaitlistRequest(BaseModel):
     email: EmailStr
