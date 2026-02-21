@@ -59,3 +59,8 @@ packages = ["cargo", "imagemagick", "libiconv", "libxcrypt", "rustc", "zip"]
 
 [userenv.shared]
 PRELAUNCH_ACCESS_CODE = "en2025"
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["bash", "-c", "cd frontend && npx serve dist -l 5000 -s & uvicorn backend.app:app --host 0.0.0.0 --port 8000"]
+build = ["bash", "-c", "cd frontend && npm run build"]
