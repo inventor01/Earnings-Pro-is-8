@@ -24,7 +24,7 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIos, setIsIos] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [showManualInstructions, setShowManualInstructions] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
@@ -63,7 +63,7 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
       }
       setDeferredPrompt(null);
     } else {
-      setShowManualInstructions(true);
+      setShowInstructions(!showInstructions);
     }
   };
 
