@@ -143,72 +143,77 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
             </p>
           </div>
 
-          {!isInstalled && (
+          {!isInstalled ? (
             <div className="mb-4 md:mb-6">
-              {isIos ? (
-                <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl p-5 border border-yellow-500/30 shadow-lg">
-                  <p className="text-white font-bold text-base mb-2 text-center">Install Earnings Ninja</p>
-                  <div className="flex items-start gap-3 mb-2">
-                    <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">1</span>
-                    <p className="text-gray-300 text-sm">
-                      Tap the <strong className="text-blue-400">Share</strong> button
-                      <svg className="w-5 h-5 text-blue-400 inline mx-1 -mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                      at the bottom of Safari
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3 mb-2">
-                    <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">2</span>
-                    <p className="text-gray-300 text-sm">
-                      Scroll down and tap <strong className="text-white">"Add to Home Screen"</strong>
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">3</span>
-                    <p className="text-gray-300 text-sm">
-                      Tap <strong className="text-white">"Add"</strong> in the top right corner
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <button
-                    onClick={handleInstallClick}
-                    className="w-full py-4 rounded-2xl font-bold text-lg bg-gradient-to-r from-green-400 to-emerald-500 text-gray-900 hover:from-green-500 hover:to-emerald-600 transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/50 flex items-center justify-center gap-3"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0 0l-4-4m4 4l4-4" />
-                    </svg>
-                    Install App
-                  </button>
-                  {showManualInstructions && (
-                    <div className="mt-3 bg-slate-800/80 backdrop-blur-sm rounded-2xl p-5 border border-yellow-500/30 shadow-lg">
-                      <p className="text-white font-bold text-sm mb-3 text-center">How to Install</p>
-                      <div className="flex items-start gap-3 mb-2">
-                        <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">1</span>
-                        <p className="text-gray-300 text-sm">
-                          Open this page in <strong className="text-white">Chrome</strong> on your phone (not inside another app)
+              <button
+                onClick={handleInstallClick}
+                className="w-full py-4 rounded-2xl font-bold text-lg bg-gradient-to-r from-green-400 to-emerald-500 text-gray-900 hover:from-green-500 hover:to-emerald-600 transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/50 flex items-center justify-center gap-3 active:scale-95"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0 0l-4-4m4 4l4-4" />
+                </svg>
+                Install App
+              </button>
+              {showInstructions && (
+                <div className="mt-3 bg-slate-800/80 backdrop-blur-sm rounded-2xl p-5 border border-yellow-500/30 shadow-lg animate-in">
+                  <p className="text-white font-bold text-sm mb-3 text-center">
+                    {isIos ? 'How to Install on iPhone' : 'How to Install'}
+                  </p>
+                  {isIos ? (
+                    <>
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="bg-yellow-500 text-gray-900 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">1</span>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          Make sure you're using <strong className="text-white">Safari</strong> (not Chrome or another browser)
                         </p>
                       </div>
-                      <div className="flex items-start gap-3 mb-2">
-                        <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">2</span>
-                        <p className="text-gray-300 text-sm">
-                          Tap the <strong className="text-white">three-dot menu</strong> (top right corner)
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="bg-yellow-500 text-gray-900 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">2</span>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          Tap the <strong className="text-blue-400">Share</strong> button
+                          <svg className="w-5 h-5 text-blue-400 inline mx-1 -mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                          at the bottom of the screen
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="bg-yellow-500 text-gray-900 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">3</span>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          Scroll down and tap <strong className="text-white">"Add to Home Screen"</strong>
                         </p>
                       </div>
                       <div className="flex items-start gap-3">
-                        <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">3</span>
-                        <p className="text-gray-300 text-sm">
+                        <span className="bg-yellow-500 text-gray-900 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">4</span>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          Tap <strong className="text-white">"Add"</strong> in the top right corner
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="bg-yellow-500 text-gray-900 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">1</span>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          Open this page in <strong className="text-white">Chrome</strong> on your phone
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="bg-yellow-500 text-gray-900 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">2</span>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          Tap the <strong className="text-white">three-dot menu</strong> (top right)
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="bg-yellow-500 text-gray-900 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">3</span>
+                        <p className="text-gray-300 text-sm leading-relaxed">
                           Tap <strong className="text-white">"Install app"</strong> or <strong className="text-white">"Add to Home screen"</strong>
                         </p>
                       </div>
-                    </div>
+                    </>
                   )}
-                </>
+                </div>
               )}
             </div>
-          )}
-
-          {isInstalled && (
+          ) : (
             <div className="mb-4 md:mb-6 bg-green-900/30 border border-green-500/30 rounded-2xl p-4 text-center">
               <p className="text-green-400 font-bold flex items-center justify-center gap-2">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
