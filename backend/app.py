@@ -45,9 +45,11 @@ app.add_middleware(
 @app.middleware("http")
 async def add_cache_headers(request, call_next):
     response = await call_next(request)
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
+    path = request.url.path
+    if path.startswith("/api"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
     return response
 
 app.include_router(health.router, prefix="/api", tags=["health"])
@@ -64,15 +66,45 @@ app.include_router(leaderboard_routes.router, prefix="/api", tags=["leaderboard"
 app.include_router(waitlist_routes.router, tags=["waitlist"])
 
 # Serve frontend static files (must be after all API routes)
-# In production (Docker), dist is at /app/dist
-# In development, it might be at backend/../frontend/dist
-dist_path = os.path.join(os.path.dirname(__file__), "..", "dist")
-dist_path = os.path.abspath(dist_path)
+# Check multiple possible dist locations
+_possible_dist = [
+    os.path.join(os.path.dirname(__file__), "..", "frontend", "dist"),
+    os.path.join(os.path.dirname(__file__), "..", "dist"),
+    "/app/dist",
+]
+dist_path = None
+for _p in _possible_dist:
+    _abs = os.path.abspath(_p)
+    if os.path.exists(_abs) and os.path.isfile(os.path.join(_abs, "index.html")):
+        dist_path = _abs
+        break
 
-if os.path.exists(dist_path):
+if dist_path:
+    @app.get("/sw.js")
+    async def service_worker():
+        return FileResponse(
+            os.path.join(dist_path, "sw.js"),
+            media_type="application/javascript",
+            headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"},
+        )
+
+    @app.get("/manifest.webmanifest")
+    async def manifest():
+        return FileResponse(
+            os.path.join(dist_path, "manifest.webmanifest"),
+            media_type="application/manifest+json",
+        )
+
+    @app.get("/registerSW.js")
+    async def register_sw():
+        return FileResponse(
+            os.path.join(dist_path, "registerSW.js"),
+            media_type="application/javascript",
+        )
+
     app.mount("/", StaticFiles(directory=dist_path, html=True), name="static")
+    logger.info(f"Serving frontend from: {dist_path}")
 else:
-    # Fallback if dist not available (for development)
     @app.get("/")
     async def root():
         return {"message": "Delivery Driver Earnings API"}
