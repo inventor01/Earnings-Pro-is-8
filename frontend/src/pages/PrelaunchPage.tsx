@@ -22,9 +22,9 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
   const [accessError, setAccessError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showInstallButton, setShowInstallButton] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [showManualInstructions, setShowManualInstructions] = useState(false);
 
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
@@ -35,23 +35,23 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
     }
 
     const ua = window.navigator.userAgent.toLowerCase();
-    const iosDevice = /iphone|ipad|ipod/.test(ua);
-    setIsIos(iosDevice);
-
-    if (!iosDevice) {
-      setShowInstallButton(true);
-    } else {
-      setShowInstallButton(true);
-    }
+    setIsIos(/iphone|ipad|ipod/.test(ua));
 
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowInstallButton(true);
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+
+    window.addEventListener('appinstalled', () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    });
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
   }, []);
 
   const handleInstallClick = async () => {
@@ -62,6 +62,8 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
         setIsInstalled(true);
       }
       setDeferredPrompt(null);
+    } else {
+      setShowManualInstructions(true);
     }
   };
 
@@ -141,30 +143,67 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
             </p>
           </div>
 
-          {showInstallButton && !isInstalled && (
+          {!isInstalled && (
             <div className="mb-4 md:mb-6">
               {isIos ? (
-                <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl p-4 border border-yellow-500/30 shadow-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="text-3xl">📲</div>
-                    <div className="flex-1">
-                      <p className="text-white font-bold text-sm">Install Earnings Ninja</p>
-                      <p className="text-gray-400 text-xs mt-1">
-                        Tap the <span className="inline-flex items-center"><svg className="w-4 h-4 text-blue-400 inline mx-1" fill="currentColor" viewBox="0 0 20 20"><path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"/></svg></span> Share button below, then tap <strong className="text-white">"Add to Home Screen"</strong>
-                      </p>
-                    </div>
+                <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl p-5 border border-yellow-500/30 shadow-lg">
+                  <p className="text-white font-bold text-base mb-2 text-center">Install Earnings Ninja</p>
+                  <div className="flex items-start gap-3 mb-2">
+                    <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">1</span>
+                    <p className="text-gray-300 text-sm">
+                      Tap the <strong className="text-blue-400">Share</strong> button
+                      <svg className="w-5 h-5 text-blue-400 inline mx-1 -mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                      at the bottom of Safari
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3 mb-2">
+                    <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">2</span>
+                    <p className="text-gray-300 text-sm">
+                      Scroll down and tap <strong className="text-white">"Add to Home Screen"</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">3</span>
+                    <p className="text-gray-300 text-sm">
+                      Tap <strong className="text-white">"Add"</strong> in the top right corner
+                    </p>
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={handleInstallClick}
-                  className="w-full py-4 rounded-2xl font-bold text-lg bg-gradient-to-r from-green-400 to-emerald-500 text-gray-900 hover:from-green-500 hover:to-emerald-600 transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/50 flex items-center justify-center gap-3"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0 0l-4-4m4 4l4-4" />
-                  </svg>
-                  Install App
-                </button>
+                <>
+                  <button
+                    onClick={handleInstallClick}
+                    className="w-full py-4 rounded-2xl font-bold text-lg bg-gradient-to-r from-green-400 to-emerald-500 text-gray-900 hover:from-green-500 hover:to-emerald-600 transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/50 flex items-center justify-center gap-3"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    Install App
+                  </button>
+                  {showManualInstructions && (
+                    <div className="mt-3 bg-slate-800/80 backdrop-blur-sm rounded-2xl p-5 border border-yellow-500/30 shadow-lg">
+                      <p className="text-white font-bold text-sm mb-3 text-center">How to Install</p>
+                      <div className="flex items-start gap-3 mb-2">
+                        <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">1</span>
+                        <p className="text-gray-300 text-sm">
+                          Open this page in <strong className="text-white">Chrome</strong> on your phone (not inside another app)
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3 mb-2">
+                        <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">2</span>
+                        <p className="text-gray-300 text-sm">
+                          Tap the <strong className="text-white">three-dot menu</strong> (top right corner)
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">3</span>
+                        <p className="text-gray-300 text-sm">
+                          Tap <strong className="text-white">"Install app"</strong> or <strong className="text-white">"Add to Home screen"</strong>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
