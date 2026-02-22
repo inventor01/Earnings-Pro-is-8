@@ -1,5 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ninjaLogo from '../assets/logo-ninja-official.png';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
 
 interface PrelaunchPageProps {
   onGoToLogin: () => void;
@@ -16,6 +21,49 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
   const [showAccessCode, setShowAccessCode] = useState(false);
   const [accessError, setAccessError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || (navigator as any).standalone === true;
+    if (isStandalone) {
+      setIsInstalled(true);
+      return;
+    }
+
+    const ua = window.navigator.userAgent.toLowerCase();
+    const iosDevice = /iphone|ipad|ipod/.test(ua);
+    setIsIos(iosDevice);
+
+    if (!iosDevice) {
+      setShowInstallButton(true);
+    } else {
+      setShowInstallButton(true);
+    }
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setShowInstallButton(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        setIsInstalled(true);
+      }
+      setDeferredPrompt(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +140,43 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
               Set goals, analyze profits, and maximize your income like a ninja.
             </p>
           </div>
+
+          {showInstallButton && !isInstalled && (
+            <div className="mb-4 md:mb-6">
+              {isIos ? (
+                <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl p-4 border border-yellow-500/30 shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl">📲</div>
+                    <div className="flex-1">
+                      <p className="text-white font-bold text-sm">Install Earnings Ninja</p>
+                      <p className="text-gray-400 text-xs mt-1">
+                        Tap the <span className="inline-flex items-center"><svg className="w-4 h-4 text-blue-400 inline mx-1" fill="currentColor" viewBox="0 0 20 20"><path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"/></svg></span> Share button below, then tap <strong className="text-white">"Add to Home Screen"</strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={handleInstallClick}
+                  className="w-full py-4 rounded-2xl font-bold text-lg bg-gradient-to-r from-green-400 to-emerald-500 text-gray-900 hover:from-green-500 hover:to-emerald-600 transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/50 flex items-center justify-center gap-3"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0 0l-4-4m4 4l4-4" />
+                  </svg>
+                  Install App
+                </button>
+              )}
+            </div>
+          )}
+
+          {isInstalled && (
+            <div className="mb-4 md:mb-6 bg-green-900/30 border border-green-500/30 rounded-2xl p-4 text-center">
+              <p className="text-green-400 font-bold flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
+                App Installed!
+              </p>
+            </div>
+          )}
 
           <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-slate-700 shadow-2xl">
             {submitted ? (
