@@ -6,3 +6,9 @@ id = "AHF-530LgLlQZI4QbGeIL"
 uri = "file://earnings-ninja-master.zip"
 type = "unspecified"
 title = "Earnings Ninja - Master Project Files"
+
+[[outputs]]
+id = "KIb_13ZVzvqvvYsDGqPIE"
+uri = "file://earnings-ninja-ios.zip"
+type = "unspecified"
+title = "Earnings Ninja - iOS App Store Package"
