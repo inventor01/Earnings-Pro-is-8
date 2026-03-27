@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Earnings Ninja",
+    "slug": "earnings-ninja",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0f172a",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.earningsninja.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Earnings Ninja needs camera access to photograph receipts for expense tracking.",
+        "NSPhotoLibraryUsageDescription": "Earnings Ninja needs photo library access to attach receipt images to your expenses.",
+        "NSPhotoLibraryAddUsageDescription": "Earnings Ninja needs permission to save receipt images to your photo library.",
+        "NSLocationWhenInUseUsageDescription": "Earnings Ninja uses your location to automatically track trip mileage while you are delivering.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Earnings Ninja uses your location to track trip mileage for accurate earnings calculations.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "UIStatusBarStyle": "UIStatusBarStyleLightContent",
+        "UIViewControllerBasedStatusBarAppearance": false
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0f172a"
+      },
+      "package": "com.earningsninja.app"
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
+    },
+    "plugins": [
+      "expo-splash-screen"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "earnings-ninja"
+      }
+    }
+  }
+}

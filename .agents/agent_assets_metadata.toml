@@ -12,3 +12,9 @@ id = "KIb_13ZVzvqvvYsDGqPIE"
 uri = "file://earnings-ninja-ios.zip"
 type = "unspecified"
 title = "Earnings Ninja - iOS App Store Package"
+
+[[outputs]]
+id = "WZfSJ-LCVpKjsi4CXlDEu"
+uri = "file://earnings-ninja-expo.zip"
+type = "unspecified"
+title = "Earnings Ninja - Expo iOS App"
