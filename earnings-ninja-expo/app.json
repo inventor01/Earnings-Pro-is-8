@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0f172a",
+    "scheme": "earningsninja",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -40,15 +41,16 @@
       "package": "com.earningsninja.app"
     },
     "web": {
-      "favicon": "./assets/icon.png"
+      "favicon": "./assets/icon.png",
+      "bundler": "metro"
     },
     "plugins": [
+      "expo-router",
+      "expo-font",
       "expo-splash-screen"
     ],
-    "extra": {
-      "eas": {
-        "projectId": "earnings-ninja"
-      }
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
