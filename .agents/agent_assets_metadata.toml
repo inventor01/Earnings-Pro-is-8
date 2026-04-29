@@ -24,3 +24,9 @@ id = "x2tSjgn-UBsPDnAEwX5xb"
 uri = "file://expo_qr.png"
 type = "image"
 title = "Scan with Expo Go — Full App Ready"
+
+[[outputs]]
+id = "tkysyfqrz5aRNT90bcf94"
+uri = "file://earnings-ninja-expo/assets/expo-qr.png"
+type = "image"
+title = "Scan this in Expo Go"
