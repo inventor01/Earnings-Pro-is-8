@@ -52,15 +52,7 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font",
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#0f172a",
-          "image": "./assets/splash-icon.png",
-          "imageWidth": 200
-        }
-      ]
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
