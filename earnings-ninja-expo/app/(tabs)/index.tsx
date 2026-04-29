@@ -429,6 +429,281 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
   );
 }
 
+// ─── Details Form (mirrors web EntryForm 1:1) ──────────────────────────────────
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Text style={{ fontSize: 15, fontWeight: '700', color: '#1f2937', marginBottom: 8 }}>
+      {children}
+    </Text>
+  );
+}
+
+function PillSelect<T extends string>({
+  options,
+  value,
+  onChange,
+  accent = CALC.HEADER_BG,
+  scroll = false,
+}: {
+  options: { key: T; label: string; color?: string }[];
+  value: T;
+  onChange: (v: T) => void;
+  accent?: string;
+  scroll?: boolean;
+}) {
+  const Row = (
+    <View style={{ flexDirection: 'row', flexWrap: scroll ? 'nowrap' : 'wrap', gap: 8 }}>
+      {options.map(o => {
+        const selected = value === o.key;
+        const accentColor = o.color || accent;
+        return (
+          <Pressable
+            key={o.key}
+            onPress={() => { hTap(); onChange(o.key); }}
+            style={({ pressed }) => ({
+              paddingHorizontal: 14,
+              paddingVertical: 11,
+              borderRadius: 12,
+              backgroundColor: selected ? accentColor : '#ffffff',
+              borderWidth: 2,
+              borderColor: selected ? accentColor : '#d1d5db',
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Text style={{
+              color: selected ? '#0f172a' : '#374151',
+              fontWeight: '700',
+              fontSize: 14,
+            }}>
+              {o.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+  return scroll
+    ? <ScrollView horizontal showsHorizontalScrollIndicator={false}>{Row}</ScrollView>
+    : Row;
+}
+
+function FormInput({
+  value, onChangeText, placeholder, keyboardType, multiline,
+}: {
+  value: string;
+  onChangeText: (v: string) => void;
+  placeholder?: string;
+  keyboardType?: 'decimal-pad' | 'number-pad' | 'default';
+  multiline?: boolean;
+}) {
+  return (
+    <TextInput
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor="#9ca3af"
+      keyboardType={keyboardType || 'default'}
+      multiline={multiline}
+      style={{
+        backgroundColor: '#ffffff',
+        borderWidth: 2,
+        borderColor: '#d1d5db',
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        color: '#0f172a',
+        fontSize: 16,
+        fontWeight: '600',
+        minHeight: multiline ? 70 : undefined,
+        textAlignVertical: multiline ? 'top' : 'center',
+      }}
+    />
+  );
+}
+
+function DetailsForm({
+  isExp, amount, entryType, setEntryType, app, setApp, category, setCategory,
+  miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount, onSave, saving,
+}: {
+  isExp: boolean;
+  amount: string;
+  entryType: EntryType;
+  setEntryType: (t: EntryType) => void;
+  app: AppType;
+  setApp: (a: AppType) => void;
+  category: ExpenseCategory;
+  setCategory: (c: ExpenseCategory) => void;
+  miles: string;
+  setMiles: (s: string) => void;
+  minutes: string;
+  setMinutes: (s: string) => void;
+  note: string;
+  setNote: (s: string) => void;
+  onEditAmount: () => void;
+  onSave: () => void;
+  saving: boolean;
+}) {
+  return (
+    <View style={{ gap: 14 }}>
+      {/* Amount summary — tap to edit, mirrors blue→purple from CalcPad */}
+      <Pressable
+        onPress={onEditAmount}
+        style={({ pressed }) => ({
+          borderRadius: 16,
+          overflow: 'hidden',
+          opacity: pressed ? 0.9 : 1,
+          shadowColor: '#000',
+          shadowOpacity: 0.08,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 2 },
+          elevation: 2,
+        })}
+      >
+        <LinearGradient
+          colors={isExp ? ['#fee2e2', '#fecaca'] : ['#dcfce7', '#bbf7d0']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={{
+            paddingHorizontal: 18,
+            paddingVertical: 18,
+            borderWidth: 2,
+            borderColor: isExp ? '#fca5a5' : '#86efac',
+            borderRadius: 16,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ color: '#475569', fontSize: 13, fontWeight: '700' }}>← Edit Amount</Text>
+          <Text style={{
+            color: isExp ? '#b91c1c' : '#15803d',
+            fontSize: 32,
+            fontWeight: '900',
+          }}>
+            {isExp ? '-' : '+'}${amount}
+          </Text>
+        </LinearGradient>
+      </Pressable>
+
+      {/* White → gray-50 gradient form card (mirrors web EntryForm) */}
+      <View style={{
+        borderRadius: 18,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 3,
+        backgroundColor: '#ffffff',
+      }}>
+        <LinearGradient
+          colors={['#ffffff', '#f9fafb']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={{ padding: 18, gap: 16 }}
+        >
+          {/* Type */}
+          <View>
+            <FieldLabel>📝 Type</FieldLabel>
+            <PillSelect
+              options={[
+                { key: 'ORDER',        label: 'Order' },
+                { key: 'BONUS',        label: 'Bonus' },
+                { key: 'EXPENSE',      label: 'Expense' },
+                { key: 'CANCELLATION', label: 'Cancellation' },
+              ]}
+              value={entryType}
+              onChange={setEntryType}
+            />
+          </View>
+
+          {/* App (hidden for EXPENSE — mirrors web) */}
+          {entryType !== 'EXPENSE' && (
+            <View>
+              <FieldLabel>🚗 App</FieldLabel>
+              <PillSelect
+                scroll
+                options={APPS.map(a => ({ key: a.key, label: a.label, color: a.color + '55' }))}
+                value={app}
+                onChange={setApp}
+              />
+            </View>
+          )}
+
+          {/* Category (only for EXPENSE) */}
+          {entryType === 'EXPENSE' && (
+            <View>
+              <FieldLabel>🏷️ Category</FieldLabel>
+              <PillSelect
+                options={EXPENSE_CATS.map(c => ({
+                  key: c,
+                  label: `${EXPENSE_EMOJIS[c]} ${c}`,
+                }))}
+                value={category}
+                onChange={setCategory}
+              />
+            </View>
+          )}
+
+          {/* Miles & Minutes */}
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <FieldLabel>🛣️ Miles</FieldLabel>
+              <FormInput
+                value={miles}
+                onChangeText={setMiles}
+                placeholder="0.0"
+                keyboardType="decimal-pad"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <FieldLabel>⏱️ Minutes</FieldLabel>
+              <FormInput
+                value={minutes}
+                onChangeText={setMinutes}
+                placeholder="0"
+                keyboardType="number-pad"
+              />
+            </View>
+          </View>
+
+          {/* Notes */}
+          <View>
+            <FieldLabel>📝 Notes (optional)</FieldLabel>
+            <FormInput
+              value={note}
+              onChangeText={setNote}
+              placeholder="Add any notes..."
+              multiline
+            />
+          </View>
+        </LinearGradient>
+      </View>
+
+      {/* Save button — solid yellow-400 like Next Step */}
+      <Pressable
+        onPress={onSave}
+        disabled={saving}
+        style={({ pressed }) => ({
+          backgroundColor: CALC.NEXT_BG,
+          borderRadius: 14,
+          paddingVertical: 18,
+          alignItems: 'center',
+          opacity: pressed ? 0.85 : 1,
+          shadowColor: '#000',
+          shadowOpacity: 0.12,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 3 },
+          elevation: 3,
+        })}
+      >
+        {saving
+          ? <ActivityIndicator color={CALC.NEXT_FG} />
+          : <Text style={{ color: CALC.NEXT_FG, fontWeight: '900', fontSize: 18 }}>💾 Save Entry</Text>
+        }
+      </Pressable>
+    </View>
+  );
+}
+
 // ─── Add Entry Modal ───────────────────────────────────────────────────────────
 function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const queryClient = useQueryClient();
@@ -480,29 +755,35 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => { reset(); onClose(); }}>
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: CALC.CARD_BG }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {/* Yellow header bar */}
-        <Pressable
-          onPress={() => {
-            hTapMed();
-            if (step === 'details') { setStep('calc'); }
-            else { reset(); onClose(); }
-          }}
-          style={({ pressed }) => ({
-            backgroundColor: CALC.HEADER_BG,
-            paddingHorizontal: 22,
-            paddingVertical: 22,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 14,
-            opacity: pressed ? 0.85 : 1,
-          })}
-        >
-          <Ionicons name={step === 'calc' ? 'arrow-down' : 'arrow-back'} size={24} color="#0f172a" />
-          <Text style={{ color: '#0f172a', fontSize: 20, fontWeight: '800' }}>
-            {step === 'calc' ? 'Hide' : 'Back'}
-          </Text>
-        </Pressable>
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        {/* Yellow header bar — static View ensures iOS paints the bg reliably */}
+        <View style={{ backgroundColor: CALC.HEADER_BG }}>
+          <Pressable
+            onPress={() => {
+              hTapMed();
+              if (step === 'details') { setStep('calc'); }
+              else { reset(); onClose(); }
+            }}
+            android_ripple={{ color: 'rgba(0,0,0,0.08)' }}
+            style={({ pressed }) => ({
+              paddingHorizontal: 18,
+              paddingVertical: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Ionicons
+              name={step === 'calc' ? 'arrow-down' : 'arrow-back'}
+              size={22}
+              color="#0f172a"
+              style={{ marginRight: 10 }}
+            />
+            <Text style={{ color: '#0f172a', fontSize: 18, fontWeight: '800' }}>
+              {step === 'calc' ? 'Hide' : 'Back'}
+            </Text>
+          </Pressable>
+        </View>
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
           {step === 'calc' ? (
             <CalcPad
               amount={amount}
@@ -512,147 +793,25 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
               onNext={() => setStep('details')}
             />
           ) : (
-            <View style={{ gap: 16 }}>
-              {/* Amount summary */}
-              <Pressable
-                onPress={() => setStep('calc')}
-                style={{
-                  backgroundColor: isExp ? '#fef2f2' : '#f0fdf4',
-                  borderRadius: 14,
-                  borderWidth: 1.5,
-                  borderColor: isExp ? '#fecaca' : '#bbf7d0',
-                  padding: 16,
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: CALC.LABEL, fontSize: 13 }}>← Edit Amount</Text>
-                <Text style={{ color: isExp ? '#dc2626' : '#16a34a', fontSize: 30, fontWeight: '900' }}>
-                  {isExp ? '-' : '+'}${amount}
-                </Text>
-              </Pressable>
-
-              {/* Entry type */}
-              <View>
-                <Text style={{ color: CALC.LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Entry Type</Text>
-                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                  {(['ORDER', 'BONUS', 'EXPENSE', 'CANCELLATION'] as EntryType[]).map(t => (
-                    <Pressable
-                      key={t}
-                      onPress={() => { hTap(); setEntryType(t); }}
-                      style={{
-                        paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12,
-                        backgroundColor: entryType === t ? '#fef9c3' : CALC.NUM_BG,
-                        borderWidth: 1.5, borderColor: entryType === t ? CALC.HEADER_BG : CALC.BORDER,
-                      }}
-                    >
-                      <Text style={{ color: entryType === t ? '#854d0e' : '#374151', fontWeight: '700', fontSize: 13 }}>{t}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-
-              {/* Platform */}
-              <View>
-                <Text style={{ color: CALC.LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Platform</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    {APPS.map(a => (
-                      <Pressable
-                        key={a.key}
-                        onPress={() => { hTap(); setApp(a.key); }}
-                        style={{
-                          paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12,
-                          backgroundColor: app === a.key ? a.color + '22' : CALC.NUM_BG,
-                          borderWidth: 1.5, borderColor: app === a.key ? a.color : CALC.BORDER,
-                        }}
-                      >
-                        <Text style={{ color: app === a.key ? a.color : '#374151', fontWeight: '700', fontSize: 13 }}>{a.label}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </ScrollView>
-              </View>
-
-              {/* Expense category */}
-              {entryType === 'EXPENSE' && (
-                <View>
-                  <Text style={{ color: CALC.LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Category</Text>
-                  <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                    {EXPENSE_CATS.map(c => (
-                      <Pressable
-                        key={c}
-                        onPress={() => { hTap(); setCategory(c); }}
-                        style={{
-                          paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
-                          backgroundColor: category === c ? '#fef9c3' : CALC.NUM_BG,
-                          borderWidth: 1, borderColor: category === c ? CALC.HEADER_BG : CALC.BORDER,
-                        }}
-                      >
-                        <Text style={{ color: category === c ? '#854d0e' : '#374151', fontSize: 13, fontWeight: '700' }}>
-                          {EXPENSE_EMOJIS[c]} {c}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Miles & Minutes */}
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                {[
-                  { label: 'Miles', value: miles, set: setMiles, type: 'decimal-pad' as const, placeholder: '0.0' },
-                  { label: 'Minutes', value: minutes, set: setMinutes, type: 'number-pad' as const, placeholder: '0' },
-                ].map(f => (
-                  <View key={f.label} style={{ flex: 1 }}>
-                    <Text style={{ color: CALC.LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{f.label}</Text>
-                    <TextInput
-                      value={f.value}
-                      onChangeText={f.set}
-                      placeholder={f.placeholder}
-                      placeholderTextColor="#9ca3af"
-                      keyboardType={f.type}
-                      style={{
-                        backgroundColor: CALC.NUM_BG, borderWidth: 1, borderColor: CALC.BORDER, borderRadius: 12,
-                        paddingHorizontal: 14, paddingVertical: 13, color: CALC.NUM_TEXT, fontSize: 16, fontWeight: '600',
-                      }}
-                    />
-                  </View>
-                ))}
-              </View>
-
-              {/* Note */}
-              <View>
-                <Text style={{ color: CALC.LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Note (optional)</Text>
-                <TextInput
-                  value={note}
-                  onChangeText={setNote}
-                  placeholder="Add a note..."
-                  placeholderTextColor="#9ca3af"
-                  multiline
-                  style={{
-                    backgroundColor: CALC.NUM_BG, borderWidth: 1, borderColor: CALC.BORDER, borderRadius: 12,
-                    paddingHorizontal: 14, paddingVertical: 13, color: CALC.NUM_TEXT, fontSize: 15, minHeight: 60, textAlignVertical: 'top',
-                  }}
-                />
-              </View>
-
-              {/* Save */}
-              <Pressable
-                onPress={handleSave}
-                disabled={mutation.isPending}
-                style={({ pressed }) => ({
-                  backgroundColor: CALC.NEXT_BG, borderRadius: 16, paddingVertical: 20, alignItems: 'center',
-                  opacity: pressed ? 0.85 : 1,
-                })}
-              >
-                {mutation.isPending
-                  ? <ActivityIndicator color="#000" />
-                  : <Text style={{ color: CALC.NEXT_FG, fontWeight: '900', fontSize: 20 }}>💾 Save Entry</Text>
-                }
-              </Pressable>
-            </View>
+            <DetailsForm
+              isExp={isExp}
+              amount={amount}
+              entryType={entryType}
+              setEntryType={setEntryType}
+              app={app}
+              setApp={setApp}
+              category={category}
+              setCategory={setCategory}
+              miles={miles}
+              setMiles={setMiles}
+              minutes={minutes}
+              setMinutes={setMinutes}
+              note={note}
+              setNote={setNote}
+              onEditAmount={() => setStep('calc')}
+              onSave={handleSave}
+              saving={mutation.isPending}
+            />
           )}
         </ScrollView>
       </KeyboardAvoidingView>
