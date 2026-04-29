@@ -936,7 +936,11 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
               mode={mode}
               onAmount={setAmount}
               onMode={setMode}
-              onNext={() => setStep('details')}
+              onNext={() => {
+                // Carry the calculator's Revenue/Expense choice into the details form
+                setEntryType(mode === 'subtract' ? 'EXPENSE' : 'ORDER');
+                setStep('details');
+              }}
             />
           ) : (
             <DetailsForm
