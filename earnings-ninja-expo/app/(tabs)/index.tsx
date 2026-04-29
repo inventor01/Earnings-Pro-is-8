@@ -206,25 +206,74 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
     onAmount(amount === '0' && n !== '.' ? n : amount + n);
   };
 
-  const numBtn = (label: string) => (
-    <Pressable
-      key={label}
-      onPress={() => tap(label)}
-      style={({ pressed }) => ({
+  // NumBtn uses View wrapper so iOS reliably paints background
+  const NumBtn = ({ label }: { label: string }) => (
+    <View
+      style={{
         flex: 1,
-        backgroundColor: pressed ? CALC.NUM_PRESSED : CALC.NUM_BG,
+        backgroundColor: CALC.NUM_BG,
         borderRadius: 18,
-        paddingVertical: 22,
-        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: CALC.BORDER,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 3,
-        elevation: 1,
-      })}
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
+        overflow: 'hidden',
+      }}
     >
-      <Text style={{ color: CALC.NUM_TEXT, fontSize: 28, fontWeight: '700' }}>{label}</Text>
-    </Pressable>
+      <Pressable
+        onPress={() => tap(label)}
+        android_ripple={{ color: CALC.NUM_PRESSED }}
+        style={({ pressed }) => ({
+          paddingVertical: 24,
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: pressed ? 0.55 : 1,
+        })}
+      >
+        <Text style={{ color: CALC.NUM_TEXT, fontSize: 32, fontWeight: '800' }}>{label}</Text>
+      </Pressable>
+    </View>
+  );
+
+  const Backspace = () => (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: CALC.BACKSPACE_BG,
+        borderRadius: 18,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 4,
+        elevation: 2,
+        overflow: 'hidden',
+      }}
+    >
+      <Pressable
+        onPress={() => { hTap(); onAmount(amount.length > 1 ? amount.slice(0, -1) : '0'); }}
+        onPressIn={() => {
+          holdRef.current = setTimeout(() => {
+            hTapHeavy();
+            onAmount('0');
+          }, 500);
+        }}
+        onPressOut={() => {
+          if (holdRef.current) clearTimeout(holdRef.current);
+        }}
+        android_ripple={{ color: 'rgba(255,255,255,0.25)' }}
+        style={({ pressed }) => ({
+          paddingVertical: 24,
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        <Ionicons name="backspace-outline" size={28} color={CALC.BACKSPACE_FG} />
+      </Pressable>
+    </View>
   );
 
   return (
@@ -235,39 +284,51 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
         borderRadius: 16,
         borderWidth: 1.5,
         borderColor: CALC.AMOUNT_BORDER,
-        paddingVertical: 22,
-        paddingHorizontal: 20,
+        paddingVertical: 26,
+        paddingHorizontal: 22,
         alignItems: 'flex-end',
       }}>
-        <Text style={{ color: CALC.AMOUNT_TEXT, fontSize: 40, fontWeight: '900' }}>
+        <Text style={{ color: CALC.AMOUNT_TEXT, fontSize: 44, fontWeight: '900' }}>
           {mode === 'subtract' ? '−' : ''}${amount}
         </Text>
       </View>
 
       {/* Revenue / Expense toggle */}
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Pressable
-          onPress={() => { hTap(); onMode('add'); }}
-          style={{
-            flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center',
-            backgroundColor: mode === 'add' ? CALC.REV_SEL_BG : CALC.REV_OFF_BG,
-          }}
-        >
-          <Text style={{ color: mode === 'add' ? CALC.REV_SEL_FG : CALC.REV_OFF_FG, fontWeight: '800', fontSize: 16 }}>
-            + Revenue
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => { hTap(); onMode('subtract'); }}
-          style={{
-            flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center',
-            backgroundColor: mode === 'subtract' ? CALC.EXP_SEL_BG : CALC.REV_OFF_BG,
-          }}
-        >
-          <Text style={{ color: mode === 'subtract' ? CALC.EXP_SEL_FG : CALC.REV_OFF_FG, fontWeight: '800', fontSize: 16 }}>
-            − Expense
-          </Text>
-        </Pressable>
+        <View style={{
+          flex: 1, borderRadius: 14, overflow: 'hidden',
+          backgroundColor: mode === 'add' ? CALC.REV_SEL_BG : CALC.REV_OFF_BG,
+        }}>
+          <Pressable
+            onPress={() => { hTap(); onMode('add'); }}
+            android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+            style={({ pressed }) => ({
+              paddingVertical: 16, alignItems: 'center',
+              opacity: pressed ? 0.8 : 1,
+            })}
+          >
+            <Text style={{ color: mode === 'add' ? CALC.REV_SEL_FG : CALC.REV_OFF_FG, fontWeight: '800', fontSize: 16 }}>
+              + Revenue
+            </Text>
+          </Pressable>
+        </View>
+        <View style={{
+          flex: 1, borderRadius: 14, overflow: 'hidden',
+          backgroundColor: mode === 'subtract' ? CALC.EXP_SEL_BG : CALC.REV_OFF_BG,
+        }}>
+          <Pressable
+            onPress={() => { hTap(); onMode('subtract'); }}
+            android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+            style={({ pressed }) => ({
+              paddingVertical: 16, alignItems: 'center',
+              opacity: pressed ? 0.8 : 1,
+            })}
+          >
+            <Text style={{ color: mode === 'subtract' ? CALC.EXP_SEL_FG : CALC.REV_OFF_FG, fontWeight: '800', fontSize: 16 }}>
+              − Expense
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Number grid */}
@@ -280,47 +341,39 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
         <View key={ri} style={{ flexDirection: 'row', gap: 10 }}>
           {row.map(k =>
             k === '⌫'
-              ? (
-                <Pressable
-                  key={k}
-                  onPress={() => { hTap(); onAmount(amount.length > 1 ? amount.slice(0, -1) : '0'); }}
-                  onPressIn={() => {
-                    holdRef.current = setTimeout(() => {
-                      hTapHeavy();
-                      onAmount('0');
-                    }, 500);
-                  }}
-                  onPressOut={() => {
-                    if (holdRef.current) clearTimeout(holdRef.current);
-                  }}
-                  style={({ pressed }) => ({
-                    flex: 1, backgroundColor: CALC.BACKSPACE_BG, borderRadius: 18,
-                    paddingVertical: 22, alignItems: 'center',
-                    opacity: pressed ? 0.75 : 1,
-                    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.08, shadowRadius: 3, elevation: 1,
-                  })}
-                >
-                  <Ionicons name="backspace-outline" size={24} color={CALC.BACKSPACE_FG} />
-                </Pressable>
-              )
-              : numBtn(k)
+              ? <Backspace key={k} />
+              : <NumBtn key={k} label={k} />
           )}
         </View>
       ))}
 
-      {/* Next button */}
-      <Pressable
-        onPress={() => { hTapMed(); onNext(); }}
-        style={({ pressed }) => ({
-          backgroundColor: CALC.NEXT_BG,
-          borderRadius: 16, paddingVertical: 20, alignItems: 'center',
-          opacity: pressed ? 0.88 : 1,
-          marginTop: 4,
-        })}
-      >
-        <Text style={{ color: CALC.NEXT_FG, fontWeight: '900', fontSize: 20 }}>Next Step →</Text>
-      </Pressable>
+      {/* Next Step button — full-width yellow */}
+      <View style={{
+        backgroundColor: CALC.NEXT_BG,
+        borderRadius: 16,
+        marginTop: 6,
+        shadowColor: CALC.NEXT_BG,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 10,
+        elevation: 4,
+        overflow: 'hidden',
+      }}>
+        <Pressable
+          onPress={() => { hTapMed(); onNext(); }}
+          android_ripple={{ color: 'rgba(0,0,0,0.12)' }}
+          style={({ pressed }) => ({
+            paddingVertical: 22,
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: pressed ? 0.88 : 1,
+          })}
+        >
+          <Text style={{ color: CALC.NEXT_FG, fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>
+            Next Step →
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -395,7 +448,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
         >
           <Ionicons name={step === 'calc' ? 'arrow-down' : 'arrow-back'} size={24} color="#0f172a" />
           <Text style={{ color: '#0f172a', fontSize: 20, fontWeight: '800' }}>
-            {step === 'calc' ? 'Hide Calculator' : 'Back to Calculator'}
+            {step === 'calc' ? 'Hide' : 'Back'}
           </Text>
         </Pressable>
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
