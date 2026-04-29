@@ -7,7 +7,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import {
   api, Entry, EntryType, AppType, ExpenseCategory,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType,
@@ -22,152 +21,100 @@ const hTapHeavy = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).c
 const hNotifyOk = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
-const BG = '#0d0d12';
-const SURFACE = '#13131a';
-const CARD = '#1a1a24';
-const BORDER = '#252535';
-const ACCENT = '#facc15';
-const GREEN = '#22c55e';
-const RED = '#ef4444';
-const PURPLE = '#a855f7';
-const ORANGE = '#f97316';
-const BLUE = '#3b82f6';
-const TEXT = '#f1f5f9';
-const MUTED = '#94a3b8';
-const DIM = '#4b5563';
+const BG       = '#F0F2F7';
+const SURFACE  = '#FFFFFF';
+const CARD_BG  = '#FFFFFF';
+const BORDER   = '#E8EAF0';
+const PRIMARY  = '#7C3AED';
+const PRI_LITE = '#EDE9FE';
+const PRI_DARK = '#5B21B6';
+const TEXT     = '#111827';
+const TEXT_MID = '#374151';
+const MUTED    = '#6B7280';
+const LABEL    = '#9CA3AF';
+const GREEN    = '#16A34A';
+const GREEN_LT = '#DCFCE7';
+const RED      = '#DC2626';
+const RED_LT   = '#FEE2E2';
+const DIVIDER  = '#F3F4F6';
+
+// Keep legacy names used inside modals / CalcPad
+const ACCENT   = PRIMARY;
+const DIM      = LABEL;
+const CARD     = CARD_BG;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month';
 
 const PERIODS: { key: Period; label: string; tf: TimeframeType }[] = [
-  { key: 'today', label: 'Today', tf: 'TODAY' },
-  { key: 'yesterday', label: 'Yesterday', tf: 'YESTERDAY' },
-  { key: 'week', label: 'This Week', tf: 'THIS_WEEK' },
-  { key: 'last7', label: 'Last 7 Days', tf: 'LAST_7_DAYS' },
-  { key: 'month', label: 'This Month', tf: 'THIS_MONTH' },
+  { key: 'today',     label: 'Today',    tf: 'TODAY' },
+  { key: 'yesterday', label: 'Yest.',    tf: 'YESTERDAY' },
+  { key: 'week',      label: 'Week',     tf: 'THIS_WEEK' },
+  { key: 'last7',     label: '7 Days',   tf: 'LAST_7_DAYS' },
+  { key: 'month',     label: 'Month',    tf: 'THIS_MONTH' },
 ];
 
 const PERIOD_LABELS: Record<Period, string> = {
-  today: "Today's",
+  today:     "Today's",
   yesterday: "Yesterday's",
-  week: "This Week's",
-  last7: 'Last 7 Days',
-  month: "This Month's",
+  week:      "This Week's",
+  last7:     'Last 7 Days',
+  month:     "This Month's",
 };
 
 const APPS: { key: AppType; label: string; color: string }[] = [
-  { key: 'DOORDASH', label: 'DoorDash', color: '#FF3008' },
-  { key: 'UBEREATS', label: 'Uber Eats', color: '#06C167' },
+  { key: 'DOORDASH',  label: 'DoorDash',  color: '#FF3008' },
+  { key: 'UBEREATS',  label: 'Uber Eats', color: '#06C167' },
   { key: 'INSTACART', label: 'Instacart', color: '#43B02A' },
-  { key: 'GRUBHUB', label: 'GrubHub', color: '#F63440' },
-  { key: 'SHIPT', label: 'Shipt', color: '#00A6CE' },
-  { key: 'OTHER', label: 'Other', color: '#94a3b8' },
+  { key: 'GRUBHUB',   label: 'GrubHub',   color: '#F63440' },
+  { key: 'SHIPT',     label: 'Shipt',     color: '#00A6CE' },
+  { key: 'OTHER',     label: 'Other',     color: '#6B7280' },
 ];
 
 const EXPENSE_CATS: ExpenseCategory[] = [
   'GAS', 'PARKING', 'TOLLS', 'MAINTENANCE', 'PHONE', 'SUBSCRIPTION', 'FOOD', 'OTHER',
 ];
 
-// ─── KPI Card ─────────────────────────────────────────────────────────────────
-function KpiCard({ label, value, color, sub }: { label: string; value: string; color: string; sub?: string }) {
+// ─── Dashed Sparkline ─────────────────────────────────────────────────────────
+function DashedLine({ color = PRIMARY }: { color?: string }) {
   return (
-    <View style={{
-      flex: 1,
-      backgroundColor: CARD,
-      borderRadius: 16,
-      borderWidth: 1.5,
-      borderColor: color + '44',
-      padding: 14,
-      shadowColor: color,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.2,
-      shadowRadius: 10,
-      elevation: 5,
-    }}>
-      <View style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-        backgroundColor: color, borderTopLeftRadius: 16, borderTopRightRadius: 16, opacity: 0.8,
-      }} />
-      <Text style={{ color, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 6 }}>
-        {label}
-      </Text>
-      <Text style={{
-        color,
-        fontSize: 26,
-        fontWeight: '900',
-        textShadowColor: color,
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 8,
-      }}>
-        {value}
-      </Text>
-      {sub && <Text style={{ color: MUTED, fontSize: 10, marginTop: 3 }}>{sub}</Text>}
-      <View style={{ height: 2, backgroundColor: color + '44', borderRadius: 2, marginTop: 10 }} />
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 16 }}>
+      {Array.from({ length: 28 }).map((_, i) => (
+        <View
+          key={i}
+          style={{
+            flex: 1,
+            height: 1.5,
+            backgroundColor: i % 2 === 0 ? color : 'transparent',
+            opacity: 0.55,
+          }}
+        />
+      ))}
     </View>
   );
 }
 
-// ─── Goal Bar ─────────────────────────────────────────────────────────────────
-function GoalBar({
-  period, profit, goalAmount, onEditGoal,
-}: {
-  period: Period; profit: number; goalAmount: number | null; onEditGoal: () => void;
-}) {
-  const safeGoal = Number(goalAmount) || 0;
-  const safeProfitNum = Number(profit) || 0;
-  const pct = safeGoal > 0 ? Math.min((safeProfitNum / safeGoal) * 100, 100) : 0;
-  const color = pct >= 100 ? ACCENT : pct >= 60 ? GREEN : BLUE;
-
+// ─── Small Stat Card ─────────────────────────────────────────────────────────
+function StatCard({ label, value, icon }: { label: string; value: string; icon: string }) {
   return (
     <View style={{
+      flex: 1,
       backgroundColor: SURFACE,
-      borderBottomWidth: 1,
-      borderBottomColor: BORDER,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: BORDER,
+      padding: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
+      elevation: 2,
     }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-          <Text style={{ color: ACCENT, fontSize: 12, fontWeight: '800' }}>
-            {PERIOD_LABELS[period]} Goal:
-          </Text>
-          <Text style={{
-            color: ACCENT,
-            fontSize: 18,
-            fontWeight: '900',
-            textShadowColor: ACCENT,
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 6,
-          }}>
-            {safeGoal > 0 ? `$${safeProfitNum.toFixed(2)} / $${safeGoal.toFixed(0)}` : 'Not set'}
-          </Text>
-          <Pressable onPress={onEditGoal} style={{ paddingHorizontal: 6 }}>
-            <Text style={{ color: DIM, fontSize: 11 }}>edit</Text>
-          </Pressable>
-        </View>
-        <Text style={{ color, fontSize: 12, fontWeight: '800' }}>
-          {safeGoal > 0 ? `${Math.round(pct)}%` : ''}
-        </Text>
-      </View>
-      <View style={{ backgroundColor: BORDER, borderRadius: 6, height: 8, overflow: 'hidden' }}>
-        {safeGoal > 0 && (
-          <View style={{
-            width: `${pct}%`,
-            height: '100%',
-            backgroundColor: color,
-            borderRadius: 6,
-            shadowColor: color,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.8,
-            shadowRadius: 4,
-          }} />
-        )}
-      </View>
-      {pct >= 100 && (
-        <Text style={{ color: ACCENT, fontSize: 12, fontWeight: '800', textAlign: 'center', marginTop: 4 }}>
-          🎉 Goal Reached!
-        </Text>
-      )}
+      <Text style={{ fontSize: 18, marginBottom: 4 }}>{icon}</Text>
+      <Text style={{ color: TEXT, fontSize: 17, fontWeight: '800' }}>{value}</Text>
+      <Text style={{ color: LABEL, fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 2 }}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -175,42 +122,46 @@ function GoalBar({
 // ─── Entry Row ────────────────────────────────────────────────────────────────
 function EntryRow({ entry, onDelete }: { entry: Entry; onDelete: (id: number) => void }) {
   const isExpense = entry.amount < 0;
-  const color = isExpense ? RED : GREEN;
-  const appColor = APP_COLORS[entry.app] || DIM;
-  const time = new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const appColor  = APP_COLORS[entry.app] || MUTED;
+  const time      = new Date(entry.timestamp).toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  });
 
   return (
     <View style={{
       flexDirection: 'row',
       alignItems: 'center',
       paddingVertical: 12,
-      paddingHorizontal: 14,
+      paddingHorizontal: 16,
       borderBottomWidth: 1,
-      borderBottomColor: BORDER,
+      borderBottomColor: DIVIDER,
     }}>
       <View style={{
-        width: 36, height: 36, borderRadius: 18,
-        backgroundColor: appColor + '22', borderWidth: 1.5, borderColor: appColor,
-        alignItems: 'center', justifyContent: 'center', marginRight: 10,
+        width: 38, height: 38, borderRadius: 19,
+        backgroundColor: appColor + '18',
+        alignItems: 'center', justifyContent: 'center', marginRight: 12,
       }}>
-        <Text style={{ fontSize: 13, fontWeight: '900', color: appColor }}>
+        <Text style={{ fontSize: 14, fontWeight: '900', color: appColor }}>
           {(APP_LABELS[entry.app] || 'O')[0]}
         </Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700' }}>
+        <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }}>
           {APP_LABELS[entry.app]}
-          <Text style={{ color: DIM, fontWeight: '500', fontSize: 12 }}> · {entry.type}</Text>
+          <Text style={{ color: LABEL, fontWeight: '400', fontSize: 12 }}> · {entry.type}</Text>
         </Text>
-        <Text style={{ color: MUTED, fontSize: 11, marginTop: 1 }}>
-          {time}{entry.distance_miles > 0 ? ` · ${entry.distance_miles.toFixed(1)} mi` : ''}
+        <Text style={{ color: LABEL, fontSize: 11, marginTop: 1 }}>
+          {time}{entry.distance_miles > 0 ? ` · ${Number(entry.distance_miles).toFixed(1)} mi` : ''}
         </Text>
       </View>
-      <Text style={{ color, fontSize: 16, fontWeight: '900' }}>
-        {isExpense ? '-' : '+'}${Math.abs(entry.amount).toFixed(2)}
+      <Text style={{
+        color: isExpense ? RED : GREEN,
+        fontSize: 15, fontWeight: '700',
+      }}>
+        {isExpense ? '-' : '+'}${Math.abs(Number(entry.amount)).toFixed(2)}
       </Text>
-      <Pressable onPress={() => onDelete(entry.id)} style={{ marginLeft: 10, padding: 4 }}>
-        <Ionicons name="trash-outline" size={15} color={DIM} />
+      <Pressable onPress={() => onDelete(entry.id)} style={{ marginLeft: 10, padding: 6 }}>
+        <Ionicons name="trash-outline" size={14} color={LABEL} />
       </Pressable>
     </View>
   );
@@ -232,10 +183,11 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
     onAmount(amount === '0' ? n : amount + n);
   };
 
-  const isExp = mode === 'subtract';
-  const color = isExp ? RED : GREEN;
+  const isExp  = mode === 'subtract';
+  const color  = isExp ? RED : GREEN;
+  const numBg  = SURFACE;
 
-  const numBtn = (label: string, onPress: () => void, bg = CARD, fg = TEXT) => (
+  const numBtn = (label: string, onPress: () => void, bg = numBg, fg = TEXT) => (
     <Pressable
       key={label}
       onPress={onPress}
@@ -245,12 +197,12 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
         borderRadius: 14,
         paddingVertical: 18,
         alignItems: 'center',
-        borderWidth: 1.5,
+        borderWidth: 1,
         borderColor: BORDER,
-        opacity: pressed ? 0.75 : 1,
+        opacity: pressed ? 0.7 : 1,
       })}
     >
-      <Text style={{ color: fg, fontSize: 24, fontWeight: '800' }}>{label}</Text>
+      <Text style={{ color: fg, fontSize: 24, fontWeight: '700' }}>{label}</Text>
     </Pressable>
   );
 
@@ -258,28 +210,17 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
     <View style={{ gap: 10 }}>
       {/* Amount display */}
       <View style={{
-        backgroundColor: CARD,
+        backgroundColor: isExp ? RED_LT : GREEN_LT,
         borderRadius: 18,
-        borderWidth: 2,
-        borderColor: color + '66',
+        borderWidth: 1.5,
+        borderColor: color + '44',
         padding: 20,
         alignItems: 'flex-end',
-        shadowColor: color,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
       }}>
         <Text style={{ color: MUTED, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
           {isExp ? 'Expense Amount' : 'Revenue Amount'}
         </Text>
-        <Text style={{
-          color,
-          fontSize: 48,
-          fontWeight: '900',
-          textShadowColor: color,
-          textShadowOffset: { width: 0, height: 0 },
-          textShadowRadius: 10,
-        }}>
+        <Text style={{ color, fontSize: 48, fontWeight: '900' }}>
           ${amount}
         </Text>
       </View>
@@ -290,10 +231,8 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
           onPress={() => { hTap(); onMode('add'); }}
           style={{
             flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center',
-            backgroundColor: mode === 'add' ? GREEN + '22' : CARD,
-            borderWidth: 2, borderColor: mode === 'add' ? GREEN : BORDER,
-            shadowColor: mode === 'add' ? GREEN : 'transparent',
-            shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 8,
+            backgroundColor: mode === 'add' ? GREEN_LT : SURFACE,
+            borderWidth: 1.5, borderColor: mode === 'add' ? GREEN : BORDER,
           }}
         >
           <Text style={{ color: mode === 'add' ? GREEN : MUTED, fontWeight: '800', fontSize: 15 }}>➕ Revenue</Text>
@@ -302,76 +241,64 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
           onPress={() => { hTap(); onMode('subtract'); }}
           style={{
             flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center',
-            backgroundColor: mode === 'subtract' ? RED + '22' : CARD,
-            borderWidth: 2, borderColor: mode === 'subtract' ? RED : BORDER,
-            shadowColor: mode === 'subtract' ? RED : 'transparent',
-            shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 8,
+            backgroundColor: mode === 'subtract' ? RED_LT : SURFACE,
+            borderWidth: 1.5, borderColor: mode === 'subtract' ? RED : BORDER,
           }}
         >
           <Text style={{ color: mode === 'subtract' ? RED : MUTED, fontWeight: '800', fontSize: 15 }}>➖ Expense</Text>
         </Pressable>
       </View>
 
-      {/* Digit rows */}
-      {[['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3']].map((row) => (
-        <View key={row[0]} style={{ flexDirection: 'row', gap: 10 }}>
-          {row.map((n) => numBtn(n, () => tap(n)))}
+      {/* Number grid */}
+      {[
+        ['7', '8', '9'],
+        ['4', '5', '6'],
+        ['1', '2', '3'],
+        ['.', '0', '⌫'],
+      ].map((row, ri) => (
+        <View key={ri} style={{ flexDirection: 'row', gap: 10 }}>
+          {row.map(k =>
+            k === '⌫'
+              ? (
+                <Pressable
+                  key={k}
+                  onPress={() => { hTap(); onAmount(amount.length > 1 ? amount.slice(0, -1) : '0'); }}
+                  onPressIn={() => {
+                    holdRef.current = setTimeout(() => {
+                      setHolding(true);
+                      hTapHeavy();
+                      onAmount('0');
+                    }, 500);
+                  }}
+                  onPressOut={() => {
+                    if (holdRef.current) clearTimeout(holdRef.current);
+                    setHolding(false);
+                  }}
+                  style={({ pressed }) => ({
+                    flex: 1, backgroundColor: RED_LT, borderRadius: 14,
+                    paddingVertical: 18, alignItems: 'center',
+                    borderWidth: 1, borderColor: RED + '44',
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Text style={{ color: RED, fontSize: 24, fontWeight: '700' }}>⌫</Text>
+                </Pressable>
+              )
+              : numBtn(k, () => tap(k))
+          )}
         </View>
       ))}
 
-      {/* Bottom row: C, 0, . */}
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Pressable
-          onPressIn={() => {
-            holdRef.current = setTimeout(() => {
-              setHolding(true);
-              hTapHeavy();
-              onAmount('0');
-            }, 500);
-          }}
-          onPressOut={() => {
-            if (holdRef.current) clearTimeout(holdRef.current);
-            if (!holding) {
-              hTap();
-              onAmount(amount.length > 1 ? amount.slice(0, -1) : '0');
-            }
-            setHolding(false);
-          }}
-          style={{
-            flex: 1, borderRadius: 14, paddingVertical: 18, alignItems: 'center',
-            backgroundColor: holding ? RED + '33' : ACCENT + '22',
-            borderWidth: 1.5, borderColor: holding ? RED : ACCENT,
-          }}
-        >
-          <Text style={{ color: holding ? RED : ACCENT, fontSize: 24, fontWeight: '900' }}>
-            {holding ? '✓' : '⌫'}
-          </Text>
-        </Pressable>
-        {numBtn('0', () => tap('0'))}
-        {numBtn('.', () => {
-          if (!amount.includes('.')) {
-            hTap();
-            onAmount(amount + '.');
-          }
-        })}
-      </View>
-
-      {/* Next */}
+      {/* Next button */}
       <Pressable
-        onPress={onNext}
+        onPress={() => { hTapMed(); onNext(); }}
         style={({ pressed }) => ({
-          backgroundColor: ACCENT,
-          borderRadius: 16,
-          paddingVertical: 18,
-          alignItems: 'center',
-          opacity: pressed ? 0.85 : 1,
-          shadowColor: ACCENT,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.7,
-          shadowRadius: 14,
+          backgroundColor: PRIMARY,
+          borderRadius: 16, paddingVertical: 18, alignItems: 'center',
+          opacity: pressed ? 0.88 : 1,
         })}
       >
-        <Text style={{ color: '#000', fontWeight: '900', fontSize: 18 }}>Next Step →</Text>
+        <Text style={{ color: '#fff', fontWeight: '900', fontSize: 18 }}>Next →</Text>
       </Pressable>
     </View>
   );
@@ -380,19 +307,19 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
 // ─── Add Entry Modal ───────────────────────────────────────────────────────────
 function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const queryClient = useQueryClient();
-  const [step, setStep] = useState<'calc' | 'details'>('calc');
-  const [amount, setAmount] = useState('0');
-  const [mode, setMode] = useState<'add' | 'subtract'>('add');
+  const [step, setStep]           = useState<'calc' | 'details'>('calc');
+  const [amount, setAmount]       = useState('0');
+  const [mode, setMode]           = useState<'add' | 'subtract'>('add');
   const [entryType, setEntryType] = useState<EntryType>('ORDER');
-  const [app, setApp] = useState<AppType>('UBEREATS');
-  const [category, setCategory] = useState<ExpenseCategory>('GAS');
-  const [miles, setMiles] = useState('');
-  const [minutes, setMinutes] = useState('');
-  const [note, setNote] = useState('');
+  const [app, setApp]             = useState<AppType>('DOORDASH');
+  const [category, setCategory]  = useState<ExpenseCategory>('GAS');
+  const [miles, setMiles]         = useState('');
+  const [minutes, setMinutes]     = useState('');
+  const [note, setNote]           = useState('');
 
   const reset = () => {
     setStep('calc'); setAmount('0'); setMode('add');
-    setEntryType('ORDER'); setApp('UBEREATS'); setCategory('GAS');
+    setEntryType('ORDER'); setApp('DOORDASH'); setCategory('GAS');
     setMiles(''); setMinutes(''); setNote('');
   };
 
@@ -428,13 +355,10 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => { reset(); onClose(); }}>
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: BG }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
           {/* Modal header */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-            <Text style={{
-              color: ACCENT, fontSize: 20, fontWeight: '900',
-              textShadowColor: ACCENT, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8,
-            }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>
               {step === 'calc' ? '💰 Log Entry' : '📝 Entry Details'}
             </Text>
             <Pressable onPress={() => { reset(); onClose(); }} style={{ padding: 6 }}>
@@ -452,14 +376,14 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
             />
           ) : (
             <View style={{ gap: 16 }}>
-              {/* Amount summary (tappable to go back) */}
+              {/* Amount summary */}
               <Pressable
                 onPress={() => setStep('calc')}
                 style={{
-                  backgroundColor: CARD,
+                  backgroundColor: isExp ? RED_LT : GREEN_LT,
                   borderRadius: 14,
-                  borderWidth: 2,
-                  borderColor: (isExp ? RED : GREEN) + '55',
+                  borderWidth: 1.5,
+                  borderColor: (isExp ? RED : GREEN) + '44',
                   padding: 16,
                   flexDirection: 'row',
                   justifyContent: 'space-between',
@@ -467,21 +391,14 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 }}
               >
                 <Text style={{ color: MUTED, fontSize: 13 }}>← Edit Amount</Text>
-                <Text style={{
-                  color: isExp ? RED : GREEN,
-                  fontSize: 30,
-                  fontWeight: '900',
-                  textShadowColor: isExp ? RED : GREEN,
-                  textShadowOffset: { width: 0, height: 0 },
-                  textShadowRadius: 8,
-                }}>
+                <Text style={{ color: isExp ? RED : GREEN, fontSize: 30, fontWeight: '900' }}>
                   {isExp ? '-' : '+'}${amount}
                 </Text>
               </Pressable>
 
               {/* Entry type */}
               <View>
-                <Text style={{ color: MUTED, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Entry Type</Text>
+                <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Entry Type</Text>
                 <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
                   {(['ORDER', 'BONUS', 'EXPENSE', 'CANCELLATION'] as EntryType[]).map(t => (
                     <Pressable
@@ -489,11 +406,11 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                       onPress={() => { hTap(); setEntryType(t); }}
                       style={{
                         paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12,
-                        backgroundColor: entryType === t ? ACCENT + '22' : CARD,
-                        borderWidth: 1.5, borderColor: entryType === t ? ACCENT : BORDER,
+                        backgroundColor: entryType === t ? PRI_LITE : SURFACE,
+                        borderWidth: 1.5, borderColor: entryType === t ? PRIMARY : BORDER,
                       }}
                     >
-                      <Text style={{ color: entryType === t ? ACCENT : MUTED, fontWeight: '700', fontSize: 13 }}>{t}</Text>
+                      <Text style={{ color: entryType === t ? PRIMARY : MUTED, fontWeight: '700', fontSize: 13 }}>{t}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -501,7 +418,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
               {/* Platform */}
               <View>
-                <Text style={{ color: MUTED, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Platform</Text>
+                <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Platform</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     {APPS.map(a => (
@@ -510,10 +427,8 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                         onPress={() => { hTap(); setApp(a.key); }}
                         style={{
                           paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12,
-                          backgroundColor: app === a.key ? a.color + '22' : CARD,
+                          backgroundColor: app === a.key ? a.color + '18' : SURFACE,
                           borderWidth: 1.5, borderColor: app === a.key ? a.color : BORDER,
-                          shadowColor: app === a.key ? a.color : 'transparent',
-                          shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 6,
                         }}
                       >
                         <Text style={{ color: app === a.key ? a.color : MUTED, fontWeight: '700', fontSize: 13 }}>{a.label}</Text>
@@ -526,7 +441,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
               {/* Expense category */}
               {entryType === 'EXPENSE' && (
                 <View>
-                  <Text style={{ color: MUTED, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Category</Text>
+                  <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Category</Text>
                   <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
                     {EXPENSE_CATS.map(c => (
                       <Pressable
@@ -534,11 +449,11 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                         onPress={() => { hTap(); setCategory(c); }}
                         style={{
                           paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
-                          backgroundColor: category === c ? ACCENT + '22' : CARD,
-                          borderWidth: 1, borderColor: category === c ? ACCENT : BORDER,
+                          backgroundColor: category === c ? PRI_LITE : SURFACE,
+                          borderWidth: 1, borderColor: category === c ? PRIMARY : BORDER,
                         }}
                       >
-                        <Text style={{ color: category === c ? ACCENT : MUTED, fontSize: 13, fontWeight: '700' }}>
+                        <Text style={{ color: category === c ? PRIMARY : MUTED, fontSize: 13, fontWeight: '700' }}>
                           {EXPENSE_EMOJIS[c]} {c}
                         </Text>
                       </Pressable>
@@ -554,15 +469,15 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                   { label: 'Minutes', value: minutes, set: setMinutes, type: 'number-pad' as const, placeholder: '0' },
                 ].map(f => (
                   <View key={f.label} style={{ flex: 1 }}>
-                    <Text style={{ color: MUTED, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{f.label}</Text>
+                    <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{f.label}</Text>
                     <TextInput
                       value={f.value}
                       onChangeText={f.set}
                       placeholder={f.placeholder}
-                      placeholderTextColor={DIM}
+                      placeholderTextColor={LABEL}
                       keyboardType={f.type}
                       style={{
-                        backgroundColor: CARD, borderWidth: 1.5, borderColor: BORDER, borderRadius: 12,
+                        backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER, borderRadius: 12,
                         paddingHorizontal: 14, paddingVertical: 13, color: TEXT, fontSize: 16, fontWeight: '600',
                       }}
                     />
@@ -572,15 +487,15 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
               {/* Note */}
               <View>
-                <Text style={{ color: MUTED, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Note (optional)</Text>
+                <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Note (optional)</Text>
                 <TextInput
                   value={note}
                   onChangeText={setNote}
                   placeholder="Add a note..."
-                  placeholderTextColor={DIM}
+                  placeholderTextColor={LABEL}
                   multiline
                   style={{
-                    backgroundColor: CARD, borderWidth: 1.5, borderColor: BORDER, borderRadius: 12,
+                    backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER, borderRadius: 12,
                     paddingHorizontal: 14, paddingVertical: 13, color: TEXT, fontSize: 15, minHeight: 60, textAlignVertical: 'top',
                   }}
                 />
@@ -591,14 +506,13 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 onPress={handleSave}
                 disabled={mutation.isPending}
                 style={({ pressed }) => ({
-                  backgroundColor: ACCENT, borderRadius: 16, paddingVertical: 18, alignItems: 'center',
+                  backgroundColor: PRIMARY, borderRadius: 16, paddingVertical: 18, alignItems: 'center',
                   opacity: pressed ? 0.85 : 1,
-                  shadowColor: ACCENT, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 14,
                 })}
               >
                 {mutation.isPending
-                  ? <ActivityIndicator color="#000" />
-                  : <Text style={{ color: '#000', fontWeight: '900', fontSize: 18 }}>💾 Save Entry</Text>
+                  ? <ActivityIndicator color="#fff" />
+                  : <Text style={{ color: '#fff', fontWeight: '900', fontSize: 18 }}>💾 Save Entry</Text>
                 }
               </Pressable>
             </View>
@@ -616,8 +530,8 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   const [editingGoal, setEditingGoal] = useState<TimeframeType | null>(null);
   const [goalInput, setGoalInput] = useState('');
 
-  const goalToday = useQuery({ queryKey: ['goal', 'TODAY'], queryFn: () => api.getGoal('TODAY') });
-  const goalWeek = useQuery({ queryKey: ['goal', 'THIS_WEEK'], queryFn: () => api.getGoal('THIS_WEEK') });
+  const goalToday = useQuery({ queryKey: ['goal', 'TODAY'],      queryFn: () => api.getGoal('TODAY') });
+  const goalWeek  = useQuery({ queryKey: ['goal', 'THIS_WEEK'],  queryFn: () => api.getGoal('THIS_WEEK') });
   const goalMonth = useQuery({ queryKey: ['goal', 'THIS_MONTH'], queryFn: () => api.getGoal('THIS_MONTH') });
   const goalQueries = [goalToday, goalWeek, goalMonth];
 
@@ -631,16 +545,16 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   });
 
   const goalRows: { tf: TimeframeType; label: string; emoji: string }[] = [
-    { tf: 'TODAY', label: 'Daily Goal', emoji: '☀️' },
-    { tf: 'THIS_WEEK', label: 'Weekly Goal', emoji: '📅' },
+    { tf: 'TODAY',      label: 'Daily Goal',   emoji: '☀️' },
+    { tf: 'THIS_WEEK',  label: 'Weekly Goal',  emoji: '📅' },
     { tf: 'THIS_MONTH', label: 'Monthly Goal', emoji: '🗓️' },
   ];
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <Text style={{ color: ACCENT, fontSize: 20, fontWeight: '900' }}>⚙️ Settings</Text>
+      <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>⚙️ Settings</Text>
           <Pressable onPress={onClose} style={{ padding: 6 }}>
             <Ionicons name="close-circle" size={28} color={MUTED} />
           </Pressable>
@@ -648,18 +562,19 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
         {/* Account */}
         <View style={{
-          backgroundColor: CARD, borderRadius: 16, borderWidth: 1, borderColor: BORDER,
-          padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20,
+          backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER,
+          padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24,
+          shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4,
         }}>
           <View style={{
             width: 48, height: 48, borderRadius: 24,
-            backgroundColor: ACCENT + '22', borderWidth: 2, borderColor: ACCENT,
+            backgroundColor: PRI_LITE, borderWidth: 2, borderColor: PRIMARY,
             alignItems: 'center', justifyContent: 'center',
           }}>
             <Text style={{ fontSize: 22 }}>🥷</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: TEXT, fontSize: 16, fontWeight: '800' }}>{user?.username || 'Driver'}</Text>
+            <Text style={{ color: TEXT, fontSize: 16, fontWeight: '700' }}>{user?.username || 'Driver'}</Text>
             <Text style={{ color: MUTED, fontSize: 12 }}>{user?.email || ''}</Text>
           </View>
           <Pressable
@@ -667,29 +582,30 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
               { text: 'Cancel', style: 'cancel' },
               { text: 'Sign Out', style: 'destructive', onPress: logout },
             ])}
-            style={{ backgroundColor: RED + '22', borderWidth: 1, borderColor: RED, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}
+            style={{ backgroundColor: RED_LT, borderWidth: 1, borderColor: RED + '44', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}
           >
-            <Text style={{ color: RED, fontWeight: '800', fontSize: 13 }}>Sign Out</Text>
+            <Text style={{ color: RED, fontWeight: '700', fontSize: 13 }}>Sign Out</Text>
           </Pressable>
         </View>
 
         {/* Profit Goals */}
-        <Text style={{ color: ACCENT, fontSize: 13, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
           🏆 Profit Goals
         </Text>
         {goalRows.map((row, i) => {
-          const goal = goalQueries[i].data;
+          const goal   = goalQueries[i].data;
           const target = Number(goal?.target_profit ?? 0) || 0;
           return (
             <View key={row.tf} style={{
-              backgroundColor: CARD, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 10,
+              backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 10,
+              shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
             }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={{ fontSize: 18 }}>{row.emoji}</Text>
-                  <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>{row.label}</Text>
+                  <Text style={{ color: TEXT, fontSize: 15, fontWeight: '600' }}>{row.label}</Text>
                 </View>
-                <Text style={{ color: ACCENT, fontSize: 20, fontWeight: '900' }}>
+                <Text style={{ color: PRIMARY, fontSize: 18, fontWeight: '800' }}>
                   {target > 0 ? `$${target.toFixed(0)}` : 'Not set'}
                 </Text>
               </View>
@@ -699,11 +615,11 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                     value={goalInput}
                     onChangeText={setGoalInput}
                     placeholder="Enter amount..."
-                    placeholderTextColor={DIM}
+                    placeholderTextColor={LABEL}
                     keyboardType="decimal-pad"
                     autoFocus
                     style={{
-                      flex: 1, backgroundColor: SURFACE, borderWidth: 1.5, borderColor: ACCENT,
+                      flex: 1, backgroundColor: BG, borderWidth: 1.5, borderColor: PRIMARY,
                       borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: TEXT, fontSize: 16, fontWeight: '700',
                     }}
                   />
@@ -713,20 +629,27 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                       if (!val || val <= 0) { Alert.alert('Invalid', 'Enter a valid amount.'); return; }
                       upsertGoal.mutate({ tf: row.tf, target: val });
                     }}
-                    style={{ backgroundColor: ACCENT, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
+                    style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Text style={{ color: '#000', fontWeight: '900' }}>Save</Text>
+                    <Text style={{ color: '#fff', fontWeight: '800' }}>Save</Text>
                   </Pressable>
-                  <Pressable onPress={() => setEditingGoal(null)} style={{ backgroundColor: CARD, borderRadius: 10, borderWidth: 1, borderColor: BORDER, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' }}>
+                  <Pressable
+                    onPress={() => setEditingGoal(null)}
+                    style={{ backgroundColor: BG, borderRadius: 10, borderWidth: 1, borderColor: BORDER, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' }}
+                  >
                     <Text style={{ color: MUTED }}>✕</Text>
                   </Pressable>
                 </View>
               ) : (
                 <Pressable
                   onPress={() => { setGoalInput(target > 0 ? target.toString() : ''); setEditingGoal(row.tf); }}
-                  style={{ marginTop: 10, backgroundColor: SURFACE, borderRadius: 8, borderWidth: 1, borderColor: BORDER, paddingVertical: 8, alignItems: 'center' }}
+                  style={{
+                    marginTop: 10, borderWidth: 1, borderColor: PRIMARY + '44', borderRadius: 10,
+                    paddingVertical: 8, paddingHorizontal: 12, alignItems: 'center',
+                    backgroundColor: PRI_LITE,
+                  }}
                 >
-                  <Text style={{ color: MUTED, fontSize: 13, fontWeight: '700' }}>
+                  <Text style={{ color: PRIMARY, fontSize: 13, fontWeight: '700' }}>
                     {target > 0 ? '✏️ Edit Goal' : '+ Set Goal'}
                   </Text>
                 </Pressable>
@@ -739,7 +662,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   );
 }
 
-// ─── Main Dashboard ────────────────────────────────────────────────────────────
+// ─── Dashboard Screen ─────────────────────────────────────────────────────────
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
@@ -804,324 +727,406 @@ export default function DashboardScreen() {
   }, [queryClient]);
 
   const n = (v: unknown) => Number(v) || 0;
-  const profit = n(rollup?.profit);
-  const revenue = n(rollup?.revenue);
-  const expenses = n(rollup?.expenses);
-  const miles = n(rollup?.miles);
-  const perHour = n(rollup?.dollars_per_hour);
-  const perMile = n(rollup?.dollars_per_mile);
-  const avgOrder = n(rollup?.average_order_value);
-  const rawGoal = goal?.target_profit;
+  const profit    = n(rollup?.profit);
+  const revenue   = n(rollup?.revenue);
+  const expenses  = n(rollup?.expenses);
+  const miles     = n(rollup?.miles);
+  const perHour   = n(rollup?.dollars_per_hour);
+  const perMile   = n(rollup?.dollars_per_mile);
+  const avgOrder  = n(rollup?.average_order_value);
+  const rawGoal   = goal?.target_profit;
   const goalTarget = (rawGoal !== undefined && rawGoal !== null) ? Number(rawGoal) || null : null;
   const displayedEntries = showAllEntries ? entries : entries.slice(0, 8);
+  const orderCount = entries.filter(e => Number(e.amount) > 0).length;
 
-  const isProfit = profit >= 0;
+  const isProfit   = profit >= 0;
   const profitColor = isProfit ? GREEN : RED;
+  const profitBg    = isProfit ? GREEN_LT : RED_LT;
+
+  // Goal progress
+  const safeGoal  = goalTarget ? Number(goalTarget) : 0;
+  const goalPct   = safeGoal > 0 ? Math.min((profit / safeGoal) * 100, 100) : 0;
+  const goalColor = goalPct >= 100 ? GREEN : PRIMARY;
+
+  // Period label for the date bar
+  const periodLabel = PERIOD_LABELS[period];
 
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
-      {/* Goal Bar (sticky top) */}
-      <View style={{ paddingTop: insets.top }}>
-        {editingGoal ? (
-          <View style={{
-            backgroundColor: SURFACE,
-            borderBottomWidth: 1,
-            borderBottomColor: BORDER,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            flexDirection: 'row',
-            gap: 8,
-          }}>
-            <TextInput
-              value={goalInput}
-              onChangeText={setGoalInput}
-              placeholder={`${PERIOD_LABELS[period]} Goal ($)`}
-              placeholderTextColor={DIM}
-              keyboardType="decimal-pad"
-              autoFocus
-              style={{
-                flex: 1, backgroundColor: CARD, borderWidth: 1.5, borderColor: ACCENT,
-                borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, color: TEXT, fontSize: 16, fontWeight: '700',
-              }}
-            />
-            <Pressable
-              onPress={() => {
-                const val = parseFloat(goalInput);
-                if (!val || val <= 0) return;
-                upsertGoalMutation.mutate({ target: val });
-              }}
-              style={{ backgroundColor: ACCENT, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Text style={{ color: '#000', fontWeight: '900' }}>Save</Text>
-            </Pressable>
-            <Pressable onPress={() => setEditingGoal(false)} style={{ backgroundColor: CARD, borderRadius: 10, borderWidth: 1, borderColor: BORDER, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: MUTED }}>✕</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <GoalBar
-            period={period}
-            profit={profit}
-            goalAmount={goalTarget}
-            onEditGoal={() => {
-              setGoalInput(goalTarget ? goalTarget.toString() : '');
-              setEditingGoal(true);
-            }}
-          />
-        )}
-      </View>
-
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
         contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header row: Logo + Buttons ─────────────────────────────────── */}
+        {/* ── Header ────────────────────────────────────────────────────────── */}
         <View style={{
+          paddingTop: insets.top + 8,
+          paddingHorizontal: 16,
+          paddingBottom: 12,
+          backgroundColor: SURFACE,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingHorizontal: 14,
-          paddingVertical: 12,
-          backgroundColor: SURFACE,
           borderBottomWidth: 1,
           borderBottomColor: BORDER,
         }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Image
               source={require('../../assets/ninja-logo.png')}
-              style={{ width: 44, height: 44, resizeMode: 'contain' }}
+              style={{ width: 36, height: 36, resizeMode: 'contain' }}
             />
-            <View>
-              <Text style={{
-                color: ACCENT, fontSize: 18, fontWeight: '900', letterSpacing: 0.5,
-                textShadowColor: ACCENT, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8,
-              }}>
-                EARNINGS NINJA
-              </Text>
-              <Text style={{ color: MUTED, fontSize: 11 }}>Delivery Driver Tracker</Text>
-            </View>
+            <Text style={{ fontSize: 18, fontWeight: '900', letterSpacing: 0.3, color: TEXT }}>
+              EARNINGS{' '}
+              <Text style={{ color: PRIMARY }}>NINJA</Text>
+            </Text>
           </View>
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
             <Pressable
               onPress={onRefresh}
-              style={{ backgroundColor: CARD, borderRadius: 10, borderWidth: 1, borderColor: BORDER, padding: 9 }}
+              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Ionicons name="refresh" size={18} color={MUTED} />
+              <Ionicons name="refresh" size={17} color={MUTED} />
             </Pressable>
             <Pressable
               onPress={() => setShowSettings(true)}
-              style={{ backgroundColor: CARD, borderRadius: 10, borderWidth: 1, borderColor: BORDER, padding: 9 }}
+              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Ionicons name="settings-outline" size={18} color={MUTED} />
+              <Ionicons name="settings-outline" size={17} color={MUTED} />
             </Pressable>
           </View>
         </View>
 
-        {/* ── Period Chips ────────────────────────────────────────────────── */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingVertical: 10 }}>
-          <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 14 }}>
+        {/* ── Period Tabs ───────────────────────────────────────────────────── */}
+        <View style={{ backgroundColor: SURFACE, borderBottomWidth: 1, borderBottomColor: BORDER }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, gap: 6, flexDirection: 'row' }}>
             {PERIODS.map(p => (
               <Pressable
                 key={p.key}
                 onPress={() => { hTap(); setPeriod(p.key); }}
                 style={{
-                  paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20,
-                  backgroundColor: period === p.key ? ACCENT : CARD,
-                  borderWidth: 1.5, borderColor: period === p.key ? ACCENT : BORDER,
-                  shadowColor: period === p.key ? ACCENT : 'transparent',
-                  shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 8,
+                  paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
+                  backgroundColor: period === p.key ? PRIMARY : 'transparent',
                 }}
               >
-                <Text style={{ color: period === p.key ? '#000' : MUTED, fontSize: 13, fontWeight: '800' }}>
+                <Text style={{
+                  color: period === p.key ? '#fff' : MUTED,
+                  fontSize: 13, fontWeight: period === p.key ? '700' : '500',
+                }}>
                   {p.label}
                 </Text>
               </Pressable>
             ))}
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
 
-        {rollupLoading ? (
-          <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-            <ActivityIndicator color={ACCENT} size="large" />
-          </View>
-        ) : (
-          <View style={{ paddingHorizontal: 14, gap: 10 }}>
-            {/* ── Main KPIs: Revenue + Expenses ─────────────────────────── */}
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <KpiCard
-                label="Revenue"
-                value={`$${revenue.toFixed(2)}`}
-                color={GREEN}
-                sub={`${entries.filter(e => e.amount > 0).length} orders`}
-              />
-              <KpiCard
-                label="Expenses"
-                value={`$${Math.abs(expenses).toFixed(2)}`}
-                color={RED}
-                sub={`${entries.filter(e => e.amount < 0).length} items`}
-              />
+        <View style={{ paddingHorizontal: 16, paddingTop: 14, gap: 12 }}>
+
+          {rollupLoading ? (
+            <View style={{ alignItems: 'center', paddingVertical: 60 }}>
+              <ActivityIndicator color={PRIMARY} size="large" />
             </View>
-
-            {/* ── Net Profit hero ───────────────────────────────────────── */}
-            <View style={{
-              backgroundColor: CARD,
-              borderRadius: 20,
-              borderWidth: 2,
-              borderColor: profitColor + '55',
-              padding: 22,
-              alignItems: 'center',
-              shadowColor: profitColor,
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.3,
-              shadowRadius: 18,
-            }}>
+          ) : (
+            <>
+              {/* ── Main Profit Card ────────────────────────────────────────── */}
               <View style={{
-                position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                backgroundColor: profitColor, borderTopLeftRadius: 20, borderTopRightRadius: 20, opacity: 0.8,
-              }} />
-              <Text style={{ color: MUTED, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
-                NET PROFIT
-              </Text>
-              <Text style={{
-                color: profitColor, fontSize: 52, fontWeight: '900', lineHeight: 60,
-                textShadowColor: profitColor, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 16,
+                backgroundColor: SURFACE,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: BORDER,
+                padding: 20,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                elevation: 4,
               }}>
-                {isProfit ? '' : '-'}${Math.abs(profit).toFixed(2)}
-              </Text>
-              <View style={{ height: 2, backgroundColor: profitColor + '44', borderRadius: 2, width: '80%', marginTop: 14 }} />
-            </View>
-
-            {/* ── Performance KPIs ──────────────────────────────────────── */}
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <KpiCard label="$/Hour" value={`$${perHour.toFixed(2)}`} color={BLUE} />
-              <KpiCard label="$/Mile" value={`$${perMile.toFixed(2)}`} color={PURPLE} />
-            </View>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <KpiCard label="Miles" value={miles.toFixed(1)} color={ORANGE} />
-              <KpiCard label="Avg Order" value={`$${avgOrder.toFixed(2)}`} color={ACCENT} />
-            </View>
-
-            {/* ── AI Suggestion ─────────────────────────────────────────── */}
-            {aiSuggestion && (
-              <View style={{
-                backgroundColor: CARD, borderRadius: 16,
-                borderWidth: 1, borderColor: PURPLE + '44',
-                padding: 16,
-                shadowColor: PURPLE, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.15, shadowRadius: 10,
-              }}>
-                <View style={{
-                  position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-                  backgroundColor: PURPLE, borderTopLeftRadius: 16, borderTopRightRadius: 16, opacity: 0.7,
-                }} />
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <Text style={{ fontSize: 18 }}>🤖</Text>
-                  <Text style={{ color: PURPLE, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>
-                    AI Earning Suggestion
-                  </Text>
-                </View>
-                <Text style={{ color: TEXT, fontSize: 14, lineHeight: 20 }}>{aiSuggestion.suggestion}</Text>
-                {(aiSuggestion.minimum_order || aiSuggestion.peak_time) && (
-                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                    {aiSuggestion.minimum_order && (
-                      <View style={{ backgroundColor: GREEN + '22', borderRadius: 8, borderWidth: 1, borderColor: GREEN + '55', paddingHorizontal: 10, paddingVertical: 5 }}>
-                        <Text style={{ color: GREEN, fontSize: 12, fontWeight: '700' }}>Min: ${aiSuggestion.minimum_order}</Text>
-                      </View>
-                    )}
-                    {aiSuggestion.peak_time && (
-                      <View style={{ backgroundColor: ACCENT + '22', borderRadius: 8, borderWidth: 1, borderColor: ACCENT + '55', paddingHorizontal: 10, paddingVertical: 5 }}>
-                        <Text style={{ color: ACCENT, fontSize: 12, fontWeight: '700' }}>⏰ {aiSuggestion.peak_time}</Text>
-                      </View>
-                    )}
-                  </View>
-                )}
-              </View>
-            )}
-
-            {/* ── Recent Entries ────────────────────────────────────────── */}
-            {entries.length > 0 ? (
-              <View style={{ backgroundColor: CARD, borderRadius: 16, borderWidth: 1, borderColor: BORDER, overflow: 'hidden' }}>
-                <View style={{
-                  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-                  paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: BORDER,
-                }}>
-                  <Text style={{ color: MUTED, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>
-                    Entries ({entries.length})
-                  </Text>
-                  <View style={{ flexDirection: 'row', gap: 6 }}>
-                    <View style={{ backgroundColor: GREEN + '22', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: GREEN + '44' }}>
-                      <Text style={{ color: GREEN, fontSize: 11, fontWeight: '800' }}>+${revenue.toFixed(2)}</Text>
-                    </View>
-                    <View style={{ backgroundColor: RED + '22', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: RED + '44' }}>
-                      <Text style={{ color: RED, fontSize: 11, fontWeight: '800' }}>-${Math.abs(expenses).toFixed(2)}</Text>
-                    </View>
-                  </View>
-                </View>
-                {displayedEntries.map(e => (
-                  <EntryRow
-                    key={e.id}
-                    entry={e}
-                    onDelete={(id) => {
-                      Alert.alert('Delete Entry', 'Remove this entry?', [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(id) },
-                      ]);
-                    }}
-                  />
-                ))}
-                {entries.length > 8 && (
-                  <Pressable
-                    onPress={() => setShowAllEntries(s => !s)}
-                    style={{ padding: 14, alignItems: 'center', borderTopWidth: 1, borderTopColor: BORDER }}
-                  >
-                    <Text style={{ color: ACCENT, fontSize: 13, fontWeight: '700' }}>
-                      {showAllEntries ? '▲ Show less' : `▼ Show all ${entries.length} entries`}
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-            ) : (
-              <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-                <Text style={{ fontSize: 40 }}>🚗</Text>
-                <Text style={{ color: MUTED, fontSize: 15, marginTop: 12, textAlign: 'center' }}>
-                  No entries yet for this period.{'\n'}Tap + Add Entry to get started!
+                {/* Label */}
+                <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                  NET PROFIT
                 </Text>
+
+                {/* Big profit number */}
+                <Text style={{ color: profitColor, fontSize: 48, fontWeight: '900', lineHeight: 56, marginTop: 4 }}>
+                  {isProfit ? '' : '-'}${Math.abs(profit).toFixed(2)}
+                </Text>
+
+                {/* Date range row */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
+                  <Ionicons name="chevron-back" size={16} color={LABEL} />
+                  <Text style={{ color: MUTED, fontSize: 13, fontWeight: '500', flex: 1, textAlign: 'center' }}>
+                    {periodLabel} earnings
+                  </Text>
+                  <Ionicons name="chevron-forward" size={16} color={LABEL} />
+                </View>
+
+                {/* Dashed sparkline */}
+                <DashedLine color={profitColor} />
+
+                {/* Three stats */}
+                <View style={{ flexDirection: 'row' }}>
+                  {[
+                    { label: 'REVENUE',  value: `$${revenue.toFixed(0)}` },
+                    { label: 'ORDERS',   value: `${orderCount}` },
+                    { label: 'AVG ORDER', value: `$${avgOrder.toFixed(0)}` },
+                  ].map((stat, i) => (
+                    <View
+                      key={stat.label}
+                      style={{
+                        flex: 1,
+                        alignItems: 'center',
+                        borderLeftWidth: i > 0 ? 1 : 0,
+                        borderLeftColor: DIVIDER,
+                        paddingVertical: 4,
+                      }}
+                    >
+                      <Text style={{ color: LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                        {stat.label}
+                      </Text>
+                      <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginTop: 2 }}>
+                        {stat.value}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                {/* View Entries CTA */}
+                <Pressable
+                  onPress={() => setShowAllEntries(s => !s)}
+                  style={({ pressed }) => ({
+                    backgroundColor: PRIMARY,
+                    borderRadius: 12,
+                    paddingVertical: 14,
+                    alignItems: 'center',
+                    marginTop: 16,
+                    opacity: pressed ? 0.88 : 1,
+                  })}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
+                    {showAllEntries ? 'Hide Entries ↑' : `View Entries →  (${entries.length})`}
+                  </Text>
+                </Pressable>
               </View>
-            )}
-          </View>
-        )}
+
+              {/* ── Secondary Stat Cards ────────────────────────────────────── */}
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <StatCard label="$/Hour"    value={`$${perHour.toFixed(2)}`} icon="⏱️" />
+                <StatCard label="$/Mile"    value={`$${perMile.toFixed(2)}`} icon="📍" />
+                <StatCard label="Miles"     value={miles.toFixed(1)}         icon="🚗" />
+              </View>
+
+              {/* ── Expenses card ───────────────────────────────────────────── */}
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <StatCard label="Revenue"   value={`$${revenue.toFixed(2)}`}          icon="💵" />
+                <StatCard label="Expenses"  value={`$${Math.abs(expenses).toFixed(2)}`} icon="💸" />
+              </View>
+
+              {/* ── AI Suggestion ───────────────────────────────────────────── */}
+              {aiSuggestion && (
+                <View style={{
+                  backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: PRIMARY + '30',
+                  padding: 16,
+                  shadowColor: PRIMARY, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 6,
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <Text style={{ fontSize: 18 }}>🤖</Text>
+                    <Text style={{ color: PRIMARY, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
+                      AI Earning Tip
+                    </Text>
+                  </View>
+                  <Text style={{ color: TEXT_MID, fontSize: 14, lineHeight: 20 }}>{aiSuggestion.suggestion}</Text>
+                  {(aiSuggestion.minimum_order || aiSuggestion.peak_time) && (
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                      {aiSuggestion.minimum_order && (
+                        <View style={{ backgroundColor: GREEN_LT, borderRadius: 8, borderWidth: 1, borderColor: GREEN + '40', paddingHorizontal: 10, paddingVertical: 5 }}>
+                          <Text style={{ color: GREEN, fontSize: 12, fontWeight: '700' }}>Min: ${aiSuggestion.minimum_order}</Text>
+                        </View>
+                      )}
+                      {aiSuggestion.peak_time && (
+                        <View style={{ backgroundColor: PRI_LITE, borderRadius: 8, borderWidth: 1, borderColor: PRIMARY + '40', paddingHorizontal: 10, paddingVertical: 5 }}>
+                          <Text style={{ color: PRIMARY, fontSize: 12, fontWeight: '700' }}>⏰ {aiSuggestion.peak_time}</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* ── Goals Section ────────────────────────────────────────────── */}
+              <View>
+                <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>
+                  GOALS
+                </Text>
+                {editingGoal ? (
+                  <View style={{
+                    backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER,
+                    padding: 14, flexDirection: 'row', gap: 8,
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
+                  }}>
+                    <TextInput
+                      value={goalInput}
+                      onChangeText={setGoalInput}
+                      placeholder={`${periodLabel} Goal ($)`}
+                      placeholderTextColor={LABEL}
+                      keyboardType="decimal-pad"
+                      autoFocus
+                      style={{
+                        flex: 1, backgroundColor: BG, borderWidth: 1.5, borderColor: PRIMARY,
+                        borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, color: TEXT, fontSize: 16, fontWeight: '700',
+                      }}
+                    />
+                    <Pressable
+                      onPress={() => {
+                        const val = parseFloat(goalInput);
+                        if (!val || val <= 0) return;
+                        upsertGoalMutation.mutate({ target: val });
+                      }}
+                      style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Text style={{ color: '#fff', fontWeight: '800' }}>Save</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setEditingGoal(false)}
+                      style={{ backgroundColor: BG, borderRadius: 10, borderWidth: 1, borderColor: BORDER, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Text style={{ color: MUTED }}>✕</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <View style={{
+                    backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 16,
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
+                  }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                      <View>
+                        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
+                          {periodLabel} Target
+                        </Text>
+                        <Text style={{ color: TEXT, fontSize: 22, fontWeight: '800', marginTop: 2 }}>
+                          {safeGoal > 0 ? `$${profit.toFixed(2)} / $${safeGoal.toFixed(0)}` : 'No goal set'}
+                        </Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        {safeGoal > 0 && (
+                          <Text style={{ color: goalColor, fontSize: 20, fontWeight: '900' }}>
+                            {Math.round(goalPct)}%
+                          </Text>
+                        )}
+                        <Pressable
+                          onPress={() => { setGoalInput(goalTarget ? goalTarget.toString() : ''); setEditingGoal(true); }}
+                          style={{ marginTop: 4 }}
+                        >
+                          <Text style={{ color: PRIMARY, fontSize: 12, fontWeight: '600' }}>
+                            {safeGoal > 0 ? 'Edit' : '+ Set Goal'}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                    {/* Progress bar */}
+                    <View style={{ backgroundColor: DIVIDER, borderRadius: 6, height: 8, overflow: 'hidden' }}>
+                      {safeGoal > 0 && (
+                        <View style={{
+                          width: `${Math.min(goalPct, 100)}%`,
+                          height: '100%',
+                          backgroundColor: goalColor,
+                          borderRadius: 6,
+                        }} />
+                      )}
+                    </View>
+                    {goalPct >= 100 && (
+                      <Text style={{ color: GREEN, fontSize: 13, fontWeight: '700', textAlign: 'center', marginTop: 8 }}>
+                        🎉 Goal Reached!
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </View>
+
+              {/* ── Entries List ─────────────────────────────────────────────── */}
+              {entries.length > 0 && showAllEntries && (
+                <View style={{
+                  backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER, overflow: 'hidden',
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4,
+                }}>
+                  <View style={{
+                    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                    paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: DIVIDER,
+                  }}>
+                    <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
+                      Entries ({entries.length})
+                    </Text>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <View style={{ backgroundColor: GREEN_LT, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ color: GREEN, fontSize: 11, fontWeight: '700' }}>+${revenue.toFixed(2)}</Text>
+                      </View>
+                      <View style={{ backgroundColor: RED_LT, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ color: RED, fontSize: 11, fontWeight: '700' }}>-${Math.abs(expenses).toFixed(2)}</Text>
+                      </View>
+                    </View>
+                  </View>
+                  {displayedEntries.map(e => (
+                    <EntryRow
+                      key={e.id}
+                      entry={e}
+                      onDelete={(id) => {
+                        Alert.alert('Delete Entry', 'Remove this entry?', [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(id) },
+                        ]);
+                      }}
+                    />
+                  ))}
+                  {entries.length > 8 && (
+                    <Pressable
+                      onPress={() => setShowAllEntries(s => !s)}
+                      style={{ padding: 14, alignItems: 'center', borderTopWidth: 1, borderTopColor: DIVIDER }}
+                    >
+                      <Text style={{ color: PRIMARY, fontSize: 13, fontWeight: '700' }}>
+                        {showAllEntries ? '▲ Show less' : `▼ Show all ${entries.length} entries`}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              )}
+
+              {/* Empty state */}
+              {entries.length === 0 && (
+                <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                  <Text style={{ fontSize: 40 }}>🚗</Text>
+                  <Text style={{ color: MUTED, fontSize: 15, marginTop: 12, textAlign: 'center' }}>
+                    No entries yet for this period.{'\n'}Tap + to get started!
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
+        </View>
       </ScrollView>
 
-      {/* ── Floating + Add Entry Button ──────────────────────────────────── */}
+      {/* ── Floating circular + Button (bottom right) ────────────────────────── */}
       <Pressable
         onPress={() => { hTapMed(); setShowAdd(true); }}
         style={({ pressed }) => ({
           position: 'absolute',
-          bottom: insets.bottom + 16,
-          left: 24,
+          bottom: insets.bottom + 24,
           right: 24,
-          backgroundColor: ACCENT,
+          width: 60,
+          height: 60,
           borderRadius: 30,
-          paddingVertical: 18,
-          flexDirection: 'row',
+          backgroundColor: PRIMARY,
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 10,
           opacity: pressed ? 0.88 : 1,
-          shadowColor: ACCENT,
+          shadowColor: PRIMARY,
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.7,
-          shadowRadius: 20,
-          elevation: 12,
+          shadowOpacity: 0.45,
+          shadowRadius: 12,
+          elevation: 10,
         })}
       >
-        <Ionicons name="add" size={24} color="#000" />
-        <Text style={{ color: '#000', fontWeight: '900', fontSize: 18, letterSpacing: 0.5 }}>
-          Add Entry
-        </Text>
+        <Ionicons name="add" size={30} color="#fff" />
       </Pressable>
 
-      {/* ── Modals ───────────────────────────────────────────────────────── */}
+      {/* ── Modals ───────────────────────────────────────────────────────────── */}
       <AddEntryModal visible={showAdd} onClose={() => setShowAdd(false)} />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
     </View>
