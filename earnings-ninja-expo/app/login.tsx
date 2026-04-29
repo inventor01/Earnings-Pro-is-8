@@ -1,12 +1,21 @@
 import { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet,
-  ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform,
+  View, Text, TextInput, Pressable,
+  ScrollView, ActivityIndicator, KeyboardAvoidingView,
+  Platform, Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/authContext';
 import { api } from '@/lib/api';
-import { colors } from '@/constants/colors';
+
+const BG = '#0a0a0f';
+const CARD = '#111118';
+const BORDER = '#1e1e2e';
+const ACCENT = '#facc15';
+const GREEN = '#22c55e';
+const TEXT = '#f1f5f9';
+const MUTED = '#94a3b8';
+const INPUT_BG = '#16161f';
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -23,13 +32,10 @@ export default function LoginScreen() {
     setError('');
     setLoading(true);
     try {
-      let data;
-      if (mode === 'login') {
-        data = await api.login(credential, password);
-      } else {
-        data = await api.signup(credential, password, username);
-      }
-      await login(data.access_token);
+      const res = mode === 'login'
+        ? await api.login(credential, password)
+        : await api.signup(credential, password, username);
+      login(res.access_token);
     } catch (e: any) {
       setError(e.message || 'Something went wrong');
     } finally {
@@ -41,8 +47,8 @@ export default function LoginScreen() {
     setError('');
     setDemoLoading(true);
     try {
-      const data = await api.demo();
-      await login(data.access_token);
+      const res = await api.demo();
+      login(res.access_token);
     } catch (e: any) {
       setError(e.message || 'Failed to start demo');
     } finally {
@@ -52,214 +58,232 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1, backgroundColor: BG }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={[styles.container, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingHorizontal: 20,
+          paddingTop: insets.top + 20,
+          paddingBottom: insets.bottom + 20,
+        }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <Text style={styles.ninja}>🥷</Text>
-          <Text style={styles.title}>Earnings Ninja</Text>
-          <Text style={styles.subtitle}>Track every dollar you earn</Text>
+        {/* Logo + Title */}
+        <View style={{ alignItems: 'center', marginBottom: 32 }}>
+          <Image
+            source={require('../assets/ninja-logo.png')}
+            style={{
+              width: 180,
+              height: 180,
+              resizeMode: 'contain',
+              marginBottom: 12,
+              shadowColor: ACCENT,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.6,
+              shadowRadius: 20,
+            }}
+          />
+          <Text style={{
+            color: TEXT,
+            fontSize: 24,
+            fontWeight: '900',
+            letterSpacing: 1,
+            textAlign: 'center',
+          }}>
+            Earnings Ninja 🥷
+          </Text>
+          <Text style={{ color: MUTED, fontSize: 13, marginTop: 4, textAlign: 'center' }}>
+            Track your delivery driver earnings
+          </Text>
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.tabRow}>
-            <Pressable
-              style={[styles.tab, mode === 'login' && styles.tabActive]}
-              onPress={() => { setMode('login'); setError(''); }}
-            >
-              <Text style={[styles.tabText, mode === 'login' && styles.tabTextActive]}>Log In</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.tab, mode === 'signup' && styles.tabActive]}
-              onPress={() => { setMode('signup'); setError(''); }}
-            >
-              <Text style={[styles.tabText, mode === 'signup' && styles.tabTextActive]}>Sign Up</Text>
-            </Pressable>
+        {/* Card */}
+        <View style={{
+          backgroundColor: CARD,
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: BORDER,
+          padding: 24,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.4,
+          shadowRadius: 20,
+          elevation: 10,
+        }}>
+          {/* Mode Toggle */}
+          <View style={{
+            flexDirection: 'row',
+            backgroundColor: '#0a0a0f',
+            borderRadius: 12,
+            padding: 4,
+            marginBottom: 20,
+          }}>
+            {(['login', 'signup'] as const).map((m) => (
+              <Pressable
+                key={m}
+                onPress={() => { setMode(m); setError(''); }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                  backgroundColor: mode === m ? ACCENT : 'transparent',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{
+                  color: mode === m ? '#000' : MUTED,
+                  fontWeight: '700',
+                  fontSize: 14,
+                  textTransform: 'capitalize',
+                }}>
+                  {m === 'login' ? 'Sign In' : 'Sign Up'}
+                </Text>
+              </Pressable>
+            ))}
           </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Email or username"
-            placeholderTextColor={colors.textMuted}
-            value={credential}
-            onChangeText={setCredential}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoCorrect={false}
-          />
-
+          {/* Fields */}
           {mode === 'signup' && (
-            <TextInput
-              style={styles.input}
-              placeholder="Username"
-              placeholderTextColor={colors.textMuted}
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ color: MUTED, fontSize: 12, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Username</Text>
+              <TextInput
+                value={username}
+                onChangeText={setUsername}
+                placeholder="your_username"
+                placeholderTextColor="#4b5563"
+                autoCapitalize="none"
+                style={{
+                  backgroundColor: INPUT_BG,
+                  borderWidth: 1,
+                  borderColor: BORDER,
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  color: TEXT,
+                  fontSize: 16,
+                }}
+              />
+            </View>
           )}
 
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={colors.textMuted}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          <Pressable
-            style={[styles.btn, styles.btnPrimary]}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            {loading
-              ? <ActivityIndicator color={colors.black} />
-              : <Text style={styles.btnPrimaryText}>{mode === 'login' ? 'Log In' : 'Create Account'}</Text>
-            }
-          </Pressable>
-
-          <View style={styles.dividerRow}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.divider} />
+          <View style={{ marginBottom: 12 }}>
+            <Text style={{ color: MUTED, fontSize: 12, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>
+              {mode === 'login' ? 'Email or Username' : 'Email'}
+            </Text>
+            <TextInput
+              value={credential}
+              onChangeText={setCredential}
+              placeholder={mode === 'login' ? 'email or username' : 'you@example.com'}
+              placeholderTextColor="#4b5563"
+              autoCapitalize="none"
+              keyboardType={mode === 'signup' ? 'email-address' : 'default'}
+              style={{
+                backgroundColor: INPUT_BG,
+                borderWidth: 1,
+                borderColor: BORDER,
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                color: TEXT,
+                fontSize: 16,
+              }}
+            />
           </View>
 
+          <View style={{ marginBottom: 20 }}>
+            <Text style={{ color: MUTED, fontSize: 12, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Password</Text>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              placeholderTextColor="#4b5563"
+              secureTextEntry
+              style={{
+                backgroundColor: INPUT_BG,
+                borderWidth: 1,
+                borderColor: BORDER,
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                color: TEXT,
+                fontSize: 16,
+              }}
+            />
+          </View>
+
+          {error ? (
+            <View style={{
+              backgroundColor: 'rgba(239,68,68,0.15)',
+              borderRadius: 10,
+              padding: 12,
+              borderWidth: 1,
+              borderColor: '#ef4444',
+              marginBottom: 16,
+            }}>
+              <Text style={{ color: '#f87171', fontSize: 13, textAlign: 'center' }}>{error}</Text>
+            </View>
+          ) : null}
+
+          {/* Submit Button */}
           <Pressable
-            style={[styles.btn, styles.btnSecondary]}
-            onPress={handleDemo}
-            disabled={demoLoading}
+            onPress={handleSubmit}
+            disabled={loading}
+            style={({ pressed }) => ({
+              backgroundColor: ACCENT,
+              borderRadius: 14,
+              paddingVertical: 16,
+              alignItems: 'center',
+              opacity: pressed ? 0.85 : 1,
+              shadowColor: ACCENT,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.6,
+              shadowRadius: 12,
+              elevation: 8,
+              marginBottom: 12,
+            })}
           >
-            {demoLoading
-              ? <ActivityIndicator color={colors.textPrimary} />
-              : <Text style={styles.btnSecondaryText}>Try Demo Mode</Text>
+            {loading
+              ? <ActivityIndicator color="#000" />
+              : <Text style={{ color: '#000', fontWeight: '900', fontSize: 16 }}>
+                  {mode === 'login' ? 'Sign In →' : 'Create Account →'}
+                </Text>
             }
           </Pressable>
 
-          <Text style={styles.demoHint}>No account needed — explore with sample data</Text>
+          {/* Demo Button */}
+          <Pressable
+            onPress={handleDemo}
+            disabled={demoLoading}
+            style={({ pressed }) => ({
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              borderColor: GREEN,
+              borderRadius: 14,
+              paddingVertical: 15,
+              alignItems: 'center',
+              opacity: pressed ? 0.8 : 1,
+              shadowColor: GREEN,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.4,
+              shadowRadius: 10,
+            })}
+          >
+            {demoLoading
+              ? <ActivityIndicator color={GREEN} />
+              : <Text style={{ color: GREEN, fontWeight: '800', fontSize: 15 }}>
+                  🚗 Try Demo Mode
+                </Text>
+            }
+          </Pressable>
         </View>
+
+        <Text style={{ color: '#374151', fontSize: 12, textAlign: 'center', marginTop: 20 }}>
+          No credit card required · Free to use
+        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-    gap: 24,
-  },
-  header: {
-    alignItems: 'center',
-    gap: 6,
-  },
-  ninja: { fontSize: 60 },
-  title: {
-    fontSize: 30,
-    fontFamily: 'Inter_700Bold',
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    fontFamily: 'Inter_400Regular',
-    color: colors.textSecondary,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 20,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  tabRow: {
-    flexDirection: 'row',
-    backgroundColor: colors.background,
-    borderRadius: 10,
-    padding: 3,
-    marginBottom: 4,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  tabActive: { backgroundColor: colors.accent },
-  tabText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  tabTextActive: { color: colors.black },
-  input: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    fontFamily: 'Inter_400Regular',
-    color: colors.textPrimary,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  error: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    color: colors.red,
-    textAlign: 'center',
-  },
-  btn: {
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 52,
-  },
-  btnPrimary: { backgroundColor: colors.accent },
-  btnPrimaryText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 16,
-    color: colors.black,
-  },
-  btnSecondary: {
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  btnSecondaryText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  dividerText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  demoHint: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-});

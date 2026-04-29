@@ -1,13 +1,24 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, Pressable,
+  View, Text, FlatList, Pressable,
   RefreshControl, Alert, ActivityIndicator, TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { api, Entry, APP_LABELS, APP_COLORS } from '@/lib/api';
-import { colors } from '@/constants/colors';
+import * as Haptics from 'expo-haptics';
+
+const BG = '#0a0a0f';
+const SURFACE = '#111118';
+const CARD = '#16161f';
+const BORDER = '#1e1e2e';
+const ACCENT = '#facc15';
+const GREEN = '#22c55e';
+const RED = '#ef4444';
+const TEXT = '#f1f5f9';
+const MUTED = '#94a3b8';
+const DIM = '#4b5563';
 
 type Period = { key: string; label: string; tf: string };
 
@@ -15,237 +26,331 @@ const PERIODS: Period[] = [
   { key: 'today', label: 'Today', tf: 'TODAY' },
   { key: 'yesterday', label: 'Yesterday', tf: 'YESTERDAY' },
   { key: 'week', label: 'This Week', tf: 'THIS_WEEK' },
-  { key: 'month', label: 'This Month', tf: 'THIS_MONTH' },
-  { key: 'last7', label: 'Last 7 Days', tf: 'LAST_7_DAYS' },
+  { key: 'last7', label: 'Last 7', tf: 'LAST_7_DAYS' },
+  { key: 'month', label: 'Month', tf: 'THIS_MONTH' },
 ];
 
-function fmt(n: number) {
-  return (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2);
-}
+function EntryCard({ entry, selected, onSelect, onDelete }: {
+  entry: Entry;
+  selected: boolean;
+  onSelect: (id: number) => void;
+  onDelete: (id: number) => void;
+}) {
+  const isExpense = entry.amount < 0 || entry.type === 'EXPENSE';
+  const color = isExpense ? RED : GREEN;
+  const amt = Math.abs(entry.amount);
+  const appColor = APP_COLORS[entry.app] || DIM;
+  const date = new Date(entry.timestamp);
+  const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
-const TYPE_ICONS: Record<string, string> = {
-  ORDER: '📦', BONUS: '⭐', EXPENSE: '💸', CANCELLATION: '❌',
-};
+  return (
+    <Pressable
+      onLongPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onSelect(entry.id); }}
+      style={{
+        backgroundColor: selected ? ACCENT + '11' : CARD,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: selected ? ACCENT + '88' : BORDER,
+        marginHorizontal: 14,
+        marginVertical: 4,
+        overflow: 'hidden',
+      }}
+    >
+      {/* Left colored bar */}
+      <View style={{
+        position: 'absolute', top: 0, bottom: 0, left: 0,
+        width: 3,
+        backgroundColor: appColor,
+        opacity: 0.8,
+      }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14, paddingLeft: 16 }}>
+        {/* App Badge */}
+        <View style={{
+          width: 42,
+          height: 42,
+          borderRadius: 21,
+          backgroundColor: appColor + '22',
+          borderWidth: 1.5,
+          borderColor: appColor,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 12,
+        }}>
+          <Text style={{ fontSize: 15, fontWeight: '900', color: appColor }}>
+            {(APP_LABELS[entry.app] || 'O')[0]}
+          </Text>
+        </View>
+
+        {/* Info */}
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700', marginBottom: 2 }}>
+            {APP_LABELS[entry.app] || entry.app}
+            <Text style={{ color: DIM, fontWeight: '500', fontSize: 12 }}> · {entry.type}</Text>
+          </Text>
+          <Text style={{ color: MUTED, fontSize: 11 }}>
+            {dateStr} at {timeStr}
+            {entry.distance_miles > 0 ? ` · ${entry.distance_miles.toFixed(1)} mi` : ''}
+            {entry.duration_minutes > 0 ? ` · ${entry.duration_minutes}min` : ''}
+          </Text>
+          {entry.note ? (
+            <Text style={{ color: DIM, fontSize: 11, marginTop: 2 }} numberOfLines={1}>
+              📝 {entry.note}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Amount */}
+        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+          <Text style={{
+            color,
+            fontSize: 18,
+            fontWeight: '900',
+            fontVariant: ['tabular-nums'],
+            textShadowColor: color,
+            textShadowOffset: { width: 0, height: 0 },
+            textShadowRadius: 6,
+          }}>
+            {isExpense ? '-' : '+'}${amt.toFixed(2)}
+          </Text>
+          <Pressable
+            onPress={() => {
+              Alert.alert('Delete Entry', 'Remove this entry?', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Delete', style: 'destructive', onPress: () => onDelete(entry.id) },
+              ]);
+            }}
+            style={{ padding: 4 }}
+          >
+            <Ionicons name="trash-outline" size={16} color={DIM} />
+          </Pressable>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
-  const qc = useQueryClient();
-  const [period, setPeriod] = useState<Period>(PERIODS[0]);
+  const queryClient = useQueryClient();
+  const [period, setPeriod] = useState('today');
   const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<number[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: entries = [], refetch, isLoading } = useQuery({
-    queryKey: ['entries', period.tf],
-    queryFn: () => api.getEntries(period.tf, 500),
+  const tf = PERIODS.find(p => p.key === period)?.tf || 'TODAY';
+
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ['entries', tf],
+    queryFn: () => api.getEntries(tf as any),
   });
 
   const deleteMutation = useMutation({
     mutationFn: api.deleteEntry,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['entries'] });
-      qc.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
     },
   });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refetch();
+    await queryClient.invalidateQueries({ queryKey: ['entries'] });
     setRefreshing(false);
-  }, [refetch]);
+  }, [queryClient]);
 
-  const handleDelete = (entry: Entry) => {
-    Alert.alert(
-      'Delete Entry',
-      `Delete ${entry.type} of ${fmt(Math.abs(entry.amount))}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(entry.id) },
-      ]
+  const toggleSelect = (id: number) => {
+    setSelected(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
+  };
+
+  const handleBulkDelete = () => {
+    Alert.alert('Delete Entries', `Delete ${selected.length} entries?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete All', style: 'destructive',
+        onPress: async () => {
+          for (const id of selected) await api.deleteEntry(id);
+          queryClient.invalidateQueries({ queryKey: ['entries'] });
+          queryClient.invalidateQueries({ queryKey: ['rollup'] });
+          setSelected([]);
+        },
+      },
+    ]);
   };
 
   const filtered = entries.filter(e => {
     if (!search) return true;
-    const q = search.toLowerCase();
+    const s = search.toLowerCase();
     return (
-      APP_LABELS[e.app].toLowerCase().includes(q) ||
-      e.type.toLowerCase().includes(q) ||
-      (e.note?.toLowerCase().includes(q)) ||
-      Math.abs(e.amount).toFixed(2).includes(q)
+      APP_LABELS[e.app]?.toLowerCase().includes(s) ||
+      e.type.toLowerCase().includes(s) ||
+      e.note?.toLowerCase().includes(s) ||
+      Math.abs(e.amount).toFixed(2).includes(s)
     );
   });
 
-  const totalRevenue = filtered.filter(e => e.type === 'ORDER' || e.type === 'BONUS').reduce((s, e) => s + e.amount, 0);
-  const totalExpenses = filtered.filter(e => e.amount < 0).reduce((s, e) => s + e.amount, 0);
-  const profit = totalRevenue + totalExpenses;
-
-  const renderEntry = ({ item: entry }: { item: Entry }) => {
-    const isNeg = entry.amount < 0;
-    const appColor = APP_COLORS[entry.app] ?? colors.textMuted;
-    const d = new Date(entry.timestamp);
-    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-
-    return (
-      <View style={styles.entryCard}>
-        <View style={[styles.entryLeft, { backgroundColor: appColor + '20' }]}>
-          <Text style={styles.typeIcon}>{TYPE_ICONS[entry.type] || '📋'}</Text>
-        </View>
-        <View style={styles.entryBody}>
-          <View style={styles.entryTopRow}>
-            <Text style={styles.entryApp}>{APP_LABELS[entry.app]}</Text>
-            <Text style={[styles.entryAmt, { color: isNeg ? colors.red : colors.green }]}>
-              {isNeg ? '' : '+'}{fmt(entry.amount)}
-            </Text>
-          </View>
-          <View style={styles.entryBottomRow}>
-            <Text style={styles.entryMeta}>
-              {entry.type}{entry.category ? ` · ${entry.category}` : ''}
-              {entry.distance_miles ? ` · ${entry.distance_miles.toFixed(1)}mi` : ''}
-            </Text>
-            <Text style={styles.entryDate}>{dateStr} {timeStr}</Text>
-          </View>
-          {entry.note ? <Text style={styles.entryNote}>"{entry.note}"</Text> : null}
-        </View>
-        <Pressable onPress={() => handleDelete(entry)} style={styles.deleteBtn} hitSlop={8}>
-          <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
-        </Pressable>
-      </View>
-    );
-  };
+  const revenue = filtered.filter(e => e.amount > 0).reduce((sum, e) => sum + e.amount, 0);
+  const expenses = filtered.filter(e => e.amount < 0).reduce((sum, e) => sum + e.amount, 0);
+  const profit = revenue + expenses;
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + 8 }]}>
-      {/* Period filter */}
-      <FlatList
-        data={PERIODS}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={p => p.key}
-        contentContainerStyle={styles.chipRow}
-        renderItem={({ item: p }) => (
-          <Pressable
-            style={[styles.chip, period.key === p.key && styles.chipActive]}
-            onPress={() => setPeriod(p)}
-          >
-            <Text style={[styles.chipText, period.key === p.key && styles.chipTextActive]}>{p.label}</Text>
-          </Pressable>
+    <View style={{ flex: 1, backgroundColor: BG }}>
+      {/* Header */}
+      <View style={{
+        paddingTop: insets.top + 12,
+        paddingHorizontal: 14,
+        paddingBottom: 12,
+        backgroundColor: SURFACE,
+        borderBottomWidth: 1,
+        borderBottomColor: BORDER,
+        gap: 12,
+      }}>
+        <Text style={{
+          color: ACCENT,
+          fontSize: 22,
+          fontWeight: '900',
+          textShadowColor: ACCENT,
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 8,
+        }}>
+          History
+        </Text>
+
+        {/* Period Chips */}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {PERIODS.map((p) => (
+            <Pressable
+              key={p.key}
+              onPress={() => { setPeriod(p.key); setSelected([]); }}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 7,
+                borderRadius: 16,
+                backgroundColor: period === p.key ? ACCENT : CARD,
+                borderWidth: 1.5,
+                borderColor: period === p.key ? ACCENT : BORDER,
+              }}
+            >
+              <Text style={{
+                color: period === p.key ? '#000' : MUTED,
+                fontSize: 12,
+                fontWeight: '700',
+              }}>
+                {p.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Search */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: CARD,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: BORDER,
+          paddingHorizontal: 12,
+          gap: 8,
+        }}>
+          <Ionicons name="search" size={16} color={DIM} />
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search entries..."
+            placeholderTextColor={DIM}
+            style={{ flex: 1, color: TEXT, fontSize: 14, paddingVertical: 10 }}
+          />
+          {search ? (
+            <Pressable onPress={() => setSearch('')}>
+              <Ionicons name="close-circle" size={16} color={DIM} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        {/* Summary Bar */}
+        {filtered.length > 0 && (
+          <View style={{
+            flexDirection: 'row',
+            backgroundColor: CARD,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: BORDER,
+            overflow: 'hidden',
+          }}>
+            {[
+              { label: 'Revenue', value: `+$${revenue.toFixed(2)}`, color: GREEN },
+              { label: 'Expenses', value: `-$${Math.abs(expenses).toFixed(2)}`, color: RED },
+              { label: 'Profit', value: `$${profit.toFixed(2)}`, color: profit >= 0 ? GREEN : RED },
+              { label: 'Entries', value: String(filtered.length), color: ACCENT },
+            ].map((item, i) => (
+              <View key={item.label} style={{
+                flex: 1,
+                alignItems: 'center',
+                paddingVertical: 8,
+                borderRightWidth: i < 3 ? 1 : 0,
+                borderRightColor: BORDER,
+              }}>
+                <Text style={{ color: MUTED, fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5 }}>{item.label}</Text>
+                <Text style={{ color: item.color, fontSize: 12, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{item.value}</Text>
+              </View>
+            ))}
+          </View>
         )}
-        style={styles.chipList}
-      />
 
-      {/* Summary bar */}
-      <View style={styles.summaryBar}>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Revenue</Text>
-          <Text style={[styles.summaryValue, { color: colors.green }]}>{fmt(totalRevenue)}</Text>
-        </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Expenses</Text>
-          <Text style={[styles.summaryValue, { color: colors.red }]}>{fmt(Math.abs(totalExpenses))}</Text>
-        </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Profit</Text>
-          <Text style={[styles.summaryValue, { color: profit >= 0 ? colors.green : colors.red }]}>{fmt(profit)}</Text>
-        </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Entries</Text>
-          <Text style={styles.summaryValue}>{filtered.length}</Text>
-        </View>
-      </View>
-
-      {/* Search */}
-      <View style={styles.searchRow}>
-        <Ionicons name="search" size={16} color={colors.textMuted} style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search entries..."
-          placeholderTextColor={colors.textMuted}
-          value={search}
-          onChangeText={setSearch}
-        />
-        {search ? (
-          <Pressable onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-          </Pressable>
-        ) : null}
+        {/* Bulk Delete */}
+        {selected.length > 0 && (
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <Text style={{ color: ACCENT, fontSize: 13, fontWeight: '700', flex: 1 }}>
+              {selected.length} selected
+            </Text>
+            <Pressable
+              onPress={handleBulkDelete}
+              style={{ backgroundColor: RED + '22', borderWidth: 1, borderColor: RED, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8 }}
+            >
+              <Text style={{ color: RED, fontWeight: '700', fontSize: 13 }}>Delete All</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setSelected([])}
+              style={{ backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8 }}
+            >
+              <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Cancel</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
 
       {isLoading ? (
-        <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={ACCENT} size="large" />
+        </View>
+      ) : filtered.length === 0 ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 40 }}>📋</Text>
+          <Text style={{ color: MUTED, fontSize: 15, marginTop: 12, textAlign: 'center' }}>
+            {search ? 'No entries match your search.' : 'No entries for this period.'}
+          </Text>
+        </View>
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={e => e.id.toString()}
-          renderItem={renderEntry}
-          contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>📭</Text>
-              <Text style={styles.emptyText}>No entries found</Text>
-            </View>
+          keyExtractor={(item) => String(item.id)}
+          renderItem={({ item }) => (
+            <EntryCard
+              entry={item}
+              selected={selected.includes(item.id)}
+              onSelect={toggleSelect}
+              onDelete={(id) => deleteMutation.mutate(id)}
+            />
+          )}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} colors={[ACCENT]} />
           }
-          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingTop: 8, paddingBottom: insets.bottom + 20 }}
         />
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  chipList: { flexGrow: 0 },
-  chipRow: { paddingHorizontal: 16, gap: 8 },
-  chip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
-  },
-  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  chipText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.textSecondary },
-  chipTextActive: { color: colors.black },
-  summaryBar: {
-    flexDirection: 'row', backgroundColor: colors.surface,
-    marginHorizontal: 16, borderRadius: 14, padding: 12,
-    marginTop: 10, borderWidth: 1, borderColor: colors.border,
-  },
-  summaryItem: { flex: 1, alignItems: 'center', gap: 2 },
-  summaryLabel: { fontFamily: 'Inter_400Regular', fontSize: 10, color: colors.textMuted },
-  summaryValue: { fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.textPrimary },
-  summaryDivider: { width: 1, backgroundColor: colors.border, marginVertical: 2 },
-  searchRow: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.surface, borderRadius: 12,
-    marginHorizontal: 16, marginTop: 10,
-    paddingHorizontal: 12, borderWidth: 1, borderColor: colors.border,
-  },
-  searchIcon: { marginRight: 8 },
-  searchInput: {
-    flex: 1, paddingVertical: 11,
-    fontFamily: 'Inter_400Regular', fontSize: 14,
-    color: colors.textPrimary,
-  },
-  list: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 24, gap: 8 },
-  entryCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: colors.surface, borderRadius: 14,
-    padding: 12, borderWidth: 1, borderColor: colors.border,
-  },
-  entryLeft: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  typeIcon: { fontSize: 18 },
-  entryBody: { flex: 1, gap: 3 },
-  entryTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  entryApp: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: colors.textPrimary },
-  entryAmt: { fontFamily: 'Inter_700Bold', fontSize: 15 },
-  entryBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  entryMeta: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.textSecondary },
-  entryDate: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.textMuted },
-  entryNote: { fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.textMuted, fontStyle: 'italic' },
-  deleteBtn: { padding: 4 },
-  empty: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyIcon: { fontSize: 40 },
-  emptyText: { fontFamily: 'Inter_400Regular', fontSize: 15, color: colors.textSecondary },
-});

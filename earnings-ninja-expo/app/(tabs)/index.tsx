@@ -1,392 +1,513 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable,
+  View, Text, ScrollView, Pressable,
   RefreshControl, ActivityIndicator, Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { api, Rollup, APP_COLORS, APP_LABELS } from '@/lib/api';
+import { api, APP_COLORS, APP_LABELS, Entry } from '@/lib/api';
 import { useAuth } from '@/lib/authContext';
-import { colors } from '@/constants/colors';
 
-type Period = 'today' | 'yesterday' | 'week' | 'month';
+const BG = '#0a0a0f';
+const SURFACE = '#111118';
+const CARD = '#16161f';
+const BORDER = '#1e1e2e';
+const ACCENT = '#facc15';
+const GREEN = '#22c55e';
+const RED = '#ef4444';
+const TEXT = '#f1f5f9';
+const MUTED = '#94a3b8';
+const DIM = '#4b5563';
+
+type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month';
 
 const PERIODS: { key: Period; label: string; tf: string }[] = [
   { key: 'today', label: 'Today', tf: 'TODAY' },
   { key: 'yesterday', label: 'Yesterday', tf: 'YESTERDAY' },
   { key: 'week', label: 'This Week', tf: 'THIS_WEEK' },
-  { key: 'month', label: 'This Month', tf: 'THIS_MONTH' },
+  { key: 'last7', label: 'Last 7', tf: 'LAST_7_DAYS' },
+  { key: 'month', label: 'Month', tf: 'THIS_MONTH' },
 ];
 
-function fmt(n: number): string {
-  return (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2);
+interface KpiCardProps {
+  label: string;
+  value: string;
+  color: string;
+  sub?: string;
 }
 
-function KpiCard({ label, value, sub, color, icon }: {
-  label: string; value: string; sub?: string; color: string; icon: string;
-}) {
+function KpiCard({ label, value, color, sub }: KpiCardProps) {
   return (
-    <View style={[kpiStyles.card, { borderTopColor: color, shadowColor: color }]}>
-      <Text style={kpiStyles.icon}>{icon}</Text>
-      <Text style={[kpiStyles.value, { color }]}>{value}</Text>
-      <Text style={kpiStyles.label}>{label}</Text>
-      {sub ? <Text style={kpiStyles.sub}>{sub}</Text> : null}
+    <View style={{
+      flex: 1,
+      backgroundColor: CARD,
+      borderRadius: 16,
+      borderWidth: 1.5,
+      borderColor: color + '55',
+      padding: 14,
+      shadowColor: color,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      elevation: 6,
+      minWidth: 0,
+    }}>
+      {/* Top glow bar */}
+      <View style={{
+        position: 'absolute', top: 0, left: 0, right: 0,
+        height: 2, backgroundColor: color, borderTopLeftRadius: 16, borderTopRightRadius: 16,
+        opacity: 0.7,
+      }} />
+      <Text style={{
+        color: color,
+        fontSize: 10,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: 4,
+        fontVariant: ['tabular-nums'],
+      }}>
+        {label}
+      </Text>
+      <Text style={{
+        color: color,
+        fontSize: 22,
+        fontWeight: '900',
+        fontVariant: ['tabular-nums'],
+        textShadowColor: color,
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 8,
+      }}>
+        {value}
+      </Text>
+      {sub && (
+        <Text style={{ color: MUTED, fontSize: 10, marginTop: 3 }}>{sub}</Text>
+      )}
     </View>
   );
 }
 
-const kpiStyles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 16,
-    flex: 1,
-    minWidth: '46%',
-    borderTopWidth: 2,
-    gap: 2,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  icon: { fontSize: 20, marginBottom: 4 },
-  value: { fontSize: 24, fontFamily: 'Inter_700Bold', letterSpacing: -0.5 },
-  label: { fontSize: 12, fontFamily: 'Inter_500Medium', color: colors.textSecondary },
-  sub: { fontSize: 11, fontFamily: 'Inter_400Regular', color: colors.textMuted, marginTop: 1 },
-});
+function ProfitHeroCard({ profit, revenue, expenses }: { profit: number; revenue: number; expenses: number }) {
+  const isPositive = profit >= 0;
+  const color = isPositive ? GREEN : RED;
+  return (
+    <View style={{
+      backgroundColor: CARD,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: color + '66',
+      padding: 24,
+      alignItems: 'center',
+      shadowColor: color,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.35,
+      shadowRadius: 18,
+      elevation: 10,
+      marginBottom: 4,
+    }}>
+      {/* Top glow bar */}
+      <View style={{
+        position: 'absolute', top: 0, left: 0, right: 0,
+        height: 3, backgroundColor: color, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+        opacity: 0.8,
+      }} />
+      <Text style={{
+        color: MUTED,
+        fontSize: 11,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 2,
+        marginBottom: 6,
+      }}>
+        NET PROFIT
+      </Text>
+      <Text style={{
+        color: color,
+        fontSize: 56,
+        fontWeight: '900',
+        fontVariant: ['tabular-nums'],
+        textShadowColor: color,
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 16,
+        lineHeight: 64,
+      }}>
+        {isPositive ? '' : '-'}${Math.abs(profit).toFixed(2)}
+      </Text>
+      <View style={{ flexDirection: 'row', gap: 24, marginTop: 12 }}>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ color: MUTED, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Revenue</Text>
+          <Text style={{ color: GREEN, fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] }}>${revenue.toFixed(2)}</Text>
+        </View>
+        <View style={{ width: 1, backgroundColor: BORDER }} />
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ color: MUTED, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Expenses</Text>
+          <Text style={{ color: RED, fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] }}>-${Math.abs(expenses).toFixed(2)}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function GoalBar({ progress, goal, current }: { progress: number; goal: number; current: number }) {
+  const pct = Math.min(progress, 100);
+  const color = pct >= 100 ? ACCENT : pct >= 60 ? GREEN : '#3b82f6';
+  return (
+    <View style={{
+      backgroundColor: CARD,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: BORDER,
+      padding: 14,
+    }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+        <Text style={{ color: MUTED, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
+          🎯 Goal Progress
+        </Text>
+        <Text style={{ color: color, fontSize: 12, fontWeight: '800' }}>
+          {pct.toFixed(0)}% · ${current.toFixed(0)} / ${goal.toFixed(0)}
+        </Text>
+      </View>
+      <View style={{ backgroundColor: '#1e1e2e', borderRadius: 8, height: 10, overflow: 'hidden' }}>
+        <View style={{
+          width: `${pct}%`,
+          height: '100%',
+          backgroundColor: color,
+          borderRadius: 8,
+          shadowColor: color,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 6,
+        }} />
+      </View>
+      {pct >= 100 && (
+        <Text style={{ color: ACCENT, fontSize: 13, fontWeight: '800', textAlign: 'center', marginTop: 8 }}>
+          🎉 Goal Reached! Excellent work!
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function EntryRow({ entry, onDelete }: { entry: Entry; onDelete: (id: number) => void }) {
+  const isExpense = entry.amount < 0 || entry.type === 'EXPENSE';
+  const color = isExpense ? RED : GREEN;
+  const amt = Math.abs(entry.amount);
+  const time = new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+  return (
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: BORDER,
+    }}>
+      <View style={{
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: (APP_COLORS[entry.app] || DIM) + '22',
+        borderWidth: 1.5,
+        borderColor: APP_COLORS[entry.app] || DIM,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+      }}>
+        <Text style={{ fontSize: 14, fontWeight: '900', color: APP_COLORS[entry.app] || DIM }}>
+          {(APP_LABELS[entry.app] || 'O')[0]}
+        </Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700' }}>
+          {APP_LABELS[entry.app] || entry.app}
+        </Text>
+        <Text style={{ color: MUTED, fontSize: 11, marginTop: 1 }}>
+          {entry.type} · {time}
+          {entry.distance_miles > 0 ? ` · ${entry.distance_miles.toFixed(1)} mi` : ''}
+        </Text>
+      </View>
+      <Text style={{ color, fontSize: 16, fontWeight: '900', fontVariant: ['tabular-nums'] }}>
+        {isExpense ? '-' : '+'}${amt.toFixed(2)}
+      </Text>
+      <Pressable onPress={() => onDelete(entry.id)} style={{ marginLeft: 12, padding: 4 }}>
+        <Ionicons name="trash-outline" size={16} color="#4b5563" />
+      </Pressable>
+    </View>
+  );
+}
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const queryClient = useQueryClient();
   const [period, setPeriod] = useState<Period>('today');
   const [refreshing, setRefreshing] = useState(false);
 
   const tf = PERIODS.find(p => p.key === period)?.tf || 'TODAY';
 
-  const { data: rollup, refetch: refetchRollup, isLoading } = useQuery({
+  const { data: rollup, isLoading: rollupLoading } = useQuery({
     queryKey: ['rollup', tf],
-    queryFn: () => api.getRollup(tf),
+    queryFn: () => api.getRollup(tf as any),
   });
 
-  const { data: entries, refetch: refetchEntries } = useQuery({
+  const { data: entries = [] } = useQuery({
     queryKey: ['entries', tf],
-    queryFn: () => api.getEntries(tf),
+    queryFn: () => api.getEntries(tf as any),
   });
 
-  const { data: suggestions } = useQuery({
-    queryKey: ['suggestions'],
+  const { data: goal } = useQuery({
+    queryKey: ['goal', tf],
+    queryFn: () => api.getGoal(tf as any),
+  });
+
+  const { data: aiSuggestion } = useQuery({
+    queryKey: ['ai-suggestion'],
     queryFn: api.getSuggestions,
-    staleTime: 5 * 60_000,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: api.deleteEntry,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+    },
   });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchRollup(), refetchEntries()]);
+    await queryClient.invalidateQueries({ queryKey: ['rollup'] });
+    await queryClient.invalidateQueries({ queryKey: ['entries'] });
     setRefreshing(false);
-  }, [refetchRollup, refetchEntries]);
+  }, [queryClient]);
 
-  const r: Rollup = rollup ?? {
-    revenue: 0, expenses: 0, profit: 0, miles: 0,
-    hours: 0, dollars_per_mile: 0, dollars_per_hour: 0, average_order_value: 0,
-  };
+  const profit = rollup?.profit ?? 0;
+  const revenue = rollup?.revenue ?? 0;
+  const expenses = rollup?.expenses ?? 0;
+  const miles = rollup?.miles ?? 0;
+  const perMile = rollup?.dollars_per_mile ?? 0;
+  const perHour = rollup?.dollars_per_hour ?? 0;
+  const avgOrder = rollup?.average_order_value ?? 0;
 
-  const recentEntries = (entries ?? []).slice(0, 8);
-  const profitColor = r.profit >= 0 ? colors.green : colors.red;
-  const goalProgress = rollup?.goal_progress ?? null;
-  const goalTarget = rollup?.goal?.target_profit ?? null;
+  const goalTarget = goal?.target_profit ?? 0;
+  const goalProgress = goalTarget > 0 ? (profit / goalTarget) * 100 : 0;
+
+  const recentEntries = entries.slice(0, 10);
 
   return (
     <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={[styles.container, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
-      showsVerticalScrollIndicator={false}
+      style={{ flex: 1, backgroundColor: BG }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={ACCENT}
+          colors={[ACCENT]}
+        />
+      }
     >
-      {/* Header with ninja logo */}
-      <View style={styles.header}>
-        <View style={styles.logoRow}>
+      {/* Header */}
+      <View style={{
+        paddingTop: insets.top + 12,
+        paddingHorizontal: 16,
+        paddingBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottomWidth: 1,
+        borderBottomColor: BORDER,
+        backgroundColor: SURFACE,
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Image
-            source={require('../../assets/icon.png')}
-            style={styles.logoImg}
-            resizeMode="contain"
+            source={require('../../assets/ninja-logo.png')}
+            style={{
+              width: 40,
+              height: 40,
+              resizeMode: 'contain',
+            }}
           />
           <View>
-            <Text style={styles.logoTitle}>EARNINGS</Text>
-            <Text style={styles.logoNinja}>NINJA</Text>
+            <Text style={{
+              color: ACCENT,
+              fontSize: 18,
+              fontWeight: '900',
+              letterSpacing: 0.5,
+              textShadowColor: ACCENT,
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 8,
+            }}>
+              Earnings Ninja
+            </Text>
+            <Text style={{ color: MUTED, fontSize: 11 }}>🚗 Dashboard</Text>
           </View>
         </View>
-        <View style={styles.headerActions}>
-          {goalTarget != null && (
-            <View style={styles.goalBadge}>
-              <Text style={styles.goalBadgeText}>
-                Goal: {fmt(goalTarget)}
-              </Text>
-            </View>
-          )}
-          <Pressable onPress={() => router.push('/(tabs)/settings')} style={styles.settingsBtn}>
-            <Ionicons name="settings-outline" size={22} color={colors.textSecondary} />
-          </Pressable>
-        </View>
+        <Pressable onPress={logout} style={{ padding: 8 }}>
+          <Ionicons name="log-out-outline" size={22} color={MUTED} />
+        </Pressable>
       </View>
 
-      {/* Period chips */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chipContent}>
-        {PERIODS.map(p => (
-          <Pressable
-            key={p.key}
-            style={[styles.chip, period === p.key && styles.chipActive]}
-            onPress={() => setPeriod(p.key)}
-          >
-            <Text style={[styles.chipText, period === p.key && styles.chipTextActive]}>{p.label}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <View style={{ paddingHorizontal: 14, paddingTop: 14, gap: 12 }}>
+        {/* Period Chips */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
+          <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 4, paddingVertical: 2 }}>
+            {PERIODS.map((p) => (
+              <Pressable
+                key={p.key}
+                onPress={() => setPeriod(p.key)}
+                style={{
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  backgroundColor: period === p.key ? ACCENT : CARD,
+                  borderWidth: 1.5,
+                  borderColor: period === p.key ? ACCENT : BORDER,
+                  shadowColor: period === p.key ? ACCENT : 'transparent',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.5,
+                  shadowRadius: 8,
+                }}
+              >
+                <Text style={{
+                  color: period === p.key ? '#000' : MUTED,
+                  fontSize: 13,
+                  fontWeight: '700',
+                }}>
+                  {p.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
 
-      {isLoading ? (
-        <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />
-      ) : (
-        <>
-          {/* Profit hero card */}
-          <View style={[styles.profitCard, { borderColor: profitColor + '50', shadowColor: profitColor }]}>
-            <Text style={styles.profitLabel}>Net Profit</Text>
-            <Text style={[styles.profitValue, { color: profitColor }]}>{fmt(r.profit)}</Text>
-            <View style={styles.profitRow}>
-              <View style={styles.profitItem}>
-                <View style={[styles.profitDot, { backgroundColor: colors.green }]} />
-                <Text style={styles.profitSub}>Revenue: {fmt(r.revenue)}</Text>
-              </View>
-              <View style={styles.profitItem}>
-                <View style={[styles.profitDot, { backgroundColor: colors.red }]} />
-                <Text style={styles.profitSub}>Expenses: {fmt(Math.abs(r.expenses))}</Text>
-              </View>
+        {rollupLoading ? (
+          <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+            <ActivityIndicator color={ACCENT} size="large" />
+          </View>
+        ) : (
+          <>
+            {/* Profit Hero Card */}
+            <ProfitHeroCard profit={profit} revenue={revenue} expenses={Math.abs(expenses)} />
+
+            {/* Goal Bar */}
+            {goalTarget > 0 && (
+              <GoalBar progress={goalProgress} goal={goalTarget} current={profit} />
+            )}
+
+            {/* KPI Grid */}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <KpiCard label="$/Hour" value={`$${perHour.toFixed(2)}`} color="#3b82f6" />
+              <KpiCard label="$/Mile" value={`$${perMile.toFixed(2)}`} color="#a855f7" />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <KpiCard label="Miles" value={miles.toFixed(1)} color="#f97316" />
+              <KpiCard label="Avg Order" value={`$${avgOrder.toFixed(2)}`} color={ACCENT} />
             </View>
 
-            {/* Goal progress bar */}
-            {goalTarget != null && goalProgress != null && (
-              <View style={styles.goalBar}>
-                <View style={styles.goalBarTrack}>
-                  <View style={[styles.goalBarFill, { width: `${Math.min(goalProgress * 100, 100)}%` as any }]} />
+            {/* AI Suggestion */}
+            {aiSuggestion && (
+              <View style={{
+                backgroundColor: CARD,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: '#a855f7' + '55',
+                padding: 16,
+                shadowColor: '#a855f7',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.2,
+                shadowRadius: 10,
+              }}>
+                {/* Top glow bar */}
+                <View style={{
+                  position: 'absolute', top: 0, left: 0, right: 0,
+                  height: 2, backgroundColor: '#a855f7',
+                  borderTopLeftRadius: 16, borderTopRightRadius: 16, opacity: 0.7,
+                }} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <Text style={{ fontSize: 18 }}>🤖</Text>
+                  <Text style={{
+                    color: '#a855f7',
+                    fontSize: 12,
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1,
+                  }}>
+                    AI Earning Suggestion
+                  </Text>
                 </View>
-                <Text style={styles.goalBarText}>
-                  {Math.round(goalProgress * 100)}% of {fmt(goalTarget)} daily goal
-                  {goalProgress >= 1 ? ' 🎉' : ''}
+                <Text style={{ color: TEXT, fontSize: 14, lineHeight: 20 }}>
+                  {aiSuggestion.suggestion}
+                </Text>
+                {aiSuggestion.minimum_order && (
+                  <View style={{
+                    flexDirection: 'row',
+                    gap: 8,
+                    marginTop: 10,
+                    flexWrap: 'wrap',
+                  }}>
+                    <View style={{ backgroundColor: GREEN + '22', borderRadius: 8, borderWidth: 1, borderColor: GREEN + '55', paddingHorizontal: 10, paddingVertical: 5 }}>
+                      <Text style={{ color: GREEN, fontSize: 12, fontWeight: '700' }}>Min: ${aiSuggestion.minimum_order}</Text>
+                    </View>
+                    {aiSuggestion.peak_time && (
+                      <View style={{ backgroundColor: ACCENT + '22', borderRadius: 8, borderWidth: 1, borderColor: ACCENT + '55', paddingHorizontal: 10, paddingVertical: 5 }}>
+                        <Text style={{ color: ACCENT, fontSize: 12, fontWeight: '700' }}>⏰ {aiSuggestion.peak_time}</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Recent Entries */}
+            {recentEntries.length > 0 && (
+              <View style={{
+                backgroundColor: CARD,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: BORDER,
+                overflow: 'hidden',
+              }}>
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderBottomWidth: 1,
+                  borderBottomColor: BORDER,
+                }}>
+                  <Text style={{ color: MUTED, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
+                    Recent Entries
+                  </Text>
+                  <Text style={{ color: ACCENT, fontSize: 12, fontWeight: '700' }}>
+                    {entries.length} total
+                  </Text>
+                </View>
+                {recentEntries.map((entry) => (
+                  <EntryRow
+                    key={entry.id}
+                    entry={entry}
+                    onDelete={(id) => deleteMutation.mutate(id)}
+                  />
+                ))}
+              </View>
+            )}
+
+            {recentEntries.length === 0 && !rollupLoading && (
+              <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                <Text style={{ fontSize: 40 }}>🚗</Text>
+                <Text style={{ color: MUTED, fontSize: 15, marginTop: 12, textAlign: 'center' }}>
+                  No entries for this period.{'\n'}Tap Log Entry to add one!
                 </Text>
               </View>
             )}
-          </View>
-
-          {/* KPI grid */}
-          <View style={styles.kpiGrid}>
-            <KpiCard
-              label="$/Hour"
-              value={r.dollars_per_hour > 0 ? `$${r.dollars_per_hour.toFixed(2)}` : '$0.00'}
-              icon="⏱️"
-              color={colors.accent}
-              sub={r.hours > 0 ? `${r.hours.toFixed(1)} hrs` : undefined}
-            />
-            <KpiCard
-              label="$/Mile"
-              value={r.dollars_per_mile > 0 ? `$${r.dollars_per_mile.toFixed(2)}` : '$0.00'}
-              icon="🛣️"
-              color="#a78bfa"
-              sub={r.miles > 0 ? `${r.miles.toFixed(1)} mi` : undefined}
-            />
-            <KpiCard
-              label="Miles"
-              value={r.miles > 0 ? r.miles.toFixed(1) : '0.0'}
-              icon="📍"
-              color="#38bdf8"
-            />
-            <KpiCard
-              label="Avg Order"
-              value={r.average_order_value > 0 ? fmt(r.average_order_value) : '$0.00'}
-              icon="📦"
-              color="#fb923c"
-            />
-          </View>
-
-          {/* AI suggestion */}
-          {suggestions && (
-            <View style={styles.aiCard}>
-              <View style={styles.aiHeader}>
-                <Text style={styles.aiIcon}>🤖</Text>
-                <Text style={styles.aiTitle}>AI Earning Suggestion</Text>
-              </View>
-              <Text style={styles.aiText}>{suggestions.suggestion}</Text>
-              {suggestions.minimum_order != null && (
-                <View style={styles.aiTagRow}>
-                  <View style={styles.aiTag}>
-                    <Text style={styles.aiTagText}>Min: {fmt(suggestions.minimum_order)}</Text>
-                  </View>
-                  {suggestions.peak_time && (
-                    <View style={styles.aiTag}>
-                      <Text style={styles.aiTagText}>Peak: {suggestions.peak_time}</Text>
-                    </View>
-                  )}
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Recent entries */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Recent Entries</Text>
-              <Pressable onPress={() => router.push('/(tabs)/history')}>
-                <Text style={styles.seeAll}>See all →</Text>
-              </Pressable>
-            </View>
-
-            {recentEntries.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyIcon}>📭</Text>
-                <Text style={styles.emptyText}>No entries yet for this period</Text>
-                <Pressable style={styles.addBtn} onPress={() => router.push('/(tabs)/add')}>
-                  <Text style={styles.addBtnText}>+ Log your first delivery</Text>
-                </Pressable>
-              </View>
-            ) : (
-              recentEntries.map(entry => {
-                const isExpense = entry.amount < 0;
-                const amtColor = isExpense ? colors.red : colors.green;
-                const appColor = APP_COLORS[entry.app] ?? colors.textMuted;
-                const d = new Date(entry.timestamp);
-                const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                return (
-                  <View key={entry.id} style={styles.entryRow}>
-                    <View style={[styles.entryIconBox, { backgroundColor: appColor + '20' }]}>
-                      <View style={[styles.appDot, { backgroundColor: appColor }]} />
-                    </View>
-                    <View style={styles.entryInfo}>
-                      <Text style={styles.entryApp}>{APP_LABELS[entry.app]}</Text>
-                      <Text style={styles.entryMeta}>
-                        {entry.type}{entry.category ? ` · ${entry.category}` : ''}
-                        {entry.distance_miles ? ` · ${entry.distance_miles.toFixed(1)}mi` : ''}
-                        {' · '}{timeStr}
-                      </Text>
-                    </View>
-                    <Text style={[styles.entryAmt, { color: amtColor }]}>
-                      {isExpense ? '' : '+'}{fmt(entry.amount)}
-                    </Text>
-                  </View>
-                );
-              })
-            )}
-          </View>
-        </>
-      )}
-
-      {/* Add entry FAB area */}
-      <Pressable style={styles.fab} onPress={() => router.push('/(tabs)/add')}>
-        <Ionicons name="add" size={24} color={colors.black} />
-        <Text style={styles.fabText}>Add Entry</Text>
-      </Pressable>
+          </>
+        )}
+      </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.background },
-  container: { paddingHorizontal: 16, gap: 16 },
-
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoImg: { width: 44, height: 44, borderRadius: 10 },
-  logoTitle: { fontSize: 13, fontFamily: 'Inter_700Bold', color: colors.accent, letterSpacing: 2 },
-  logoNinja: { fontSize: 18, fontFamily: 'Inter_700Bold', color: colors.textPrimary, letterSpacing: 3, marginTop: -2 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  goalBadge: {
-    backgroundColor: colors.accent + '20', borderRadius: 20,
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderWidth: 1, borderColor: colors.accent + '40',
-  },
-  goalBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: colors.accent },
-  settingsBtn: { padding: 4 },
-
-  chipScroll: { marginHorizontal: -16 },
-  chipContent: { paddingHorizontal: 16, gap: 8 },
-  chip: {
-    paddingHorizontal: 16, paddingVertical: 8,
-    borderRadius: 20, borderWidth: 1,
-    backgroundColor: colors.surface, borderColor: colors.border,
-  },
-  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  chipText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.textSecondary },
-  chipTextActive: { color: colors.black },
-
-  profitCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 20, padding: 20,
-    alignItems: 'center', gap: 10,
-    borderWidth: 1.5,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  profitLabel: { fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.textSecondary },
-  profitValue: { fontFamily: 'Inter_700Bold', fontSize: 52, letterSpacing: -2 },
-  profitRow: { flexDirection: 'row', gap: 20 },
-  profitItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  profitDot: { width: 8, height: 8, borderRadius: 4 },
-  profitSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.textSecondary },
-
-  goalBar: { width: '100%', gap: 6 },
-  goalBarTrack: { height: 8, backgroundColor: colors.surfaceAlt, borderRadius: 4, overflow: 'hidden' },
-  goalBarFill: { height: '100%', backgroundColor: colors.green, borderRadius: 4 },
-  goalBarText: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.textMuted, textAlign: 'center' },
-
-  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-
-  aiCard: {
-    backgroundColor: '#0f1629',
-    borderRadius: 16, padding: 16, gap: 10,
-    borderWidth: 1, borderColor: '#312e81',
-  },
-  aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  aiIcon: { fontSize: 18 },
-  aiTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#a5b4fc' },
-  aiText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: colors.textPrimary, lineHeight: 21 },
-  aiTagRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  aiTag: {
-    backgroundColor: '#312e81', borderRadius: 12,
-    paddingHorizontal: 10, paddingVertical: 4,
-  },
-  aiTagText: { fontFamily: 'Inter_500Medium', fontSize: 11, color: '#a5b4fc' },
-
-  section: { gap: 10 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.textPrimary },
-  seeAll: { fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.accent },
-
-  emptyState: { alignItems: 'center', paddingVertical: 32, gap: 10 },
-  emptyIcon: { fontSize: 40 },
-  emptyText: { fontFamily: 'Inter_400Regular', fontSize: 15, color: colors.textSecondary },
-  addBtn: {
-    marginTop: 4, backgroundColor: colors.accent,
-    borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10,
-  },
-  addBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: colors.black },
-
-  entryRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: colors.surface, borderRadius: 14,
-    padding: 14, borderWidth: 1, borderColor: colors.border,
-  },
-  entryIconBox: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  appDot: { width: 10, height: 10, borderRadius: 5 },
-  entryInfo: { flex: 1 },
-  entryApp: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: colors.textPrimary },
-  entryMeta: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.textSecondary, marginTop: 2 },
-  entryAmt: { fontFamily: 'Inter_700Bold', fontSize: 15 },
-
-  fab: {
-    backgroundColor: colors.accent, borderRadius: 16,
-    paddingVertical: 16, flexDirection: 'row',
-    alignItems: 'center', justifyContent: 'center', gap: 8,
-    marginTop: 4,
-  },
-  fabText: { fontFamily: 'Inter_700Bold', fontSize: 16, color: colors.black },
-});
