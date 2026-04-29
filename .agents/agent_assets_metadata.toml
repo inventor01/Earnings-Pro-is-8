@@ -30,3 +30,9 @@ id = "tkysyfqrz5aRNT90bcf94"
 uri = "file://earnings-ninja-expo/assets/expo-qr.png"
 type = "image"
 title = "New QR Code — exp://map214w-anonymous-8081.exp.direct"
+
+[[outputs]]
+id = "K0IAF1fCHhv6ZGtrClcWg"
+uri = "file://attached_assets/expo_qr.png"
+type = "image"
+title = "Expo Tunnel QR — exp://ccpvuxk-anonymous-8081.exp.direct"
