@@ -7,12 +7,19 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import {
-  api, Rollup, Entry, EntryType, AppType, ExpenseCategory,
+  api, Entry, EntryType, AppType, ExpenseCategory,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType,
 } from '@/lib/api';
 import { useAuth } from '@/lib/authContext';
 import * as Haptics from 'expo-haptics';
+
+// Safe haptics — silently ignored on simulators / devices without haptic engine
+const hTap = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+const hTapMed = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+const hTapHeavy = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+const hNotifyOk = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
 const BG = '#0d0d12';
@@ -221,7 +228,7 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
   const [holding, setHolding] = useState(false);
 
   const tap = (n: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hTap();
     onAmount(amount === '0' ? n : amount + n);
   };
 
@@ -280,7 +287,7 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
       {/* Revenue / Expense toggle */}
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Pressable
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onMode('add'); }}
+          onPress={() => { hTap(); onMode('add'); }}
           style={{
             flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center',
             backgroundColor: mode === 'add' ? GREEN + '22' : CARD,
@@ -292,7 +299,7 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
           <Text style={{ color: mode === 'add' ? GREEN : MUTED, fontWeight: '800', fontSize: 15 }}>➕ Revenue</Text>
         </Pressable>
         <Pressable
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onMode('subtract'); }}
+          onPress={() => { hTap(); onMode('subtract'); }}
           style={{
             flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center',
             backgroundColor: mode === 'subtract' ? RED + '22' : CARD,
@@ -318,14 +325,14 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
           onPressIn={() => {
             holdRef.current = setTimeout(() => {
               setHolding(true);
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              hTapHeavy();
               onAmount('0');
             }, 500);
           }}
           onPressOut={() => {
             if (holdRef.current) clearTimeout(holdRef.current);
             if (!holding) {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              hTap();
               onAmount(amount.length > 1 ? amount.slice(0, -1) : '0');
             }
             setHolding(false);
@@ -343,7 +350,7 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
         {numBtn('0', () => tap('0'))}
         {numBtn('.', () => {
           if (!amount.includes('.')) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            hTap();
             onAmount(amount + '.');
           }
         })}
@@ -395,7 +402,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['rollup'] });
       queryClient.invalidateQueries({ queryKey: ['goal'] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      hNotifyOk();
       reset();
       onClose();
     },
@@ -479,7 +486,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                   {(['ORDER', 'BONUS', 'EXPENSE', 'CANCELLATION'] as EntryType[]).map(t => (
                     <Pressable
                       key={t}
-                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setEntryType(t); }}
+                      onPress={() => { hTap(); setEntryType(t); }}
                       style={{
                         paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12,
                         backgroundColor: entryType === t ? ACCENT + '22' : CARD,
@@ -500,7 +507,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                     {APPS.map(a => (
                       <Pressable
                         key={a.key}
-                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setApp(a.key); }}
+                        onPress={() => { hTap(); setApp(a.key); }}
                         style={{
                           paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12,
                           backgroundColor: app === a.key ? a.color + '22' : CARD,
@@ -524,7 +531,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                     {EXPENSE_CATS.map(c => (
                       <Pressable
                         key={c}
-                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setCategory(c); }}
+                        onPress={() => { hTap(); setCategory(c); }}
                         style={{
                           paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
                           backgroundColor: category === c ? ACCENT + '22' : CARD,
@@ -609,18 +616,17 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   const [editingGoal, setEditingGoal] = useState<TimeframeType | null>(null);
   const [goalInput, setGoalInput] = useState('');
 
-  const goalQueries = [
-    useQuery({ queryKey: ['goal', 'TODAY'], queryFn: () => api.getGoal('TODAY') }),
-    useQuery({ queryKey: ['goal', 'THIS_WEEK'], queryFn: () => api.getGoal('THIS_WEEK') }),
-    useQuery({ queryKey: ['goal', 'THIS_MONTH'], queryFn: () => api.getGoal('THIS_MONTH') }),
-  ];
+  const goalToday = useQuery({ queryKey: ['goal', 'TODAY'], queryFn: () => api.getGoal('TODAY') });
+  const goalWeek = useQuery({ queryKey: ['goal', 'THIS_WEEK'], queryFn: () => api.getGoal('THIS_WEEK') });
+  const goalMonth = useQuery({ queryKey: ['goal', 'THIS_MONTH'], queryFn: () => api.getGoal('THIS_MONTH') });
+  const goalQueries = [goalToday, goalWeek, goalMonth];
 
   const upsertGoal = useMutation({
     mutationFn: ({ tf, target }: { tf: TimeframeType; target: number }) => api.upsertGoal(tf, target),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goal'] });
       setEditingGoal(null);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      hNotifyOk();
     },
   });
 
@@ -673,7 +679,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         </Text>
         {goalRows.map((row, i) => {
           const goal = goalQueries[i].data;
-          const target = goal?.target_profit ?? 0;
+          const target = Number(goal?.target_profit ?? 0) || 0;
           return (
             <View key={row.tf} style={{
               backgroundColor: CARD, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 10,
@@ -783,7 +789,7 @@ export default function DashboardScreen() {
       queryClient.invalidateQueries({ queryKey: ['goal'] });
       refetchGoal();
       setEditingGoal(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      hNotifyOk();
     },
   });
 
@@ -918,7 +924,7 @@ export default function DashboardScreen() {
             {PERIODS.map(p => (
               <Pressable
                 key={p.key}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setPeriod(p.key); }}
+                onPress={() => { hTap(); setPeriod(p.key); }}
                 style={{
                   paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20,
                   backgroundColor: period === p.key ? ACCENT : CARD,
@@ -1088,7 +1094,7 @@ export default function DashboardScreen() {
 
       {/* ── Floating + Add Entry Button ──────────────────────────────────── */}
       <Pressable
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowAdd(true); }}
+        onPress={() => { hTapMed(); setShowAdd(true); }}
         style={({ pressed }) => ({
           position: 'absolute',
           bottom: insets.bottom + 16,
