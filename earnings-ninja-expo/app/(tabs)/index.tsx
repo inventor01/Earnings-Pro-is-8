@@ -7,6 +7,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   api, Entry, EntryType, AppType, ExpenseCategory,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType,
@@ -167,31 +168,93 @@ function EntryRow({ entry, onDelete }: { entry: Entry; onDelete: (id: number) =>
   );
 }
 
-// ─── Calculator pad palette (light theme) ─────────────────────────────────────
+// ─── Calculator pad palette (mirrors web Tailwind tokens) ────────────────────
 const CALC = {
-  HEADER_BG:    '#facc15',
-  CARD_BG:      '#ffffff',
-  AMOUNT_BG:    '#eef2ff',
-  AMOUNT_BORDER:'#c7d2fe',
-  AMOUNT_TEXT:  '#0f172a',
-  NUM_BG:       '#f5f5f7',
-  NUM_TEXT:     '#0f172a',
-  NUM_PRESSED:  '#bfdbfe',
-  BACKSPACE_BG: '#fb923c',
-  BACKSPACE_FG: '#ffffff',
-  REV_SEL_BG:   '#22c55e',
-  REV_SEL_FG:   '#ffffff',
-  REV_OFF_BG:   '#f3f4f6',
-  REV_OFF_FG:   '#374151',
-  EXP_SEL_BG:   '#374151',
-  EXP_SEL_FG:   '#ffffff',
-  NEXT_BG:      '#facc15',
-  NEXT_FG:      '#0f172a',
-  LABEL:        '#6b7280',
-  BORDER:       '#e5e7eb',
+  HEADER_BG:      '#facc15',          // yellow-400
+  CARD_BG:        '#ffffff',          // modal background
+  CARD_FROM:      '#ffffff',          // gradient bg-white
+  CARD_TO:        '#f9fafb',          // to-gray-50
+  NUM_BG:         '#f3f4f6',          // gray-100 (used by inputs/pills in details step)
+  AMOUNT_FROM:    '#dbeafe',          // blue-100
+  AMOUNT_TO:      '#f3e8ff',          // purple-100
+  AMOUNT_BORDER:  '#93c5fd',          // blue-300 (border-4)
+  AMOUNT_TEXT:    '#0f172a',
+  NUM_FROM:       '#f3f4f6',          // gray-100
+  NUM_TO:         '#e5e7eb',          // gray-200
+  NUM_TEXT:       '#111827',          // gray-900
+  REV_FROM:       '#4ade80',          // green-400
+  REV_TO:         '#22c55e',          // green-500
+  EXP_FROM:       '#f87171',          // red-400
+  EXP_TO:         '#ef4444',          // red-500
+  OFF_BG:         '#e5e7eb',          // gray-200
+  OFF_FG:         '#374151',          // gray-700
+  BACKSPACE_FROM: '#fb923c',          // orange-400
+  BACKSPACE_TO:   '#f97316',          // orange-500
+  BACKSPACE_HELD_FROM: '#ef4444',     // red-500
+  BACKSPACE_HELD_TO:   '#dc2626',     // red-600
+  BACKSPACE_FG:   '#ffffff',
+  NEXT_BG:        '#facc15',          // yellow-400
+  NEXT_FG:        '#111827',          // gray-900
+  LABEL:          '#6b7280',
+  BORDER:         '#e5e7eb',
 };
 
-// ─── Calculator Pad (light, matches mockup) ───────────────────────────────────
+// ─── Calculator Pad (mirrors web CalcPad.tsx 1:1) ────────────────────────────
+// Reusable gradient button helper: outer View carries shadow + flex, inner
+// Pressable handles touch + press feedback, LinearGradient paints the bg.
+function GradBtn({
+  colors, onPress, onPressIn, onPressOut, children, flex = 1, shadow = true,
+  rounded = 14, paddingVertical = 22, pressedScale = 0.95,
+}: {
+  colors: readonly [string, string];
+  onPress?: () => void;
+  onPressIn?: () => void;
+  onPressOut?: () => void;
+  children: React.ReactNode;
+  flex?: number;
+  shadow?: boolean;
+  rounded?: number;
+  paddingVertical?: number;
+  pressedScale?: number;
+}) {
+  return (
+    <View style={{
+      flex,
+      borderRadius: rounded,
+      backgroundColor: colors[0], // gives iOS a solid layer for the shadow
+      ...(shadow ? {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 4,
+        elevation: 3,
+      } : {}),
+    }}>
+      <View style={{ borderRadius: rounded, overflow: 'hidden' }}>
+        <Pressable
+          onPress={onPress}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          android_ripple={{ color: 'rgba(0,0,0,0.08)' }}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.92 : 1,
+            transform: [{ scale: pressed ? pressedScale : 1 }],
+          })}
+        >
+          <LinearGradient
+            colors={colors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ paddingVertical, alignItems: 'center', justifyContent: 'center' }}
+          >
+            {children}
+          </LinearGradient>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
   amount: string;
   mode: 'add' | 'subtract';
@@ -200,179 +263,167 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
   onNext: () => void;
 }) {
   const holdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isHeld, setIsHeld] = useState(false);
 
   const tap = (n: string) => {
     hTap();
-    onAmount(amount === '0' && n !== '.' ? n : amount + n);
+    if (n === '.') {
+      if (!amount.includes('.')) onAmount(amount + '.');
+    } else {
+      onAmount(amount === '0' ? n : amount + n);
+    }
   };
 
-  // NumBtn uses View wrapper so iOS reliably paints background
-  const NumBtn = ({ label }: { label: string }) => (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: CALC.NUM_BG,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: CALC.BORDER,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 2,
-        overflow: 'hidden',
-      }}
-    >
-      <Pressable
-        onPress={() => tap(label)}
-        android_ripple={{ color: CALC.NUM_PRESSED }}
-        style={({ pressed }) => ({
-          paddingVertical: 24,
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: pressed ? 0.55 : 1,
-        })}
-      >
-        <Text style={{ color: CALC.NUM_TEXT, fontSize: 32, fontWeight: '800' }}>{label}</Text>
-      </Pressable>
-    </View>
-  );
+  const onBackspaceIn = () => {
+    setIsHeld(false);
+    holdRef.current = setTimeout(() => {
+      setIsHeld(true);
+      hTapHeavy();
+      onAmount('0');
+    }, 500);
+  };
+  const onBackspaceOut = () => {
+    if (holdRef.current) {
+      clearTimeout(holdRef.current);
+      holdRef.current = null;
+    }
+    if (!isHeld) {
+      hTap();
+      onAmount(amount.length > 1 ? amount.slice(0, -1) : '0');
+    }
+    setIsHeld(false);
+  };
 
-  const Backspace = () => (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: CALC.BACKSPACE_BG,
-        borderRadius: 18,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.12,
-        shadowRadius: 4,
-        elevation: 2,
-        overflow: 'hidden',
-      }}
-    >
-      <Pressable
-        onPress={() => { hTap(); onAmount(amount.length > 1 ? amount.slice(0, -1) : '0'); }}
-        onPressIn={() => {
-          holdRef.current = setTimeout(() => {
-            hTapHeavy();
-            onAmount('0');
-          }, 500);
-        }}
-        onPressOut={() => {
-          if (holdRef.current) clearTimeout(holdRef.current);
-        }}
-        android_ripple={{ color: 'rgba(255,255,255,0.25)' }}
-        style={({ pressed }) => ({
-          paddingVertical: 24,
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: pressed ? 0.7 : 1,
-        })}
-      >
-        <Ionicons name="backspace-outline" size={28} color={CALC.BACKSPACE_FG} />
-      </Pressable>
-    </View>
-  );
-
+  // Outer card mirrors `bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl p-6`
   return (
-    <View style={{ gap: 14 }}>
-      {/* Amount display */}
-      <View style={{
-        backgroundColor: CALC.AMOUNT_BG,
-        borderRadius: 16,
-        borderWidth: 1.5,
-        borderColor: CALC.AMOUNT_BORDER,
-        paddingVertical: 26,
-        paddingHorizontal: 22,
-        alignItems: 'flex-end',
-      }}>
-        <Text style={{ color: CALC.AMOUNT_TEXT, fontSize: 44, fontWeight: '900' }}>
-          {mode === 'subtract' ? '−' : ''}${amount}
-        </Text>
-      </View>
-
-      {/* Revenue / Expense toggle */}
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <View style={{
-          flex: 1, borderRadius: 14, overflow: 'hidden',
-          backgroundColor: mode === 'add' ? CALC.REV_SEL_BG : CALC.REV_OFF_BG,
-        }}>
-          <Pressable
-            onPress={() => { hTap(); onMode('add'); }}
-            android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
-            style={({ pressed }) => ({
-              paddingVertical: 16, alignItems: 'center',
-              opacity: pressed ? 0.8 : 1,
-            })}
-          >
-            <Text style={{ color: mode === 'add' ? CALC.REV_SEL_FG : CALC.REV_OFF_FG, fontWeight: '800', fontSize: 16 }}>
-              + Revenue
-            </Text>
-          </Pressable>
-        </View>
-        <View style={{
-          flex: 1, borderRadius: 14, overflow: 'hidden',
-          backgroundColor: mode === 'subtract' ? CALC.EXP_SEL_BG : CALC.REV_OFF_BG,
-        }}>
-          <Pressable
-            onPress={() => { hTap(); onMode('subtract'); }}
-            android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
-            style={({ pressed }) => ({
-              paddingVertical: 16, alignItems: 'center',
-              opacity: pressed ? 0.8 : 1,
-            })}
-          >
-            <Text style={{ color: mode === 'subtract' ? CALC.EXP_SEL_FG : CALC.REV_OFF_FG, fontWeight: '800', fontSize: 16 }}>
-              − Expense
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Number grid */}
-      {[
-        ['7', '8', '9'],
-        ['4', '5', '6'],
-        ['1', '2', '3'],
-        ['⌫', '0', '.'],
-      ].map((row, ri) => (
-        <View key={ri} style={{ flexDirection: 'row', gap: 10 }}>
-          {row.map(k =>
-            k === '⌫'
-              ? <Backspace key={k} />
-              : <NumBtn key={k} label={k} />
-          )}
-        </View>
-      ))}
-
-      {/* Next Step button — full-width yellow */}
-      <View style={{
-        backgroundColor: CALC.NEXT_BG,
-        borderRadius: 16,
-        marginTop: 6,
-        shadowColor: CALC.NEXT_BG,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 10,
-        elevation: 4,
-        overflow: 'hidden',
-      }}>
-        <Pressable
-          onPress={() => { hTapMed(); onNext(); }}
-          android_ripple={{ color: 'rgba(0,0,0,0.12)' }}
-          style={({ pressed }) => ({
-            paddingVertical: 22,
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: pressed ? 0.88 : 1,
-          })}
+    <View style={{
+      borderRadius: 16,
+      backgroundColor: CALC.CARD_FROM,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.12,
+      shadowRadius: 16,
+      elevation: 6,
+    }}>
+      <View style={{ borderRadius: 16, overflow: 'hidden' }}>
+        <LinearGradient
+          colors={[CALC.CARD_FROM, CALC.CARD_TO]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ padding: 18, gap: 14 }}
         >
-          <Text style={{ color: CALC.NEXT_FG, fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>
-            Next Step →
-          </Text>
-        </Pressable>
+          {/* Amount display — blue→purple gradient with thick blue border */}
+          <View style={{
+            borderRadius: 14,
+            borderWidth: 4,
+            borderColor: CALC.AMOUNT_BORDER,
+            overflow: 'hidden',
+          }}>
+            <LinearGradient
+              colors={[CALC.AMOUNT_FROM, CALC.AMOUNT_TO]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ paddingVertical: 22, paddingHorizontal: 20, alignItems: 'flex-end' }}
+            >
+              <Text style={{ color: CALC.AMOUNT_TEXT, fontSize: 48, fontWeight: '900' }}>
+                {mode === 'subtract' ? '−' : ''}${amount}
+              </Text>
+            </LinearGradient>
+          </View>
+
+          {/* Revenue / Expense toggle */}
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <GradBtn
+              colors={mode === 'add' ? [CALC.REV_FROM, CALC.REV_TO] : [CALC.OFF_BG, CALC.OFF_BG]}
+              onPress={() => { hTap(); onMode('add'); }}
+              paddingVertical={16}
+              shadow={mode === 'add'}
+            >
+              <Text style={{
+                color: mode === 'add' ? '#ffffff' : CALC.OFF_FG,
+                fontWeight: '800',
+                fontSize: 17,
+              }}>
+                ➕ Revenue
+              </Text>
+            </GradBtn>
+            <GradBtn
+              colors={mode === 'subtract' ? [CALC.EXP_FROM, CALC.EXP_TO] : [CALC.OFF_BG, CALC.OFF_BG]}
+              onPress={() => { hTap(); onMode('subtract'); }}
+              paddingVertical={16}
+              shadow={mode === 'subtract'}
+            >
+              <Text style={{
+                color: mode === 'subtract' ? '#ffffff' : CALC.OFF_FG,
+                fontWeight: '800',
+                fontSize: 17,
+              }}>
+                ➖ Expense
+              </Text>
+            </GradBtn>
+          </View>
+
+          {/* Number grid */}
+          {[
+            ['7', '8', '9'],
+            ['4', '5', '6'],
+            ['1', '2', '3'],
+            ['⌫', '0', '.'],
+          ].map((row, ri) => (
+            <View key={ri} style={{ flexDirection: 'row', gap: 10 }}>
+              {row.map(k =>
+                k === '⌫' ? (
+                  <GradBtn
+                    key={k}
+                    colors={isHeld
+                      ? [CALC.BACKSPACE_HELD_FROM, CALC.BACKSPACE_HELD_TO]
+                      : [CALC.BACKSPACE_FROM, CALC.BACKSPACE_TO]}
+                    onPressIn={onBackspaceIn}
+                    onPressOut={onBackspaceOut}
+                    paddingVertical={22}
+                  >
+                    <Text style={{ color: CALC.BACKSPACE_FG, fontSize: 26, fontWeight: '800' }}>
+                      {isHeld ? '✓' : '⌫'}
+                    </Text>
+                  </GradBtn>
+                ) : (
+                  <GradBtn
+                    key={k}
+                    colors={[CALC.NUM_FROM, CALC.NUM_TO]}
+                    onPress={() => tap(k)}
+                    paddingVertical={22}
+                  >
+                    <Text style={{ color: CALC.NUM_TEXT, fontSize: 26, fontWeight: '800' }}>{k}</Text>
+                  </GradBtn>
+                )
+              )}
+            </View>
+          ))}
+
+          {/* Next Step — solid yellow, full width */}
+          <View style={{
+            borderRadius: 12,
+            overflow: 'hidden',
+            marginTop: 4,
+          }}>
+            <Pressable
+              onPress={() => { hTapMed(); onNext(); }}
+              android_ripple={{ color: 'rgba(0,0,0,0.12)' }}
+              style={({ pressed }) => ({
+                backgroundColor: CALC.NEXT_BG,
+                paddingVertical: 16,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.92 : 1,
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+              })}
+            >
+              <Text style={{ color: CALC.NEXT_FG, fontWeight: '800', fontSize: 18 }}>
+                Next Step →
+              </Text>
+            </Pressable>
+          </View>
+        </LinearGradient>
       </View>
     </View>
   );
