@@ -853,6 +853,7 @@ function DetailsForm({
 // ─── Add Entry Modal ───────────────────────────────────────────────────────────
 function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const [step, setStep]           = useState<'calc' | 'details'>('calc');
   const [amount, setAmount]       = useState('0');
   const [mode, setMode]           = useState<'add' | 'subtract'>('add');
@@ -901,8 +902,9 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => { reset(); onClose(); }}>
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: CALC.CARD_BG }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {/* Yellow header bar — static View ensures iOS paints the bg reliably */}
-        <View style={{ backgroundColor: CALC.HEADER_BG }}>
+        {/* Yellow header bar — static View ensures iOS paints the bg reliably.
+            paddingTop pushes content below the iPhone status bar / notch. */}
+        <View style={{ backgroundColor: CALC.HEADER_BG, paddingTop: insets.top }}>
           <Pressable
             onPress={() => {
               hTapMed();
@@ -912,7 +914,8 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
             android_ripple={{ color: 'rgba(0,0,0,0.08)' }}
             style={({ pressed }) => ({
               paddingHorizontal: 18,
-              paddingVertical: 16,
+              paddingTop: 18,
+              paddingBottom: 18,
               flexDirection: 'row',
               alignItems: 'center',
               opacity: pressed ? 0.85 : 1,
@@ -924,7 +927,15 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
               color="#0f172a"
               style={{ marginRight: 10 }}
             />
-            <Text style={{ color: '#0f172a', fontSize: 18, fontWeight: '800' }}>
+            <Text
+              style={{
+                color: '#0f172a',
+                fontSize: 18,
+                fontWeight: '800',
+                lineHeight: 24,
+                includeFontPadding: false,
+              }}
+            >
               {step === 'calc' ? 'Hide' : 'Back'}
             </Text>
           </Pressable>
