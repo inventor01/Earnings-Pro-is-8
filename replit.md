@@ -42,6 +42,15 @@ Required secret:
 
 The email service is configured and ready to send password reset emails when users click "Forgot password?" on the login page.
 
+## Recent Changes (April 29, 2026)
+- **Expo dashboard polish pass** to align native iOS app with web "Dark Neon" theme:
+  - Deeper background color stack: BG `#0a0a0a` / SURFACE `#111` / CARD_BG `#1a1a1a` (true blacks)
+  - Neon-glow shadows on Hero profit card (green/red, 22px radius), KPI cards (subtle yellow/green/red, 10px), period chips (yellow when active), and sticky Add Entry bar (heavy yellow halo, 28px radius / 0.7 opacity)
+  - Reanimated 4 micro-animations: Hero "pop" pulse on every profit change, ninja logo glow at $50 milestones (yellow under $100, green at $100+), smooth count-up on profit / revenue / orders / avg-order / $-per-hour / $-per-mile / miles via `requestAnimationFrame` easeOutCubic over 700ms (interruption-safe — tweens from current displayed value, no jitter)
+  - Press-scale `0.96` on header refresh / settings buttons, period chips (`0.92`), and sticky Add Entry button (mirrors web `active:scale-95`)
+  - Period chip text color fixed white→black on yellow active state for proper contrast
+- Helper components added to `app/(tabs)/index.tsx`: `neonGlow()`, `PressScale`, `AnimatedNumber`, `usePopOnChange`, `useMilestoneGlow`
+
 ## Recent Changes (December 2, 2025)
 - Added default daily/weekly/monthly goals for new user signups (regular users now get default goals like demo users)
 - Implemented password reset functionality with secure token-based reset flow
