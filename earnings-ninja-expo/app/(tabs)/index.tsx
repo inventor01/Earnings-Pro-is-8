@@ -106,8 +106,9 @@ function GoalBar({
 }: {
   period: Period; profit: number; goalAmount: number | null; onEditGoal: () => void;
 }) {
-  const safeGoal = goalAmount ?? 0;
-  const pct = safeGoal > 0 ? Math.min((profit / safeGoal) * 100, 100) : 0;
+  const safeGoal = Number(goalAmount) || 0;
+  const safeProfitNum = Number(profit) || 0;
+  const pct = safeGoal > 0 ? Math.min((safeProfitNum / safeGoal) * 100, 100) : 0;
   const color = pct >= 100 ? ACCENT : pct >= 60 ? GREEN : BLUE;
 
   return (
@@ -131,7 +132,7 @@ function GoalBar({
             textShadowOffset: { width: 0, height: 0 },
             textShadowRadius: 6,
           }}>
-            {safeGoal > 0 ? `$${profit.toFixed(2)} / $${safeGoal.toFixed(0)}` : 'Not set'}
+            {safeGoal > 0 ? `$${safeProfitNum.toFixed(2)} / $${safeGoal.toFixed(0)}` : 'Not set'}
           </Text>
           <Pressable onPress={onEditGoal} style={{ paddingHorizontal: 6 }}>
             <Text style={{ color: DIM, fontSize: 11 }}>edit</Text>
@@ -796,14 +797,16 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }, [queryClient]);
 
-  const profit = rollup?.profit ?? 0;
-  const revenue = rollup?.revenue ?? 0;
-  const expenses = rollup?.expenses ?? 0;
-  const miles = rollup?.miles ?? 0;
-  const perHour = rollup?.dollars_per_hour ?? 0;
-  const perMile = rollup?.dollars_per_mile ?? 0;
-  const avgOrder = rollup?.average_order_value ?? 0;
-  const goalTarget = goal?.target_profit ?? null;
+  const n = (v: unknown) => Number(v) || 0;
+  const profit = n(rollup?.profit);
+  const revenue = n(rollup?.revenue);
+  const expenses = n(rollup?.expenses);
+  const miles = n(rollup?.miles);
+  const perHour = n(rollup?.dollars_per_hour);
+  const perMile = n(rollup?.dollars_per_mile);
+  const avgOrder = n(rollup?.average_order_value);
+  const rawGoal = goal?.target_profit;
+  const goalTarget = (rawGoal !== undefined && rawGoal !== null) ? Number(rawGoal) || null : null;
   const displayedEntries = showAllEntries ? entries : entries.slice(0, 8);
 
   const isProfit = profit >= 0;
