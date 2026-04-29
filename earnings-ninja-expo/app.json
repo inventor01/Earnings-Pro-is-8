@@ -3,9 +3,6 @@
     "name": "Earnings Ninja",
     "slug": "earnings-ninja",
     "version": "1.0.0",
-    "runtimeVersion": {
-      "policy": "sdkVersion"
-    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -25,12 +22,7 @@
         "NSPhotoLibraryUsageDescription": "Earnings Ninja needs photo library access to attach receipt images to your expenses.",
         "NSLocationWhenInUseUsageDescription": "Earnings Ninja uses your location to automatically track trip mileage while you are delivering.",
         "NSAppTransportSecurity": {
-          "NSExceptionDomains": {
-            "picard.replit.dev": {
-              "NSExceptionAllowsInsecureHTTPLoads": false,
-              "NSIncludesSubdomains": true
-            }
-          }
+          "NSAllowsArbitraryLoads": true
         }
       },
       "config": {
@@ -58,10 +50,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiBase": "https://b21ea173-8d4d-4445-a8db-6d8c912d7dc4-00-l5lnc6lhje6p.picard.replit.dev",
-      "eas": {
-        "projectId": "earnings-ninja-app"
-      }
+      "apiBase": "https://b21ea173-8d4d-4445-a8db-6d8c912d7dc4-00-l5lnc6lhje6p.picard.replit.dev"
     }
   }
 }
