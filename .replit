@@ -56,7 +56,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd earnings-ninja-expo && npx expo start --port 8080"
+args = "cd earnings-ninja-expo && npx expo start --tunnel"
 
 [[ports]]
 localPort = 5000
