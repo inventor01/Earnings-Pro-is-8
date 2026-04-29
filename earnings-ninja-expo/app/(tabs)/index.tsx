@@ -1102,9 +1102,9 @@ export default function DashboardScreen() {
       </ScrollView>
 
       {/* ── Sticky "+ Add Entry" bar ─────────────────────────────────────────── */}
-      <Pressable
-        onPress={() => { hTapMed(); setShowAdd(true); }}
-        style={({ pressed }) => ({
+      <View
+        pointerEvents="box-none"
+        style={{
           position: 'absolute',
           bottom: 0,
           left: 0,
@@ -1112,23 +1112,32 @@ export default function DashboardScreen() {
           backgroundColor: PRIMARY,
           paddingTop: 16,
           paddingBottom: insets.bottom > 0 ? insets.bottom + 10 : 18,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 10,
-          opacity: pressed ? 0.88 : 1,
           shadowColor: PRIMARY,
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.5,
           shadowRadius: 16,
           elevation: 12,
-        })}
+          zIndex: 999,
+        }}
       >
-        <Ionicons name="add-circle" size={24} color="#000" />
-        <Text style={{ color: '#000', fontWeight: '900', fontSize: 18, letterSpacing: 0.5 }}>
-          + Add Entry
-        </Text>
-      </Pressable>
+        <Pressable
+          onPress={() => { hTapMed(); setShowAdd(true); }}
+          android_ripple={{ color: 'rgba(0,0,0,0.15)' }}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            opacity: pressed ? 0.7 : 1,
+            paddingVertical: 4,
+          })}
+        >
+          <Ionicons name="add-circle" size={24} color="#000" />
+          <Text style={{ color: '#000', fontWeight: '900', fontSize: 18, letterSpacing: 0.5 }}>
+            + Add Entry
+          </Text>
+        </Pressable>
+      </View>
 
       {/* ── Modals ───────────────────────────────────────────────────────────── */}
       <AddEntryModal visible={showAdd} onClose={() => setShowAdd(false)} />
