@@ -1,9 +1,14 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, Pressable, Modal,
   RefreshControl, ActivityIndicator, Image, Alert,
   TextInput, KeyboardAvoidingView, Platform,
+  ViewStyle, TextStyle,
 } from 'react-native';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withTiming, withSequence, withRepeat, withDelay,
+  Easing,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,10 +27,10 @@ const hTapHeavy = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).c
 const hNotifyOk = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
-const BG       = '#0a0a0f';
-const SURFACE  = '#13131a';
-const CARD_BG  = '#1a1a24';
-const BORDER   = '#252535';
+const BG       = '#0a0a0a';   // page background (true black)
+const SURFACE  = '#111111';   // raised surface (cards, header)
+const CARD_BG  = '#1a1a1a';   // inset surface (input fields, etc.)
+const BORDER   = '#262626';
 const PRIMARY  = '#facc15';
 const PRI_LITE = '#2a2410';
 const PRI_DARK = '#ca8a04';
@@ -37,12 +42,138 @@ const GREEN    = '#22c55e';
 const GREEN_LT = '#052e16';
 const RED      = '#ef4444';
 const RED_LT   = '#450a0a';
-const DIVIDER  = '#1e1e2e';
+const DIVIDER  = '#1f1f1f';
 
 // Keep legacy names used inside modals / CalcPad
 const ACCENT   = PRIMARY;
 const DIM      = LABEL;
 const CARD     = CARD_BG;
+
+// ─── Neon glow helper (mirrors Tailwind shadow-[0_0_Npx_color]) ──────────────
+const neonGlow = (color: string, radius: number = 16, opacity: number = 0.45): ViewStyle => ({
+  shadowColor: color,
+  shadowOffset: { width: 0, height: 0 },
+  shadowOpacity: opacity,
+  shadowRadius: radius,
+  elevation: Math.round(radius / 2),
+});
+
+// ─── Press-scale Pressable (mirrors web active:scale-95) ─────────────────────
+function PressScale({
+  children, onPress, onLongPress, scale = 0.96, style, hitSlop, disabled,
+}: {
+  children: React.ReactNode;
+  onPress?: () => void;
+  onLongPress?: () => void;
+  scale?: number;
+  style?: ViewStyle | ViewStyle[];
+  hitSlop?: number;
+  disabled?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      disabled={disabled}
+      hitSlop={hitSlop}
+      android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
+      style={({ pressed }) => [
+        Array.isArray(style) ? Object.assign({}, ...style) : style,
+        {
+          opacity: pressed ? 0.9 : disabled ? 0.5 : 1,
+          transform: [{ scale: pressed ? scale : 1 }],
+        },
+      ]}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
+// ─── AnimatedNumber: smooth count-up via requestAnimationFrame ───────────────
+function AnimatedNumber({
+  value, format, style, duration = 700,
+}: {
+  value: number;
+  format: (n: number) => string;
+  style?: TextStyle | TextStyle[];
+  duration?: number;
+}) {
+  const [display, setDisplay] = useState(value);
+  // Track the latest *rendered* value so that if a new target arrives
+  // mid-animation we tween from where we currently are (no snap/jitter).
+  const displayRef = useRef(value);
+
+  useEffect(() => {
+    const start = displayRef.current;
+    const end = value;
+    if (start === end) return;
+    const t0 = Date.now();
+    let raf: number;
+    const tick = () => {
+      const t = Math.min((Date.now() - t0) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      const current = start + (end - start) * eased;
+      displayRef.current = current;
+      setDisplay(current);
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else displayRef.current = end;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, duration]);
+
+  return <Text style={style}>{format(display)}</Text>;
+}
+
+// ─── Pop animation hook (Hero pulses on value change) ────────────────────────
+function usePopOnChange(value: number, intensity: number = 1.08) {
+  const scale = useSharedValue(1);
+  const initialMount = useRef(true);
+  useEffect(() => {
+    if (initialMount.current) { initialMount.current = false; return; }
+    scale.value = withSequence(
+      withTiming(intensity, { duration: 160, easing: Easing.out(Easing.quad) }),
+      withTiming(1, { duration: 220, easing: Easing.inOut(Easing.quad) }),
+    );
+  }, [value]);
+  return useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+}
+
+// ─── Milestone glow on ninja logo ($50/$100/$150...) ─────────────────────────
+function useMilestoneGlow(profit: number) {
+  const milestone = Math.max(0, Math.floor(profit / 50));
+  const glow = useSharedValue(0);
+  const lastRef = useRef(0);
+  useEffect(() => {
+    if (milestone > lastRef.current && milestone > 0) {
+      // Big celebratory pulse, then settle to gentle ambient glow
+      glow.value = withSequence(
+        withTiming(1, { duration: 250 }),
+        withRepeat(
+          withSequence(
+            withTiming(0.4, { duration: 800 }),
+            withTiming(0.9, { duration: 800 }),
+          ),
+          3, false,
+        ),
+        withTiming(0.35, { duration: 600 }),
+      );
+    } else if (milestone === 0) {
+      glow.value = withTiming(0, { duration: 400 });
+    }
+    lastRef.current = milestone;
+  }, [milestone]);
+
+  const color = milestone >= 2 ? GREEN : PRIMARY; // green at $100+, yellow at $50+
+  return useAnimatedStyle(() => ({
+    shadowColor: color,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: glow.value * 0.9,
+    shadowRadius: 8 + glow.value * 18,
+    elevation: glow.value * 8,
+  }));
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month';
@@ -95,24 +226,39 @@ function DashedLine({ color = PRIMARY }: { color?: string }) {
   );
 }
 
-// ─── Small Stat Card ─────────────────────────────────────────────────────────
-function StatCard({ label, value, icon }: { label: string; value: string; icon: string }) {
+// ─── Small Stat Card (subtle yellow neon outline + animated value) ──────────
+function StatCard({
+  label, value, icon, numericValue, format, accent = PRIMARY,
+}: {
+  label: string;
+  value: string;
+  icon: string;
+  numericValue?: number;
+  format?: (n: number) => string;
+  accent?: string;
+}) {
   return (
-    <View style={{
-      flex: 1,
-      backgroundColor: SURFACE,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: BORDER,
-      padding: 12,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
-      shadowRadius: 4,
-      elevation: 2,
-    }}>
+    <View style={[
+      {
+        flex: 1,
+        backgroundColor: SURFACE,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: accent + '22',
+        padding: 12,
+      },
+      neonGlow(accent, 10, 0.18),
+    ]}>
       <Text style={{ fontSize: 18, marginBottom: 4 }}>{icon}</Text>
-      <Text style={{ color: TEXT, fontSize: 17, fontWeight: '800' }}>{value}</Text>
+      {numericValue !== undefined && format ? (
+        <AnimatedNumber
+          value={numericValue}
+          format={format}
+          style={{ color: TEXT, fontSize: 17, fontWeight: '800' }}
+        />
+      ) : (
+        <Text style={{ color: TEXT, fontSize: 17, fontWeight: '800' }}>{value}</Text>
+      )}
       <Text style={{ color: LABEL, fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 2 }}>
         {label}
       </Text>
@@ -1048,6 +1194,10 @@ export default function DashboardScreen() {
   // Period label for the date bar
   const periodLabel = PERIOD_LABELS[period];
 
+  // ── Animations ──
+  const profitPopStyle = usePopOnChange(Math.round(profit * 100));   // pop on any cent change
+  const ninjaGlowStyle = useMilestoneGlow(profit);                   // logo halo at $50/$100/...
+
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
       <ScrollView
@@ -1068,51 +1218,61 @@ export default function DashboardScreen() {
           borderBottomColor: BORDER,
         }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Image
-              source={require('../../assets/ninja-logo.png')}
-              style={{ width: 36, height: 36, resizeMode: 'contain' }}
-            />
+            <Animated.View style={[{ borderRadius: 18 }, ninjaGlowStyle]}>
+              <Image
+                source={require('../../assets/ninja-logo.png')}
+                style={{ width: 36, height: 36, resizeMode: 'contain' }}
+              />
+            </Animated.View>
             <Text style={{ fontSize: 18, fontWeight: '900', letterSpacing: 0.3, color: TEXT }}>
               EARNINGS{' '}
               <Text style={{ color: PRIMARY }}>NINJA</Text>
             </Text>
           </View>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Pressable
-              onPress={onRefresh}
+            <PressScale
+              onPress={() => { hTap(); onRefresh(); }}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="refresh" size={17} color={MUTED} />
-            </Pressable>
-            <Pressable
-              onPress={() => setShowSettings(true)}
+            </PressScale>
+            <PressScale
+              onPress={() => { hTap(); setShowSettings(true); }}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="settings-outline" size={17} color={MUTED} />
-            </Pressable>
+            </PressScale>
           </View>
         </View>
 
         {/* ── Period Tabs ───────────────────────────────────────────────────── */}
         <View style={{ backgroundColor: SURFACE, borderBottomWidth: 1, borderBottomColor: BORDER }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, gap: 6, flexDirection: 'row' }}>
-            {PERIODS.map(p => (
-              <Pressable
-                key={p.key}
-                onPress={() => { hTap(); setPeriod(p.key); }}
-                style={{
-                  paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
-                  backgroundColor: period === p.key ? PRIMARY : 'transparent',
-                }}
-              >
-                <Text style={{
-                  color: period === p.key ? '#fff' : MUTED,
-                  fontSize: 13, fontWeight: period === p.key ? '700' : '500',
-                }}>
-                  {p.label}
-                </Text>
-              </Pressable>
-            ))}
+            {PERIODS.map(p => {
+              const active = period === p.key;
+              return (
+                <PressScale
+                  key={p.key}
+                  onPress={() => { hTap(); setPeriod(p.key); }}
+                  scale={0.92}
+                  style={[
+                    {
+                      paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
+                      backgroundColor: active ? PRIMARY : 'transparent',
+                      borderWidth: 1, borderColor: active ? PRIMARY : BORDER,
+                    },
+                    active ? neonGlow(PRIMARY, 8, 0.4) : undefined,
+                  ].filter(Boolean) as ViewStyle[]}
+                >
+                  <Text style={{
+                    color: active ? '#000' : MUTED,
+                    fontSize: 13, fontWeight: active ? '800' : '500',
+                  }}>
+                    {p.label}
+                  </Text>
+                </PressScale>
+              );
+            })}
           </ScrollView>
         </View>
 
@@ -1124,28 +1284,29 @@ export default function DashboardScreen() {
             </View>
           ) : (
             <>
-              {/* ── Main Profit Card ────────────────────────────────────────── */}
-              <View style={{
-                backgroundColor: SURFACE,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: BORDER,
-                padding: 20,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.08,
-                shadowRadius: 12,
-                elevation: 4,
-              }}>
+              {/* ── Main Profit Card with neon glow ─────────────────────────── */}
+              <Animated.View style={[
+                {
+                  backgroundColor: SURFACE,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: profitColor + '33',
+                  padding: 20,
+                },
+                neonGlow(profitColor, 22, 0.35),
+                profitPopStyle,
+              ]}>
                 {/* Label */}
                 <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>
                   NET PROFIT
                 </Text>
 
-                {/* Big profit number */}
-                <Text style={{ color: profitColor, fontSize: 48, fontWeight: '900', lineHeight: 56, marginTop: 4 }}>
-                  {isProfit ? '' : '-'}${Math.abs(profit).toFixed(2)}
-                </Text>
+                {/* Big profit number with count-up */}
+                <AnimatedNumber
+                  value={profit}
+                  format={(n) => (n < 0 ? '-' : '') + '$' + Math.abs(n).toFixed(2)}
+                  style={{ color: profitColor, fontSize: 48, fontWeight: '900', lineHeight: 56, marginTop: 4 }}
+                />
 
                 {/* Date range row */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
@@ -1159,12 +1320,12 @@ export default function DashboardScreen() {
                 {/* Dashed sparkline */}
                 <DashedLine color={profitColor} />
 
-                {/* Three stats */}
+                {/* Three stats with count-up */}
                 <View style={{ flexDirection: 'row' }}>
                   {[
-                    { label: 'REVENUE',  value: `$${revenue.toFixed(0)}` },
-                    { label: 'ORDERS',   value: `${orderCount}` },
-                    { label: 'AVG ORDER', value: `$${avgOrder.toFixed(0)}` },
+                    { label: 'REVENUE',   numeric: revenue,    format: (n: number) => `$${Math.round(n)}` },
+                    { label: 'ORDERS',    numeric: orderCount, format: (n: number) => `${Math.round(n)}` },
+                    { label: 'AVG ORDER', numeric: avgOrder,   format: (n: number) => `$${Math.round(n)}` },
                   ].map((stat, i) => (
                     <View
                       key={stat.label}
@@ -1179,26 +1340,28 @@ export default function DashboardScreen() {
                       <Text style={{ color: LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
                         {stat.label}
                       </Text>
-                      <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginTop: 2 }}>
-                        {stat.value}
-                      </Text>
+                      <AnimatedNumber
+                        value={stat.numeric}
+                        format={stat.format}
+                        style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginTop: 2 }}
+                      />
                     </View>
                   ))}
                 </View>
 
+              </Animated.View>
+
+              {/* ── Secondary Stat Cards (subtle yellow glow + count-up) ────── */}
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <StatCard label="$/Hour" icon="⏱️" value={`$${perHour.toFixed(2)}`} numericValue={perHour} format={(n) => `$${n.toFixed(2)}`} />
+                <StatCard label="$/Mile" icon="📍" value={`$${perMile.toFixed(2)}`} numericValue={perMile} format={(n) => `$${n.toFixed(2)}`} />
+                <StatCard label="Miles"  icon="🚗" value={miles.toFixed(1)}         numericValue={miles}   format={(n) => n.toFixed(1)} />
               </View>
 
-              {/* ── Secondary Stat Cards ────────────────────────────────────── */}
+              {/* ── Revenue/Expense cards (green/red glow) ──────────────────── */}
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                <StatCard label="$/Hour"    value={`$${perHour.toFixed(2)}`} icon="⏱️" />
-                <StatCard label="$/Mile"    value={`$${perMile.toFixed(2)}`} icon="📍" />
-                <StatCard label="Miles"     value={miles.toFixed(1)}         icon="🚗" />
-              </View>
-
-              {/* ── Expenses card ───────────────────────────────────────────── */}
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <StatCard label="Revenue"   value={`$${revenue.toFixed(2)}`}          icon="💵" />
-                <StatCard label="Expenses"  value={`$${Math.abs(expenses).toFixed(2)}`} icon="💸" />
+                <StatCard label="Revenue"  icon="💵" accent={GREEN} value={`$${revenue.toFixed(2)}`}          numericValue={revenue}          format={(n) => `$${n.toFixed(2)}`} />
+                <StatCard label="Expenses" icon="💸" accent={RED}   value={`$${Math.abs(expenses).toFixed(2)}`} numericValue={Math.abs(expenses)} format={(n) => `$${n.toFixed(2)}`} />
               </View>
 
               {/* ── AI Suggestion (collapsible) ─────────────────────────────── */}
@@ -1397,7 +1560,7 @@ export default function DashboardScreen() {
         </View>
       </ScrollView>
 
-      {/* ── Sticky "Add Entry" bar ───────────────────────────────────────────── */}
+      {/* ── Sticky "Add Entry" bar (heavy neon yellow halo) ─────────────────── */}
       <View
         pointerEvents="box-none"
         style={{
@@ -1412,10 +1575,10 @@ export default function DashboardScreen() {
           paddingBottom: insets.bottom > 0 ? insets.bottom + 14 : 22,
           paddingHorizontal: 28,
           shadowColor: PRIMARY,
-          shadowOffset: { width: 0, height: -6 },
-          shadowOpacity: 0.55,
-          shadowRadius: 18,
-          elevation: 14,
+          shadowOffset: { width: 0, height: -8 },
+          shadowOpacity: 0.7,
+          shadowRadius: 28,
+          elevation: 22,
           zIndex: 999,
         }}
       >
@@ -1426,10 +1589,11 @@ export default function DashboardScreen() {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: pressed ? 0.7 : 1,
+            opacity: pressed ? 0.85 : 1,
+            transform: [{ scale: pressed ? 0.96 : 1 }],
           })}
         >
-          <Text style={{ color: '#000', fontWeight: '800', fontSize: 22, letterSpacing: 0.3 }}>
+          <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>
             + Add Entry
           </Text>
         </Pressable>
