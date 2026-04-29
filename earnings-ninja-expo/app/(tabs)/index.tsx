@@ -673,6 +673,7 @@ export default function DashboardScreen() {
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
   const [showAllEntries, setShowAllEntries] = useState(false);
+  const [aiCollapsed, setAiCollapsed] = useState(true);
 
   const tf = PERIODS.find(p => p.key === period)!.tf;
 
@@ -904,33 +905,47 @@ export default function DashboardScreen() {
                 <StatCard label="Expenses"  value={`$${Math.abs(expenses).toFixed(2)}`} icon="💸" />
               </View>
 
-              {/* ── AI Suggestion ───────────────────────────────────────────── */}
+              {/* ── AI Suggestion (collapsible) ─────────────────────────────── */}
               {aiSuggestion && (
                 <View style={{
                   backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: PRIMARY + '30',
                   padding: 16,
                   shadowColor: PRIMARY, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 6,
                 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <Pressable
+                    onPress={() => { hTapMed(); setAiCollapsed(c => !c); }}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row', alignItems: 'center', gap: 8,
+                      marginBottom: aiCollapsed ? 0 : 8,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
                     <Text style={{ fontSize: 18 }}>🤖</Text>
-                    <Text style={{ color: PRIMARY, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
+                    <Text style={{ color: PRIMARY, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, flex: 1 }}>
                       AI Earning Tip
                     </Text>
-                  </View>
-                  <Text style={{ color: TEXT_MID, fontSize: 14, lineHeight: 20 }}>{aiSuggestion.suggestion}</Text>
-                  {(aiSuggestion.minimum_order || aiSuggestion.peak_time) && (
-                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                      {aiSuggestion.minimum_order && (
-                        <View style={{ backgroundColor: GREEN_LT, borderRadius: 8, borderWidth: 1, borderColor: GREEN + '40', paddingHorizontal: 10, paddingVertical: 5 }}>
-                          <Text style={{ color: GREEN, fontSize: 12, fontWeight: '700' }}>Min: ${aiSuggestion.minimum_order}</Text>
+                    <Text style={{ color: PRIMARY, fontSize: 14, fontWeight: '700' }}>
+                      {aiCollapsed ? '▼' : '▲'}
+                    </Text>
+                  </Pressable>
+                  {!aiCollapsed && (
+                    <>
+                      <Text style={{ color: TEXT_MID, fontSize: 14, lineHeight: 20 }}>{aiSuggestion.suggestion}</Text>
+                      {(aiSuggestion.minimum_order || aiSuggestion.peak_time) && (
+                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                          {aiSuggestion.minimum_order && (
+                            <View style={{ backgroundColor: GREEN_LT, borderRadius: 8, borderWidth: 1, borderColor: GREEN + '40', paddingHorizontal: 10, paddingVertical: 5 }}>
+                              <Text style={{ color: GREEN, fontSize: 12, fontWeight: '700' }}>Min: ${aiSuggestion.minimum_order}</Text>
+                            </View>
+                          )}
+                          {aiSuggestion.peak_time && (
+                            <View style={{ backgroundColor: PRI_LITE, borderRadius: 8, borderWidth: 1, borderColor: PRIMARY + '40', paddingHorizontal: 10, paddingVertical: 5 }}>
+                              <Text style={{ color: PRIMARY, fontSize: 12, fontWeight: '700' }}>⏰ {aiSuggestion.peak_time}</Text>
+                            </View>
+                          )}
                         </View>
                       )}
-                      {aiSuggestion.peak_time && (
-                        <View style={{ backgroundColor: PRI_LITE, borderRadius: 8, borderWidth: 1, borderColor: PRIMARY + '40', paddingHorizontal: 10, paddingVertical: 5 }}>
-                          <Text style={{ color: PRIMARY, fontSize: 12, fontWeight: '700' }}>⏰ {aiSuggestion.peak_time}</Text>
-                        </View>
-                      )}
-                    </View>
+                    </>
                   )}
                 </View>
               )}
