@@ -1129,13 +1129,12 @@ export default function DashboardScreen() {
           style={({ pressed }) => ({
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 16,
+            justifyContent: 'center',
             opacity: pressed ? 0.7 : 1,
           })}
         >
-          <Ionicons name="add" size={32} color="#000" />
           <Text style={{ color: '#000', fontWeight: '800', fontSize: 22, letterSpacing: 0.3 }}>
-            Add Entry
+            + Add Entry
           </Text>
         </Pressable>
       </View>
