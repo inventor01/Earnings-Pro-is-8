@@ -889,22 +889,6 @@ export default function DashboardScreen() {
                   ))}
                 </View>
 
-                {/* View Entries CTA */}
-                <Pressable
-                  onPress={() => setShowAllEntries(s => !s)}
-                  style={({ pressed }) => ({
-                    backgroundColor: PRIMARY,
-                    borderRadius: 12,
-                    paddingVertical: 14,
-                    alignItems: 'center',
-                    marginTop: 16,
-                    opacity: pressed ? 0.88 : 1,
-                  })}
-                >
-                  <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>
-                    {showAllEntries ? 'Hide Entries ↑' : `View Entries →  (${entries.length})`}
-                  </Text>
-                </Pressable>
               </View>
 
               {/* ── Secondary Stat Cards ────────────────────────────────────── */}
@@ -1042,7 +1026,7 @@ export default function DashboardScreen() {
               </View>
 
               {/* ── Entries List ─────────────────────────────────────────────── */}
-              {entries.length > 0 && showAllEntries && (
+              {entries.length > 0 && (
                 <View style={{
                   backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER, overflow: 'hidden',
                   shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4,
