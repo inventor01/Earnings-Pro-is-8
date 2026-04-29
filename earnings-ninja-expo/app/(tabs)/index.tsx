@@ -1124,8 +1124,8 @@ export default function DashboardScreen() {
           elevation: 12,
         })}
       >
-        <Ionicons name="add-circle" size={24} color="#fff" />
-        <Text style={{ color: '#fff', fontWeight: '900', fontSize: 18, letterSpacing: 0.5 }}>
+        <Ionicons name="add-circle" size={24} color="#000" />
+        <Text style={{ color: '#000', fontWeight: '900', fontSize: 18, letterSpacing: 0.5 }}>
           + Add Entry
         </Text>
       </Pressable>
