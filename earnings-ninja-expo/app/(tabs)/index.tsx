@@ -1101,7 +1101,7 @@ export default function DashboardScreen() {
         </View>
       </ScrollView>
 
-      {/* ── Sticky "+ Add Entry" bar ─────────────────────────────────────────── */}
+      {/* ── Sticky "Add Entry" bar ───────────────────────────────────────────── */}
       <View
         pointerEvents="box-none"
         style={{
@@ -1110,13 +1110,16 @@ export default function DashboardScreen() {
           left: 0,
           right: 0,
           backgroundColor: PRIMARY,
-          paddingTop: 16,
-          paddingBottom: insets.bottom > 0 ? insets.bottom + 10 : 18,
+          borderTopLeftRadius: 28,
+          borderTopRightRadius: 28,
+          paddingTop: 22,
+          paddingBottom: insets.bottom > 0 ? insets.bottom + 14 : 22,
+          paddingHorizontal: 28,
           shadowColor: PRIMARY,
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.5,
-          shadowRadius: 16,
-          elevation: 12,
+          shadowOffset: { width: 0, height: -6 },
+          shadowOpacity: 0.55,
+          shadowRadius: 18,
+          elevation: 14,
           zIndex: 999,
         }}
       >
@@ -1126,15 +1129,13 @@ export default function DashboardScreen() {
           style={({ pressed }) => ({
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
-            gap: 10,
+            gap: 16,
             opacity: pressed ? 0.7 : 1,
-            paddingVertical: 4,
           })}
         >
-          <Ionicons name="add-circle" size={24} color="#000" />
-          <Text style={{ color: '#000', fontWeight: '900', fontSize: 18, letterSpacing: 0.5 }}>
-            + Add Entry
+          <Ionicons name="add" size={32} color="#000" />
+          <Text style={{ color: '#000', fontWeight: '800', fontSize: 22, letterSpacing: 0.3 }}>
+            Add Entry
           </Text>
         </Pressable>
       </View>
