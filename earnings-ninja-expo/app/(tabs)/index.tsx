@@ -247,7 +247,7 @@ function StatCard({
         borderColor: accent + '22',
         padding: 12,
       },
-      neonGlow(accent, 10, 0.18),
+      neonGlow(accent, 6, 0.10),
     ]}>
       <Text style={{ fontSize: 18, marginBottom: 4 }}>{icon}</Text>
       {numericValue !== undefined && format ? (
@@ -1261,11 +1261,11 @@ export default function DashboardScreen() {
                       backgroundColor: active ? PRIMARY : 'transparent',
                       borderWidth: 1, borderColor: active ? PRIMARY : BORDER,
                     },
-                    active ? neonGlow(PRIMARY, 8, 0.4) : undefined,
+                    active ? neonGlow(PRIMARY, 5, 0.18) : undefined,
                   ].filter(Boolean) as ViewStyle[]}
                 >
                   <Text style={{
-                    color: active ? '#000' : MUTED,
+                    color: active ? '#fff' : MUTED,
                     fontSize: 13, fontWeight: active ? '800' : '500',
                   }}>
                     {p.label}
@@ -1293,7 +1293,7 @@ export default function DashboardScreen() {
                   borderColor: profitColor + '33',
                   padding: 20,
                 },
-                neonGlow(profitColor, 22, 0.35),
+                neonGlow(profitColor, 14, 0.22),
                 profitPopStyle,
               ]}>
                 {/* Label */}
@@ -1575,10 +1575,10 @@ export default function DashboardScreen() {
           paddingBottom: insets.bottom > 0 ? insets.bottom + 14 : 22,
           paddingHorizontal: 28,
           shadowColor: PRIMARY,
-          shadowOffset: { width: 0, height: -8 },
-          shadowOpacity: 0.7,
-          shadowRadius: 28,
-          elevation: 22,
+          shadowOffset: { width: 0, height: -6 },
+          shadowOpacity: 0.4,
+          shadowRadius: 16,
+          elevation: 12,
           zIndex: 999,
         }}
       >
