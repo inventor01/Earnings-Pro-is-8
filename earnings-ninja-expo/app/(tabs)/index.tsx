@@ -21,22 +21,22 @@ const hTapHeavy = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).c
 const hNotifyOk = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
-const BG       = '#F0F2F7';
-const SURFACE  = '#FFFFFF';
-const CARD_BG  = '#FFFFFF';
-const BORDER   = '#E8EAF0';
-const PRIMARY  = '#7C3AED';
-const PRI_LITE = '#EDE9FE';
-const PRI_DARK = '#5B21B6';
-const TEXT     = '#111827';
-const TEXT_MID = '#374151';
-const MUTED    = '#6B7280';
-const LABEL    = '#9CA3AF';
-const GREEN    = '#16A34A';
-const GREEN_LT = '#DCFCE7';
-const RED      = '#DC2626';
-const RED_LT   = '#FEE2E2';
-const DIVIDER  = '#F3F4F6';
+const BG       = '#0a0a0f';
+const SURFACE  = '#13131a';
+const CARD_BG  = '#1a1a24';
+const BORDER   = '#252535';
+const PRIMARY  = '#facc15';
+const PRI_LITE = '#2a2410';
+const PRI_DARK = '#ca8a04';
+const TEXT     = '#f1f5f9';
+const TEXT_MID = '#cbd5e1';
+const MUTED    = '#94a3b8';
+const LABEL    = '#64748b';
+const GREEN    = '#22c55e';
+const GREEN_LT = '#052e16';
+const RED      = '#ef4444';
+const RED_LT   = '#450a0a';
+const DIVIDER  = '#1e1e2e';
 
 // Keep legacy names used inside modals / CalcPad
 const ACCENT   = PRIMARY;
@@ -298,7 +298,7 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
           opacity: pressed ? 0.88 : 1,
         })}
       >
-        <Text style={{ color: '#fff', fontWeight: '900', fontSize: 18 }}>Next →</Text>
+        <Text style={{ color: '#000', fontWeight: '900', fontSize: 18 }}>Next →</Text>
       </Pressable>
     </View>
   );
@@ -511,8 +511,8 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 })}
               >
                 {mutation.isPending
-                  ? <ActivityIndicator color="#fff" />
-                  : <Text style={{ color: '#fff', fontWeight: '900', fontSize: 18 }}>💾 Save Entry</Text>
+                  ? <ActivityIndicator color="#000" />
+                  : <Text style={{ color: '#000', fontWeight: '900', fontSize: 18 }}>💾 Save Entry</Text>
                 }
               </Pressable>
             </View>
@@ -631,7 +631,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                     }}
                     style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Text style={{ color: '#fff', fontWeight: '800' }}>Save</Text>
+                    <Text style={{ color: '#000', fontWeight: '800' }}>Save</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => setEditingGoal(null)}
@@ -901,7 +901,7 @@ export default function DashboardScreen() {
                     opacity: pressed ? 0.88 : 1,
                   })}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
+                  <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>
                     {showAllEntries ? 'Hide Entries ↑' : `View Entries →  (${entries.length})`}
                   </Text>
                 </Pressable>
@@ -982,7 +982,7 @@ export default function DashboardScreen() {
                       }}
                       style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <Text style={{ color: '#fff', fontWeight: '800' }}>Save</Text>
+                      <Text style={{ color: '#000', fontWeight: '800' }}>Save</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => setEditingGoal(false)}
@@ -1102,28 +1102,33 @@ export default function DashboardScreen() {
         </View>
       </ScrollView>
 
-      {/* ── Floating circular + Button (bottom right) ────────────────────────── */}
+      {/* ── Sticky "+ Add Entry" bar ─────────────────────────────────────────── */}
       <Pressable
         onPress={() => { hTapMed(); setShowAdd(true); }}
         style={({ pressed }) => ({
           position: 'absolute',
-          bottom: insets.bottom + 24,
-          right: 24,
-          width: 60,
-          height: 60,
-          borderRadius: 30,
+          bottom: 0,
+          left: 0,
+          right: 0,
           backgroundColor: PRIMARY,
+          paddingTop: 16,
+          paddingBottom: insets.bottom > 0 ? insets.bottom + 10 : 18,
+          flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
+          gap: 10,
           opacity: pressed ? 0.88 : 1,
           shadowColor: PRIMARY,
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.45,
-          shadowRadius: 12,
-          elevation: 10,
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.5,
+          shadowRadius: 16,
+          elevation: 12,
         })}
       >
-        <Ionicons name="add" size={30} color="#fff" />
+        <Ionicons name="add-circle" size={24} color="#000" />
+        <Text style={{ color: '#000', fontWeight: '900', fontSize: 18, letterSpacing: 0.5 }}>
+          + Add Entry
+        </Text>
       </Pressable>
 
       {/* ── Modals ───────────────────────────────────────────────────────────── */}
