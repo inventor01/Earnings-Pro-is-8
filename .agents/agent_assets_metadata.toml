@@ -18,3 +18,9 @@ id = "WZfSJ-LCVpKjsi4CXlDEu"
 uri = "file://earnings-ninja-expo.zip"
 type = "unspecified"
 title = "Earnings Ninja - Expo iOS App"
+
+[[outputs]]
+id = "x2tSjgn-UBsPDnAEwX5xb"
+uri = "file://expo_qr.png"
+type = "image"
+title = "Expo Go QR Code — exp://kelpojy-anonymous-8081.exp.direct"
