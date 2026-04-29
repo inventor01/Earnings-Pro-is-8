@@ -1,12 +1,31 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet } from 'react-native';
-import { colors } from '@/constants/colors';
+import { View } from 'react-native';
 
-function AddTabIcon({ color }: { color: string }) {
+const SURFACE = '#111118';
+const BORDER = '#1e1e2e';
+const ACCENT = '#facc15';
+const MUTED = '#4b5563';
+
+function AddTabIcon() {
   return (
-    <View style={styles.addIcon}>
-      <Ionicons name="add" size={26} color={colors.black} />
+    <View
+      style={{
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+        backgroundColor: ACCENT,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 2,
+        shadowColor: ACCENT,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.9,
+        shadowRadius: 14,
+        elevation: 10,
+      }}
+    >
+      <Ionicons name="add" size={28} color="#000" />
     </View>
   );
 }
@@ -17,18 +36,19 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          backgroundColor: SURFACE,
+          borderTopColor: BORDER,
           borderTopWidth: 1,
-          height: 64,
-          paddingBottom: 10,
+          height: 68,
+          paddingBottom: 12,
           paddingTop: 6,
         },
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: ACCENT,
+        tabBarInactiveTintColor: MUTED,
         tabBarLabelStyle: {
-          fontFamily: 'Inter_500Medium',
           fontSize: 10,
+          fontWeight: '600',
+          marginTop: 2,
         },
       }}
     >
@@ -45,8 +65,8 @@ export default function TabLayout() {
         name="add"
         options={{
           title: 'Log Entry',
-          tabBarIcon: ({ color }) => <AddTabIcon color={color} />,
-          tabBarLabelStyle: { fontFamily: 'Inter_500Medium', fontSize: 10, color: colors.accent },
+          tabBarIcon: () => <AddTabIcon />,
+          tabBarLabelStyle: { fontSize: 10, fontWeight: '700', color: ACCENT, marginTop: 2 },
         }}
       />
       <Tabs.Screen
@@ -63,27 +83,10 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
+            <Ionicons name="settings-outline" size={size} color={color} />
           ),
         }}
       />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  addIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-});
