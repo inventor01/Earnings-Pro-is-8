@@ -925,15 +925,16 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
               name={step === 'calc' ? 'arrow-down' : 'arrow-back'}
               size={22}
               color="#0f172a"
-              style={{ marginRight: 10 }}
+              style={{ marginRight: 10, lineHeight: 22 }}
             />
             <Text
               style={{
                 color: '#0f172a',
                 fontSize: 18,
                 fontWeight: '800',
-                lineHeight: 24,
+                lineHeight: 22,
                 includeFontPadding: false,
+                textAlignVertical: 'center',
               }}
             >
               {step === 'calc' ? 'Hide' : 'Back'}
