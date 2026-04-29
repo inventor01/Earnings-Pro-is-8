@@ -167,7 +167,31 @@ function EntryRow({ entry, onDelete }: { entry: Entry; onDelete: (id: number) =>
   );
 }
 
-// ─── Calculator Pad ───────────────────────────────────────────────────────────
+// ─── Calculator pad palette (light theme) ─────────────────────────────────────
+const CALC = {
+  HEADER_BG:    '#facc15',
+  CARD_BG:      '#ffffff',
+  AMOUNT_BG:    '#eef2ff',
+  AMOUNT_BORDER:'#c7d2fe',
+  AMOUNT_TEXT:  '#0f172a',
+  NUM_BG:       '#f5f5f7',
+  NUM_TEXT:     '#0f172a',
+  NUM_PRESSED:  '#bfdbfe',
+  BACKSPACE_BG: '#fb923c',
+  BACKSPACE_FG: '#ffffff',
+  REV_SEL_BG:   '#22c55e',
+  REV_SEL_FG:   '#ffffff',
+  REV_OFF_BG:   '#f3f4f6',
+  REV_OFF_FG:   '#374151',
+  EXP_SEL_BG:   '#374151',
+  EXP_SEL_FG:   '#ffffff',
+  NEXT_BG:      '#facc15',
+  NEXT_FG:      '#0f172a',
+  LABEL:        '#6b7280',
+  BORDER:       '#e5e7eb',
+};
+
+// ─── Calculator Pad (light, matches mockup) ───────────────────────────────────
 function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
   amount: string;
   mode: 'add' | 'subtract';
@@ -176,52 +200,47 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
   onNext: () => void;
 }) {
   const holdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [holding, setHolding] = useState(false);
 
   const tap = (n: string) => {
     hTap();
-    onAmount(amount === '0' ? n : amount + n);
+    onAmount(amount === '0' && n !== '.' ? n : amount + n);
   };
 
-  const isExp  = mode === 'subtract';
-  const color  = isExp ? RED : GREEN;
-  const numBg  = SURFACE;
-
-  const numBtn = (label: string, onPress: () => void, bg = numBg, fg = TEXT) => (
+  const numBtn = (label: string) => (
     <Pressable
       key={label}
-      onPress={onPress}
+      onPress={() => tap(label)}
       style={({ pressed }) => ({
         flex: 1,
-        backgroundColor: bg,
-        borderRadius: 14,
-        paddingVertical: 18,
+        backgroundColor: pressed ? CALC.NUM_PRESSED : CALC.NUM_BG,
+        borderRadius: 18,
+        paddingVertical: 22,
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: BORDER,
-        opacity: pressed ? 0.7 : 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 3,
+        elevation: 1,
       })}
     >
-      <Text style={{ color: fg, fontSize: 24, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color: CALC.NUM_TEXT, fontSize: 28, fontWeight: '700' }}>{label}</Text>
     </Pressable>
   );
 
   return (
-    <View style={{ gap: 10 }}>
+    <View style={{ gap: 14 }}>
       {/* Amount display */}
       <View style={{
-        backgroundColor: isExp ? RED_LT : GREEN_LT,
-        borderRadius: 18,
+        backgroundColor: CALC.AMOUNT_BG,
+        borderRadius: 16,
         borderWidth: 1.5,
-        borderColor: color + '44',
-        padding: 20,
+        borderColor: CALC.AMOUNT_BORDER,
+        paddingVertical: 22,
+        paddingHorizontal: 20,
         alignItems: 'flex-end',
       }}>
-        <Text style={{ color: MUTED, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
-          {isExp ? 'Expense Amount' : 'Revenue Amount'}
-        </Text>
-        <Text style={{ color, fontSize: 48, fontWeight: '900' }}>
-          ${amount}
+        <Text style={{ color: CALC.AMOUNT_TEXT, fontSize: 40, fontWeight: '900' }}>
+          {mode === 'subtract' ? '−' : ''}${amount}
         </Text>
       </View>
 
@@ -231,21 +250,23 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
           onPress={() => { hTap(); onMode('add'); }}
           style={{
             flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center',
-            backgroundColor: mode === 'add' ? GREEN_LT : SURFACE,
-            borderWidth: 1.5, borderColor: mode === 'add' ? GREEN : BORDER,
+            backgroundColor: mode === 'add' ? CALC.REV_SEL_BG : CALC.REV_OFF_BG,
           }}
         >
-          <Text style={{ color: mode === 'add' ? GREEN : MUTED, fontWeight: '800', fontSize: 15 }}>➕ Revenue</Text>
+          <Text style={{ color: mode === 'add' ? CALC.REV_SEL_FG : CALC.REV_OFF_FG, fontWeight: '800', fontSize: 16 }}>
+            + Revenue
+          </Text>
         </Pressable>
         <Pressable
           onPress={() => { hTap(); onMode('subtract'); }}
           style={{
             flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center',
-            backgroundColor: mode === 'subtract' ? RED_LT : SURFACE,
-            borderWidth: 1.5, borderColor: mode === 'subtract' ? RED : BORDER,
+            backgroundColor: mode === 'subtract' ? CALC.EXP_SEL_BG : CALC.REV_OFF_BG,
           }}
         >
-          <Text style={{ color: mode === 'subtract' ? RED : MUTED, fontWeight: '800', fontSize: 15 }}>➖ Expense</Text>
+          <Text style={{ color: mode === 'subtract' ? CALC.EXP_SEL_FG : CALC.REV_OFF_FG, fontWeight: '800', fontSize: 16 }}>
+            − Expense
+          </Text>
         </Pressable>
       </View>
 
@@ -254,7 +275,7 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
         ['7', '8', '9'],
         ['4', '5', '6'],
         ['1', '2', '3'],
-        ['.', '0', '⌫'],
+        ['⌫', '0', '.'],
       ].map((row, ri) => (
         <View key={ri} style={{ flexDirection: 'row', gap: 10 }}>
           {row.map(k =>
@@ -265,26 +286,25 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
                   onPress={() => { hTap(); onAmount(amount.length > 1 ? amount.slice(0, -1) : '0'); }}
                   onPressIn={() => {
                     holdRef.current = setTimeout(() => {
-                      setHolding(true);
                       hTapHeavy();
                       onAmount('0');
                     }, 500);
                   }}
                   onPressOut={() => {
                     if (holdRef.current) clearTimeout(holdRef.current);
-                    setHolding(false);
                   }}
                   style={({ pressed }) => ({
-                    flex: 1, backgroundColor: RED_LT, borderRadius: 14,
-                    paddingVertical: 18, alignItems: 'center',
-                    borderWidth: 1, borderColor: RED + '44',
-                    opacity: pressed ? 0.7 : 1,
+                    flex: 1, backgroundColor: CALC.BACKSPACE_BG, borderRadius: 18,
+                    paddingVertical: 22, alignItems: 'center',
+                    opacity: pressed ? 0.75 : 1,
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.08, shadowRadius: 3, elevation: 1,
                   })}
                 >
-                  <Text style={{ color: RED, fontSize: 24, fontWeight: '700' }}>⌫</Text>
+                  <Ionicons name="backspace-outline" size={24} color={CALC.BACKSPACE_FG} />
                 </Pressable>
               )
-              : numBtn(k, () => tap(k))
+              : numBtn(k)
           )}
         </View>
       ))}
@@ -293,12 +313,13 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
       <Pressable
         onPress={() => { hTapMed(); onNext(); }}
         style={({ pressed }) => ({
-          backgroundColor: PRIMARY,
-          borderRadius: 16, paddingVertical: 18, alignItems: 'center',
+          backgroundColor: CALC.NEXT_BG,
+          borderRadius: 16, paddingVertical: 20, alignItems: 'center',
           opacity: pressed ? 0.88 : 1,
+          marginTop: 4,
         })}
       >
-        <Text style={{ color: '#000', fontWeight: '900', fontSize: 18 }}>Next →</Text>
+        <Text style={{ color: CALC.NEXT_FG, fontWeight: '900', fontSize: 20 }}>Next Step →</Text>
       </Pressable>
     </View>
   );
@@ -354,18 +375,30 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => { reset(); onClose(); }}>
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: BG }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: CALC.CARD_BG }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/* Yellow header bar */}
+        <Pressable
+          onPress={() => {
+            hTapMed();
+            if (step === 'details') { setStep('calc'); }
+            else { reset(); onClose(); }
+          }}
+          style={({ pressed }) => ({
+            backgroundColor: CALC.HEADER_BG,
+            paddingHorizontal: 22,
+            paddingVertical: 22,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 14,
+            opacity: pressed ? 0.85 : 1,
+          })}
+        >
+          <Ionicons name={step === 'calc' ? 'arrow-down' : 'arrow-back'} size={24} color="#0f172a" />
+          <Text style={{ color: '#0f172a', fontSize: 20, fontWeight: '800' }}>
+            {step === 'calc' ? 'Hide Calculator' : 'Back to Calculator'}
+          </Text>
+        </Pressable>
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-          {/* Modal header */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>
-              {step === 'calc' ? '💰 Log Entry' : '📝 Entry Details'}
-            </Text>
-            <Pressable onPress={() => { reset(); onClose(); }} style={{ padding: 6 }}>
-              <Ionicons name="close-circle" size={28} color={MUTED} />
-            </Pressable>
-          </View>
-
           {step === 'calc' ? (
             <CalcPad
               amount={amount}
@@ -380,25 +413,25 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
               <Pressable
                 onPress={() => setStep('calc')}
                 style={{
-                  backgroundColor: isExp ? RED_LT : GREEN_LT,
+                  backgroundColor: isExp ? '#fef2f2' : '#f0fdf4',
                   borderRadius: 14,
                   borderWidth: 1.5,
-                  borderColor: (isExp ? RED : GREEN) + '44',
+                  borderColor: isExp ? '#fecaca' : '#bbf7d0',
                   padding: 16,
                   flexDirection: 'row',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                 }}
               >
-                <Text style={{ color: MUTED, fontSize: 13 }}>← Edit Amount</Text>
-                <Text style={{ color: isExp ? RED : GREEN, fontSize: 30, fontWeight: '900' }}>
+                <Text style={{ color: CALC.LABEL, fontSize: 13 }}>← Edit Amount</Text>
+                <Text style={{ color: isExp ? '#dc2626' : '#16a34a', fontSize: 30, fontWeight: '900' }}>
                   {isExp ? '-' : '+'}${amount}
                 </Text>
               </Pressable>
 
               {/* Entry type */}
               <View>
-                <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Entry Type</Text>
+                <Text style={{ color: CALC.LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Entry Type</Text>
                 <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
                   {(['ORDER', 'BONUS', 'EXPENSE', 'CANCELLATION'] as EntryType[]).map(t => (
                     <Pressable
@@ -406,11 +439,11 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                       onPress={() => { hTap(); setEntryType(t); }}
                       style={{
                         paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12,
-                        backgroundColor: entryType === t ? PRI_LITE : SURFACE,
-                        borderWidth: 1.5, borderColor: entryType === t ? PRIMARY : BORDER,
+                        backgroundColor: entryType === t ? '#fef9c3' : CALC.NUM_BG,
+                        borderWidth: 1.5, borderColor: entryType === t ? CALC.HEADER_BG : CALC.BORDER,
                       }}
                     >
-                      <Text style={{ color: entryType === t ? PRIMARY : MUTED, fontWeight: '700', fontSize: 13 }}>{t}</Text>
+                      <Text style={{ color: entryType === t ? '#854d0e' : '#374151', fontWeight: '700', fontSize: 13 }}>{t}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -418,7 +451,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
               {/* Platform */}
               <View>
-                <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Platform</Text>
+                <Text style={{ color: CALC.LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Platform</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     {APPS.map(a => (
@@ -427,11 +460,11 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                         onPress={() => { hTap(); setApp(a.key); }}
                         style={{
                           paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12,
-                          backgroundColor: app === a.key ? a.color + '18' : SURFACE,
-                          borderWidth: 1.5, borderColor: app === a.key ? a.color : BORDER,
+                          backgroundColor: app === a.key ? a.color + '22' : CALC.NUM_BG,
+                          borderWidth: 1.5, borderColor: app === a.key ? a.color : CALC.BORDER,
                         }}
                       >
-                        <Text style={{ color: app === a.key ? a.color : MUTED, fontWeight: '700', fontSize: 13 }}>{a.label}</Text>
+                        <Text style={{ color: app === a.key ? a.color : '#374151', fontWeight: '700', fontSize: 13 }}>{a.label}</Text>
                       </Pressable>
                     ))}
                   </View>
@@ -441,7 +474,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
               {/* Expense category */}
               {entryType === 'EXPENSE' && (
                 <View>
-                  <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Category</Text>
+                  <Text style={{ color: CALC.LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Category</Text>
                   <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
                     {EXPENSE_CATS.map(c => (
                       <Pressable
@@ -449,11 +482,11 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                         onPress={() => { hTap(); setCategory(c); }}
                         style={{
                           paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
-                          backgroundColor: category === c ? PRI_LITE : SURFACE,
-                          borderWidth: 1, borderColor: category === c ? PRIMARY : BORDER,
+                          backgroundColor: category === c ? '#fef9c3' : CALC.NUM_BG,
+                          borderWidth: 1, borderColor: category === c ? CALC.HEADER_BG : CALC.BORDER,
                         }}
                       >
-                        <Text style={{ color: category === c ? PRIMARY : MUTED, fontSize: 13, fontWeight: '700' }}>
+                        <Text style={{ color: category === c ? '#854d0e' : '#374151', fontSize: 13, fontWeight: '700' }}>
                           {EXPENSE_EMOJIS[c]} {c}
                         </Text>
                       </Pressable>
@@ -469,16 +502,16 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                   { label: 'Minutes', value: minutes, set: setMinutes, type: 'number-pad' as const, placeholder: '0' },
                 ].map(f => (
                   <View key={f.label} style={{ flex: 1 }}>
-                    <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{f.label}</Text>
+                    <Text style={{ color: CALC.LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{f.label}</Text>
                     <TextInput
                       value={f.value}
                       onChangeText={f.set}
                       placeholder={f.placeholder}
-                      placeholderTextColor={LABEL}
+                      placeholderTextColor="#9ca3af"
                       keyboardType={f.type}
                       style={{
-                        backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER, borderRadius: 12,
-                        paddingHorizontal: 14, paddingVertical: 13, color: TEXT, fontSize: 16, fontWeight: '600',
+                        backgroundColor: CALC.NUM_BG, borderWidth: 1, borderColor: CALC.BORDER, borderRadius: 12,
+                        paddingHorizontal: 14, paddingVertical: 13, color: CALC.NUM_TEXT, fontSize: 16, fontWeight: '600',
                       }}
                     />
                   </View>
@@ -487,16 +520,16 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
               {/* Note */}
               <View>
-                <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Note (optional)</Text>
+                <Text style={{ color: CALC.LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Note (optional)</Text>
                 <TextInput
                   value={note}
                   onChangeText={setNote}
                   placeholder="Add a note..."
-                  placeholderTextColor={LABEL}
+                  placeholderTextColor="#9ca3af"
                   multiline
                   style={{
-                    backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER, borderRadius: 12,
-                    paddingHorizontal: 14, paddingVertical: 13, color: TEXT, fontSize: 15, minHeight: 60, textAlignVertical: 'top',
+                    backgroundColor: CALC.NUM_BG, borderWidth: 1, borderColor: CALC.BORDER, borderRadius: 12,
+                    paddingHorizontal: 14, paddingVertical: 13, color: CALC.NUM_TEXT, fontSize: 15, minHeight: 60, textAlignVertical: 'top',
                   }}
                 />
               </View>
@@ -506,13 +539,13 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 onPress={handleSave}
                 disabled={mutation.isPending}
                 style={({ pressed }) => ({
-                  backgroundColor: PRIMARY, borderRadius: 16, paddingVertical: 18, alignItems: 'center',
+                  backgroundColor: CALC.NEXT_BG, borderRadius: 16, paddingVertical: 20, alignItems: 'center',
                   opacity: pressed ? 0.85 : 1,
                 })}
               >
                 {mutation.isPending
                   ? <ActivityIndicator color="#000" />
-                  : <Text style={{ color: '#000', fontWeight: '900', fontSize: 18 }}>💾 Save Entry</Text>
+                  : <Text style={{ color: CALC.NEXT_FG, fontWeight: '900', fontSize: 20 }}>💾 Save Entry</Text>
                 }
               </Pressable>
             </View>
