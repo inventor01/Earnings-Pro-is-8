@@ -3,6 +3,9 @@
     "name": "Earnings Ninja",
     "slug": "earnings-ninja",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -22,7 +25,12 @@
         "NSPhotoLibraryUsageDescription": "Earnings Ninja needs photo library access to attach receipt images to your expenses.",
         "NSLocationWhenInUseUsageDescription": "Earnings Ninja uses your location to automatically track trip mileage while you are delivering.",
         "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
+          "NSExceptionDomains": {
+            "picard.replit.dev": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSIncludesSubdomains": true
+            }
+          }
         }
       },
       "config": {
@@ -31,10 +39,12 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
         "backgroundColor": "#0f172a"
       },
-      "package": "com.earningsninja.app"
+      "package": "com.earningsninja.app",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/icon.png",
@@ -42,10 +52,24 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0f172a",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "apiBase": "https://b21ea173-8d4d-4445-a8db-6d8c912d7dc4-00-l5lnc6lhje6p.picard.replit.dev",
+      "eas": {
+        "projectId": "earnings-ninja-app"
+      }
     }
   }
 }

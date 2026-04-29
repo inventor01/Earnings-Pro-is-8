@@ -1,6 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-export const API_BASE = 'https://b21ea173-8d4d-4445-a8db-6d8c912d7dc4-00-l5lnc6lhje6p.picard.replit.dev';
+// Priority: EXPO_PUBLIC env var → app.json extra → fallback dev URL
+export const API_BASE =
+  process.env.EXPO_PUBLIC_API_BASE ||
+  (Constants.expoConfig?.extra?.apiBase as string | undefined) ||
+  'https://b21ea173-8d4d-4445-a8db-6d8c912d7dc4-00-l5lnc6lhje6p.picard.replit.dev';
 
 async function getAuthToken(): Promise<string | null> {
   return AsyncStorage.getItem('auth_token');
