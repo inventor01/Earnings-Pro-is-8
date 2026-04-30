@@ -401,12 +401,11 @@ function GradBtn({
   );
 }
 
-function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
+function CalcPad({ amount, mode, onAmount, onMode }: {
   amount: string;
   mode: 'add' | 'subtract';
   onAmount: (v: string) => void;
   onMode: (m: 'add' | 'subtract') => void;
-  onNext: () => void;
 }) {
   const holdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isHeld, setIsHeld] = useState(false);
@@ -545,38 +544,6 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
               )}
             </View>
           ))}
-
-          {/* Next Step — full width, matches the sticky "Add Entry" button:
-              yellow PRIMARY bg lives on the wrapper View so it always renders,
-              even if Pressable's style-as-function gets stale. Pressable handles
-              press feedback only. */}
-          <View style={{
-            overflow: 'hidden',
-            marginTop: 4,
-            marginHorizontal: -18,
-            marginBottom: -18,
-            borderBottomLeftRadius: 16,
-            borderBottomRightRadius: 16,
-            backgroundColor: PRIMARY,
-            width: undefined,
-          }}>
-            <Pressable
-              onPress={() => { hTapMed(); onNext(); }}
-              android_ripple={{ color: 'rgba(0,0,0,0.15)' }}
-              style={({ pressed }) => ({
-                width: '100%',
-                paddingVertical: 28,
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: pressed ? 0.85 : 1,
-                transform: [{ scale: pressed ? 0.97 : 1 }],
-              })}
-            >
-              <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>
-                Next Step →
-              </Text>
-            </Pressable>
-          </View>
         </LinearGradient>
       </View>
     </View>
@@ -688,7 +655,7 @@ function FormInput({
 
 function DetailsForm({
   isExp, amount, entryType, setEntryType, app, setApp, category, setCategory,
-  miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount, onSave, saving,
+  miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
 }: {
   isExp: boolean;
   amount: string;
@@ -705,8 +672,6 @@ function DetailsForm({
   note: string;
   setNote: (s: string) => void;
   onEditAmount: () => void;
-  onSave: () => void;
-  saving: boolean;
 }) {
   return (
     <View style={{ gap: 14 }}>
@@ -844,37 +809,6 @@ function DetailsForm({
           </View>
         </LinearGradient>
       </View>
-
-      {/* Save button — full width, matches sticky "Add Entry" button.
-          Yellow PRIMARY bg lives on the wrapper View so it always renders. */}
-      <View style={{
-        marginHorizontal: -16,
-        backgroundColor: PRIMARY,
-        shadowColor: '#000',
-        shadowOpacity: 0.12,
-        shadowRadius: 6,
-        shadowOffset: { width: 0, height: 3 },
-        elevation: 3,
-      }}>
-        <Pressable
-          onPress={onSave}
-          disabled={saving}
-          android_ripple={{ color: 'rgba(0,0,0,0.15)' }}
-          style={({ pressed }) => ({
-            width: '100%',
-            paddingVertical: 28,
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: pressed ? 0.85 : 1,
-            transform: [{ scale: pressed ? 0.97 : 1 }],
-          })}
-        >
-          {saving
-            ? <ActivityIndicator color="#000" />
-            : <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>💾 Save Entry</Text>
-          }
-        </Pressable>
-      </View>
     </View>
   );
 }
@@ -975,18 +909,17 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
             </View>
           </Pressable>
         </View>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+          keyboardShouldPersistTaps="handled"
+        >
           {step === 'calc' ? (
             <CalcPad
               amount={amount}
               mode={mode}
               onAmount={setAmount}
               onMode={setMode}
-              onNext={() => {
-                // Carry the calculator's Revenue/Expense choice into the details form
-                setEntryType(mode === 'subtract' ? 'EXPENSE' : 'ORDER');
-                setStep('details');
-              }}
             />
           ) : (
             <DetailsForm
@@ -1005,11 +938,57 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
               note={note}
               setNote={setNote}
               onEditAmount={() => setStep('calc')}
-              onSave={handleSave}
-              saving={mutation.isPending}
             />
           )}
         </ScrollView>
+
+        {/* ── Bottom-pinned action button ─────────────────────────────────────
+            Lives outside both forms so it's flush against the bottom edge of
+            the modal (same treatment as the dashboard's "+ Add Entry" sticky
+            bar). Behavior swaps based on which step you're on. */}
+        <View
+          style={{
+            backgroundColor: PRIMARY,
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 12,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.12,
+            shadowRadius: 8,
+            elevation: 12,
+          }}
+        >
+          <Pressable
+            onPress={() => {
+              hTapMed();
+              if (step === 'calc') {
+                // Carry the calculator's Revenue/Expense choice into details
+                setEntryType(mode === 'subtract' ? 'EXPENSE' : 'ORDER');
+                setStep('details');
+              } else {
+                handleSave();
+              }
+            }}
+            disabled={mutation.isPending}
+            android_ripple={{ color: 'rgba(0,0,0,0.15)' }}
+            style={({ pressed }) => ({
+              width: '100%',
+              paddingVertical: 24,
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: pressed ? 0.85 : 1,
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            })}
+          >
+            {step === 'details' && mutation.isPending
+              ? <ActivityIndicator color="#000" />
+              : (
+                <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>
+                  {step === 'calc' ? 'Next Step →' : '💾 Save Entry'}
+                </Text>
+              )
+            }
+          </Pressable>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
