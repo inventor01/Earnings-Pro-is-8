@@ -610,15 +610,26 @@ function PillSelect<T extends string>({
               paddingHorizontal: 14,
               paddingVertical: 11,
               borderRadius: 12,
-              backgroundColor: selected ? accentColor : '#ffffff',
+              // Active = bright accent w/ dark border + drop shadow that lifts it.
+              // Inactive = solid muted gray chip w/ darker border so it reads as
+              // a real disabled button, not invisible white-on-white.
+              backgroundColor: selected ? accentColor : '#e5e7eb',
               borderWidth: 2,
-              borderColor: selected ? accentColor : '#d1d5db',
+              borderColor: selected ? '#0f172a' : '#9ca3af',
               opacity: pressed ? 0.85 : 1,
+              transform: [{ scale: selected ? 1 : 0.98 }],
+              ...(selected ? {
+                shadowColor: '#000',
+                shadowOpacity: 0.18,
+                shadowRadius: 6,
+                shadowOffset: { width: 0, height: 3 },
+                elevation: 3,
+              } : null),
             })}
           >
             <Text style={{
-              color: selected ? '#0f172a' : '#374151',
-              fontWeight: '700',
+              color: selected ? '#0f172a' : '#6b7280',
+              fontWeight: selected ? '900' : '600',
               fontSize: 14,
             }}>
               {o.label}
