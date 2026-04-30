@@ -176,14 +176,15 @@ function useMilestoneGlow(profit: number) {
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month';
+type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth';
 
 const PERIODS: { key: Period; label: string; tf: TimeframeType }[] = [
-  { key: 'today',     label: 'Today',    tf: 'TODAY' },
-  { key: 'yesterday', label: 'Yest.',    tf: 'YESTERDAY' },
-  { key: 'week',      label: 'Week',     tf: 'THIS_WEEK' },
-  { key: 'last7',     label: '7 Days',   tf: 'LAST_7_DAYS' },
-  { key: 'month',     label: 'Month',    tf: 'THIS_MONTH' },
+  { key: 'today',     label: 'Today',      tf: 'TODAY' },
+  { key: 'yesterday', label: 'Yesterday',  tf: 'YESTERDAY' },
+  { key: 'week',      label: 'This Week',  tf: 'THIS_WEEK' },
+  { key: 'last7',     label: 'Last 7 Days', tf: 'LAST_7_DAYS' },
+  { key: 'month',     label: 'This Month', tf: 'THIS_MONTH' },
+  { key: 'lastMonth', label: 'Last Month', tf: 'LAST_MONTH' },
 ];
 
 const PERIOD_LABELS: Record<Period, string> = {
@@ -192,6 +193,7 @@ const PERIOD_LABELS: Record<Period, string> = {
   week:      "This Week's",
   last7:     'Last 7 Days',
   month:     "This Month's",
+  lastMonth: "Last Month's",
 };
 
 const APPS: { key: AppType; label: string; color: string }[] = [
@@ -1171,6 +1173,8 @@ export default function DashboardScreen() {
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
   const [showAllEntries, setShowAllEntries] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const tf = PERIODS.find(p => p.key === period)!.tf;
 
@@ -1227,7 +1231,26 @@ export default function DashboardScreen() {
   const avgOrder  = n(rollup?.average_order_value);
   const rawGoal   = goal?.target_profit;
   const goalTarget = (rawGoal !== undefined && rawGoal !== null) ? Number(rawGoal) || null : null;
-  const displayedEntries = showAllEntries ? entries : entries.slice(0, 8);
+  // Filter entries by search query (matches app label, type, category, note, amount)
+  const q = searchQuery.trim().toLowerCase();
+  const isSearching = q !== '';
+  const filteredEntries = !isSearching
+    ? entries
+    : entries.filter(e => {
+        const amt = Number(e.amount);
+        const fields = [
+          e.app,
+          APP_LABELS[e.app] ?? '',
+          e.type,
+          e.category ?? '',
+          e.note ?? '',
+          String(e.amount),
+          amt.toFixed(2),
+          `$${amt.toFixed(2)}`,
+        ].join(' ').toLowerCase();
+        return fields.includes(q);
+      });
+  const displayedEntries = showAllEntries ? filteredEntries : filteredEntries.slice(0, 8);
   const orderCount = entries.filter(e => Number(e.amount) > 0).length;
 
   const isProfit   = profit >= 0;
@@ -1288,6 +1311,27 @@ export default function DashboardScreen() {
           </View>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <PressScale
+              onPress={() => {
+                hTap();
+                setShowSearchBar(s => {
+                  if (s) { setSearchQuery(''); }
+                  return !s;
+                });
+              }}
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                backgroundColor: showSearchBar ? PRIMARY : BG,
+                borderWidth: 1, borderColor: showSearchBar ? PRIMARY : BORDER,
+                alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <Ionicons
+                name={showSearchBar ? 'close' : 'search'}
+                size={17}
+                color={showSearchBar ? '#000' : MUTED}
+              />
+            </PressScale>
+            <PressScale
               onPress={() => { hTap(); onRefresh(); }}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
@@ -1322,7 +1366,7 @@ export default function DashboardScreen() {
                   ].filter(Boolean) as ViewStyle[]}
                 >
                   <Text style={{
-                    color: active ? '#fff' : MUTED,
+                    color: active ? '#000' : MUTED,
                     fontSize: 13, fontWeight: active ? '800' : '500',
                   }}>
                     {p.label}
@@ -1332,6 +1376,66 @@ export default function DashboardScreen() {
             })}
           </ScrollView>
         </View>
+
+        {/* ── Search Bar (collapsible) ──────────────────────────────────────── */}
+        {showSearchBar && (
+          <View style={{
+            backgroundColor: SURFACE,
+            borderBottomWidth: 1,
+            borderBottomColor: BORDER,
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+          }}>
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: BG,
+              borderWidth: 1,
+              borderColor: PRIMARY,
+              borderRadius: 12,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              gap: 10,
+              ...neonGlow(PRIMARY, 6, 0.25),
+            }}>
+              <Ionicons name="search" size={18} color={PRIMARY} />
+              <TextInput
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search by app, type, category, note, or amount…"
+                placeholderTextColor={MUTED}
+                autoFocus
+                returnKeyType="search"
+                style={{
+                  flex: 1,
+                  color: TEXT,
+                  fontSize: 14,
+                  fontWeight: '600',
+                  paddingVertical: 0,
+                }}
+              />
+              {searchQuery.length > 0 && (
+                <PressScale
+                  onPress={() => { hTap(); setSearchQuery(''); }}
+                  style={{ padding: 2 }}
+                >
+                  <Ionicons name="close-circle" size={18} color={MUTED} />
+                </PressScale>
+              )}
+            </View>
+            {q !== '' && (
+              <Text style={{
+                color: MUTED,
+                fontSize: 11,
+                fontWeight: '600',
+                marginTop: 8,
+                marginLeft: 4,
+              }}>
+                {filteredEntries.length} match{filteredEntries.length === 1 ? '' : 'es'}
+              </Text>
+            )}
+          </View>
+        )}
 
         <View style={{ paddingHorizontal: 16, paddingTop: 14, gap: 12 }}>
 
@@ -1549,7 +1653,7 @@ export default function DashboardScreen() {
                     paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: DIVIDER,
                   }}>
                     <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
-                      Entries ({entries.length})
+                      {isSearching ? `Results (${filteredEntries.length})` : `Entries (${entries.length})`}
                     </Text>
                     <View style={{ flexDirection: 'row', gap: 6 }}>
                       <View style={{ backgroundColor: GREEN_LT, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
@@ -1560,25 +1664,39 @@ export default function DashboardScreen() {
                       </View>
                     </View>
                   </View>
-                  {displayedEntries.map(e => (
-                    <EntryRow
-                      key={e.id}
-                      entry={e}
-                      onDelete={(id) => {
-                        Alert.alert('Delete Entry', 'Remove this entry?', [
-                          { text: 'Cancel', style: 'cancel' },
-                          { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(id) },
-                        ]);
-                      }}
-                    />
-                  ))}
-                  {entries.length > 8 && (
+                  {filteredEntries.length === 0 ? (
+                    <View style={{ paddingVertical: 28, alignItems: 'center', gap: 8 }}>
+                      <Text style={{ fontSize: 28 }}>🔍</Text>
+                      <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700' }}>
+                        No matches for "{searchQuery.trim()}"
+                      </Text>
+                      <Text style={{ color: MUTED, fontSize: 12 }}>
+                        Try a different search term.
+                      </Text>
+                    </View>
+                  ) : (
+                    displayedEntries.map(e => (
+                      <EntryRow
+                        key={e.id}
+                        entry={e}
+                        onDelete={(id) => {
+                          Alert.alert('Delete Entry', 'Remove this entry?', [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(id) },
+                          ]);
+                        }}
+                      />
+                    ))
+                  )}
+                  {filteredEntries.length > 8 && (
                     <Pressable
                       onPress={() => setShowAllEntries(s => !s)}
                       style={{ padding: 14, alignItems: 'center', borderTopWidth: 1, borderTopColor: DIVIDER }}
                     >
                       <Text style={{ color: PRIMARY, fontSize: 13, fontWeight: '700' }}>
-                        {showAllEntries ? '▲ Show less' : `▼ Show all ${entries.length} entries`}
+                        {showAllEntries
+                          ? '▲ Show less'
+                          : `▼ Show all ${filteredEntries.length} ${isSearching ? 'results' : 'entries'}`}
                       </Text>
                     </Pressable>
                   )}
