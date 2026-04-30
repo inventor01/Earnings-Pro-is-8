@@ -874,6 +874,8 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
           backgroundColor: CALC.HEADER_BG,
           paddingTop: insets.top / 2,
           paddingBottom: insets.top / 4,
+          paddingLeft: 28,
+          paddingRight: 28,
         }}>
           <Pressable
             onPress={() => {
@@ -883,9 +885,9 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
             }}
             android_ripple={{ color: 'rgba(0,0,0,0.08)' }}
             style={({ pressed }) => ({
-              paddingLeft: 40,
-              paddingRight: 28,
+              alignSelf: 'flex-start',
               paddingVertical: 4,
+              paddingRight: 12,
               opacity: pressed ? 0.85 : 1,
             })}
           >
