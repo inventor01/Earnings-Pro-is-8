@@ -1321,10 +1321,40 @@ export default function DashboardScreen() {
                 neonGlow(heroColor, 14, 0.22),
                 profitPopStyle,
               ]}>
-                {/* Label (swaps with metric) */}
-                <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>
-                  {heroLabel}
-                </Text>
+                {/* Title row: label on the left, tappable alternate metric inline on the right */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                    {heroLabel}
+                  </Text>
+
+                  {/* Tappable secondary metric — tap to swap with the big number */}
+                  <PressScale
+                    onPress={() => { hTap(); setHeroMetric(isProfitHero ? 'revenue' : 'profit'); }}
+                    scale={0.96}
+                    hitSlop={8}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                      paddingVertical: 4,
+                      paddingHorizontal: 8,
+                      borderRadius: 8,
+                      backgroundColor: BG,
+                      borderWidth: 1,
+                      borderColor: BORDER,
+                    }}
+                  >
+                    <Text style={{ color: MUTED, fontSize: 13, fontWeight: '600' }}>
+                      {altLabel}:
+                    </Text>
+                    <AnimatedNumber
+                      value={altValue}
+                      format={(n) => (n < 0 ? '-' : '') + '$' + Math.abs(n).toFixed(2)}
+                      style={{ color: TEXT, fontSize: 14, fontWeight: '800' }}
+                    />
+                    <Ionicons name="swap-horizontal" size={14} color={LABEL} />
+                  </PressScale>
+                </View>
 
                 {/* Big number with count-up */}
                 <AnimatedNumber
@@ -1332,36 +1362,6 @@ export default function DashboardScreen() {
                   format={(n) => (n < 0 ? '-' : '') + '$' + Math.abs(n).toFixed(2)}
                   style={{ color: heroColor, fontSize: 48, fontWeight: '900', lineHeight: 56, marginTop: 4 }}
                 />
-
-                {/* Tappable secondary metric — tap to swap with the big number */}
-                <PressScale
-                  onPress={() => { hTap(); setHeroMetric(isProfitHero ? 'revenue' : 'profit'); }}
-                  scale={0.96}
-                  hitSlop={8}
-                  style={{
-                    alignSelf: 'flex-start',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 6,
-                    marginTop: 6,
-                    paddingVertical: 4,
-                    paddingHorizontal: 8,
-                    borderRadius: 8,
-                    backgroundColor: BG,
-                    borderWidth: 1,
-                    borderColor: BORDER,
-                  }}
-                >
-                  <Text style={{ color: MUTED, fontSize: 13, fontWeight: '600' }}>
-                    {altLabel}:
-                  </Text>
-                  <AnimatedNumber
-                    value={altValue}
-                    format={(n) => (n < 0 ? '-' : '') + '$' + Math.abs(n).toFixed(2)}
-                    style={{ color: TEXT, fontSize: 14, fontWeight: '800' }}
-                  />
-                  <Ionicons name="swap-horizontal" size={14} color={LABEL} />
-                </PressScale>
 
                 {/* Date range row */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
