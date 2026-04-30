@@ -256,20 +256,20 @@ export default function LoginScreen() {
             }
           </Pressable>
 
-          {/* Demo Button — full-width, solid green (matches Sign In as a stacked pair) */}
+          {/* Demo Button — full-width, solid yellow (matches Sign In as a stacked pair) */}
           <Pressable
             onPress={handleDemo}
             disabled={demoLoading}
             style={({ pressed }) => ({
               width: '100%',
-              backgroundColor: GREEN,
+              backgroundColor: ACCENT,
               borderRadius: 14,
               paddingVertical: 16,
               alignItems: 'center',
               justifyContent: 'center',
               opacity: pressed ? 0.85 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
-              shadowColor: GREEN,
+              shadowColor: ACCENT,
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.45,
               shadowRadius: 10,
