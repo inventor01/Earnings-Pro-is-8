@@ -1378,9 +1378,9 @@ export default function DashboardScreen() {
                 {/* Three stats with count-up */}
                 <View style={{ flexDirection: 'row' }}>
                   {[
-                    { label: 'REVENUE',   numeric: revenue,    format: (n: number) => `$${Math.round(n)}` },
-                    { label: 'ORDERS',    numeric: orderCount, format: (n: number) => `${Math.round(n)}` },
-                    { label: 'AVG ORDER', numeric: avgOrder,   format: (n: number) => `$${Math.round(n)}` },
+                    { label: 'EXPENSES',  numeric: Math.abs(expenses), format: (n: number) => `$${Math.round(n)}` },
+                    { label: 'ORDERS',    numeric: orderCount,         format: (n: number) => `${Math.round(n)}` },
+                    { label: 'AVG ORDER', numeric: avgOrder,           format: (n: number) => `$${Math.round(n)}` },
                   ].map((stat, i) => (
                     <View
                       key={stat.label}
@@ -1406,11 +1406,14 @@ export default function DashboardScreen() {
 
               </Animated.View>
 
-              {/* ── Secondary Stat Cards: $/Mile, Miles, Expenses (centered row) ── */}
+              {/* ── Secondary Stat Cards: $/Mile, Miles (centered row) ──────── */}
               <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center' }}>
-                <StatCard label="$/Mile"   icon="📍"                value={`$${perMile.toFixed(2)}`}            numericValue={perMile}             format={(n) => `$${n.toFixed(2)}`} />
-                <StatCard label="Miles"    icon="🚗"                value={miles.toFixed(1)}                    numericValue={miles}               format={(n) => n.toFixed(1)} />
-                <StatCard label="Expenses" icon="💸" accent={RED}   value={`$${Math.abs(expenses).toFixed(2)}`} numericValue={Math.abs(expenses)}  format={(n) => `$${n.toFixed(2)}`} />
+                <View style={{ flex: 1, maxWidth: '48%' }}>
+                  <StatCard label="$/Mile" icon="📍" value={`$${perMile.toFixed(2)}`} numericValue={perMile} format={(n) => `$${n.toFixed(2)}`} />
+                </View>
+                <View style={{ flex: 1, maxWidth: '48%' }}>
+                  <StatCard label="Miles"  icon="🚗" value={miles.toFixed(1)}         numericValue={miles}   format={(n) => n.toFixed(1)} />
+                </View>
               </View>
 
               {/* ── AI Suggestion (collapsible) ─────────────────────────────── */}
