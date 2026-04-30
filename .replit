@@ -23,6 +23,10 @@ args = "Frontend"
 task = "workflow.run"
 args = "Expo Mobile"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Landing Site"
+
 [[workflows.workflow]]
 name = "Backend API"
 author = "agent"
@@ -58,9 +62,25 @@ outputType = "console"
 task = "shell.exec"
 args = "cd earnings-ninja-expo && npx expo start --tunnel"
 
+[[workflows.workflow]]
+name = "Landing Site"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd landing && npm run dev"
+waitForPort = 5173
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 5173
+externalPort = 5173
 
 [[ports]]
 localPort = 8000
