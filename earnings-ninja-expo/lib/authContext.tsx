@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, User } from './api';
+import { getToken, setToken as persistToken, clearToken } from './tokenStorage';
 
 interface AuthContextType {
   token: string | null;
@@ -24,14 +24,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    AsyncStorage.getItem('auth_token').then(async (t) => {
+    getToken().then(async (t) => {
       if (t) {
         setToken(t);
         try {
           const u = await api.getMe();
           setUser(u);
         } catch {
-          await AsyncStorage.removeItem('auth_token');
+          await clearToken();
           setToken(null);
         }
       }
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (newToken: string) => {
-    await AsyncStorage.setItem('auth_token', newToken);
+    await persistToken(newToken);
     setToken(newToken);
     try {
       const u = await api.getMe();
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('auth_token');
+    await clearToken();
     setToken(null);
     setUser(null);
   };

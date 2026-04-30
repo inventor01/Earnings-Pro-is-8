@@ -21,6 +21,8 @@ import { useAuth } from '@/lib/authContext';
 import * as Haptics from 'expo-haptics';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
+import * as ImagePicker from 'expo-image-picker';
+import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 
 // Safe haptics — silently ignored on simulators / devices without haptic engine
 const hTap = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -28,28 +30,11 @@ const hTapMed = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).ca
 const hTapHeavy = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
 const hNotifyOk = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
-// ─── Colors ──────────────────────────────────────────────────────────────────
-const BG       = '#0a0a0a';   // page background (true black)
-const SURFACE  = '#111111';   // raised surface (cards, header)
-const CARD_BG  = '#1a1a1a';   // inset surface (input fields, etc.)
-const BORDER   = '#262626';
-const PRIMARY  = '#facc15';
-const PRI_LITE = '#2a2410';
-const PRI_DARK = '#ca8a04';
-const TEXT     = '#f1f5f9';
-const TEXT_MID = '#cbd5e1';
-const MUTED    = '#94a3b8';
-const LABEL    = '#64748b';
-const GREEN    = '#22c55e';
-const GREEN_LT = '#052e16';
-const RED      = '#ef4444';
-const RED_LT   = '#450a0a';
-const DIVIDER  = '#1f1f1f';
-
-// Keep legacy names used inside modals / CalcPad
-const ACCENT   = PRIMARY;
-const DIM      = LABEL;
-const CARD     = CARD_BG;
+// ─── Colors come from active Theme via useTheme() ────────────────────────────
+// Each component below destructures the palette at the top, e.g.
+//   const { BG, SURFACE, PRIMARY, ... } = useTheme();
+// Hooks like useMilestoneGlow / DashedLine read theme themselves so callers
+// don't need to forward palette values.
 
 // ─── Neon glow helper (mirrors Tailwind shadow-[0_0_Npx_color]) ──────────────
 const neonGlow = (color: string, radius: number = 16, opacity: number = 0.45): ViewStyle => ({
@@ -144,6 +129,7 @@ function usePopOnChange(value: number, intensity: number = 1.08) {
 
 // ─── Milestone glow on ninja logo ($50/$100/$150...) ─────────────────────────
 function useMilestoneGlow(profit: number) {
+  const { GREEN, PRIMARY } = useTheme();
   const milestone = Math.max(0, Math.floor(profit / 50));
   const glow = useSharedValue(0);
   const lastRef = useRef(0);
@@ -175,6 +161,103 @@ function useMilestoneGlow(profit: number) {
     shadowRadius: 8 + glow.value * 18,
     elevation: glow.value * 8,
   }));
+}
+
+// ─── Skeleton primitives ──────────────────────────────────────────────────────
+// Subtle looped opacity shimmer (0.45 → 1.0 → 0.45). Reanimated keeps this on
+// the UI thread so it stays smooth even when the rest of the JS thread is
+// busy boot-loading data.
+function SkeletonBox({
+  width, height, radius = 8, style,
+}: { width: number | `${number}%`; height: number; radius?: number; style?: ViewStyle }) {
+  const { CARD_BG, BORDER } = useTheme();
+  const shimmer = useSharedValue(0.5);
+  useEffect(() => {
+    shimmer.value = withRepeat(
+      withSequence(
+        withTiming(1.0, { duration: 750 }),
+        withTiming(0.45, { duration: 750 }),
+      ),
+      -1, false,
+    );
+  }, [shimmer]);
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: shimmer.value }));
+  return (
+    <Animated.View
+      style={[
+        {
+          width, height, borderRadius: radius,
+          backgroundColor: CARD_BG, borderWidth: 1, borderColor: BORDER,
+        },
+        animatedStyle,
+        style,
+      ]}
+    />
+  );
+}
+
+function DashboardSkeleton() {
+  const { SURFACE, BORDER } = useTheme();
+  return (
+    <View style={{ gap: 12 }}>
+      {/* Hero card mock */}
+      <View style={{
+        backgroundColor: SURFACE, borderRadius: 20, borderWidth: 1, borderColor: BORDER, padding: 20,
+      }}>
+        {/* title row: label left, alt-metric pill right */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <SkeletonBox width={60} height={12} radius={4} />
+          <SkeletonBox width={120} height={26} radius={8} />
+        </View>
+        {/* big number */}
+        <SkeletonBox width={'62%'} height={48} radius={10} style={{ marginTop: 10 }} />
+        {/* date row */}
+        <SkeletonBox width={'45%'} height={14} radius={4} style={{ marginTop: 10, alignSelf: 'center' }} />
+        {/* dashed divider stand-in */}
+        <View style={{ height: 1, backgroundColor: BORDER, marginTop: 14, opacity: 0.5 }} />
+        {/* three inline stats */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14, gap: 12 }}>
+          {[0, 1, 2].map(i => (
+            <View key={i} style={{ flex: 1, gap: 6 }}>
+              <SkeletonBox width={'70%'} height={10} radius={3} />
+              <SkeletonBox width={'85%'} height={20} radius={6} />
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* KPI strip: $/Mile + Miles */}
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        {[0, 1].map(i => (
+          <View key={i} style={{
+            flex: 1, backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER,
+            padding: 14, gap: 8,
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <SkeletonBox width={50} height={10} radius={3} />
+              <SkeletonBox width={20} height={20} radius={10} />
+            </View>
+            <SkeletonBox width={'60%'} height={26} radius={6} style={{ marginTop: 4 }} />
+          </View>
+        ))}
+      </View>
+
+      {/* Goals section header + bar */}
+      <View style={{ marginTop: 4, gap: 8 }}>
+        <SkeletonBox width={50} height={10} radius={3} />
+        <View style={{
+          backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 14, gap: 10,
+        }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <SkeletonBox width={120} height={14} radius={4} />
+            <SkeletonBox width={70} height={14} radius={4} />
+          </View>
+          <SkeletonBox width={'100%'} height={10} radius={5} />
+        </View>
+      </View>
+
+    </View>
+  );
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -221,7 +304,9 @@ const EXPENSE_CATS: ExpenseCategory[] = [
 ];
 
 // ─── Dashed Sparkline ─────────────────────────────────────────────────────────
-function DashedLine({ color = PRIMARY }: { color?: string }) {
+function DashedLine({ color }: { color?: string }) {
+  const { PRIMARY } = useTheme();
+  const c = color ?? PRIMARY;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 60 }}>
       {Array.from({ length: 28 }).map((_, i) => (
@@ -230,7 +315,7 @@ function DashedLine({ color = PRIMARY }: { color?: string }) {
           style={{
             flex: 1,
             height: 1.5,
-            backgroundColor: i % 2 === 0 ? color : 'transparent',
+            backgroundColor: i % 2 === 0 ? c : 'transparent',
             opacity: 0.55,
           }}
         />
@@ -241,7 +326,7 @@ function DashedLine({ color = PRIMARY }: { color?: string }) {
 
 // ─── Small Stat Card (subtle yellow neon outline + animated value) ──────────
 function StatCard({
-  label, value, icon, numericValue, format, accent = PRIMARY,
+  label, value, icon, numericValue, format, accent,
 }: {
   label: string;
   value: string;
@@ -250,6 +335,8 @@ function StatCard({
   format?: (n: number) => string;
   accent?: string;
 }) {
+  const { SURFACE, TEXT, LABEL, PRIMARY } = useTheme();
+  const acc = accent ?? PRIMARY;
   return (
     <View style={[
       {
@@ -257,10 +344,10 @@ function StatCard({
         backgroundColor: SURFACE,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: accent + '22',
+        borderColor: acc + '22',
         padding: 12,
       },
-      neonGlow(accent, 6, 0.10),
+      neonGlow(acc, 6, 0.10),
     ]}>
       <Text style={{ fontSize: 18, marginBottom: 4 }}>{icon}</Text>
       {numericValue !== undefined && format ? (
@@ -281,6 +368,7 @@ function StatCard({
 
 // ─── Entry Row ────────────────────────────────────────────────────────────────
 function EntryRow({ entry, onDelete }: { entry: Entry; onDelete: (id: number) => void }) {
+  const { TEXT, LABEL, MUTED, RED, GREEN, DIVIDER } = useTheme();
   const isExpense = entry.amount < 0;
   const appColor  = APP_COLORS[entry.app] || MUTED;
   const time      = new Date(entry.timestamp).toLocaleTimeString('en-US', {
@@ -669,6 +757,7 @@ function FormInput({
 function DetailsForm({
   isExp, amount, entryType, setEntryType, app, setApp, category, setCategory,
   miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
+  receiptUri, onPickReceipt, onRemoveReceipt,
 }: {
   isExp: boolean;
   amount: string;
@@ -685,6 +774,9 @@ function DetailsForm({
   note: string;
   setNote: (s: string) => void;
   onEditAmount: () => void;
+  receiptUri: string | null;
+  onPickReceipt: () => void;
+  onRemoveReceipt: () => void;
 }) {
   return (
     <View style={{ gap: 14 }}>
@@ -786,6 +878,62 @@ function DetailsForm({
             </View>
           )}
 
+          {/* Receipt photo (only for EXPENSE) — uses CALC palette since this
+              modal stays on the white "Add Entry" sheet regardless of theme. */}
+          {entryType === 'EXPENSE' && (
+            <View>
+              <FieldLabel>🧾 Receipt (optional)</FieldLabel>
+              {receiptUri ? (
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 12,
+                  borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
+                  padding: 10, backgroundColor: '#f9fafb',
+                }}>
+                  <Image
+                    source={{ uri: receiptUri }}
+                    style={{ width: 64, height: 64, borderRadius: 8, backgroundColor: '#e5e7eb' }}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
+                      Receipt attached
+                    </Text>
+                    <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>
+                      Tap remove to clear
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={onRemoveReceipt}
+                    style={({ pressed }) => ({
+                      backgroundColor: '#fee2e2',
+                      borderWidth: 1, borderColor: '#fca5a5',
+                      borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+                      opacity: pressed ? 0.85 : 1,
+                    })}
+                  >
+                    <Text style={{ color: '#b91c1c', fontWeight: '700', fontSize: 12 }}>Remove</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable
+                  onPress={onPickReceipt}
+                  style={({ pressed }) => ({
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                    gap: 8,
+                    borderWidth: 1.5, borderColor: '#cbd5e1', borderStyle: 'dashed',
+                    borderRadius: 12, paddingVertical: 14, backgroundColor: '#f9fafb',
+                    opacity: pressed ? 0.85 : 1,
+                    transform: [{ scale: pressed ? 0.98 : 1 }],
+                  })}
+                >
+                  <Ionicons name="camera" size={18} color="#475569" />
+                  <Text style={{ color: '#475569', fontSize: 14, fontWeight: '700' }}>
+                    Attach Receipt Photo
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+
           {/* Miles & Minutes — hidden for EXPENSE entries */}
           {entryType !== 'EXPENSE' && (
             <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -828,6 +976,7 @@ function DetailsForm({
 
 // ─── Add Entry Modal ───────────────────────────────────────────────────────────
 function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { PRIMARY, ON_PRIMARY } = useTheme();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const [step, setStep]           = useState<'calc' | 'details'>('calc');
@@ -839,11 +988,67 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
   const [miles, setMiles]         = useState('');
   const [minutes, setMinutes]     = useState('');
   const [note, setNote]           = useState('');
+  const [receiptUri, setReceiptUri]       = useState<string | null>(null);
+  const [receiptDataUri, setReceiptDataUri] = useState<string | null>(null);
 
   const reset = () => {
     setStep('calc'); setAmount('0'); setMode('add');
     setEntryType('ORDER'); setApp('DOORDASH'); setCategory('GAS');
     setMiles(''); setMinutes(''); setNote('');
+    setReceiptUri(null); setReceiptDataUri(null);
+  };
+
+  // Image-picker helpers — request permissions, then offer Camera vs Library
+  // via Alert (matches iOS conventions). We store the local `uri` for the
+  // thumbnail and the `data:image/jpeg;base64,…` payload for the backend
+  // (web client persists receipts the same way — no separate upload endpoint).
+  const handleAssetResult = (asset: ImagePicker.ImagePickerAsset | undefined) => {
+    if (!asset) return;
+    setReceiptUri(asset.uri);
+    if (asset.base64) {
+      const mime = asset.mimeType || 'image/jpeg';
+      setReceiptDataUri(`data:${mime};base64,${asset.base64}`);
+    } else {
+      setReceiptDataUri(null);
+    }
+  };
+  const pickFromCamera = async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Camera access denied', 'Enable camera access in Settings to take receipt photos.');
+      return;
+    }
+    const res = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.6, base64: true, allowsEditing: false,
+    });
+    if (!res.canceled) handleAssetResult(res.assets[0]);
+  };
+  const pickFromLibrary = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Photo access denied', 'Enable photo access in Settings to attach a receipt.');
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.6, base64: true, allowsEditing: false,
+    });
+    if (!res.canceled) handleAssetResult(res.assets[0]);
+  };
+  const onPickReceipt = () => {
+    Alert.alert(
+      'Attach Receipt',
+      'Choose a source',
+      [
+        { text: 'Take Photo',   onPress: pickFromCamera },
+        { text: 'Choose from Library', onPress: pickFromLibrary },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
+  };
+  const onRemoveReceipt = () => {
+    setReceiptUri(null); setReceiptDataUri(null);
   };
 
   const mutation = useMutation({
@@ -870,6 +1075,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
       duration_minutes: minutes ? parseInt(minutes) : undefined,
       category: entryType === 'EXPENSE' ? category : undefined,
       note: note || undefined,
+      receipt_url: entryType === 'EXPENSE' && receiptDataUri ? receiptDataUri : undefined,
     });
   };
 
@@ -954,6 +1160,9 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
               note={note}
               setNote={setNote}
               onEditAmount={() => setStep('calc')}
+              receiptUri={receiptUri}
+              onPickReceipt={onPickReceipt}
+              onRemoveReceipt={onRemoveReceipt}
             />
           )}
         </ScrollView>
@@ -1008,11 +1217,11 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 })}
               >
                 {step === 'details' && mutation.isPending
-                  ? <ActivityIndicator color="#000" />
+                  ? <ActivityIndicator color={ON_PRIMARY} />
                   : (
                     <Text
                       style={{
-                        color: '#000',
+                        color: ON_PRIMARY,
                         fontWeight: '900',
                         fontSize: 22,
                         letterSpacing: 0.3,
@@ -1036,6 +1245,8 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
 // ─── Settings Modal ────────────────────────────────────────────────────────────
 function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { BG, SURFACE, BORDER, PRIMARY, PRI_LITE, TEXT, MUTED, LABEL, RED, RED_LT, ON_PRIMARY } = useTheme();
+  const { themeName, setThemeName } = useThemeControls();
   const { logout, user } = useAuth();
   const queryClient = useQueryClient();
   const [editingGoal, setEditingGoal] = useState<TimeframeType | null>(null);
@@ -1142,7 +1353,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                     }}
                     style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Text style={{ color: '#000', fontWeight: '800' }}>Save</Text>
+                    <Text style={{ color: ON_PRIMARY, fontWeight: '800' }}>Save</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => setEditingGoal(null)}
@@ -1168,6 +1379,54 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             </View>
           );
         })}
+
+        {/* Theme switcher */}
+        <Text style={{
+          color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
+          letterSpacing: 1.5, marginTop: 24, marginBottom: 12,
+        }}>
+          🎨 Appearance
+        </Text>
+        {(Object.keys(THEMES) as ThemeName[]).map((name) => {
+          const th = THEMES[name];
+          const active = themeName === name;
+          return (
+            <Pressable
+              key={name}
+              onPress={() => { hTap(); setThemeName(name); }}
+              style={{
+                backgroundColor: SURFACE,
+                borderRadius: 14,
+                borderWidth: active ? 2 : 1,
+                borderColor: active ? PRIMARY : BORDER,
+                padding: 14,
+                marginBottom: 10,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              {/* Color swatch row showing the theme's surface + accent + green/red */}
+              <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: BORDER }}>
+                <View style={{ width: 18, height: 36, backgroundColor: th.BG }} />
+                <View style={{ width: 18, height: 36, backgroundColor: th.SURFACE }} />
+                <View style={{ width: 18, height: 36, backgroundColor: th.PRIMARY }} />
+                <View style={{ width: 18, height: 36, backgroundColor: th.GREEN }} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>{th.label}</Text>
+                <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>
+                  {name === 'darkNeon' ? 'True-black with neon glow' :
+                   name === 'simpleLight' ? 'Clean white with blue accents' :
+                   'High-contrast black & white'}
+                </Text>
+              </View>
+              {active && (
+                <Ionicons name="checkmark-circle" size={22} color={PRIMARY} />
+              )}
+            </Pressable>
+          );
+        })}
       </ScrollView>
     </Modal>
   );
@@ -1175,6 +1434,10 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
 // ─── Dashboard Screen ─────────────────────────────────────────────────────────
 export default function DashboardScreen() {
+  const {
+    BG, SURFACE, CARD_BG, CARD, BORDER, PRIMARY, ACCENT, PRI_LITE, PRI_DARK,
+    TEXT, TEXT_MID, MUTED, LABEL, DIM, GREEN, GREEN_LT, RED, RED_LT, DIVIDER, ON_PRIMARY,
+  } = useTheme();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<Period>('today');
@@ -1405,7 +1668,7 @@ export default function DashboardScreen() {
               <Ionicons
                 name={showSearchBar ? 'close' : 'search'}
                 size={17}
-                color={showSearchBar ? '#000' : MUTED}
+                color={showSearchBar ? ON_PRIMARY : MUTED}
               />
             </PressScale>
             <PressScale
@@ -1449,7 +1712,7 @@ export default function DashboardScreen() {
                   ].filter(Boolean) as ViewStyle[]}
                 >
                   <Text style={{
-                    color: active ? '#fff' : MUTED,
+                    color: active ? ON_PRIMARY : MUTED,
                     fontSize: 13, fontWeight: active ? '800' : '500',
                   }}>
                     {p.label}
@@ -1475,10 +1738,10 @@ export default function DashboardScreen() {
                 <Ionicons
                   name="calendar"
                   size={12}
-                  color={period === 'custom' ? '#fff' : MUTED}
+                  color={period === 'custom' ? ON_PRIMARY : MUTED}
                 />
                 <Text style={{
-                  color: period === 'custom' ? '#fff' : MUTED,
+                  color: period === 'custom' ? ON_PRIMARY : MUTED,
                   fontSize: 13, fontWeight: period === 'custom' ? '800' : '500',
                 }}>
                   {customRange.from === customRange.to
@@ -1498,7 +1761,7 @@ export default function DashboardScreen() {
                   <Ionicons
                     name="close"
                     size={13}
-                    color={period === 'custom' ? '#fff' : MUTED}
+                    color={period === 'custom' ? ON_PRIMARY : MUTED}
                   />
                 </Pressable>
               </PressScale>
@@ -1569,9 +1832,7 @@ export default function DashboardScreen() {
         <View style={{ paddingHorizontal: 16, paddingTop: 14, gap: 12 }}>
 
           {rollupLoading ? (
-            <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-              <ActivityIndicator color={PRIMARY} size="large" />
-            </View>
+            <DashboardSkeleton />
           ) : (
             <>
               {/* ── Main Hero Card with neon glow (toggle Profit↔Revenue) ──── */}
@@ -1732,7 +1993,7 @@ export default function DashboardScreen() {
                       }}
                       style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <Text style={{ color: '#000', fontWeight: '800' }}>Save</Text>
+                      <Text style={{ color: ON_PRIMARY, fontWeight: '800' }}>Save</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => setEditingGoal(false)}
@@ -1900,7 +2161,7 @@ export default function DashboardScreen() {
             transform: [{ scale: pressed ? 0.96 : 1 }],
           })}
         >
-          <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>
+          <Text style={{ color: ON_PRIMARY, fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>
             + Add Entry
           </Text>
         </Pressable>

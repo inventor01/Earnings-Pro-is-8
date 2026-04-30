@@ -51,7 +51,8 @@
           "photosPermission": "Earnings Ninja needs photo library access to attach receipt images to your expenses.",
           "cameraPermission": "Earnings Ninja needs camera access to photograph receipts for expense tracking."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

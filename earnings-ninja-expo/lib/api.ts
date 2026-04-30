@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import { getToken } from './tokenStorage';
 
 // Priority: EXPO_PUBLIC env var → app.json extra → fallback dev URL
 export const API_BASE =
@@ -8,7 +8,7 @@ export const API_BASE =
   'https://b21ea173-8d4d-4445-a8db-6d8c912d7dc4-00-l5lnc6lhje6p.picard.replit.dev';
 
 async function getAuthToken(): Promise<string | null> {
-  return AsyncStorage.getItem('auth_token');
+  return getToken();
 }
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
@@ -79,6 +79,7 @@ export interface EntryCreate {
   note?: string;
   date?: string;
   time?: string;
+  receipt_url?: string;
 }
 
 export interface Rollup {
@@ -145,6 +146,19 @@ export const api = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'Signup failed');
+    }
+    return res.json();
+  },
+
+  async requestPasswordReset(email: string): Promise<{ message: string }> {
+    const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not send reset email');
     }
     return res.json();
   },

@@ -8,22 +8,15 @@ import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, Entry, APP_LABELS, APP_COLORS } from '../lib/api';
+import { useTheme } from '../lib/theme';
 
-// ─── Theme tokens (mirror dashboard's Dark Neon palette) ──────────────────────
-const BG       = '#0a0a0a';
-const SURFACE  = '#111';
-const CARD     = '#1a1a1a';
-const BORDER   = '#262626';
-const DIVIDER  = '#1f1f1f';
-const TEXT     = '#fff';
-const LABEL    = '#9ca3af';
-const MUTED    = '#6b7280';
-const PRIMARY  = '#facc15';
-const GREEN    = '#22c55e';
+// ─── Theme palette is read inside each component via useTheme() ──────────────
+// Heat-map intensity overlays (kept module-level since alpha-tinted shades
+// only ever sit on top of the green/red theme accents and look correct in
+// every theme).
 const GREEN_LT = 'rgba(34,197,94,0.18)';
 const GREEN_MD = 'rgba(34,197,94,0.32)';
 const GREEN_HI = 'rgba(34,197,94,0.55)';
-const RED      = '#ef4444';
 const RED_LT   = 'rgba(239,68,68,0.18)';
 const RED_MD   = 'rgba(239,68,68,0.32)';
 const RED_HI   = 'rgba(239,68,68,0.55)';
@@ -117,6 +110,7 @@ interface CalendarModalProps {
 }
 
 export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalProps) {
+  const { BG, SURFACE, CARD, BORDER, DIVIDER, TEXT, LABEL, MUTED, PRIMARY, GREEN, RED, ON_PRIMARY } = useTheme();
   const insets = useSafeAreaInsets();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
@@ -989,6 +983,7 @@ export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalP
 }
 
 function LegendItem({ color, label }: { color: string; label: string }) {
+  const { BORDER, MUTED } = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
       <View style={{ width: 14, height: 14, borderRadius: 4, backgroundColor: color, borderWidth: 1, borderColor: BORDER }} />
@@ -1000,6 +995,7 @@ function LegendItem({ color, label }: { color: string; label: string }) {
 function DayStat({
   label, value, color, last,
 }: { label: string; value: string; color: string; last?: boolean }) {
+  const { DIVIDER, LABEL } = useTheme();
   return (
     <View style={{
       flex: 1, alignItems: 'center',
