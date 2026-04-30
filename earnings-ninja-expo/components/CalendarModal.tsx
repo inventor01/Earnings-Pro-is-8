@@ -191,32 +191,14 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
     return metric === 'profit' ? d.profit : metric === 'revenue' ? d.revenue : d.expenses;
   }
 
-  function getCellBg(value: number, hasData: boolean, isSelected: boolean): string {
-    if (isSelected) return PRIMARY;
-    if (!hasData) return SURFACE;
-    if (metric === 'expenses') {
-      const v = Math.abs(value);
-      if (v > 100) return RED_HI;
-      if (v > 50)  return RED_MD;
-      if (v > 0)   return RED_LT;
-      return SURFACE;
-    }
-    // profit / revenue — every active day gets a clear green or red tint.
-    if (value > 100)  return GREEN_HI;
-    if (value > 25)   return GREEN_MD;
-    if (value > 0)    return GREEN_LT;
-    if (value < -50)  return RED_HI;
-    if (value < -10)  return RED_MD;
-    if (value < 0)    return RED_LT;
-    return SURFACE;
-  }
-
-  function getCellText(value: number, isSelected: boolean): string {
-    if (isSelected) return '#000';
-    if (metric === 'expenses') return value > 0 ? RED : LABEL;
+  // Cells are mostly uniform; profit/loss is conveyed by the day-number color
+  // and the colored dot under it.
+  function getDotColor(value: number, hasData: boolean): string | null {
+    if (!hasData) return null;
+    if (metric === 'expenses') return value > 0 ? RED : null;
     if (value > 0) return GREEN;
     if (value < 0) return RED;
-    return LABEL;
+    return null;
   }
 
   function prevMonth() {
@@ -282,13 +264,16 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
           <PressScale
             onPress={jumpToToday}
             style={{
-              backgroundColor: PRIMARY, borderRadius: 10,
+              backgroundColor: 'transparent',
+              borderRadius: 10,
+              borderWidth: 1.5,
+              borderColor: PRIMARY,
               paddingVertical: 6, paddingHorizontal: 12,
-              ...neonGlow(PRIMARY, 6, 0.4),
+              ...neonGlow(PRIMARY, 6, 0.35),
             }}
             scale={0.94}
           >
-            <Text style={{ color: '#000', fontWeight: '900', fontSize: 12 }}>Today</Text>
+            <Text style={{ color: PRIMARY, fontWeight: '900', fontSize: 12 }}>Today</Text>
           </PressScale>
         </View>
 
@@ -355,15 +340,15 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                     flex: 1,
                     paddingVertical: 9, paddingHorizontal: 8,
                     borderRadius: 10,
-                    backgroundColor: active ? PRIMARY : SURFACE,
-                    borderWidth: 1,
+                    backgroundColor: active ? 'rgba(250,204,21,0.15)' : SURFACE,
+                    borderWidth: 1.5,
                     borderColor: active ? PRIMARY : BORDER,
                     alignItems: 'center',
                     ...(active ? neonGlow(PRIMARY, 6, 0.35) : {}),
                   }}
                 >
                   <Text style={{
-                    color: active ? '#000' : LABEL,
+                    color: active ? PRIMARY : LABEL,
                     fontWeight: active ? '900' : '700',
                     fontSize: 12,
                   }}>
@@ -471,13 +456,15 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
               <PressScale
                 onPress={() => { hTap(); refetch(); }}
                 style={{
-                  backgroundColor: PRIMARY,
+                  backgroundColor: 'transparent',
+                  borderWidth: 1.5,
+                  borderColor: PRIMARY,
                   paddingHorizontal: 18, paddingVertical: 9, borderRadius: 10,
-                  ...neonGlow(PRIMARY, 6, 0.4),
+                  ...neonGlow(PRIMARY, 6, 0.35),
                 }}
                 scale={0.94}
               >
-                <Text style={{ color: '#000', fontWeight: '900', fontSize: 13 }}>Retry</Text>
+                <Text style={{ color: PRIMARY, fontWeight: '900', fontSize: 13 }}>Retry</Text>
               </PressScale>
             </View>
           ) : (
@@ -519,16 +506,16 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                 const hasData = !!data && data.count > 0;
                 const isSelected = cell.dateStr === selectedDay;
                 const isToday = cell.dateStr === todayStr;
-                const bg = getCellBg(value, hasData, isSelected);
-                const txt = getCellText(value, isSelected);
+                const dotColor = getDotColor(value, hasData);
 
-                // Day-number color: profit-aware in profit mode for at-a-glance scanning.
+                // Day-number color: white by default, yellow if today, profit/loss tint if data.
                 let dayNumColor: string;
-                if (isSelected)        dayNumColor = '#000';
-                else if (isToday)      dayNumColor = PRIMARY;
-                else if (!hasData)     dayNumColor = MUTED;
+                if (isToday)               dayNumColor = PRIMARY;
+                else if (!hasData)         dayNumColor = TEXT;
                 else if (metric === 'expenses') dayNumColor = value > 0 ? RED : TEXT;
-                else                   dayNumColor = value > 0 ? GREEN : value < 0 ? RED : TEXT;
+                else if (value > 0)        dayNumColor = GREEN;
+                else if (value < 0)        dayNumColor = RED;
+                else                       dayNumColor = TEXT;
 
                 return (
                   <PressScale
@@ -541,18 +528,16 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                     style={{
                       width: cellSize,
                       height: cellHeight,
-                      backgroundColor: bg,
+                      backgroundColor: SURFACE,
                       borderRightWidth: isLastCol ? 0 : 1,
                       borderBottomWidth: isLastRow ? 0 : 1,
                       borderColor: BORDER,
-                      paddingTop: 4,
-                      paddingHorizontal: 4,
-                      paddingBottom: 4,
-                      ...(isSelected ? neonGlow(PRIMARY, 8, 0.5) : {}),
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    {/* Today ring overlay */}
-                    {isToday && !isSelected && (
+                    {/* Selected ring overlay */}
+                    {isSelected && (
                       <View
                         pointerEvents="none"
                         style={{
@@ -560,47 +545,40 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                           top: 0, left: 0, right: 0, bottom: 0,
                           borderWidth: 2,
                           borderColor: PRIMARY,
+                          ...neonGlow(PRIMARY, 8, 0.6),
                         }}
                       />
                     )}
-                    {/* Day number — top-left, fixed-size box for alignment */}
-                    <View style={{ alignSelf: 'flex-start', minWidth: 18, alignItems: 'center' }}>
-                      <Text
-                        style={{
-                          color: dayNumColor,
-                          fontSize: 13,
-                          fontWeight: isToday || isSelected ? '900' : '700',
-                          lineHeight: 16,
-                          textAlign: 'center',
-                        }}
-                      >
-                        {cell.day}
-                      </Text>
+                    {/* Day number — perfectly centered */}
+                    <Text
+                      style={{
+                        color: dayNumColor,
+                        fontSize: 15,
+                        fontWeight: isToday || isSelected ? '900' : '600',
+                        lineHeight: 18,
+                        textAlign: 'center',
+                        textAlignVertical: 'center',
+                        includeFontPadding: false,
+                      }}
+                    >
+                      {cell.day}
+                    </Text>
+                    {/* Profit/loss dot — fixed-height row so cells stay aligned */}
+                    <View style={{
+                      height: 10,
+                      marginTop: 4,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      {dotColor && (
+                        <View style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: 3,
+                          backgroundColor: dotColor,
+                        }} />
+                      )}
                     </View>
-                    {/* Amount — centered, dominant */}
-                    {hasData && (
-                      <View style={{
-                        flex: 1,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginTop: -2,
-                      }}>
-                        <Text
-                          numberOfLines={1}
-                          adjustsFontSizeToFit
-                          style={{
-                            color: txt,
-                            fontSize: 12,
-                            fontWeight: '900',
-                            letterSpacing: -0.2,
-                            textAlign: 'center',
-                          }}
-                        >
-                          {(metric === 'expenses' ? '-' : value < 0 ? '-' : '') +
-                            '$' + Math.abs(Math.round(value))}
-                        </Text>
-                      </View>
-                    )}
                   </PressScale>
                 );
               })}
