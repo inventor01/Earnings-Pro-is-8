@@ -547,7 +547,9 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
           ))}
 
           {/* Next Step — full width, matches the sticky "Add Entry" button:
-              same yellow PRIMARY bg, pure-black bold 22px text, beefy padding. */}
+              yellow PRIMARY bg lives on the wrapper View so it always renders,
+              even if Pressable's style-as-function gets stale. Pressable handles
+              press feedback only. */}
           <View style={{
             overflow: 'hidden',
             marginTop: 4,
@@ -555,17 +557,18 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
             marginBottom: -18,
             borderBottomLeftRadius: 16,
             borderBottomRightRadius: 16,
+            backgroundColor: PRIMARY,
+            width: undefined,
           }}>
             <Pressable
               onPress={() => { hTapMed(); onNext(); }}
               android_ripple={{ color: 'rgba(0,0,0,0.15)' }}
               style={({ pressed }) => ({
-                backgroundColor: PRIMARY,
+                width: '100%',
                 paddingVertical: 28,
-                alignSelf: 'stretch',
                 alignItems: 'center',
                 justifyContent: 'center',
-                opacity: pressed ? 0.92 : 1,
+                opacity: pressed ? 0.85 : 1,
                 transform: [{ scale: pressed ? 0.97 : 1 }],
               })}
             >
@@ -842,31 +845,36 @@ function DetailsForm({
         </LinearGradient>
       </View>
 
-      {/* Save button — full width, matches sticky "Add Entry" button:
-          same yellow PRIMARY bg, pure-black bold 22px text, beefy padding. */}
-      <Pressable
-        onPress={onSave}
-        disabled={saving}
-        style={({ pressed }) => ({
-          backgroundColor: PRIMARY,
-          paddingVertical: 28,
-          marginHorizontal: -16,
-          alignSelf: 'stretch',
-          alignItems: 'center',
-          opacity: pressed ? 0.85 : 1,
-          transform: [{ scale: pressed ? 0.97 : 1 }],
-          shadowColor: '#000',
-          shadowOpacity: 0.12,
-          shadowRadius: 6,
-          shadowOffset: { width: 0, height: 3 },
-          elevation: 3,
-        })}
-      >
-        {saving
-          ? <ActivityIndicator color="#000" />
-          : <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>💾 Save Entry</Text>
-        }
-      </Pressable>
+      {/* Save button — full width, matches sticky "Add Entry" button.
+          Yellow PRIMARY bg lives on the wrapper View so it always renders. */}
+      <View style={{
+        marginHorizontal: -16,
+        backgroundColor: PRIMARY,
+        shadowColor: '#000',
+        shadowOpacity: 0.12,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 3 },
+        elevation: 3,
+      }}>
+        <Pressable
+          onPress={onSave}
+          disabled={saving}
+          android_ripple={{ color: 'rgba(0,0,0,0.15)' }}
+          style={({ pressed }) => ({
+            width: '100%',
+            paddingVertical: 28,
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: pressed ? 0.85 : 1,
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+          })}
+        >
+          {saving
+            ? <ActivityIndicator color="#000" />
+            : <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>💾 Save Entry</Text>
+          }
+        </Pressable>
+      </View>
     </View>
   );
 }
