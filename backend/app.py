@@ -79,6 +79,28 @@ for _p in _possible_dist:
         dist_path = _abs
         break
 
+# ── Legal pages (Privacy Policy + Support) ───────────────────────────────────
+# These are required by Apple App Store Connect (privacy URL + support URL).
+# Served straight from the backend so the URLs are stable across frontend
+# rebuilds. Must be registered BEFORE the StaticFiles catch-all mount below.
+_LEGAL_DIR = os.path.join(os.path.dirname(__file__), "legal")
+
+@app.get("/privacy", include_in_schema=False)
+@app.get("/privacy.html", include_in_schema=False)
+async def privacy_policy():
+    return FileResponse(
+        os.path.join(_LEGAL_DIR, "privacy.html"),
+        media_type="text/html",
+    )
+
+@app.get("/support", include_in_schema=False)
+@app.get("/support.html", include_in_schema=False)
+async def support_page():
+    return FileResponse(
+        os.path.join(_LEGAL_DIR, "support.html"),
+        media_type="text/html",
+    )
+
 if dist_path:
     @app.get("/sw.js")
     async def service_worker():
