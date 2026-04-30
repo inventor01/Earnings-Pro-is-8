@@ -916,29 +916,28 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
               paddingHorizontal: 18,
               paddingTop: 18,
               paddingBottom: 18,
-              flexDirection: 'row',
-              alignItems: 'center',
               opacity: pressed ? 0.85 : 1,
             })}
           >
-            <Ionicons
-              name={step === 'calc' ? 'arrow-down' : 'arrow-back'}
-              size={22}
-              color="#0f172a"
-              style={{ marginRight: 10, lineHeight: 22 }}
-            />
-            <Text
-              style={{
-                color: '#0f172a',
-                fontSize: 18,
-                fontWeight: '800',
-                lineHeight: 22,
-                includeFontPadding: false,
-                textAlignVertical: 'center',
-              }}
-            >
-              {step === 'calc' ? 'Hide' : 'Back'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', height: 24 }}>
+              <Ionicons
+                name={step === 'calc' ? 'arrow-down' : 'arrow-back'}
+                size={20}
+                color="#0f172a"
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  color: '#0f172a',
+                  fontSize: 18,
+                  fontWeight: '800',
+                  lineHeight: 22,
+                  includeFontPadding: false,
+                }}
+              >
+                {step === 'calc' ? 'Hide' : 'Back'}
+              </Text>
+            </View>
           </Pressable>
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
