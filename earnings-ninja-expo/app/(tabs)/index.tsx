@@ -1452,6 +1452,60 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             </Pressable>
           );
         })}
+
+        {/* Delete Account — Apple Guideline 5.1.1(v) requires apps that support */}
+        {/* account creation to also support in-app account deletion. */}
+        <View style={{ height: 28 }} />
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+          ⚠️  Danger Zone
+        </Text>
+        <Pressable
+          onPress={() => {
+            Alert.alert(
+              'Delete Account',
+              'This permanently deletes your account and ALL of your earnings, expenses, goals and settings. This cannot be undone.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete Forever',
+                  style: 'destructive',
+                  onPress: () => {
+                    Alert.alert(
+                      'Are you absolutely sure?',
+                      'Tap "Yes, delete everything" to permanently erase your account.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Yes, delete everything',
+                          style: 'destructive',
+                          onPress: async () => {
+                            try {
+                              await api.deleteAccount();
+                              await logout();
+                            } catch (e: any) {
+                              Alert.alert('Could not delete account', e?.message || 'Please try again.');
+                            }
+                          },
+                        },
+                      ],
+                    );
+                  },
+                },
+              ],
+            );
+          }}
+          style={{
+            backgroundColor: RED_LT,
+            borderWidth: 1,
+            borderColor: RED + '66',
+            borderRadius: 14,
+            padding: 16,
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ color: RED, fontWeight: '800', fontSize: 14 }}>Delete My Account</Text>
+          <Text style={{ color: MUTED, fontSize: 11, marginTop: 4 }}>Permanently erase all of your data</Text>
+        </Pressable>
       </ScrollView>
     </Modal>
   );
