@@ -268,31 +268,28 @@ export default function LoginScreen() {
             }
           </Pressable>
 
-          {/* Demo Button — full-width, solid green (kept green per user). */}
+          {/* Demo Button — full-width, green outline only (transparent fill). */}
           <Pressable
             onPress={handleDemo}
             disabled={demoLoading}
             style={{
               width: '100%',
               alignSelf: 'stretch',
-              backgroundColor: GREEN,
+              backgroundColor: 'transparent',
               borderRadius: 14,
-              paddingVertical: 16,
+              borderWidth: 2,
+              borderColor: GREEN,
+              paddingVertical: 14,
               paddingHorizontal: 16,
               alignItems: 'center',
               justifyContent: 'center',
-              shadowColor: GREEN,
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.45,
-              shadowRadius: 10,
-              elevation: 6,
               opacity: demoLoading ? 0.85 : 1,
             }}
           >
             {demoLoading
-              ? <ActivityIndicator color="#000" />
+              ? <ActivityIndicator color={GREEN} />
               : <Text style={{
-                  color: '#000',
+                  color: GREEN,
                   fontWeight: '900',
                   fontSize: 17,
                   letterSpacing: 0.3,
