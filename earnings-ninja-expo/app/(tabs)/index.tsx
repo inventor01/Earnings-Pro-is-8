@@ -210,7 +210,7 @@ const EXPENSE_CATS: ExpenseCategory[] = [
 // ─── Dashed Sparkline ─────────────────────────────────────────────────────────
 function DashedLine({ color = PRIMARY }: { color?: string }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 28 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 40 }}>
       {Array.from({ length: 28 }).map((_, i) => (
         <View
           key={i}
