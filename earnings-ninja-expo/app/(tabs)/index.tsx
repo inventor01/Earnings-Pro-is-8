@@ -983,6 +983,8 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 style={({ pressed }) => ({
                   width: '100%',
                   paddingVertical: 16,
+                  paddingHorizontal: 16,
+                  flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
                   opacity: pressed ? 0.85 : 1,
@@ -992,8 +994,18 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 {step === 'details' && mutation.isPending
                   ? <ActivityIndicator color="#000" />
                   : (
-                    <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>
-                      {step === 'calc' ? 'Next Step →' : '💾 Save Entry'}
+                    <Text
+                      style={{
+                        color: '#000',
+                        fontWeight: '900',
+                        fontSize: 22,
+                        letterSpacing: 0.3,
+                        textAlign: 'center',
+                        textAlignVertical: 'center',
+                        includeFontPadding: false,
+                      }}
+                    >
+                      {step === 'calc' ? 'Next Step  →' : '💾  Save Entry'}
                     </Text>
                   )
                 }
