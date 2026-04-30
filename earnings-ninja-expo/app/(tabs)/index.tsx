@@ -210,7 +210,7 @@ const EXPENSE_CATS: ExpenseCategory[] = [
 // ─── Dashed Sparkline ─────────────────────────────────────────────────────────
 function DashedLine({ color = PRIMARY }: { color?: string }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 16 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 28 }}>
       {Array.from({ length: 28 }).map((_, i) => (
         <View
           key={i}
@@ -1210,9 +1210,18 @@ export default function DashboardScreen() {
   // Period label for the date bar
   const periodLabel = PERIOD_LABELS[period];
 
+  // ── Hero metric toggle (tap small number to swap with big number) ──
+  const [heroMetric, setHeroMetric] = useState<'profit' | 'revenue'>('profit');
+  const isProfitHero = heroMetric === 'profit';
+  const heroValue   = isProfitHero ? profit  : revenue;
+  const heroLabel   = isProfitHero ? 'NET PROFIT' : 'REVENUE';
+  const heroColor   = isProfitHero ? profitColor : GREEN;
+  const altValue    = isProfitHero ? revenue : profit;
+  const altLabel    = isProfitHero ? 'Revenue' : 'Net Profit';
+
   // ── Animations ──
-  const profitPopStyle = usePopOnChange(Math.round(profit * 100));   // pop on any cent change
-  const ninjaGlowStyle = useMilestoneGlow(profit);                   // logo halo at $50/$100/...
+  const profitPopStyle = usePopOnChange(Math.round(heroValue * 100));   // pop on any cent change
+  const ninjaGlowStyle = useMilestoneGlow(profit);                      // logo halo at $50/$100/...
 
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
@@ -1300,29 +1309,59 @@ export default function DashboardScreen() {
             </View>
           ) : (
             <>
-              {/* ── Main Profit Card with neon glow ─────────────────────────── */}
+              {/* ── Main Hero Card with neon glow (toggle Profit↔Revenue) ──── */}
               <Animated.View style={[
                 {
                   backgroundColor: SURFACE,
                   borderRadius: 20,
                   borderWidth: 1,
-                  borderColor: profitColor + '33',
+                  borderColor: heroColor + '33',
                   padding: 20,
                 },
-                neonGlow(profitColor, 14, 0.22),
+                neonGlow(heroColor, 14, 0.22),
                 profitPopStyle,
               ]}>
-                {/* Label */}
+                {/* Label (swaps with metric) */}
                 <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>
-                  NET PROFIT
+                  {heroLabel}
                 </Text>
 
-                {/* Big profit number with count-up */}
+                {/* Big number with count-up */}
                 <AnimatedNumber
-                  value={profit}
+                  value={heroValue}
                   format={(n) => (n < 0 ? '-' : '') + '$' + Math.abs(n).toFixed(2)}
-                  style={{ color: profitColor, fontSize: 48, fontWeight: '900', lineHeight: 56, marginTop: 4 }}
+                  style={{ color: heroColor, fontSize: 48, fontWeight: '900', lineHeight: 56, marginTop: 4 }}
                 />
+
+                {/* Tappable secondary metric — tap to swap with the big number */}
+                <PressScale
+                  onPress={() => { hTap(); setHeroMetric(isProfitHero ? 'revenue' : 'profit'); }}
+                  scale={0.96}
+                  hitSlop={8}
+                  style={{
+                    alignSelf: 'flex-start',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginTop: 6,
+                    paddingVertical: 4,
+                    paddingHorizontal: 8,
+                    borderRadius: 8,
+                    backgroundColor: BG,
+                    borderWidth: 1,
+                    borderColor: BORDER,
+                  }}
+                >
+                  <Text style={{ color: MUTED, fontSize: 13, fontWeight: '600' }}>
+                    {altLabel}:
+                  </Text>
+                  <AnimatedNumber
+                    value={altValue}
+                    format={(n) => (n < 0 ? '-' : '') + '$' + Math.abs(n).toFixed(2)}
+                    style={{ color: TEXT, fontSize: 14, fontWeight: '800' }}
+                  />
+                  <Ionicons name="swap-horizontal" size={14} color={LABEL} />
+                </PressScale>
 
                 {/* Date range row */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
@@ -1367,17 +1406,11 @@ export default function DashboardScreen() {
 
               </Animated.View>
 
-              {/* ── Secondary Stat Cards (subtle yellow glow + count-up) ────── */}
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <StatCard label="$/Hour" icon="⏱️" value={`$${perHour.toFixed(2)}`} numericValue={perHour} format={(n) => `$${n.toFixed(2)}`} />
-                <StatCard label="$/Mile" icon="📍" value={`$${perMile.toFixed(2)}`} numericValue={perMile} format={(n) => `$${n.toFixed(2)}`} />
-                <StatCard label="Miles"  icon="🚗" value={miles.toFixed(1)}         numericValue={miles}   format={(n) => n.toFixed(1)} />
-              </View>
-
-              {/* ── Revenue/Expense cards (green/red glow) ──────────────────── */}
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <StatCard label="Revenue"  icon="💵" accent={GREEN} value={`$${revenue.toFixed(2)}`}          numericValue={revenue}          format={(n) => `$${n.toFixed(2)}`} />
-                <StatCard label="Expenses" icon="💸" accent={RED}   value={`$${Math.abs(expenses).toFixed(2)}`} numericValue={Math.abs(expenses)} format={(n) => `$${n.toFixed(2)}`} />
+              {/* ── Secondary Stat Cards: $/Mile, Miles, Expenses (centered row) ── */}
+              <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center' }}>
+                <StatCard label="$/Mile"   icon="📍"                value={`$${perMile.toFixed(2)}`}            numericValue={perMile}             format={(n) => `$${n.toFixed(2)}`} />
+                <StatCard label="Miles"    icon="🚗"                value={miles.toFixed(1)}                    numericValue={miles}               format={(n) => n.toFixed(1)} />
+                <StatCard label="Expenses" icon="💸" accent={RED}   value={`$${Math.abs(expenses).toFixed(2)}`} numericValue={Math.abs(expenses)}  format={(n) => `$${n.toFixed(2)}`} />
               </View>
 
               {/* ── AI Suggestion (collapsible) ─────────────────────────────── */}
