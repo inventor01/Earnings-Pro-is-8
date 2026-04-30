@@ -32,7 +32,7 @@ function RootNav() {
   }, []);
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0a0a0f' } }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0a0a0a' } }}>
       <Stack.Screen name="login" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="index" />
@@ -42,11 +42,11 @@ function RootNav() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0a0a0f' }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <StatusBar style="light" backgroundColor="#0a0a0f" />
+            <StatusBar style="light" backgroundColor="#0a0a0a" />
             <RootNav />
           </AuthProvider>
         </QueryClientProvider>
