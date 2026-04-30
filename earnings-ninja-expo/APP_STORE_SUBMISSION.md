@@ -98,8 +98,9 @@ Edit captions/overlays in Figma, Sketch, or [Screenshots.pro](https://screenshot
 **Third-party data sharing — declare these in App Privacy → "Data Used to Track You" / "Data Linked to You" → "Third-Party Partners":**
 
 - **Resend** (transactional email provider): receives the user's email address whenever they request a password reset. Declare under *Contact Info → Email Address* with purpose *App Functionality*.
-- **OpenAI** (AI Earning Suggestions): if the AI Suggestions feature is enabled in production, the backend sends aggregated, non-PII earnings/expense statistics (totals, $/mile, platform mix) to OpenAI's GPT-4o-mini API. **No raw email, name, or user ID is sent.** Declare under *Financial Info → Other Financial Info* with purpose *App Functionality*. If you'd rather not declare this, disable the AI suggestions endpoint in production by unsetting `AI_INTEGRATIONS_OPENAI_API_KEY` on the Railway backend.
 - **Railway** (backend hosting) is infrastructure, not a partner — does not need a Privacy Label entry.
+
+> **Note on AI Suggestions / OAuth:** The AI Earning Suggestions endpoint and the Uber Eats / Shipt OAuth integrations exist in the backend but are NOT wired into the iOS app shipping in this release. The published `/privacy` and `/support` pages reflect this honestly. **Do NOT declare OpenAI or any platform OAuth in the Privacy Label for this release** — declaring data sharing the binary doesn't actually do is also an Inaccurate Metadata violation. If you wire either feature into a future iOS build, update both the Privacy Label and the `backend/legal/privacy.html` page in the same submission.
 
 > **Important:** The Location permission string is in `infoPlist` because the app *can* use GPS for trip tracking, but the current build does not actually collect/store location data. If you ever start storing GPS coordinates server-side, update the Privacy Label to include "Precise location → linked to user, not used for tracking".
 
@@ -242,7 +243,7 @@ THREE THEMES
 Dark Neon (default car-dashboard look), Simple Light, and B/W Neon. Switch instantly in Settings.
 
 PRIVACY-FIRST
-We don't track you across other apps. We don't sell your data. We don't run ads. Your data is only used for password-reset emails (Resend) and, optionally, anonymous earnings aggregates sent to OpenAI to power the AI Earning Suggestions feature.
+We don't track you across other apps. We don't sell your data. We don't run ads. The only third party your data ever touches is Resend, which delivers your password-reset emails.
 
 TRIP MILEAGE
 Track miles per trip manually or let the app calculate distance from start/end addresses.
@@ -273,11 +274,20 @@ First release — track delivery earnings, expenses, and profit in real time acr
 **Sign-In Required:** YES
 
 **Demo Account:**
-- Username: `demo@earningsninja.app`
-- Password: `Demo1234!`
+- Username: `reviewer@earningsninja.app`
+- Password: `ReviewMe2026!`
 
-> Make sure this account exists on your production backend with some sample data so reviewers can see the dashboard populated.
-> If you don't want to expose a real demo, use the in-app **"Try Demo"** button on the login screen (which calls `/api/auth/demo`) and tell the reviewer in the notes below.
+> ✅ Created automatically by `python -m backend.scripts.create_demo_account`.
+> The script seeds the account with 14 days of realistic earnings (175 orders + 22 expenses, deterministic so reviewers see the same numbers) plus daily/weekly profit goals.
+>
+> **Run this against your PRODUCTION database before submitting:**
+> ```bash
+> DATABASE_URL="postgresql://...railway..." \
+>   DEMO_EMAIL="reviewer@earningsninja.app" \
+>   DEMO_PASSWORD="ReviewMe2026!" \
+>   python -m backend.scripts.create_demo_account
+> ```
+> Re-runnable any time — wipes and repopulates that account's entries without touching other users.
 
 **Notes for the reviewer:**
 ```
@@ -294,9 +304,9 @@ iOS WIDGET (on iOS 17+):
 The app installs a Home Screen + Lock Screen widget called "Earnings Ninja". Long-press the Home Screen → + → search "Earnings Ninja" to add it. The widget shows today's net profit and lets you tap quick-amount buttons ($10, $25, etc.) to log revenue or expenses without opening the app. The widget uses an App Group (group.com.earningsninja.shared) to share auth token + API base URL with the main app — the token is sandboxed to the App Group and is never exposed to other apps. The widget extension refuses to attach the bearer token to any URL that does not start with https://.
 
 ACCOUNT DELETION (Guideline 5.1.1(v)):
-Settings (gear icon, top right) → scroll to Danger Zone → "Delete My Account". Two confirmation dialogs, then the account and ALL associated data (entries, settings, goals, OAuth credentials, etc.) are permanently deleted via DELETE /api/auth/account.
+Settings (gear icon, top right) → scroll to Danger Zone → "Delete My Account". Two confirmation dialogs, then the account and ALL associated user data (earnings/expense entries, settings, goals, friend connections, achievements, password-reset tokens) are permanently deleted via DELETE /api/auth/account.
 
-PRIVACY: We collect email (for login + Resend password-reset emails) + manually-entered earnings/expense data + optional receipt images. We do NOT collect location, device identifiers, contacts, or any tracking data. No analytics SDKs (no Sentry, no Firebase, no Amplitude). The optional AI Earning Suggestions feature sends aggregated, non-PII earnings statistics to OpenAI's GPT-4o-mini API.
+PRIVACY: We collect email (for login + Resend password-reset emails) + manually-entered earnings/expense data + optional receipt images. We do NOT collect location, device identifiers, contacts, or any tracking data. No analytics SDKs (no Sentry, no Firebase, no Amplitude). The only third party that ever sees any data is Resend (email address only, only when sending a password-reset email).
 
 Backend: https://earnings-pro-is-8-production.up.railway.app (FastAPI/Python on Railway).
 ```
@@ -344,10 +354,10 @@ Review typically takes **24–48 hours**.
 | 14 | Apple Team ID filled in (`appleTeamId` in `app.json` and `eas.json`) | ⚠️ TODO — replace placeholder |
 | 15 | App Store Connect numeric App ID filled in (`ascAppId` in `eas.json`) | ⚠️ TODO — fill after creating app entry |
 | 16 | Apple ID email filled in (`appleId` in `eas.json`) | ⚠️ TODO — replace placeholder |
-| 17 | Demo account exists on production backend | ⚠️ TODO — verify `demo@earningsninja.app` works |
+| 17 | Demo account exists on production backend | ✅ `python -m backend.scripts.create_demo_account` against prod DB. Login verified end-to-end. |
 | 18 | At least 3 screenshots for 6.9" iPhone uploaded to App Store Connect | ⚠️ TODO — capture after first build |
-| 19 | App Store description, keywords, support URL filled in | ⚠️ TODO — paste from Step 4.4 |
-| 20 | Privacy Label completed in App Store Connect | ⚠️ TODO — copy from Step 2 table |
+| 19 | App Store description, keywords, support URL filled in | ⚠️ TODO — support URL is `https://<your-railway-domain>/support` (paste from Step 4.4) |
+| 20 | Privacy Label + Privacy Policy URL completed in App Store Connect | ⚠️ TODO — Privacy URL is `https://<your-railway-domain>/privacy`, copy table from Step 2 |
 | 21 | Age Rating answered (will produce 4+) | ⚠️ TODO — quick form |
 | 22 | App category set to Finance (primary), Business (secondary) | ⚠️ TODO — in App Information |
 | 23 | No console.log of secrets / tokens in production code | ✅ Audit clean |
@@ -378,17 +388,21 @@ Review typically takes **24–48 hours**.
 
 ### ⚠️ Known gaps you must close before submitting
 
-1. ✅ ~~**Account Deletion** (Guideline 5.1.1(v))~~ — **DONE in this submission prep.** SettingsModal → Danger Zone → "Delete My Account" → backend cascades all user data.
+1. ✅ ~~**Account Deletion** (Guideline 5.1.1(v))~~ — **DONE.** SettingsModal → Danger Zone → "Delete My Account" → backend cascades all user data.
 
-2. **Support URL** — `https://earningsninja.app/support` is a placeholder. Apple checks that this URL resolves and looks legitimate. Set up at least a one-page support site (a Notion page or simple landing page is fine) before submitting. Must include a contact email.
+2. ✅ ~~**Support URL**~~ — **DONE.** Served from the backend at `GET /support` (`backend/legal/support.html`). Once the backend deploys to Railway, the URL is `https://<your-railway-domain>/support`. Includes FAQ, app description, and `support@earningsninja.app` contact link.
 
-3. **Privacy Policy URL** — Required when Privacy Labels declare any data collection. Write a short privacy policy mentioning Resend and (if enabled) OpenAI, and host it at `https://earningsninja.app/privacy`. Reference it in App Store Connect → App Privacy → Privacy Policy URL.
+3. ✅ ~~**Privacy Policy URL**~~ — **DONE.** Served from the backend at `GET /privacy` (`backend/legal/privacy.html`). URL: `https://<your-railway-domain>/privacy`. Conservatively scoped to what the iOS binary *actually* does: discloses **only** Resend (password-reset emails) and Railway (hosting) as third parties. Does **not** claim AI Suggestions or OAuth integrations because neither is wired into the iOS app being submitted. Documents the in-app account deletion flow.
 
-4. **Production demo account** — Confirm `demo@earningsninja.app` / `Demo1234!` actually exists on the Railway backend with seeded sample data, OR remove the credentials from "App Review Information" and tell the reviewer to use the in-app "Try Demo" button on the login screen (which calls `/api/auth/demo`). The Try Demo path is more reliable because it provisions a fresh seeded account on every tap.
+4. ✅ ~~**Production demo account**~~ — **DONE.** `python -m backend.scripts.create_demo_account` creates `reviewer@earningsninja.app` / `ReviewMe2026!` and seeds 14 days of deterministic sample data (175 orders + 22 expenses + daily/weekly profit goals). Run against the Railway DB before submitting; idempotent (re-runnable any time).
 
-5. **Widget extension privacy manifest** — After `expo prebuild`, verify that `ios/widget/` contains its own `PrivacyInfo.xcprivacy`. If `@bacons/apple-targets` doesn't generate one for the widget extension target, copy the main app's file into the widget folder and add it to the EarningsWidget target in Xcode (File → Add Files → check the EarningsWidget target box). Apple checks privacy manifests at the per-target level since iOS 17.4.
+5. **Configure your domain** ⚠️ — The two URLs above currently resolve via your Railway backend's auto-generated hostname (`<project>.up.railway.app`). That's acceptable to Apple, but if you want them on `earningsninja.app/privacy` and `earningsninja.app/support`, point a CNAME at the Railway service or add a static reverse proxy. Either way, **verify both URLs return HTTP 200 from a public browser** before pasting them into App Store Connect.
 
-6. **Apple Developer App Group registration** — Manually enable the App Groups capability for BOTH bundle IDs (`com.earningsninja.app` and `com.earningsninja.app.widget`) at <https://developer.apple.com/account/resources/identifiers/list>. EAS will regenerate provisioning profiles after that.
+6. **`support@earningsninja.app` mailbox** ⚠️ — Both the privacy policy and support page link to this address. Set up an inbox or forwarder (e.g. via your domain registrar's email forwarding, or Resend → catch-all → personal inbox) so reviewer/user replies don't bounce. Apple sometimes test-emails the support address.
+
+7. **Widget extension privacy manifest** — After `expo prebuild`, verify that `ios/widget/` contains its own `PrivacyInfo.xcprivacy`. If `@bacons/apple-targets` doesn't generate one for the widget extension target, copy the main app's file into the widget folder and add it to the EarningsWidget target in Xcode (File → Add Files → check the EarningsWidget target box). Apple checks privacy manifests at the per-target level since iOS 17.4.
+
+8. **Apple Developer App Group registration** — Manually enable the App Groups capability for BOTH bundle IDs (`com.earningsninja.app` and `com.earningsninja.app.widget`) at <https://developer.apple.com/account/resources/identifiers/list>. EAS will regenerate provisioning profiles after that.
 
 ---
 

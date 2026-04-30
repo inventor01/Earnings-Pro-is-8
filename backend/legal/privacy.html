@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Privacy Policy — Earnings Ninja</title>
+  <meta name="description" content="Privacy Policy for Earnings Ninja, the delivery driver earnings tracker." />
+  <style>
+    :root {
+      --bg: #0a0a0a; --surface: #141414; --text: #e5e5e5;
+      --muted: #9ca3af; --primary: #22c55e; --border: #262626;
+    }
+    @media (prefers-color-scheme: light) {
+      :root { --bg: #fafafa; --surface: #fff; --text: #111; --muted: #555;
+              --primary: #16a34a; --border: #e5e5e5; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+                 font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .wrap { max-width: 780px; margin: 0 auto; padding: 32px 20px 80px; }
+    header { padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+    h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    h2 { font-size: 19px; margin: 32px 0 10px; color: var(--primary); letter-spacing: -0.01em; }
+    h3 { font-size: 16px; margin: 18px 0 6px; }
+    .meta { color: var(--muted); font-size: 13px; }
+    a { color: var(--primary); }
+    ul { padding-left: 20px; }
+    li { margin: 4px 0; }
+    .nav { font-size: 14px; margin-top: 14px; }
+    .nav a { margin-right: 14px; }
+    code { background: var(--surface); padding: 2px 6px; border-radius: 4px;
+           font-size: 13px; border: 1px solid var(--border); }
+    footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border);
+             color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>🥷 Earnings Ninja — Privacy Policy</h1>
+      <div class="meta">Last updated: April 30, 2026</div>
+      <nav class="nav"><a href="/support">Support</a><a href="/privacy">Privacy</a></nav>
+    </header>
+
+    <p>This Privacy Policy describes how Earnings Ninja ("we", "our", "the App") collects,
+    uses, and safeguards your information. By using Earnings Ninja you agree to the
+    practices described below.</p>
+
+    <h2>1. Information we collect</h2>
+
+    <h3>Account information</h3>
+    <ul>
+      <li><strong>Email address</strong> — used to identify your account and send password-reset links.</li>
+      <li><strong>Password</strong> — stored only as a one-way bcrypt hash. We never see or store your plaintext password.</li>
+    </ul>
+
+    <h3>App content you create</h3>
+    <ul>
+      <li><strong>Earnings entries</strong> — the platform (e.g. DoorDash), amount, type (order, tip, cancellation, etc.), and timestamp you record.</li>
+      <li><strong>Expense entries</strong> — amount, category, optional photo of a receipt you choose to attach.</li>
+      <li><strong>Trip data</strong> — miles you log manually or via the in-app GPS trip tracker.</li>
+      <li><strong>Goals & settings</strong> — your profit targets, theme preference, and similar preferences.</li>
+    </ul>
+
+    <h3>Information we do <em>not</em> collect</h3>
+    <ul>
+      <li>We do not collect your real name, phone number, address, or government identifiers.</li>
+      <li>We do not use any advertising or analytics SDKs. The App contains no third-party tracking.</li>
+      <li>We do not access your Contacts, Calendar, Health data, or microphone.</li>
+      <li>Photos selected as receipt attachments are uploaded to our servers for your records — we do not scan or analyze the image contents.</li>
+    </ul>
+
+    <h2>2. How we use your information</h2>
+    <ul>
+      <li>To operate the core features of the App (recording earnings, computing profit, showing dashboards).</li>
+      <li>To authenticate you and let you reset a forgotten password.</li>
+      <li>To compute and display your daily/weekly/monthly profit, mileage, and other dashboard metrics on your device.</li>
+    </ul>
+
+    <h2>3. Third-party service providers</h2>
+    <p>We use a small number of third-party processors to run the App. We do not sell or share your data for advertising. Specifically:</p>
+    <ul>
+      <li><strong>Resend</strong> — receives your email address solely to deliver password-reset emails. No other email is ever sent through Resend. <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener">Resend privacy policy</a>.</li>
+      <li><strong>Railway</strong> — our backend hosting provider, where your account and entries are stored. Encrypted in transit (HTTPS) and at rest. <a href="https://railway.com/legal/privacy" target="_blank" rel="noopener">Railway privacy policy</a>.</li>
+    </ul>
+    <p>That's the complete list. The current iOS release does not call any AI service, advertising network, analytics SDK, or social-platform SDK with your data. If we add any new third-party processor in a future release, this page will be updated and the change announced in-app or by email.</p>
+
+    <h2>4. Data retention</h2>
+    <p>We retain your account and entries for as long as your account is active.
+    When you delete your account (see Section 6), we permanently delete all of
+    your personal data, entries, goals, settings, friend connections, achievements,
+    and password-reset tokens from our database. This deletion is irreversible.</p>
+
+    <h2>5. Security</h2>
+    <ul>
+      <li>All traffic between the App and our servers uses HTTPS / TLS.</li>
+      <li>Passwords are hashed with bcrypt before being stored.</li>
+      <li>Authentication tokens on your device are stored in the iOS Keychain via <code>expo-secure-store</code>.</li>
+      <li>Tokens shared with the iOS Home Screen widget are stored in an App Group container that is sandboxed to this app's bundle identifier.</li>
+    </ul>
+
+    <h2>6. Your rights — Account & data deletion</h2>
+    <p>You can permanently delete your account and all associated data at any time from inside the App:</p>
+    <ol>
+      <li>Open the App and go to <strong>Settings → Danger Zone → Delete My Account</strong>.</li>
+      <li>Confirm twice. The deletion is processed immediately and cannot be undone.</li>
+    </ol>
+    <p>If you cannot access the App and need account deletion, email
+    <a href="mailto:support@earningsninja.app">support@earningsninja.app</a>
+    from the email address on file and we will process the deletion within 7 days.</p>
+
+    <h2>7. Children's privacy</h2>
+    <p>Earnings Ninja is not directed to children under 13, and we do not
+    knowingly collect personal information from anyone under 13. If you believe
+    a child has provided us information, contact us and we will delete it.</p>
+
+    <h2>8. International users</h2>
+    <p>Our servers are located in the United States. By using the App you
+    consent to your information being processed in the United States. We strive
+    to comply with GDPR and CCPA principles even where not strictly required.</p>
+
+    <h2>9. Changes to this policy</h2>
+    <p>If we make material changes we will update the "Last updated" date at the
+    top of this page and, where appropriate, notify you in-app or by email.</p>
+
+    <h2>10. Contact</h2>
+    <p>Questions, requests, or concerns? Email
+    <a href="mailto:support@earningsninja.app">support@earningsninja.app</a>.</p>
+
+    <footer>© 2026 Earnings Ninja. <a href="/support">Support</a> · <a href="/privacy">Privacy</a></footer>
+  </div>
+</body>
+</html>
