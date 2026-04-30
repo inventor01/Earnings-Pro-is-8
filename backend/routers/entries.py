@@ -95,14 +95,25 @@ async def get_entries(
         
         query = query.filter(Entry.timestamp >= from_dt)
         query = query.filter(Entry.timestamp <= to_dt)
-    # Fall back to old from_date/to_date parameters for backward compatibility
+    # Fall back to old from_date/to_date parameters for backward compatibility.
+    # Accepts either full ISO datetimes OR YYYY-MM-DD (interpreted as inclusive
+    # EST calendar days, mirroring the timeframe helpers).
     elif from_date or to_date:
-        if from_date:
-            from_dt = datetime.fromisoformat(from_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
-            query = query.filter(Entry.timestamp >= from_dt)
-        if to_date:
-            to_dt = datetime.fromisoformat(to_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
-            query = query.filter(Entry.timestamp <= to_dt)
+        from backend.services.period import get_est_date_range
+        if from_date and to_date and 'T' not in from_date and 'T' not in to_date:
+            try:
+                from_dt, to_dt = get_est_date_range(from_date, to_date)
+                query = query.filter(Entry.timestamp >= from_dt)
+                query = query.filter(Entry.timestamp <= to_dt)
+            except Exception:
+                pass
+        else:
+            if from_date:
+                from_dt = datetime.fromisoformat(from_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
+                query = query.filter(Entry.timestamp >= from_dt)
+            if to_date:
+                to_dt = datetime.fromisoformat(to_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
+                query = query.filter(Entry.timestamp <= to_dt)
     
     if cursor:
         query = query.filter(Entry.id < cursor)

@@ -188,6 +188,14 @@ export const api = {
     return res.json();
   },
 
+  async getRollupInRange(fromIso: string, toIso: string): Promise<Rollup> {
+    const headers = await getAuthHeaders();
+    const url = `${API_BASE}/api/rollup?from_date=${encodeURIComponent(fromIso)}&to_date=${encodeURIComponent(toIso)}`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error('Failed to fetch rollup');
+    return res.json();
+  },
+
   async getEntries(timeframe: string = 'TODAY', limit = 200): Promise<Entry[]> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/entries?timeframe=${timeframe}&limit=${limit}`, { headers });
