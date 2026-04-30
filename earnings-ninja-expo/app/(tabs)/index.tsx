@@ -915,7 +915,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
             style={({ pressed }) => ({
               paddingHorizontal: 18,
               paddingTop: 18,
-              paddingBottom: 18,
+              paddingBottom: 40,
               opacity: pressed ? 0.85 : 1,
             })}
           >
