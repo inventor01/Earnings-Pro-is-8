@@ -1335,6 +1335,38 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           </Pressable>
         </View>
 
+        {/* Refresh data — moved out of the header to make room for the
+            settings icon. Invalidates the same queries pull-to-refresh does. */}
+        <Pressable
+          onPress={async () => {
+            hTap();
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: ['rollup'] }),
+              queryClient.invalidateQueries({ queryKey: ['entries'] }),
+              queryClient.invalidateQueries({ queryKey: ['goal'] }),
+            ]);
+            hNotifyOk();
+          }}
+          style={{
+            flexDirection: 'row', alignItems: 'center', gap: 12,
+            backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER,
+            padding: 14, marginBottom: 24,
+            shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
+          }}
+        >
+          <View style={{
+            width: 36, height: 36, borderRadius: 18,
+            backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Ionicons name="refresh" size={18} color={PRIMARY} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Refresh data</Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>Re-pull earnings, expenses, and goals</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={MUTED} />
+        </Pressable>
+
         {/* Profit Goals */}
         <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
           🏆 Profit Goals
@@ -1542,6 +1574,12 @@ export default function DashboardScreen() {
   const [showAllEntries, setShowAllEntries] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  // Clear the query whenever the search bar closes. Decoupled from the tap
+  // handler so the toggle stays a pure functional update — no side effects
+  // inside the setState updater (avoids React 19 strict-mode double-fire).
+  useEffect(() => {
+    if (!showSearchBar && searchQuery) setSearchQuery('');
+  }, [showSearchBar]); // eslint-disable-line react-hooks/exhaustive-deps
   const [showCalendar, setShowCalendar] = useState(false);
   // When the user picks a range from the calendar, period === 'custom' and this
   // holds the YYYY-MM-DD bounds (inclusive, EST).
@@ -1739,26 +1777,36 @@ export default function DashboardScreen() {
           borderBottomWidth: 1,
           borderBottomColor: BORDER,
         }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          {/* Left title block: shrinkable so it never pushes the right icons
+              off-screen on 320dp-class phones. minWidth:0 lets flex actually
+              shrink the inner Text; numberOfLines+adjustsFontSizeToFit caps it. */}
+          <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10, marginRight: 8 }}>
             <Animated.View style={[{ borderRadius: 18 }, ninjaGlowStyle]}>
               <Image
                 source={require('../../assets/ninja-logo.png')}
                 style={{ width: 36, height: 36, resizeMode: 'contain' }}
               />
             </Animated.View>
-            <Text style={{ fontSize: 18, fontWeight: '900', letterSpacing: 0.3, color: TEXT }}>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              style={{ flexShrink: 1, fontSize: 18, fontWeight: '900', letterSpacing: 0.3, color: TEXT }}
+            >
               EARNINGS{' '}
               <Text style={{ color: PRIMARY }}>NINJA</Text>
             </Text>
           </View>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          {/* Right icon group: fixed-size, never shrinks, always visible. */}
+          <View style={{ flexDirection: 'row', gap: 8, flexShrink: 0 }}>
             <PressScale
+              hitSlop={8}
               onPress={() => {
                 hTap();
-                setShowSearchBar(s => {
-                  if (s) { setSearchQuery(''); }
-                  return !s;
-                });
+                // Functional updater is closure-safe under rapid taps. The
+                // searchQuery clear runs in an effect below — keeping side
+                // effects out of the updater avoids React 19 double-fire.
+                setShowSearchBar(prev => !prev);
               }}
               style={{
                 width: 36, height: 36, borderRadius: 10,
@@ -1774,18 +1822,14 @@ export default function DashboardScreen() {
               />
             </PressScale>
             <PressScale
+              hitSlop={8}
               onPress={() => { hTap(); setShowCalendar(true); }}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="calendar-outline" size={17} color={MUTED} />
             </PressScale>
             <PressScale
-              onPress={() => { hTap(); onRefresh(); }}
-              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Ionicons name="refresh" size={17} color={MUTED} />
-            </PressScale>
-            <PressScale
+              hitSlop={8}
               onPress={() => { hTap(); setShowSettings(true); }}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
