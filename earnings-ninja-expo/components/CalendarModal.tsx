@@ -87,6 +87,12 @@ function estDateString(input: Date | string): string {
 }
 
 // Convert a backend entry's timestamp into an EST YYYY-MM-DD bucket.
+// Parse 'YYYY-MM-DD' as a local Date at midnight (used for day-count math).
+function parseEstYmd(yyyymmdd: string): Date {
+  const [y, m, d] = yyyymmdd.split('-').map(n => parseInt(n, 10));
+  return new Date(y, (m || 1) - 1, d || 1);
+}
+
 function entryDateStr(e: Entry): string {
   let raw: string | undefined =
     (e as any).timestamp || (e as any).created_at || (e as any).date;
@@ -106,15 +112,20 @@ function entryDateStr(e: Entry): string {
 interface CalendarModalProps {
   visible: boolean;
   onClose: () => void;
+  /** Called with two YYYY-MM-DD EST dates when the user taps "Apply to Dashboard". */
+  onApplyRange?: (fromDateStr: string, toDateStr: string) => void;
 }
 
-export function CalendarModal({ visible, onClose }: CalendarModalProps) {
+export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalProps) {
   const insets = useSafeAreaInsets();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear]   = useState(now.getFullYear());
   const [metric, setMetric] = useState<Metric>('profit');
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  // Range selection: rangeStart is set on first tap; rangeEnd is set on second tap.
+  // While only rangeStart is set (rangeEnd === null), it's treated as a 1-day "in progress" range.
+  const [rangeStart, setRangeStart] = useState<string | null>(null);
+  const [rangeEnd, setRangeEnd]     = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   // Year being browsed inside the picker (separate from `year` so user can scrub years
   // without immediately changing the calendar until they tap a month).
@@ -209,14 +220,12 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
 
   function prevMonth() {
     hTap();
-    setSelectedDay(null);
     if (month === 0) { setMonth(11); setYear(y => y - 1); }
     else setMonth(m => m - 1);
   }
 
   function nextMonth() {
     hTap();
-    setSelectedDay(null);
     if (month === 11) { setMonth(0); setYear(y => y + 1); }
     else setMonth(m => m + 1);
   }
@@ -226,20 +235,83 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
     const t = new Date();
     setMonth(t.getMonth());
     setYear(t.getFullYear());
-    setSelectedDay(estDateString(t));
   }
 
-  // Entries list for selected day.
-  const selectedDayEntries = useMemo(() => {
-    if (!selectedDay) return [];
+  // Normalized [from, to] of the current selection (ascending), or null when nothing is selected.
+  const normalizedRange = useMemo<{ from: string; to: string } | null>(() => {
+    if (!rangeStart) return null;
+    const end = rangeEnd ?? rangeStart;
+    if (rangeStart <= end) return { from: rangeStart, to: end };
+    return { from: end, to: rangeStart };
+  }, [rangeStart, rangeEnd]);
+
+  // Entries that fall within the selected range (sorted newest first).
+  const rangeEntries = useMemo(() => {
+    if (!normalizedRange) return [];
     return entries
-      .filter(e => entryDateStr(e) === selectedDay)
+      .filter(e => {
+        const ds = entryDateStr(e);
+        return ds >= normalizedRange.from && ds <= normalizedRange.to;
+      })
       .sort((a, b) => {
         const ta = new Date((a as any).timestamp || (a as any).created_at || 0).getTime();
         const tb = new Date((b as any).timestamp || (b as any).created_at || 0).getTime();
         return tb - ta;
       });
-  }, [selectedDay, entries]);
+  }, [normalizedRange, entries]);
+
+  // Aggregated totals across the selected range.
+  const rangeTotals = useMemo(() => {
+    if (!normalizedRange) return { profit: 0, revenue: 0, expenses: 0, days: 0, entryCount: 0 };
+    let profit = 0, revenue = 0, expenses = 0, days = 0;
+    for (const k of Object.keys(dailyData)) {
+      if (k >= normalizedRange.from && k <= normalizedRange.to) {
+        const d = dailyData[k];
+        profit   += d.profit;
+        revenue  += d.revenue;
+        expenses += d.expenses;
+        if (d.count > 0) days += 1;
+      }
+    }
+    return { profit, revenue, expenses, days, entryCount: rangeEntries.length };
+  }, [normalizedRange, dailyData, rangeEntries]);
+
+  // Inclusive count of calendar days in the range (selected days, not just days with data).
+  const rangeDayCount = useMemo(() => {
+    if (!normalizedRange) return 0;
+    const f = parseEstYmd(normalizedRange.from);
+    const t = parseEstYmd(normalizedRange.to);
+    return Math.round((t.getTime() - f.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  }, [normalizedRange]);
+
+  // Tap handler that drives 2-tap range selection.
+  function handleDayPress(dateStr: string) {
+    hTap();
+    // Start a new range if nothing selected, OR if a complete range exists.
+    if (!rangeStart || (rangeStart && rangeEnd)) {
+      setRangeStart(dateStr);
+      setRangeEnd(null);
+      return;
+    }
+    // Have a start, no end → complete the range.
+    if (dateStr === rangeStart) {
+      // Tapping the same day twice → keep it as a single-day selection (commit it).
+      setRangeEnd(dateStr);
+      return;
+    }
+    if (dateStr < rangeStart) {
+      setRangeEnd(rangeStart);
+      setRangeStart(dateStr);
+    } else {
+      setRangeEnd(dateStr);
+    }
+  }
+
+  function clearRange() {
+    hTap();
+    setRangeStart(null);
+    setRangeEnd(null);
+  }
 
   const todayStr = estDateString(new Date());
   // Compute fixed pixel cell width from the live window dimensions.
@@ -548,9 +620,17 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                 const value = getValue(cell.dateStr);
                 const data  = dailyData[cell.dateStr];
                 const hasData = !!data && data.count > 0;
-                const isSelected = cell.dateStr === selectedDay;
                 const isToday = cell.dateStr === todayStr;
                 const dotColor = getDotColor(value, hasData);
+
+                // Range-selection visuals.
+                const isRangeStart = !!normalizedRange && cell.dateStr === normalizedRange.from;
+                const isRangeEnd   = !!normalizedRange && cell.dateStr === normalizedRange.to;
+                const isInRange    = !!normalizedRange &&
+                  cell.dateStr >= normalizedRange.from &&
+                  cell.dateStr <= normalizedRange.to;
+                const isRangeMiddle = isInRange && !isRangeStart && !isRangeEnd;
+                const isEndpoint   = isRangeStart || isRangeEnd;
 
                 // Day-number color: white by default, yellow if today, profit/loss tint if data.
                 let dayNumColor: string;
@@ -561,17 +641,17 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                 else if (value < 0)        dayNumColor = RED;
                 else                       dayNumColor = TEXT;
 
+                // Soft yellow tint for in-range middle days.
+                const cellBg = isRangeMiddle ? 'rgba(250,204,21,0.12)' : SURFACE;
+
                 return (
                   <Pressable
                     key={idx}
-                    onPress={() => {
-                      hTap();
-                      setSelectedDay(prev => prev === cell.dateStr ? null : cell.dateStr);
-                    }}
+                    onPress={() => handleDayPress(cell.dateStr)}
                     style={{
                       width: cellSize,
                       height: cellHeight,
-                      backgroundColor: SURFACE,
+                      backgroundColor: cellBg,
                       borderRightWidth: isLastCol ? 0 : 1,
                       borderBottomWidth: isLastRow ? 0 : 1,
                       borderColor: BORDER,
@@ -580,8 +660,8 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                       overflow: 'hidden',
                     }}
                   >
-                    {/* Selected ring overlay */}
-                    {isSelected && (
+                    {/* Endpoint ring overlay (start/end of range) */}
+                    {isEndpoint && (
                       <View
                         pointerEvents="none"
                         style={{
@@ -598,7 +678,7 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                       style={{
                         color: dayNumColor,
                         fontSize: 15,
-                        fontWeight: isToday || isSelected ? '900' : '600',
+                        fontWeight: isToday || isEndpoint ? '900' : '600',
                         lineHeight: 18,
                         textAlign: 'center',
                         textAlignVertical: 'center',
@@ -652,91 +732,97 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
             )}
           </View>
 
-          {/* ── Selected Day Detail ─────────────────────────────────────────── */}
-          {selectedDay && (
+          {/* ── Selected Range Detail ───────────────────────────────────────── */}
+          {normalizedRange && (
             <View style={{
-              marginHorizontal: 16, marginTop: 18,
+              marginHorizontal: 16, marginTop: 18, marginBottom: 24,
               backgroundColor: SURFACE, borderRadius: 14,
               borderWidth: 1, borderColor: PRIMARY,
               ...neonGlow(PRIMARY, 6, 0.25),
             }}>
+              {/* Header */}
               <View style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                 paddingHorizontal: 14, paddingVertical: 12,
                 borderBottomWidth: 1, borderBottomColor: DIVIDER,
               }}>
-                <Text style={{ color: PRIMARY, fontSize: 14, fontWeight: '900' }}>
-                  {formatHumanDate(selectedDay)}
-                </Text>
-                <Pressable onPress={() => { hTap(); setSelectedDay(null); }} hitSlop={10}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: PRIMARY, fontSize: 14, fontWeight: '900' }}>
+                    {normalizedRange.from === normalizedRange.to
+                      ? formatHumanDate(normalizedRange.from)
+                      : `${formatHumanDate(normalizedRange.from)} → ${formatHumanDate(normalizedRange.to)}`}
+                  </Text>
+                  <Text style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>
+                    {rangeDayCount} day{rangeDayCount === 1 ? '' : 's'}
+                    {!rangeEnd ? ' · tap another day to extend' : ''}
+                  </Text>
+                </View>
+                <Pressable onPress={clearRange} hitSlop={10}>
                   <Ionicons name="close" size={18} color={LABEL} />
                 </Pressable>
               </View>
 
-              {/* Day stats */}
-              {(() => {
-                const d = dailyData[selectedDay];
-                if (!d || d.count === 0) {
-                  return (
-                    <View style={{ padding: 18, alignItems: 'center' }}>
-                      <Text style={{ fontSize: 28 }}>🗓️</Text>
-                      <Text style={{ color: MUTED, fontSize: 13, marginTop: 8 }}>
-                        No entries on this day.
-                      </Text>
-                    </View>
-                  );
-                }
-                return (
-                  <>
-                    <View style={{
-                      flexDirection: 'row',
-                      paddingVertical: 12, paddingHorizontal: 14,
-                      borderBottomWidth: 1, borderBottomColor: DIVIDER,
-                    }}>
-                      <DayStat label="Profit"   value={`$${d.profit.toFixed(2)}`}   color={d.profit >= 0 ? GREEN : RED} />
-                      <DayStat label="Revenue"  value={`$${d.revenue.toFixed(2)}`}  color={GREEN} />
-                      <DayStat label="Expenses" value={`$${d.expenses.toFixed(2)}`} color={RED} last />
-                    </View>
+              {/* Range stats */}
+              {rangeTotals.entryCount === 0 ? (
+                <View style={{ padding: 18, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 28 }}>🗓️</Text>
+                  <Text style={{ color: MUTED, fontSize: 13, marginTop: 8 }}>
+                    No entries in this range.
+                  </Text>
+                </View>
+              ) : (
+                <View style={{
+                  flexDirection: 'row',
+                  paddingVertical: 12, paddingHorizontal: 14,
+                  borderBottomWidth: 1, borderBottomColor: DIVIDER,
+                }}>
+                  <DayStat label="Profit"   value={`$${rangeTotals.profit.toFixed(2)}`}   color={rangeTotals.profit >= 0 ? GREEN : RED} />
+                  <DayStat label="Revenue"  value={`$${rangeTotals.revenue.toFixed(2)}`}  color={GREEN} />
+                  <DayStat label="Expenses" value={`$${rangeTotals.expenses.toFixed(2)}`} color={RED} last />
+                </View>
+              )}
 
-                    {selectedDayEntries.map(e => {
-                      const amt = Number(e.amount) || 0;
-                      const isExpense = amt < 0;
-                      return (
-                        <View key={e.id} style={{
-                          flexDirection: 'row', alignItems: 'center',
-                          paddingHorizontal: 14, paddingVertical: 10,
-                          borderBottomWidth: 1, borderBottomColor: DIVIDER,
-                          gap: 10,
-                        }}>
-                          <View style={{
-                            width: 32, height: 32, borderRadius: 8,
-                            backgroundColor: APP_COLORS[e.app] || '#444',
-                            alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            <Text style={{ color: '#fff', fontWeight: '900', fontSize: 13 }}>
-                              {(APP_LABELS[e.app] || 'O')[0]}
-                            </Text>
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text style={{ color: TEXT, fontWeight: '700', fontSize: 13 }}>
-                              {APP_LABELS[e.app] || e.app}
-                            </Text>
-                            <Text style={{ color: MUTED, fontSize: 11, marginTop: 1 }}>
-                              {e.type}{e.category ? ` · ${e.category}` : ''}
-                            </Text>
-                          </View>
-                          <Text style={{
-                            color: isExpense ? RED : GREEN,
-                            fontWeight: '900', fontSize: 14,
-                          }}>
-                            {isExpense ? '-' : '+'}${Math.abs(amt).toFixed(2)}
-                          </Text>
-                        </View>
-                      );
-                    })}
-                  </>
-                );
-              })()}
+              {/* Action row */}
+              <View style={{
+                flexDirection: 'row', gap: 10,
+                paddingHorizontal: 14, paddingVertical: 12,
+              }}>
+                <Pressable
+                  onPress={clearRange}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 12, borderRadius: 10,
+                    borderWidth: 1, borderColor: BORDER,
+                    alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: 'transparent',
+                  }}
+                >
+                  <Text style={{ color: LABEL, fontWeight: '800', fontSize: 13 }}>
+                    Clear
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    if (!normalizedRange || !onApplyRange) return;
+                    hTap();
+                    onApplyRange(normalizedRange.from, normalizedRange.to);
+                    onClose();
+                  }}
+                  disabled={!onApplyRange}
+                  style={{
+                    flex: 2,
+                    paddingVertical: 12, borderRadius: 10,
+                    backgroundColor: PRIMARY,
+                    alignItems: 'center', justifyContent: 'center',
+                    ...neonGlow(PRIMARY, 12, 0.7),
+                    opacity: onApplyRange ? 1 : 0.5,
+                  }}
+                >
+                  <Text style={{ color: '#000', fontWeight: '900', fontSize: 14 }}>
+                    Apply to Dashboard
+                  </Text>
+                </Pressable>
+              </View>
             </View>
           )}
         </ScrollView>
@@ -817,7 +903,6 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                       hTap();
                       setMonth(i);
                       setYear(pickerYear);
-                      setSelectedDay(null);
                       setPickerOpen(false);
                     }}
                     scale={0.94}
@@ -864,7 +949,6 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                   setMonth(t.getMonth());
                   setYear(t.getFullYear());
                   setPickerYear(t.getFullYear());
-                  setSelectedDay(null);
                   setPickerOpen(false);
                 }}
                 scale={0.95}

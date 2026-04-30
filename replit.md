@@ -42,6 +42,11 @@ Required secret:
 
 The email service is configured and ready to send password reset emails when users click "Forgot password?" on the login page.
 
+## Recent Changes (April 30, 2026)
+- **Expo CalendarModal: multi-day range selection.** Tap a day to start a range, tap another day to complete (auto-swaps if end < start; tapping the same day twice commits a single-day range). Range visuals: yellow ring on start/end endpoints, soft yellow tint (`rgba(250,204,21,0.12)`) on in-between days. New bottom panel shows aggregated PROFIT/REVENUE/EXPENSES totals + day count, with "Apply to Dashboard" + "Clear" buttons.
+- **Dashboard: new `'custom'` Period.** When applied from the calendar, the dashboard hits new range-aware API endpoints (`api.getRollupInRange` / `api.getEntriesInRange`) and shows a dismissible "Custom Range" chip in the period strip with a compact `Apr 14 – Apr 20` label. Goals section is hidden in custom mode (goals are tied to fixed timeframes only).
+- **Backend `from_date`/`to_date` support added to `/api/rollup`.** New helper `get_est_date_range(from, to)` in `backend/services/period.py` interprets YYYY-MM-DD strings as inclusive EST calendar days → naive UTC datetime bounds (mirroring `get_today()` / `get_this_month()` convention). `/api/entries` updated to use the same helper for date-only inputs so single-day ranges no longer exclude same-day entries.
+
 ## Recent Changes (April 29, 2026)
 - **Expo dashboard polish pass** to align native iOS app with web "Dark Neon" theme:
   - Deeper background color stack: BG `#0a0a0a` / SURFACE `#111` / CARD_BG `#1a1a1a` (true blacks)

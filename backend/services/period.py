@@ -1,6 +1,29 @@
 from datetime import datetime, timedelta, timezone
 from pytz import timezone as pytz_timezone
 
+def get_est_date_range(from_date_str: str, to_date_str: str):
+    """
+    Convert two YYYY-MM-DD strings (interpreted as inclusive EST calendar days)
+    into naive UTC datetime bounds suitable for DB comparison.
+    Mirrors the convention used by get_today() / get_this_month() etc.
+    """
+    est = pytz_timezone('US/Eastern')
+
+    from_year, from_month, from_day = (int(p) for p in from_date_str.split('-'))
+    to_year, to_month, to_day = (int(p) for p in to_date_str.split('-'))
+
+    start_est_naive = datetime(from_year, from_month, from_day, 0, 0, 0, 0)
+    end_est_naive   = datetime(to_year, to_month, to_day, 23, 59, 59, 999999)
+
+    start_est = est.localize(start_est_naive)
+    end_est   = est.localize(end_est_naive)
+
+    start_utc = start_est.astimezone(timezone.utc).replace(tzinfo=None)
+    end_utc   = end_est.astimezone(timezone.utc).replace(tzinfo=None)
+
+    return start_utc, end_utc
+
+
 def get_day_offset(offset_days: int = 0):
     """Get a specific day with offset in EST timezone, return UTC bounds. 0 = today, -1 = yesterday, 1 = tomorrow, etc."""
     est = pytz_timezone('US/Eastern')

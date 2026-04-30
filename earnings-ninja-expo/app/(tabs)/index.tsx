@@ -177,7 +177,7 @@ function useMilestoneGlow(profit: number) {
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth';
+type Period = 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth' | 'custom';
 
 const PERIODS: { key: Period; label: string; tf: TimeframeType }[] = [
   { key: 'today',     label: 'Today',      tf: 'TODAY' },
@@ -195,7 +195,16 @@ const PERIOD_LABELS: Record<Period, string> = {
   last7:     'Last 7 Days',
   month:     "This Month's",
   lastMonth: "Last Month's",
+  custom:    'Custom Range',
 };
+
+// Compact "Apr 14" display for custom-range chips/labels.
+function formatShortDate(yyyymmdd: string): string {
+  const [y, m, d] = yyyymmdd.split('-').map(n => parseInt(n, 10));
+  if (!y || !m || !d) return yyyymmdd;
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 const APPS: { key: AppType; label: string; color: string }[] = [
   { key: 'DOORDASH',  label: 'DoorDash',  color: '#FF3008' },
@@ -1177,22 +1186,44 @@ export default function DashboardScreen() {
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
+  // When the user picks a range from the calendar, period === 'custom' and this
+  // holds the YYYY-MM-DD bounds (inclusive, EST).
+  const [customRange, setCustomRange] = useState<{ from: string; to: string } | null>(null);
 
-  const tf = PERIODS.find(p => p.key === period)!.tf;
+  const tf = period === 'custom'
+    ? 'TODAY' // unused — but keeps query keys typed cleanly
+    : PERIODS.find(p => p.key === period)!.tf;
+
+  // Stable cache keys that include the range when in custom mode so React Query
+  // doesn't share data across different ranges.
+  const rollupKey  = period === 'custom'
+    ? ['rollup', 'custom', customRange?.from, customRange?.to]
+    : ['rollup', tf];
+  const entriesKey = period === 'custom'
+    ? ['entries', 'custom', customRange?.from, customRange?.to]
+    : ['entries', tf];
 
   const { data: rollup, isLoading: rollupLoading } = useQuery({
-    queryKey: ['rollup', tf],
-    queryFn: () => api.getRollup(tf),
+    queryKey: rollupKey,
+    queryFn: () => period === 'custom' && customRange
+      ? api.getRollupInRange(customRange.from, customRange.to)
+      : api.getRollup(tf),
+    enabled: period !== 'custom' || !!customRange,
   });
 
   const { data: entries = [] } = useQuery({
-    queryKey: ['entries', tf],
-    queryFn: () => api.getEntries(tf),
+    queryKey: entriesKey,
+    queryFn: () => period === 'custom' && customRange
+      ? api.getEntriesInRange(customRange.from, customRange.to)
+      : api.getEntries(tf),
+    enabled: period !== 'custom' || !!customRange,
   });
 
+  // Goals only exist for the fixed timeframes — disable the goal query in custom mode.
   const { data: goal, refetch: refetchGoal } = useQuery({
     queryKey: ['goal', tf],
     queryFn: () => api.getGoal(tf),
+    enabled: period !== 'custom',
   });
 
   const deleteMutation = useMutation({
@@ -1382,6 +1413,52 @@ export default function DashboardScreen() {
                 </PressScale>
               );
             })}
+            {/* Custom Range chip — only shown after the user picks a range from the calendar. */}
+            {customRange && (
+              <PressScale
+                onPress={() => { hTap(); setPeriod('custom'); }}
+                scale={0.92}
+                style={[
+                  {
+                    flexDirection: 'row', alignItems: 'center', gap: 6,
+                    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+                    backgroundColor: period === 'custom' ? PRIMARY : 'transparent',
+                    borderWidth: 1, borderColor: period === 'custom' ? PRIMARY : BORDER,
+                  },
+                  period === 'custom' ? neonGlow(PRIMARY, 5, 0.18) : undefined,
+                ].filter(Boolean) as ViewStyle[]}
+              >
+                <Ionicons
+                  name="calendar"
+                  size={12}
+                  color={period === 'custom' ? '#fff' : MUTED}
+                />
+                <Text style={{
+                  color: period === 'custom' ? '#fff' : MUTED,
+                  fontSize: 13, fontWeight: period === 'custom' ? '800' : '500',
+                }}>
+                  {customRange.from === customRange.to
+                    ? formatShortDate(customRange.from)
+                    : `${formatShortDate(customRange.from)} – ${formatShortDate(customRange.to)}`}
+                </Text>
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation?.();
+                    hTap();
+                    setCustomRange(null);
+                    if (period === 'custom') setPeriod('today');
+                  }}
+                  hitSlop={8}
+                  style={{ marginLeft: 2 }}
+                >
+                  <Ionicons
+                    name="close"
+                    size={13}
+                    color={period === 'custom' ? '#fff' : MUTED}
+                  />
+                </Pressable>
+              </PressScale>
+            )}
           </ScrollView>
         </View>
 
@@ -1560,7 +1637,8 @@ export default function DashboardScreen() {
                 </View>
               </View>
 
-              {/* ── Goals Section ────────────────────────────────────────────── */}
+              {/* ── Goals Section (hidden in custom-range mode — goals are tied to fixed timeframes) ──── */}
+              {period !== 'custom' && (
               <View>
                 <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>
                   GOALS
@@ -1649,6 +1727,7 @@ export default function DashboardScreen() {
                   </View>
                 )}
               </View>
+              )}
 
               {/* ── Entries List ─────────────────────────────────────────────── */}
               {entries.length > 0 && (
@@ -1767,7 +1846,14 @@ export default function DashboardScreen() {
       {/* ── Modals ───────────────────────────────────────────────────────────── */}
       <AddEntryModal visible={showAdd} onClose={() => setShowAdd(false)} />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
-      <CalendarModal visible={showCalendar} onClose={() => setShowCalendar(false)} />
+      <CalendarModal
+        visible={showCalendar}
+        onClose={() => setShowCalendar(false)}
+        onApplyRange={(from, to) => {
+          setCustomRange({ from, to });
+          setPeriod('custom');
+        }}
+      />
     </View>
   );
 }
