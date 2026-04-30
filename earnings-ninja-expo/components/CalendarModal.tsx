@@ -193,21 +193,22 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
 
   function getCellBg(value: number, hasData: boolean, isSelected: boolean): string {
     if (isSelected) return PRIMARY;
-    if (!hasData) return CARD;
+    if (!hasData) return SURFACE;
     if (metric === 'expenses') {
       const v = Math.abs(value);
       if (v > 100) return RED_HI;
       if (v > 50)  return RED_MD;
       if (v > 0)   return RED_LT;
-      return CARD;
+      return SURFACE;
     }
-    // profit / revenue
+    // profit / revenue — every active day gets a clear green or red tint.
     if (value > 100)  return GREEN_HI;
-    if (value > 50)   return GREEN_MD;
+    if (value > 25)   return GREEN_MD;
     if (value > 0)    return GREEN_LT;
     if (value < -50)  return RED_HI;
+    if (value < -10)  return RED_MD;
     if (value < 0)    return RED_LT;
-    return CARD;
+    return SURFACE;
   }
 
   function getCellText(value: number, isSelected: boolean): string {
@@ -254,8 +255,9 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
 
   const todayStr = estDateString(new Date());
   const screenW  = Dimensions.get('window').width;
-  // 7 cols, container has 16 padding both sides + 6 gap between cells (6 gaps).
-  const cellSize = Math.floor((screenW - 16 * 2 - 6 * 6) / 7);
+  // 7 columns, flush grid: container has 16px padding both sides + 1px outer border.
+  const cellSize = Math.floor((screenW - 16 * 2 - 2) / 7);
+  const cellHeight = Math.max(cellSize, 62);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -419,22 +421,34 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
             </View>
           </View>
 
-          {/* ── Day-of-week Header ──────────────────────────────────────────── */}
+          {/* ── Day-of-week Header (flush with grid) ────────────────────────── */}
           <View style={{
             flexDirection: 'row',
-            paddingHorizontal: 16,
-            gap: 6,
+            marginHorizontal: 16,
+            borderTopLeftRadius: 12,
+            borderTopRightRadius: 12,
+            borderWidth: 1,
+            borderColor: BORDER,
+            backgroundColor: SURFACE,
+            overflow: 'hidden',
           }}>
             {DAY_NAMES.map((d, i) => (
               <View
                 key={i}
                 style={{
                   width: cellSize,
-                  paddingVertical: 6,
+                  paddingVertical: 8,
                   alignItems: 'center',
+                  borderRightWidth: i < 6 ? 1 : 0,
+                  borderRightColor: BORDER,
                 }}
               >
-                <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700' }}>{d}</Text>
+                <Text style={{
+                  color: i === 0 || i === 6 ? PRIMARY : MUTED,
+                  fontSize: 11,
+                  fontWeight: '800',
+                  letterSpacing: 0.5,
+                }}>{d}</Text>
               </View>
             ))}
           </View>
@@ -468,15 +482,38 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
             </View>
           ) : (
             <View style={{
-              paddingHorizontal: 16,
+              marginHorizontal: 16,
               flexDirection: 'row',
               flexWrap: 'wrap',
-              gap: 6,
+              borderLeftWidth: 1,
+              borderRightWidth: 1,
+              borderBottomWidth: 1,
+              borderColor: BORDER,
+              borderBottomLeftRadius: 12,
+              borderBottomRightRadius: 12,
+              overflow: 'hidden',
+              backgroundColor: SURFACE,
             }}>
               {days.map((cell, idx) => {
+                const isLastCol = idx % 7 === 6;
+                const isLastRow = idx >= days.length - 7;
+
                 if (cell === null) {
-                  return <View key={idx} style={{ width: cellSize, height: cellSize }} />;
+                  return (
+                    <View
+                      key={idx}
+                      style={{
+                        width: cellSize,
+                        height: cellHeight,
+                        backgroundColor: BG,
+                        borderRightWidth: isLastCol ? 0 : 1,
+                        borderBottomWidth: isLastRow ? 0 : 1,
+                        borderColor: BORDER,
+                      }}
+                    />
+                  );
                 }
+
                 const value = getValue(cell.dateStr);
                 const data  = dailyData[cell.dateStr];
                 const hasData = !!data && data.count > 0;
@@ -485,6 +522,14 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                 const bg = getCellBg(value, hasData, isSelected);
                 const txt = getCellText(value, isSelected);
 
+                // Day-number color: profit-aware in profit mode for at-a-glance scanning.
+                let dayNumColor: string;
+                if (isSelected)        dayNumColor = '#000';
+                else if (isToday)      dayNumColor = PRIMARY;
+                else if (!hasData)     dayNumColor = MUTED;
+                else if (metric === 'expenses') dayNumColor = value > 0 ? RED : TEXT;
+                else                   dayNumColor = value > 0 ? GREEN : value < 0 ? RED : TEXT;
+
                 return (
                   <PressScale
                     key={idx}
@@ -492,37 +537,69 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                       hTap();
                       setSelectedDay(prev => prev === cell.dateStr ? null : cell.dateStr);
                     }}
-                    scale={0.92}
+                    scale={0.94}
                     style={{
                       width: cellSize,
-                      height: cellSize,
-                      borderRadius: 10,
+                      height: cellHeight,
                       backgroundColor: bg,
-                      borderWidth: isToday || isSelected ? 2 : 1,
-                      borderColor: isSelected ? '#000' : isToday ? PRIMARY : BORDER,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      paddingVertical: 4,
+                      borderRightWidth: isLastCol ? 0 : 1,
+                      borderBottomWidth: isLastRow ? 0 : 1,
+                      borderColor: BORDER,
+                      paddingTop: 4,
+                      paddingHorizontal: 4,
+                      paddingBottom: 4,
                       ...(isSelected ? neonGlow(PRIMARY, 8, 0.5) : {}),
                     }}
                   >
-                    <Text style={{
-                      color: isSelected ? '#000' : isToday ? PRIMARY : TEXT,
-                      fontSize: 12,
-                      fontWeight: isToday || isSelected ? '900' : '600',
-                    }}>
-                      {cell.day}
-                    </Text>
-                    {hasData && (
-                      <Text style={{
-                        color: txt,
-                        fontSize: 10,
-                        fontWeight: '900',
-                        marginTop: 2,
-                      }}>
-                        {(metric === 'expenses' ? '-' : value < 0 ? '-' : '') +
-                         '$' + Math.abs(Math.round(value))}
+                    {/* Today ring overlay */}
+                    {isToday && !isSelected && (
+                      <View
+                        pointerEvents="none"
+                        style={{
+                          position: 'absolute',
+                          top: 0, left: 0, right: 0, bottom: 0,
+                          borderWidth: 2,
+                          borderColor: PRIMARY,
+                        }}
+                      />
+                    )}
+                    {/* Day number — top-left, fixed-size box for alignment */}
+                    <View style={{ alignSelf: 'flex-start', minWidth: 18, alignItems: 'center' }}>
+                      <Text
+                        style={{
+                          color: dayNumColor,
+                          fontSize: 13,
+                          fontWeight: isToday || isSelected ? '900' : '700',
+                          lineHeight: 16,
+                          textAlign: 'center',
+                        }}
+                      >
+                        {cell.day}
                       </Text>
+                    </View>
+                    {/* Amount — centered, dominant */}
+                    {hasData && (
+                      <View style={{
+                        flex: 1,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginTop: -2,
+                      }}>
+                        <Text
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          style={{
+                            color: txt,
+                            fontSize: 12,
+                            fontWeight: '900',
+                            letterSpacing: -0.2,
+                            textAlign: 'center',
+                          }}
+                        >
+                          {(metric === 'expenses' ? '-' : value < 0 ? '-' : '') +
+                            '$' + Math.abs(Math.round(value))}
+                        </Text>
+                      </View>
                     )}
                   </PressScale>
                 );
