@@ -23,6 +23,8 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
+import { widgetSync } from '@/lib/widgetSync';
+import { useLocalSearchParams, router } from 'expo-router';
 
 // Safe haptics — silently ignored on simulators / devices without haptic engine
 const hTap = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -975,7 +977,12 @@ function DetailsForm({
 }
 
 // ─── Add Entry Modal ───────────────────────────────────────────────────────────
-function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+type AddEntryPrefill = { type?: 'REVENUE' | 'EXPENSE'; amount?: string };
+function AddEntryModal({ visible, onClose, prefill }: {
+  visible: boolean;
+  onClose: () => void;
+  prefill?: AddEntryPrefill;
+}) {
   const { PRIMARY, ON_PRIMARY } = useTheme();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -997,6 +1004,19 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
     setMiles(''); setMinutes(''); setNote('');
     setReceiptUri(null); setReceiptDataUri(null);
   };
+
+  // Apply widget-driven prefill whenever the modal opens with a prefill set.
+  useEffect(() => {
+    if (!visible || !prefill) return;
+    if (prefill.type === 'EXPENSE') {
+      setEntryType('EXPENSE'); setMode('subtract'); setApp('OTHER'); setCategory('OTHER');
+    } else if (prefill.type === 'REVENUE') {
+      setEntryType('ORDER'); setMode('add');
+    }
+    if (prefill.amount && /^\d+(\.\d+)?$/.test(prefill.amount)) {
+      setAmount(prefill.amount);
+    }
+  }, [visible, prefill]);
 
   // Image-picker helpers — request permissions, then offer Camera vs Library
   // via Alert (matches iOS conventions). We store the local `uri` for the
@@ -1053,10 +1073,15 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
   const mutation = useMutation({
     mutationFn: api.createEntry,
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['rollup'] });
       queryClient.invalidateQueries({ queryKey: ['goal'] });
+      // Remember the last app the user logged revenue against — the iOS
+      // widget's quick-add buttons use this as the platform.
+      if (vars.type === 'ORDER' && vars.app) {
+        widgetSync.pushLastApp(vars.app);
+      }
       hNotifyOk();
       reset();
       onClose();
@@ -1443,7 +1468,21 @@ export default function DashboardScreen() {
   const [period, setPeriod] = useState<Period>('today');
   const [refreshing, setRefreshing] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [addPrefill, setAddPrefill] = useState<AddEntryPrefill | undefined>(undefined);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Watch for `?openEntry=1[&type=…&amount=…]` from the iOS widget deep link.
+  // Open the AddEntry modal with prefill, then immediately strip the params
+  // so the modal doesn't reopen on subsequent navigations.
+  const searchParams = useLocalSearchParams<{ openEntry?: string; type?: string; amount?: string }>();
+  useEffect(() => {
+    if (searchParams.openEntry === '1') {
+      const t = searchParams.type === 'EXPENSE' ? 'EXPENSE' : searchParams.type === 'REVENUE' ? 'REVENUE' : undefined;
+      setAddPrefill({ type: t, amount: searchParams.amount });
+      setShowAdd(true);
+      router.setParams({ openEntry: undefined, type: undefined, amount: undefined } as never);
+    }
+  }, [searchParams.openEntry, searchParams.type, searchParams.amount]);
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
   const [showAllEntries, setShowAllEntries] = useState(false);
@@ -1533,6 +1572,15 @@ export default function DashboardScreen() {
   const perHour   = n(rollup?.dollars_per_hour);
   const perMile   = n(rollup?.dollars_per_mile);
   const avgOrder  = n(rollup?.average_order_value);
+
+  // Push today's net profit to the iOS widget whenever we're actually
+  // viewing today (period === 'today' && dayOffset === 0). Other periods
+  // would lie to the widget about "today".
+  useEffect(() => {
+    if (period === 'today' && effectiveDayOffset === 0 && rollup) {
+      widgetSync.pushProfit(profit);
+    }
+  }, [profit, period, effectiveDayOffset, rollup]);
   const rawGoal   = goal?.target_profit;
   const goalTarget = (rawGoal !== undefined && rawGoal !== null) ? Number(rawGoal) || null : null;
   // Filter entries by search query (matches app label, type, category, note, amount)
@@ -2168,7 +2216,11 @@ export default function DashboardScreen() {
       </View>
 
       {/* ── Modals ───────────────────────────────────────────────────────────── */}
-      <AddEntryModal visible={showAdd} onClose={() => setShowAdd(false)} />
+      <AddEntryModal
+        visible={showAdd}
+        prefill={addPrefill}
+        onClose={() => { setShowAdd(false); setAddPrefill(undefined); }}
+      />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
       <CalendarModal
         visible={showCalendar}

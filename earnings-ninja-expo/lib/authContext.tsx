@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { api, User } from './api';
 import { getToken, setToken as persistToken, clearToken } from './tokenStorage';
+import { widgetSync } from './widgetSync';
 
 interface AuthContextType {
   token: string | null;
@@ -27,12 +28,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getToken().then(async (t) => {
       if (t) {
         setToken(t);
+        widgetSync.onLogin(t);
         try {
           const u = await api.getMe();
           setUser(u);
         } catch {
           await clearToken();
           setToken(null);
+          widgetSync.onLogout();
         }
       }
       setIsLoading(false);
@@ -42,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (newToken: string) => {
     await persistToken(newToken);
     setToken(newToken);
+    widgetSync.onLogin(newToken);
     try {
       const u = await api.getMe();
       setUser(u);
@@ -52,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await clearToken();
     setToken(null);
     setUser(null);
+    widgetSync.onLogout();
   };
 
   return (
