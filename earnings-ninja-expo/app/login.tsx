@@ -227,58 +227,79 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          {/* Submit Button — full-width, solid yellow */}
+          {/* Submit Button — full-width, solid yellow.
+              NOTE: object-style `style` (not the `({pressed})=>...` function form) —
+              the function form was being dropped by RN here, leaving the button
+              rendering as plain text on a transparent background. */}
           <Pressable
             onPress={handleSubmit}
             disabled={loading}
-            style={({ pressed }) => ({
+            style={{
               width: '100%',
+              alignSelf: 'stretch',
               backgroundColor: ACCENT,
               borderRadius: 14,
               paddingVertical: 16,
+              paddingHorizontal: 16,
               alignItems: 'center',
               justifyContent: 'center',
-              opacity: pressed ? 0.85 : 1,
-              transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: ACCENT,
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.45,
               shadowRadius: 10,
               elevation: 6,
               marginBottom: 12,
-            })}
+              opacity: loading ? 0.85 : 1,
+            }}
           >
             {loading
               ? <ActivityIndicator color="#000" />
-              : <Text style={{ color: '#000', fontWeight: '900', fontSize: 17, letterSpacing: 0.3 }}>
+              : <Text style={{
+                  color: '#000',
+                  fontWeight: '900',
+                  fontSize: 17,
+                  letterSpacing: 0.3,
+                  textAlign: 'center',
+                  textAlignVertical: 'center',
+                  includeFontPadding: false,
+                }}>
                   {mode === 'login' ? 'Sign In →' : 'Create Account →'}
                 </Text>
             }
           </Pressable>
 
-          {/* Demo Button — full-width, solid yellow (matches Sign In as a stacked pair) */}
+          {/* Demo Button — full-width, solid green (kept green per user). */}
           <Pressable
             onPress={handleDemo}
             disabled={demoLoading}
-            style={({ pressed }) => ({
+            style={{
               width: '100%',
-              backgroundColor: ACCENT,
+              alignSelf: 'stretch',
+              backgroundColor: GREEN,
               borderRadius: 14,
               paddingVertical: 16,
+              paddingHorizontal: 16,
               alignItems: 'center',
               justifyContent: 'center',
-              opacity: pressed ? 0.85 : 1,
-              transform: [{ scale: pressed ? 0.98 : 1 }],
-              shadowColor: ACCENT,
+              shadowColor: GREEN,
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.45,
               shadowRadius: 10,
               elevation: 6,
-            })}
+              opacity: demoLoading ? 0.85 : 1,
+            }}
           >
             {demoLoading
               ? <ActivityIndicator color="#000" />
-              : <Text style={{ color: '#000', fontWeight: '900', fontSize: 17, letterSpacing: 0.3 }}>
+              : <Text style={{
+                  color: '#000',
+                  fontWeight: '900',
+                  fontSize: 17,
+                  letterSpacing: 0.3,
+                  textAlign: 'center',
+                  textAlignVertical: 'center',
+                  includeFontPadding: false,
+                }}>
                   🚗 Try Demo Mode
                 </Text>
             }
