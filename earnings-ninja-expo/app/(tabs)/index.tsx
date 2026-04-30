@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withSequence, withRepeat, withDelay,
-  Easing,
+  Easing, runOnJS,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,6 +19,7 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/lib/authContext';
 import * as Haptics from 'expo-haptics';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
 
 // Safe haptics — silently ignored on simulators / devices without haptic engine
@@ -1189,25 +1190,32 @@ export default function DashboardScreen() {
   // When the user picks a range from the calendar, period === 'custom' and this
   // holds the YYYY-MM-DD bounds (inclusive, EST).
   const [customRange, setCustomRange] = useState<{ from: string; to: string } | null>(null);
+  // Day offset for swipe-to-change-day on the "Today" period (0 = today, -1 = yesterday, etc).
+  // Only meaningful when period === 'today'. Reset whenever the user switches periods.
+  const [dayOffset, setDayOffset] = useState(0);
 
   const tf = period === 'custom'
     ? 'TODAY' // unused — but keeps query keys typed cleanly
     : PERIODS.find(p => p.key === period)!.tf;
 
+  // Effective day offset is only applied when we're on the TODAY chip; otherwise 0.
+  const effectiveDayOffset = period === 'today' ? dayOffset : 0;
+
   // Stable cache keys that include the range when in custom mode so React Query
-  // doesn't share data across different ranges.
+  // doesn't share data across different ranges. Day offset is also part of the
+  // key so each day has its own cache slot.
   const rollupKey  = period === 'custom'
     ? ['rollup', 'custom', customRange?.from, customRange?.to]
-    : ['rollup', tf];
+    : ['rollup', tf, effectiveDayOffset];
   const entriesKey = period === 'custom'
     ? ['entries', 'custom', customRange?.from, customRange?.to]
-    : ['entries', tf];
+    : ['entries', tf, effectiveDayOffset];
 
   const { data: rollup, isLoading: rollupLoading } = useQuery({
     queryKey: rollupKey,
     queryFn: () => period === 'custom' && customRange
       ? api.getRollupInRange(customRange.from, customRange.to)
-      : api.getRollup(tf),
+      : api.getRollup(tf, effectiveDayOffset),
     enabled: period !== 'custom' || !!customRange,
   });
 
@@ -1215,7 +1223,7 @@ export default function DashboardScreen() {
     queryKey: entriesKey,
     queryFn: () => period === 'custom' && customRange
       ? api.getEntriesInRange(customRange.from, customRange.to)
-      : api.getEntries(tf),
+      : api.getEntries(tf, 200, effectiveDayOffset),
     enabled: period !== 'custom' || !!customRange,
   });
 
@@ -1295,8 +1303,44 @@ export default function DashboardScreen() {
   const goalPct   = safeGoal > 0 ? Math.min((profit / safeGoal) * 100, 100) : 0;
   const goalColor = goalPct >= 100 ? GREEN : PRIMARY;
 
-  // Period label for the date bar
-  const periodLabel = PERIOD_LABELS[period];
+  // Period label for the date bar. When the user is on the TODAY chip and has
+  // swiped to a different day, replace the static "Today" label with the actual
+  // weekday/date the dashboard is now showing (e.g. "Yesterday • Apr 29").
+  const dayNavActive = period === 'today';
+  const dateLabelForOffset = (off: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + off);
+    const md = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (off === 0)  return `Today • ${md}`;
+    if (off === -1) return `Yesterday • ${md}`;
+    if (off === 1)  return `Tomorrow • ${md}`;
+    const wd = d.toLocaleDateString('en-US', { weekday: 'short' });
+    return `${wd}, ${md}`;
+  };
+  const periodLabel = dayNavActive
+    ? dateLabelForOffset(dayOffset)
+    : PERIOD_LABELS[period];
+
+  // ── Swipe-to-change-day gesture (mirrors web SummaryCard.tsx) ────────────
+  // Swipe LEFT  → next day (dayOffset + 1)
+  // Swipe RIGHT → previous day (dayOffset - 1)
+  // Threshold: |dx| > 50 AND |dx| > |dy|. Disabled when not on the TODAY chip.
+  const goToDay = useCallback((delta: number) => {
+    setDayOffset(prev => prev + delta);
+    hTap();
+  }, []);
+  const swipeGesture = Gesture.Pan()
+    .enabled(dayNavActive)
+    .activeOffsetX([-15, 15])
+    .failOffsetY([-20, 20])
+    .onEnd((e) => {
+      'worklet';
+      const dx = e.translationX;
+      const dy = e.translationY;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        runOnJS(goToDay)(dx < 0 ? 1 : -1);
+      }
+    });
 
   // ── Hero metric toggle (tap small number to swap with big number) ──
   const [heroMetric, setHeroMetric] = useState<'profit' | 'revenue'>('profit');
@@ -1393,7 +1437,7 @@ export default function DashboardScreen() {
               return (
                 <PressScale
                   key={p.key}
-                  onPress={() => { hTap(); setPeriod(p.key); }}
+                  onPress={() => { hTap(); setPeriod(p.key); setDayOffset(0); }}
                   scale={0.92}
                   style={[
                     {
@@ -1416,7 +1460,7 @@ export default function DashboardScreen() {
             {/* Custom Range chip — only shown after the user picks a range from the calendar. */}
             {customRange && (
               <PressScale
-                onPress={() => { hTap(); setPeriod('custom'); }}
+                onPress={() => { hTap(); setPeriod('custom'); setDayOffset(0); }}
                 scale={0.92}
                 style={[
                   {
@@ -1446,7 +1490,7 @@ export default function DashboardScreen() {
                     e.stopPropagation?.();
                     hTap();
                     setCustomRange(null);
-                    if (period === 'custom') setPeriod('today');
+                    if (period === 'custom') { setPeriod('today'); setDayOffset(0); }
                   }}
                   hitSlop={8}
                   style={{ marginLeft: 2 }}
@@ -1531,6 +1575,8 @@ export default function DashboardScreen() {
           ) : (
             <>
               {/* ── Main Hero Card with neon glow (toggle Profit↔Revenue) ──── */}
+              {/* Horizontal swipe on this card cycles dayOffset ± 1 when on the TODAY chip. */}
+              <GestureDetector gesture={swipeGesture}>
               <Animated.View style={[
                 {
                   backgroundColor: SURFACE,
@@ -1584,13 +1630,29 @@ export default function DashboardScreen() {
                   style={{ color: heroColor, fontSize: 48, fontWeight: '900', lineHeight: 56, marginTop: 4 }}
                 />
 
-                {/* Date range row */}
+                {/* Date range row — chevrons cycle days when on the TODAY chip. */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
-                  <Ionicons name="chevron-back" size={16} color={LABEL} />
+                  <PressScale
+                    onPress={() => goToDay(-1)}
+                    disabled={!dayNavActive}
+                    scale={0.85}
+                    hitSlop={12}
+                    style={{ padding: 4, opacity: dayNavActive ? 1 : 0.35 }}
+                  >
+                    <Ionicons name="chevron-back" size={18} color={dayNavActive ? PRIMARY : LABEL} />
+                  </PressScale>
                   <Text style={{ color: MUTED, fontSize: 13, fontWeight: '500', flex: 1, textAlign: 'center' }}>
-                    {periodLabel} earnings
+                    {dayNavActive ? periodLabel : `${periodLabel} earnings`}
                   </Text>
-                  <Ionicons name="chevron-forward" size={16} color={LABEL} />
+                  <PressScale
+                    onPress={() => goToDay(1)}
+                    disabled={!dayNavActive}
+                    scale={0.85}
+                    hitSlop={12}
+                    style={{ padding: 4, opacity: dayNavActive ? 1 : 0.35 }}
+                  >
+                    <Ionicons name="chevron-forward" size={18} color={dayNavActive ? PRIMARY : LABEL} />
+                  </PressScale>
                 </View>
 
                 {/* Dashed sparkline */}
@@ -1626,6 +1688,7 @@ export default function DashboardScreen() {
                 </View>
 
               </Animated.View>
+              </GestureDetector>
 
               {/* ── Secondary Stat Cards: $/Mile, Miles (centered row) ──────── */}
               <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center' }}>
@@ -1852,6 +1915,7 @@ export default function DashboardScreen() {
         onApplyRange={(from, to) => {
           setCustomRange({ from, to });
           setPeriod('custom');
+          setDayOffset(0);
         }}
       />
     </View>

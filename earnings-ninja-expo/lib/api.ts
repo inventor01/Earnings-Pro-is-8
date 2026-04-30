@@ -181,9 +181,12 @@ export const api = {
     return res.json();
   },
 
-  async getRollup(timeframe: string = 'TODAY'): Promise<Rollup> {
+  async getRollup(timeframe: string = 'TODAY', dayOffset: number = 0): Promise<Rollup> {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/rollup?timeframe=${timeframe}`, { headers });
+    const url = dayOffset !== 0 && timeframe === 'TODAY'
+      ? `${API_BASE}/api/rollup?timeframe=${timeframe}&day_offset=${dayOffset}`
+      : `${API_BASE}/api/rollup?timeframe=${timeframe}`;
+    const res = await fetch(url, { headers });
     if (!res.ok) throw new Error('Failed to fetch rollup');
     return res.json();
   },
@@ -196,9 +199,10 @@ export const api = {
     return res.json();
   },
 
-  async getEntries(timeframe: string = 'TODAY', limit = 200): Promise<Entry[]> {
+  async getEntries(timeframe: string = 'TODAY', limit = 200, dayOffset: number = 0): Promise<Entry[]> {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/entries?timeframe=${timeframe}&limit=${limit}`, { headers });
+    const offsetParam = dayOffset !== 0 && timeframe === 'TODAY' ? `&day_offset=${dayOffset}` : '';
+    const res = await fetch(`${API_BASE}/api/entries?timeframe=${timeframe}&limit=${limit}${offsetParam}`, { headers });
     if (!res.ok) throw new Error('Failed to fetch entries');
     return res.json();
   },
