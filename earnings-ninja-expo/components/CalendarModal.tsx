@@ -374,8 +374,12 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
             backgroundColor: SURFACE, borderRadius: 12,
             borderWidth: 1, borderColor: BORDER,
           }}>
-            <View style={{ flex: 1, padding: 10, alignItems: 'center' }}>
-              <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            <View style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 4, alignItems: 'center' }}>
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={{ color: LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}
+              >
                 Profit
               </Text>
               <Text style={{
@@ -386,8 +390,12 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
               </Text>
             </View>
             <View style={{ width: 1, backgroundColor: BORDER, marginVertical: 8 }} />
-            <View style={{ flex: 1, padding: 10, alignItems: 'center' }}>
-              <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            <View style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 4, alignItems: 'center' }}>
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={{ color: LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}
+              >
                 Revenue
               </Text>
               <Text style={{ color: GREEN, fontSize: 14, fontWeight: '900', marginTop: 2 }}>
@@ -395,8 +403,12 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
               </Text>
             </View>
             <View style={{ width: 1, backgroundColor: BORDER, marginVertical: 8 }} />
-            <View style={{ flex: 1, padding: 10, alignItems: 'center' }}>
-              <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            <View style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 4, alignItems: 'center' }}>
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={{ color: LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}
+              >
                 Expenses
               </Text>
               <Text style={{ color: RED, fontSize: 14, fontWeight: '900', marginTop: 2 }}>
@@ -404,8 +416,12 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
               </Text>
             </View>
             <View style={{ width: 1, backgroundColor: BORDER, marginVertical: 8 }} />
-            <View style={{ flex: 1, padding: 10, alignItems: 'center' }}>
-              <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            <View style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 4, alignItems: 'center' }}>
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={{ color: LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}
+              >
                 Days
               </Text>
               <Text style={{ color: TEXT, fontSize: 14, fontWeight: '900', marginTop: 2 }}>
