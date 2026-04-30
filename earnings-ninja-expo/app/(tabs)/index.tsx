@@ -19,6 +19,7 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/lib/authContext';
 import * as Haptics from 'expo-haptics';
+import { CalendarModal } from '../../components/CalendarModal';
 
 // Safe haptics — silently ignored on simulators / devices without haptic engine
 const hTap = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -1175,6 +1176,7 @@ export default function DashboardScreen() {
   const [showAllEntries, setShowAllEntries] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const tf = PERIODS.find(p => p.key === period)!.tf;
 
@@ -1330,6 +1332,12 @@ export default function DashboardScreen() {
                 size={17}
                 color={showSearchBar ? '#000' : MUTED}
               />
+            </PressScale>
+            <PressScale
+              onPress={() => { hTap(); setShowCalendar(true); }}
+              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name="calendar-outline" size={17} color={MUTED} />
             </PressScale>
             <PressScale
               onPress={() => { hTap(); onRefresh(); }}
@@ -1759,6 +1767,7 @@ export default function DashboardScreen() {
       {/* ── Modals ───────────────────────────────────────────────────────────── */}
       <AddEntryModal visible={showAdd} onClose={() => setShowAdd(false)} />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
+      <CalendarModal visible={showCalendar} onClose={() => setShowCalendar(false)} />
     </View>
   );
 }

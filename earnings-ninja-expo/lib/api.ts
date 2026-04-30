@@ -195,6 +195,14 @@ export const api = {
     return res.json();
   },
 
+  async getEntriesInRange(fromIso: string, toIso: string, limit = 1000): Promise<Entry[]> {
+    const headers = await getAuthHeaders();
+    const url = `${API_BASE}/api/entries?from_date=${encodeURIComponent(fromIso)}&to_date=${encodeURIComponent(toIso)}&limit=${limit}`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error('Failed to fetch entries');
+    return res.json();
+  },
+
   async createEntry(entry: EntryCreate): Promise<Entry> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/entries`, {
