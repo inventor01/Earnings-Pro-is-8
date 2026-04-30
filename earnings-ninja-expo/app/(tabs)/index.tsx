@@ -1366,7 +1366,7 @@ export default function DashboardScreen() {
                   ].filter(Boolean) as ViewStyle[]}
                 >
                   <Text style={{
-                    color: active ? '#000' : MUTED,
+                    color: active ? '#fff' : MUTED,
                     fontSize: 13, fontWeight: active ? '800' : '500',
                   }}>
                     {p.label}
