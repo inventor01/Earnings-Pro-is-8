@@ -1,0 +1,15 @@
+{
+  "type": "widget",
+  "name": "EarningsWidget",
+  "icon": "../../assets/icon.png",
+  "deploymentTarget": "17.0",
+  "entitlements": {
+    "com.apple.security.application-groups": [
+      "group.com.earningsninja.shared"
+    ]
+  },
+  "colors": {
+    "WidgetBackground": "#0a0a0a",
+    "AccentColor": "#facc15"
+  }
+}

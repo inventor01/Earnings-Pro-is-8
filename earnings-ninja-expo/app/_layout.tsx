@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from '@/lib/authContext';
 import { ThemeProvider } from '@/lib/theme';
 
@@ -30,6 +31,33 @@ function RootNav() {
   useEffect(() => {
     SplashScreen.hideAsync();
   }, []);
+
+  // Deep links from the iOS widget land here. The widget tile fires
+  // `earningsninja://entry/new` (and the QuickAddIntent uses the same scheme
+  // when it falls back to opening the app). We forward into the dashboard
+  // with `?openEntry=…` so the AddEntryModal opens automatically.
+  useEffect(() => {
+    if (isLoading || !token) return;
+    const handle = (url: string | null) => {
+      if (!url) return;
+      const parsed = Linking.parse(url);
+      // Only `earningsninja://entry/new` (and trailing /) is honored — any
+      // other path is ignored so future deep links don't accidentally open
+      // the AddEntry modal.
+      if (parsed.hostname !== 'entry') return;
+      const path = (parsed.path ?? '').replace(/^\/+|\/+$/g, '');
+      if (path !== 'new') return;
+      const type = String(parsed.queryParams?.type ?? '').toUpperCase();
+      const amount = String(parsed.queryParams?.amount ?? '');
+      const params: Record<string, string> = { openEntry: '1' };
+      if (type === 'EXPENSE' || type === 'REVENUE') params.type = type;
+      if (amount) params.amount = amount;
+      router.replace({ pathname: '/(tabs)', params });
+    };
+    Linking.getInitialURL().then(handle);
+    const sub = Linking.addEventListener('url', (e) => handle(e.url));
+    return () => sub.remove();
+  }, [isLoading, token]);
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0a0a0a' } }}>
