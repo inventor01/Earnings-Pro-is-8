@@ -546,8 +546,8 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
             </View>
           ))}
 
-          {/* Next Step — full width, extends past CalcPad's 18px padding to
-              reach the card's edges for a bigger, easier-to-hit tap target. */}
+          {/* Next Step — full width, matches the sticky "Add Entry" button:
+              same yellow PRIMARY bg, pure-black bold 22px text, beefy padding. */}
           <View style={{
             overflow: 'hidden',
             marginTop: 4,
@@ -558,10 +558,10 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
           }}>
             <Pressable
               onPress={() => { hTapMed(); onNext(); }}
-              android_ripple={{ color: 'rgba(0,0,0,0.12)' }}
+              android_ripple={{ color: 'rgba(0,0,0,0.15)' }}
               style={({ pressed }) => ({
-                backgroundColor: CALC.NEXT_BG,
-                paddingVertical: 22,
+                backgroundColor: PRIMARY,
+                paddingVertical: 28,
                 alignSelf: 'stretch',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -569,7 +569,7 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
                 transform: [{ scale: pressed ? 0.97 : 1 }],
               })}
             >
-              <Text style={{ color: CALC.NEXT_FG, fontWeight: '800', fontSize: 18 }}>
+              <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>
                 Next Step →
               </Text>
             </Pressable>
@@ -842,18 +842,19 @@ function DetailsForm({
         </LinearGradient>
       </View>
 
-      {/* Save button — full width, extends past ScrollView's 16px padding to
-          the screen edges so the tap target is as large as possible. */}
+      {/* Save button — full width, matches sticky "Add Entry" button:
+          same yellow PRIMARY bg, pure-black bold 22px text, beefy padding. */}
       <Pressable
         onPress={onSave}
         disabled={saving}
         style={({ pressed }) => ({
-          backgroundColor: CALC.NEXT_BG,
-          paddingVertical: 22,
+          backgroundColor: PRIMARY,
+          paddingVertical: 28,
           marginHorizontal: -16,
           alignSelf: 'stretch',
           alignItems: 'center',
           opacity: pressed ? 0.85 : 1,
+          transform: [{ scale: pressed ? 0.97 : 1 }],
           shadowColor: '#000',
           shadowOpacity: 0.12,
           shadowRadius: 6,
@@ -862,8 +863,8 @@ function DetailsForm({
         })}
       >
         {saving
-          ? <ActivityIndicator color={CALC.NEXT_FG} />
-          : <Text style={{ color: CALC.NEXT_FG, fontWeight: '900', fontSize: 18 }}>💾 Save Entry</Text>
+          ? <ActivityIndicator color="#000" />
+          : <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>💾 Save Entry</Text>
         }
       </Pressable>
     </View>
