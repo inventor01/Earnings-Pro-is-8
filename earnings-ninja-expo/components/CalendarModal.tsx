@@ -115,6 +115,10 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
   const [year, setYear]   = useState(now.getFullYear());
   const [metric, setMetric] = useState<Metric>('profit');
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // Year being browsed inside the picker (separate from `year` so user can scrub years
+  // without immediately changing the calendar until they tap a month).
+  const [pickerYear, setPickerYear] = useState(now.getFullYear());
 
   // First/last day of the visible month, padded ±36h so we don't miss entries
   // whose UTC timestamp lands in an adjacent day when bucketed back into EST.
@@ -302,14 +306,30 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
               <Ionicons name="chevron-back" size={20} color={TEXT} />
             </PressScale>
 
-            <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ color: PRIMARY, fontSize: 20, fontWeight: '900', letterSpacing: 0.4 }}>
-                {MONTH_NAMES[month]}
-              </Text>
+            <PressScale
+              onPress={() => {
+                hTap();
+                setPickerYear(year);
+                setPickerOpen(true);
+              }}
+              scale={0.96}
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                paddingVertical: 4,
+                borderRadius: 10,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={{ color: PRIMARY, fontSize: 20, fontWeight: '900', letterSpacing: 0.4 }}>
+                  {MONTH_NAMES[month]}
+                </Text>
+                <Ionicons name="chevron-down" size={16} color={PRIMARY} />
+              </View>
               <Text style={{ color: LABEL, fontSize: 12, fontWeight: '700', marginTop: 2 }}>
                 {year}
               </Text>
-            </View>
+            </PressScale>
 
             <PressScale
               onPress={nextMonth}
@@ -721,6 +741,165 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
           )}
         </ScrollView>
       </View>
+
+      {/* ── Month / Year Picker Overlay ───────────────────────────────────── */}
+      <Modal
+        visible={pickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPickerOpen(false)}
+      >
+        <Pressable
+          onPress={() => setPickerOpen(false)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.65)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          {/* Stop propagation so taps inside the card don't dismiss it */}
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 360,
+              backgroundColor: SURFACE,
+              borderWidth: 1, borderColor: BORDER,
+              borderRadius: 16,
+              padding: 16,
+              ...neonGlow(PRIMARY, 14, 0.25),
+            }}
+          >
+            {/* Year selector row */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: 14,
+            }}>
+              <PressScale
+                onPress={() => { hTap(); setPickerYear(y => y - 1); }}
+                scale={0.9}
+                style={{
+                  width: 38, height: 38, borderRadius: 10,
+                  backgroundColor: BG, borderWidth: 1, borderColor: BORDER,
+                  alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="chevron-back" size={18} color={TEXT} />
+              </PressScale>
+              <Text style={{ color: PRIMARY, fontSize: 22, fontWeight: '900', letterSpacing: 0.4 }}>
+                {pickerYear}
+              </Text>
+              <PressScale
+                onPress={() => { hTap(); setPickerYear(y => y + 1); }}
+                scale={0.9}
+                style={{
+                  width: 38, height: 38, borderRadius: 10,
+                  backgroundColor: BG, borderWidth: 1, borderColor: BORDER,
+                  alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="chevron-forward" size={18} color={TEXT} />
+              </PressScale>
+            </View>
+
+            {/* Month grid: 4 rows × 3 cols */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {MONTH_NAMES.map((name, i) => {
+                const isCurrent = i === month && pickerYear === year;
+                const todayDate = new Date();
+                const isThisMonth = i === todayDate.getMonth() && pickerYear === todayDate.getFullYear();
+                return (
+                  <PressScale
+                    key={i}
+                    onPress={() => {
+                      hTap();
+                      setMonth(i);
+                      setYear(pickerYear);
+                      setSelectedDay(null);
+                      setPickerOpen(false);
+                    }}
+                    scale={0.94}
+                    style={{
+                      width: '31.5%',
+                      paddingVertical: 14,
+                      borderRadius: 10,
+                      borderWidth: 1.5,
+                      borderColor: isCurrent ? PRIMARY : BORDER,
+                      backgroundColor: isCurrent ? 'rgba(250,204,21,0.18)' : BG,
+                      alignItems: 'center',
+                      ...(isCurrent ? neonGlow(PRIMARY, 6, 0.4) : {}),
+                    }}
+                  >
+                    <Text style={{
+                      color: isCurrent ? PRIMARY : isThisMonth ? PRIMARY : TEXT,
+                      fontSize: 14,
+                      fontWeight: isCurrent ? '900' : '700',
+                      letterSpacing: 0.3,
+                    }}>
+                      {name.slice(0, 3)}
+                    </Text>
+                    {isThisMonth && !isCurrent && (
+                      <View style={{
+                        width: 4, height: 4, borderRadius: 2,
+                        backgroundColor: PRIMARY,
+                        marginTop: 4,
+                      }} />
+                    )}
+                  </PressScale>
+                );
+              })}
+            </View>
+
+            {/* Footer actions */}
+            <View style={{
+              flexDirection: 'row', gap: 8,
+              marginTop: 14,
+            }}>
+              <PressScale
+                onPress={() => {
+                  hTap();
+                  const t = new Date();
+                  setMonth(t.getMonth());
+                  setYear(t.getFullYear());
+                  setPickerYear(t.getFullYear());
+                  setSelectedDay(null);
+                  setPickerOpen(false);
+                }}
+                scale={0.95}
+                style={{
+                  flex: 1,
+                  paddingVertical: 11,
+                  borderRadius: 10,
+                  borderWidth: 1.5,
+                  borderColor: PRIMARY,
+                  backgroundColor: 'transparent',
+                  alignItems: 'center',
+                  ...neonGlow(PRIMARY, 6, 0.3),
+                }}
+              >
+                <Text style={{ color: PRIMARY, fontWeight: '900', fontSize: 13 }}>Jump to Today</Text>
+              </PressScale>
+              <PressScale
+                onPress={() => { hTap(); setPickerOpen(false); }}
+                scale={0.95}
+                style={{
+                  flex: 1,
+                  paddingVertical: 11,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: BORDER,
+                  backgroundColor: BG,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: LABEL, fontWeight: '800', fontSize: 13 }}>Cancel</Text>
+              </PressScale>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Modal>
   );
 }
