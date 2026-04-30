@@ -342,7 +342,7 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                   scale={0.94}
                   style={{
                     flex: 1,
-                    paddingVertical: 9, paddingHorizontal: 8,
+                    paddingVertical: 9, paddingHorizontal: 4,
                     borderRadius: 10,
                     backgroundColor: active ? 'rgba(250,204,21,0.15)' : SURFACE,
                     borderWidth: 1.5,
@@ -351,11 +351,15 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                     ...(active ? neonGlow(PRIMARY, 6, 0.35) : {}),
                   }}
                 >
-                  <Text style={{
-                    color: active ? PRIMARY : LABEL,
-                    fontWeight: active ? '900' : '700',
-                    fontSize: 12,
-                  }}>
+                  <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    style={{
+                      color: active ? PRIMARY : LABEL,
+                      fontWeight: active ? '900' : '700',
+                      fontSize: 10,
+                    }}
+                  >
                     {m.label}
                   </Text>
                 </PressScale>
