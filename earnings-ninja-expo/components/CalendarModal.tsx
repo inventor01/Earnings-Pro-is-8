@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   View, Text, Pressable, Modal, ScrollView, ActivityIndicator,
-  ViewStyle, Platform,
+  ViewStyle, Platform, useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -238,8 +238,11 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
   }, [selectedDay, entries]);
 
   const todayStr = estDateString(new Date());
-  // Use percentage widths so the grid stays correct regardless of modal sizing.
-  const cellWidthPct = `${100 / 7}%` as `${number}%`;
+  // Compute fixed pixel cell width from the live window dimensions.
+  // Container has 16px horizontal margin both sides + 1px outer borders.
+  const { width: winW } = useWindowDimensions();
+  const gridInnerW = Math.max(280, winW - 32 - 2);
+  const cellSize = Math.floor(gridInnerW / 7);
   const cellHeight = 60;
 
   return (
@@ -422,7 +425,7 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
               <View
                 key={i}
                 style={{
-                  width: cellWidthPct,
+                  width: cellSize,
                   paddingVertical: 8,
                   alignItems: 'center',
                   borderRightWidth: i < 6 ? 1 : 0,
@@ -491,7 +494,7 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                     <View
                       key={idx}
                       style={{
-                        width: cellWidthPct,
+                        width: cellSize,
                         height: cellHeight,
                         backgroundColor: BG,
                         borderRightWidth: isLastCol ? 0 : 1,
@@ -519,15 +522,14 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                 else                       dayNumColor = TEXT;
 
                 return (
-                  <PressScale
+                  <Pressable
                     key={idx}
                     onPress={() => {
                       hTap();
                       setSelectedDay(prev => prev === cell.dateStr ? null : cell.dateStr);
                     }}
-                    scale={0.94}
                     style={{
-                      width: cellWidthPct,
+                      width: cellSize,
                       height: cellHeight,
                       backgroundColor: SURFACE,
                       borderRightWidth: isLastCol ? 0 : 1,
@@ -535,6 +537,7 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                       borderColor: BORDER,
                       alignItems: 'center',
                       justifyContent: 'center',
+                      overflow: 'hidden',
                     }}
                   >
                     {/* Selected ring overlay */}
@@ -580,7 +583,7 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                         }} />
                       )}
                     </View>
-                  </PressScale>
+                  </Pressable>
                 );
               })}
             </View>
