@@ -896,7 +896,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 name={step === 'calc' ? 'arrow-down' : 'arrow-back'}
                 size={20}
                 color="#0f172a"
-                style={{ marginRight: 8 }}
+                style={{ marginRight: 0 }}
               />
               <Text
                 style={{
