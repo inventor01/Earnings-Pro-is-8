@@ -227,53 +227,58 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          {/* Submit Button */}
+          {/* Submit Button — full-width, solid yellow */}
           <Pressable
             onPress={handleSubmit}
             disabled={loading}
             style={({ pressed }) => ({
+              width: '100%',
               backgroundColor: ACCENT,
               borderRadius: 14,
               paddingVertical: 16,
               alignItems: 'center',
+              justifyContent: 'center',
               opacity: pressed ? 0.85 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: ACCENT,
               shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.6,
-              shadowRadius: 12,
-              elevation: 8,
+              shadowOpacity: 0.45,
+              shadowRadius: 10,
+              elevation: 6,
               marginBottom: 12,
             })}
           >
             {loading
               ? <ActivityIndicator color="#000" />
-              : <Text style={{ color: '#000', fontWeight: '900', fontSize: 16 }}>
+              : <Text style={{ color: '#000', fontWeight: '900', fontSize: 17, letterSpacing: 0.3 }}>
                   {mode === 'login' ? 'Sign In →' : 'Create Account →'}
                 </Text>
             }
           </Pressable>
 
-          {/* Demo Button */}
+          {/* Demo Button — full-width, solid green (matches Sign In as a stacked pair) */}
           <Pressable
             onPress={handleDemo}
             disabled={demoLoading}
             style={({ pressed }) => ({
-              backgroundColor: 'transparent',
-              borderWidth: 2,
-              borderColor: GREEN,
+              width: '100%',
+              backgroundColor: GREEN,
               borderRadius: 14,
-              paddingVertical: 15,
+              paddingVertical: 16,
               alignItems: 'center',
-              opacity: pressed ? 0.8 : 1,
+              justifyContent: 'center',
+              opacity: pressed ? 0.85 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
               shadowColor: GREEN,
               shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.4,
+              shadowOpacity: 0.45,
               shadowRadius: 10,
+              elevation: 6,
             })}
           >
             {demoLoading
-              ? <ActivityIndicator color={GREEN} />
-              : <Text style={{ color: GREEN, fontWeight: '800', fontSize: 15 }}>
+              ? <ActivityIndicator color="#000" />
+              : <Text style={{ color: '#000', fontWeight: '900', fontSize: 17, letterSpacing: 0.3 }}>
                   🚗 Try Demo Mode
                 </Text>
             }
