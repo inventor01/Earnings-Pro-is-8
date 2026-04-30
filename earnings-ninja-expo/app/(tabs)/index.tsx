@@ -915,7 +915,9 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
             style={({ pressed }) => ({
               paddingHorizontal: 18,
               paddingTop: 18,
-              paddingBottom: 40,
+              // Mirror (status-bar inset + paddingTop) below the text so it sits
+              // visually centered in the yellow header on every device.
+              paddingBottom: insets.top + 18,
               opacity: pressed ? 0.85 : 1,
             })}
           >
