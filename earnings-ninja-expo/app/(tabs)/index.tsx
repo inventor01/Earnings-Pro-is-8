@@ -945,50 +945,62 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
         {/* ── Bottom-pinned action button ─────────────────────────────────────
             Lives outside both forms so it's flush against the bottom edge of
             the modal (same treatment as the dashboard's "+ Add Entry" sticky
-            bar). Behavior swaps based on which step you're on. */}
-        <View
-          style={{
-            backgroundColor: PRIMARY,
-            paddingBottom: insets.bottom > 0 ? insets.bottom : 12,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.12,
-            shadowRadius: 8,
-            elevation: 12,
-          }}
-        >
-          <Pressable
-            onPress={() => {
-              hTapMed();
-              if (step === 'calc') {
-                // Carry the calculator's Revenue/Expense choice into details
-                setEntryType(mode === 'subtract' ? 'EXPENSE' : 'ORDER');
-                setStep('details');
-              } else {
-                handleSave();
-              }
-            }}
-            disabled={mutation.isPending}
-            android_ripple={{ color: 'rgba(0,0,0,0.15)' }}
-            style={({ pressed }) => ({
-              width: '100%',
-              paddingVertical: 24,
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: pressed ? 0.85 : 1,
-              transform: [{ scale: pressed ? 0.97 : 1 }],
-            })}
-          >
-            {step === 'details' && mutation.isPending
-              ? <ActivityIndicator color="#000" />
-              : (
-                <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>
-                  {step === 'calc' ? 'Next Step →' : '💾 Save Entry'}
-                </Text>
-              )
-            }
-          </Pressable>
-        </View>
+            bar). Behavior swaps based on which step you're on.
+
+            Padding is split: the wrapper View gets a SYMMETRIC top/bottom pad
+            that mirrors the safe-area inset, so the inner Pressable sits
+            equidistant from the top and bottom of the visible yellow zone.
+            This keeps the text optically centered (the home-indicator inset
+            no longer pushes the text upward visually). */}
+        {(() => {
+          const safePad = insets.bottom > 0 ? insets.bottom : 12;
+          return (
+            <View
+              style={{
+                backgroundColor: PRIMARY,
+                paddingTop: safePad,
+                paddingBottom: safePad,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: -4 },
+                shadowOpacity: 0.12,
+                shadowRadius: 8,
+                elevation: 12,
+              }}
+            >
+              <Pressable
+                onPress={() => {
+                  hTapMed();
+                  if (step === 'calc') {
+                    // Carry the calculator's Revenue/Expense choice into details
+                    setEntryType(mode === 'subtract' ? 'EXPENSE' : 'ORDER');
+                    setStep('details');
+                  } else {
+                    handleSave();
+                  }
+                }}
+                disabled={mutation.isPending}
+                android_ripple={{ color: 'rgba(0,0,0,0.15)' }}
+                style={({ pressed }) => ({
+                  width: '100%',
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: pressed ? 0.85 : 1,
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                })}
+              >
+                {step === 'details' && mutation.isPending
+                  ? <ActivityIndicator color="#000" />
+                  : (
+                    <Text style={{ color: '#000', fontWeight: '900', fontSize: 22, letterSpacing: 0.3 }}>
+                      {step === 'calc' ? 'Next Step →' : '💾 Save Entry'}
+                    </Text>
+                  )
+                }
+              </Pressable>
+            </View>
+          );
+        })()}
       </KeyboardAvoidingView>
     </Modal>
   );
