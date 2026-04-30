@@ -246,6 +246,15 @@ export const api = {
     if (!res.ok) throw new Error('Failed to delete entry');
   },
 
+  async deleteAccount(): Promise<void> {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/api/auth/account`, { method: 'DELETE', headers });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(text || 'Failed to delete account');
+    }
+  },
+
   async getGoal(timeframe: TimeframeType): Promise<Goal | null> {
     try {
       const headers = await getAuthHeaders();

@@ -2,7 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from backend.db import get_db
-from backend.models import AuthUser, Settings, Entry, EntryType, AppType, ExpenseCategory, Goal, TimeframeType, PasswordResetToken
+from backend.models import (
+    AuthUser, Settings, Entry, EntryType, AppType, ExpenseCategory, Goal,
+    TimeframeType, PasswordResetToken,
+    Friend, Achievement, Congratulation,
+)
 import secrets
 from backend.auth import get_current_user
 from backend.services.email_service import send_password_reset_email
@@ -436,3 +440,37 @@ async def create_demo_session(db: Session = Depends(get_db)):
         "user_id": user.id,
         "email": user.email
     }
+
+
+@router.delete("/auth/account")
+async def delete_account(
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Permanently delete the authenticated user's account and all associated data.
+
+    Required by Apple App Store Guideline 5.1.1(v): apps that support account creation
+    must also provide an in-app way for users to delete their account.
+
+    Cascades through every table that references auth_users.id so no orphan rows remain.
+    """
+    user_id = current_user.id
+
+    # Delete all rows in tables that have a user_id FK to auth_users.id.
+    # ApiCredential / SyncedOrder / DailyUsage / User are legacy single-tenant
+    # tables (no user_id column) and are intentionally left untouched.
+    db.query(Congratulation).filter(
+        (Congratulation.from_user_id == user_id) | (Congratulation.to_user_id == user_id)
+    ).delete(synchronize_session=False)
+    db.query(Friend).filter(
+        (Friend.user_id == user_id) | (Friend.friend_id == user_id)
+    ).delete(synchronize_session=False)
+    db.query(Achievement).filter(Achievement.user_id == user_id).delete(synchronize_session=False)
+    db.query(Goal).filter(Goal.user_id == user_id).delete(synchronize_session=False)
+    db.query(Settings).filter(Settings.user_id == user_id).delete(synchronize_session=False)
+    db.query(Entry).filter(Entry.user_id == user_id).delete(synchronize_session=False)
+    db.query(PasswordResetToken).filter(PasswordResetToken.user_id == user_id).delete(synchronize_session=False)
+    db.query(AuthUser).filter(AuthUser.id == user_id).delete(synchronize_session=False)
+
+    db.commit()
+    return {"deleted": True, "user_id": user_id}

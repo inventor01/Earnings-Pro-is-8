@@ -12,10 +12,11 @@
 // returns false there.
 
 import { WidgetBridge } from '../modules/widget-bridge';
-import Constants from 'expo-constants';
+import { API_BASE as apiBase } from './api';
 
-const apiBase = (Constants.expoConfig?.extra as { apiBase?: string } | undefined)?.apiBase
-  ?? 'http://localhost:8000';
+// Reuse the exact same API_BASE the JS app uses so the widget can never
+// drift to a different backend than the main app (env-first → app.json
+// extra → dev fallback). See lib/api.ts for the resolution order.
 
 export const widgetSync = {
   isAvailable: () => WidgetBridge.isAvailable(),

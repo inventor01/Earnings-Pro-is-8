@@ -17,13 +17,15 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.earningsninja.app",
       "buildNumber": "1",
+      "deploymentTarget": "17.0",
+      "appleTeamId": "REPLACE_WITH_YOUR_10_CHAR_TEAM_ID",
       "infoPlist": {
         "NSCameraUsageDescription": "Earnings Ninja needs camera access to photograph receipts for expense tracking.",
         "NSPhotoLibraryUsageDescription": "Earnings Ninja needs photo library access to attach receipt images to your expenses.",
+        "NSPhotoLibraryAddUsageDescription": "Earnings Ninja needs permission to save receipt photos to your library.",
         "NSLocationWhenInUseUsageDescription": "Earnings Ninja uses your location to automatically track trip mileage while you are delivering.",
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
-        }
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationCategoryType": "public.app-category.finance"
       },
       "config": {
         "usesNonExemptEncryption": false
@@ -32,6 +34,29 @@
         "com.apple.security.application-groups": [
           "group.com.earningsninja.shared"
         ]
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+            "NSPrivacyAccessedAPITypeReasons": ["35F9.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": ["E174.1"]
+          }
+        ],
+        "NSPrivacyTracking": false,
+        "NSPrivacyTrackingDomains": [],
+        "NSPrivacyCollectedDataTypes": []
       }
     },
     "android": {
@@ -64,7 +89,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiBase": "https://b21ea173-8d4d-4445-a8db-6d8c912d7dc4-00-l5lnc6lhje6p.picard.replit.dev"
+      "apiBase": "https://earnings-pro-is-8-production.up.railway.app"
     }
   }
 }
