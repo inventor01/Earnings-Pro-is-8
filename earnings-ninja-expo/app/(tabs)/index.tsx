@@ -883,7 +883,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
             }}
             android_ripple={{ color: 'rgba(0,0,0,0.08)' }}
             style={({ pressed }) => ({
-              paddingHorizontal: 9,
+              paddingHorizontal: 28,
               paddingVertical: 4,
               opacity: pressed ? 0.85 : 1,
             })}
