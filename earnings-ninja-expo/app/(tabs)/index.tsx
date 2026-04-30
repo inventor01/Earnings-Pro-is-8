@@ -872,8 +872,8 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
             mirrors with insets.top/2 + Pressable paddingTop=9 to compensate. */}
         <View style={{
           backgroundColor: CALC.HEADER_BG,
-          paddingTop: insets.top,
-          paddingBottom: insets.top / 2,
+          paddingTop: insets.top / 2,
+          paddingBottom: insets.top / 4,
         }}>
           <Pressable
             onPress={() => {
@@ -883,8 +883,8 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
             }}
             android_ripple={{ color: 'rgba(0,0,0,0.08)' }}
             style={({ pressed }) => ({
-              paddingHorizontal: 18,
-              paddingVertical: 9,
+              paddingHorizontal: 9,
+              paddingVertical: 4,
               opacity: pressed ? 0.85 : 1,
             })}
           >
