@@ -1,4 +1,3 @@
-import '../global.css';
 import { useEffect } from 'react';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from '@/lib/authContext';
+import { ThemeProvider } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,10 +45,12 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <StatusBar style="light" backgroundColor="#0a0a0a" />
-            <RootNav />
-          </AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <StatusBar style="light" backgroundColor="#0a0a0a" />
+              <RootNav />
+            </AuthProvider>
+          </ThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

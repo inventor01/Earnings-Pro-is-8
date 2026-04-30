@@ -2,22 +2,25 @@ import { useState } from 'react';
 import {
   View, Text, TextInput, Pressable,
   ScrollView, ActivityIndicator, KeyboardAvoidingView,
-  Platform, Image,
+  Platform, Image, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/authContext';
 import { api } from '@/lib/api';
-
-const BG = '#0a0a0f';
-const CARD = '#111118';
-const BORDER = '#1e1e2e';
-const ACCENT = '#facc15';
-const GREEN = '#22c55e';
-const TEXT = '#f1f5f9';
-const MUTED = '#94a3b8';
-const INPUT_BG = '#16161f';
+import { useTheme } from '@/lib/theme';
 
 export default function LoginScreen() {
+  const t = useTheme();
+  const BG = t.BG;
+  const CARD = t.SURFACE;
+  const BORDER = t.BORDER;
+  const ACCENT = t.PRIMARY;
+  const GREEN = t.GREEN;
+  const TEXT = t.TEXT;
+  const MUTED = t.MUTED;
+  const INPUT_BG = t.CARD_BG;
+  const ON_PRIMARY = t.ON_PRIMARY;
+
   const insets = useSafeAreaInsets();
   const { login } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -27,6 +30,12 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState('');
+  const [forgotError, setForgotError] = useState('');
 
   const handleSubmit = async () => {
     setError('');
@@ -53,6 +62,31 @@ export default function LoginScreen() {
       setError(e.message || 'Failed to start demo');
     } finally {
       setDemoLoading(false);
+    }
+  };
+
+  const openForgot = () => {
+    setForgotEmail(credential.includes('@') ? credential : '');
+    setForgotMessage('');
+    setForgotError('');
+    setShowForgot(true);
+  };
+
+  const submitForgot = async () => {
+    setForgotMessage('');
+    setForgotError('');
+    if (!forgotEmail.trim()) {
+      setForgotError('Enter the email on your account');
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      const res = await api.requestPasswordReset(forgotEmail.trim());
+      setForgotMessage(res.message || 'If that email is on file, a reset link is on its way.');
+    } catch (e: any) {
+      setForgotError(e.message || 'Could not send reset email');
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -116,7 +150,7 @@ export default function LoginScreen() {
           {/* Mode Toggle */}
           <View style={{
             flexDirection: 'row',
-            backgroundColor: '#0a0a0f',
+            backgroundColor: BG,
             borderRadius: 12,
             padding: 4,
             marginBottom: 20,
@@ -134,7 +168,7 @@ export default function LoginScreen() {
                 }}
               >
                 <Text style={{
-                  color: mode === m ? '#000' : MUTED,
+                  color: mode === m ? ON_PRIMARY : MUTED,
                   fontWeight: '700',
                   fontSize: 14,
                   textTransform: 'capitalize',
@@ -153,7 +187,7 @@ export default function LoginScreen() {
                 value={username}
                 onChangeText={setUsername}
                 placeholder="your_username"
-                placeholderTextColor="#4b5563"
+                placeholderTextColor={MUTED}
                 autoCapitalize="none"
                 style={{
                   backgroundColor: INPUT_BG,
@@ -177,7 +211,7 @@ export default function LoginScreen() {
               value={credential}
               onChangeText={setCredential}
               placeholder={mode === 'login' ? 'email or username' : 'you@example.com'}
-              placeholderTextColor="#4b5563"
+              placeholderTextColor={MUTED}
               autoCapitalize="none"
               keyboardType={mode === 'signup' ? 'email-address' : 'default'}
               style={{
@@ -193,13 +227,13 @@ export default function LoginScreen() {
             />
           </View>
 
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 6 }}>
             <Text style={{ color: MUTED, fontSize: 12, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Password</Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••"
-              placeholderTextColor="#4b5563"
+              placeholderTextColor={MUTED}
               secureTextEntry
               style={{
                 backgroundColor: INPUT_BG,
@@ -214,6 +248,20 @@ export default function LoginScreen() {
             />
           </View>
 
+          {/* Forgot password link — only on the Sign In tab */}
+          {mode === 'login' && (
+            <Pressable
+              onPress={openForgot}
+              hitSlop={8}
+              style={{ alignSelf: 'flex-end', marginTop: 4, marginBottom: 14, paddingVertical: 4 }}
+            >
+              <Text style={{ color: ACCENT, fontSize: 13, fontWeight: '700' }}>
+                Forgot password?
+              </Text>
+            </Pressable>
+          )}
+          {mode === 'signup' && <View style={{ height: 14 }} />}
+
           {error ? (
             <View style={{
               backgroundColor: 'rgba(239,68,68,0.15)',
@@ -227,10 +275,7 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          {/* Submit Button — full-width, solid yellow.
-              NOTE: object-style `style` (not the `({pressed})=>...` function form) —
-              the function form was being dropped by RN here, leaving the button
-              rendering as plain text on a transparent background. */}
+          {/* Submit */}
           <Pressable
             onPress={handleSubmit}
             disabled={loading}
@@ -253,9 +298,9 @@ export default function LoginScreen() {
             }}
           >
             {loading
-              ? <ActivityIndicator color="#000" />
+              ? <ActivityIndicator color={ON_PRIMARY} />
               : <Text style={{
-                  color: '#000',
+                  color: ON_PRIMARY,
                   fontWeight: '900',
                   fontSize: 17,
                   letterSpacing: 0.3,
@@ -268,7 +313,7 @@ export default function LoginScreen() {
             }
           </Pressable>
 
-          {/* Demo Button — full-width, green outline only (transparent fill). */}
+          {/* Demo Button */}
           <Pressable
             onPress={handleDemo}
             disabled={demoLoading}
@@ -303,10 +348,103 @@ export default function LoginScreen() {
           </Pressable>
         </View>
 
-        <Text style={{ color: '#374151', fontSize: 12, textAlign: 'center', marginTop: 20 }}>
+        <Text style={{ color: MUTED, opacity: 0.55, fontSize: 12, textAlign: 'center', marginTop: 20 }}>
           No credit card required · Free to use
         </Text>
       </ScrollView>
+
+      {/* Forgot-password modal */}
+      <Modal visible={showForgot} animationType="fade" transparent onRequestClose={() => setShowForgot(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
+          <View style={{
+            backgroundColor: CARD,
+            borderRadius: 18,
+            borderWidth: 1,
+            borderColor: BORDER,
+            padding: 22,
+          }}>
+            <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginBottom: 6 }}>
+              Reset your password
+            </Text>
+            <Text style={{ color: MUTED, fontSize: 13, marginBottom: 16, lineHeight: 18 }}>
+              Enter the email on your account. If we find a match, we'll email you a link to reset your password.
+            </Text>
+
+            <Text style={{ color: MUTED, fontSize: 12, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>
+              Email
+            </Text>
+            <TextInput
+              value={forgotEmail}
+              onChangeText={setForgotEmail}
+              placeholder="you@example.com"
+              placeholderTextColor={MUTED}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              editable={!forgotLoading && !forgotMessage}
+              style={{
+                backgroundColor: INPUT_BG,
+                borderWidth: 1,
+                borderColor: BORDER,
+                borderRadius: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                color: TEXT,
+                fontSize: 16,
+                marginBottom: 12,
+              }}
+            />
+
+            {forgotMessage ? (
+              <View style={{ backgroundColor: 'rgba(34,197,94,0.12)', borderWidth: 1, borderColor: GREEN, borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                <Text style={{ color: GREEN, fontSize: 13, textAlign: 'center' }}>{forgotMessage}</Text>
+              </View>
+            ) : null}
+            {forgotError ? (
+              <View style={{ backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: '#ef4444', borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                <Text style={{ color: '#f87171', fontSize: 13, textAlign: 'center' }}>{forgotError}</Text>
+              </View>
+            ) : null}
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Pressable
+                onPress={() => setShowForgot(false)}
+                style={{
+                  flex: 1,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: BORDER,
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <Text style={{ color: TEXT, fontWeight: '700', fontSize: 15 }}>
+                  {forgotMessage ? 'Done' : 'Cancel'}
+                </Text>
+              </Pressable>
+              {!forgotMessage && (
+                <Pressable
+                  onPress={submitForgot}
+                  disabled={forgotLoading}
+                  style={{
+                    flex: 1,
+                    borderRadius: 12,
+                    paddingVertical: 12,
+                    alignItems: 'center',
+                    backgroundColor: ACCENT,
+                    opacity: forgotLoading ? 0.7 : 1,
+                  }}
+                >
+                  {forgotLoading
+                    ? <ActivityIndicator color={ON_PRIMARY} />
+                    : <Text style={{ color: ON_PRIMARY, fontWeight: '900', fontSize: 15 }}>Send reset link</Text>
+                  }
+                </Pressable>
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
