@@ -546,18 +546,23 @@ function CalcPad({ amount, mode, onAmount, onMode, onNext }: {
             </View>
           ))}
 
-          {/* Next Step — solid yellow, full width */}
+          {/* Next Step — full width, extends past CalcPad's 18px padding to
+              reach the card's edges for a bigger, easier-to-hit tap target. */}
           <View style={{
-            borderRadius: 12,
             overflow: 'hidden',
             marginTop: 4,
+            marginHorizontal: -18,
+            marginBottom: -18,
+            borderBottomLeftRadius: 16,
+            borderBottomRightRadius: 16,
           }}>
             <Pressable
               onPress={() => { hTapMed(); onNext(); }}
               android_ripple={{ color: 'rgba(0,0,0,0.12)' }}
               style={({ pressed }) => ({
                 backgroundColor: CALC.NEXT_BG,
-                paddingVertical: 16,
+                paddingVertical: 22,
+                alignSelf: 'stretch',
                 alignItems: 'center',
                 justifyContent: 'center',
                 opacity: pressed ? 0.92 : 1,
@@ -837,14 +842,16 @@ function DetailsForm({
         </LinearGradient>
       </View>
 
-      {/* Save button — solid yellow-400 like Next Step */}
+      {/* Save button — full width, extends past ScrollView's 16px padding to
+          the screen edges so the tap target is as large as possible. */}
       <Pressable
         onPress={onSave}
         disabled={saving}
         style={({ pressed }) => ({
           backgroundColor: CALC.NEXT_BG,
-          borderRadius: 14,
-          paddingVertical: 18,
+          paddingVertical: 22,
+          marginHorizontal: -16,
+          alignSelf: 'stretch',
           alignItems: 'center',
           opacity: pressed ? 0.85 : 1,
           shadowColor: '#000',
