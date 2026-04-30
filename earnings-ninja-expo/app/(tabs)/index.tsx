@@ -800,27 +800,29 @@ function DetailsForm({
             </View>
           )}
 
-          {/* Miles & Minutes */}
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <FieldLabel>🛣️ Miles</FieldLabel>
-              <FormInput
-                value={miles}
-                onChangeText={setMiles}
-                placeholder="0.0"
-                keyboardType="decimal-pad"
-              />
+          {/* Miles & Minutes — hidden for EXPENSE entries */}
+          {entryType !== 'EXPENSE' && (
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flex: 1 }}>
+                <FieldLabel>🛣️ Miles</FieldLabel>
+                <FormInput
+                  value={miles}
+                  onChangeText={setMiles}
+                  placeholder="0.0"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <FieldLabel>⏱️ Minutes</FieldLabel>
+                <FormInput
+                  value={minutes}
+                  onChangeText={setMinutes}
+                  placeholder="0"
+                  keyboardType="number-pad"
+                />
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <FieldLabel>⏱️ Minutes</FieldLabel>
-              <FormInput
-                value={minutes}
-                onChangeText={setMinutes}
-                placeholder="0"
-                keyboardType="number-pad"
-              />
-            </View>
-          </View>
+          )}
 
           {/* Notes */}
           <View>
