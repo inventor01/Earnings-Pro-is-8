@@ -904,7 +904,15 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: CALC.CARD_BG }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/* Yellow header bar — static View ensures iOS paints the bg reliably.
             paddingTop pushes content below the iPhone status bar / notch. */}
-        <View style={{ backgroundColor: CALC.HEADER_BG, paddingTop: insets.top }}>
+        {/* Yellow header — static padding on outer View so the row sits visually
+            centered between the status-bar inset above and equal space below.
+            Centering math: top = insets.top + 18 (Pressable paddingTop) ;
+                            bottom = insets.top + 18 (outer View paddingBottom). */}
+        <View style={{
+          backgroundColor: CALC.HEADER_BG,
+          paddingTop: insets.top,
+          paddingBottom: insets.top,
+        }}>
           <Pressable
             onPress={() => {
               hTapMed();
@@ -914,10 +922,7 @@ function AddEntryModal({ visible, onClose }: { visible: boolean; onClose: () => 
             android_ripple={{ color: 'rgba(0,0,0,0.08)' }}
             style={({ pressed }) => ({
               paddingHorizontal: 18,
-              paddingTop: 18,
-              // Mirror (status-bar inset + paddingTop) below the text so it sits
-              // visually centered in the yellow header on every device.
-              paddingBottom: insets.top + 18,
+              paddingVertical: 18,
               opacity: pressed ? 0.85 : 1,
             })}
           >
