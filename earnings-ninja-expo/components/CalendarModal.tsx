@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   View, Text, Pressable, Modal, ScrollView, ActivityIndicator,
-  ViewStyle, Dimensions, Platform,
+  ViewStyle, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -170,6 +170,8 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       cells.push({ day: d, dateStr });
     }
+    // Pad the trailing partial week so the grid always ends on a full row of 7.
+    while (cells.length % 7 !== 0) cells.push(null);
     return cells;
   }, [year, month]);
 
@@ -236,10 +238,9 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
   }, [selectedDay, entries]);
 
   const todayStr = estDateString(new Date());
-  const screenW  = Dimensions.get('window').width;
-  // 7 columns, flush grid: container has 16px padding both sides + 1px outer border.
-  const cellSize = Math.floor((screenW - 16 * 2 - 2) / 7);
-  const cellHeight = Math.max(cellSize, 62);
+  // Use percentage widths so the grid stays correct regardless of modal sizing.
+  const cellWidthPct = `${100 / 7}%` as `${number}%`;
+  const cellHeight = 60;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -421,7 +422,7 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
               <View
                 key={i}
                 style={{
-                  width: cellSize,
+                  width: cellWidthPct,
                   paddingVertical: 8,
                   alignItems: 'center',
                   borderRightWidth: i < 6 ? 1 : 0,
@@ -490,7 +491,7 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                     <View
                       key={idx}
                       style={{
-                        width: cellSize,
+                        width: cellWidthPct,
                         height: cellHeight,
                         backgroundColor: BG,
                         borderRightWidth: isLastCol ? 0 : 1,
@@ -526,7 +527,7 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
                     }}
                     scale={0.94}
                     style={{
-                      width: cellSize,
+                      width: cellWidthPct,
                       height: cellHeight,
                       backgroundColor: SURFACE,
                       borderRightWidth: isLastCol ? 0 : 1,
