@@ -305,23 +305,139 @@ const EXPENSE_CATS: ExpenseCategory[] = [
   'GAS', 'PARKING', 'TOLLS', 'MAINTENANCE', 'PHONE', 'SUBSCRIPTION', 'FOOD', 'OTHER',
 ];
 
-// ─── Dashed Sparkline ─────────────────────────────────────────────────────────
-function DashedLine({ color }: { color?: string }) {
-  const { PRIMARY } = useTheme();
-  const c = color ?? PRIMARY;
+// ─── Profit Chart ─────────────────────────────────────────────────────────────
+// Replaces the old decorative dashed line with a real, period-aware bar chart
+// of net profit (revenue − expenses) bucketed appropriately for the dashboard's
+// current period: hourly for today/yesterday/single-day, daily for week/month/
+// custom ranges. Positive bars rise above the baseline (profit), negative bars
+// fall below (loss). No data → subtle "—" placeholder.
+function ProfitChart({
+  entries,
+  period,
+  customRange,
+  dayOffset,
+  positiveColor,
+  negativeColor,
+}: {
+  entries: Entry[];
+  period: 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth' | 'custom';
+  customRange: { from: string; to: string } | null;
+  dayOffset: number;
+  positiveColor: string;
+  negativeColor: string;
+}) {
+  const { LABEL, DIVIDER } = useTheme();
+
+  // Determine buckets: list of { key, sum } where sum = signed-amount total.
+  type Bucket = { key: string; sum: number };
+  const buckets: Bucket[] = (() => {
+    // Hourly (24) for any single-day view
+    if (period === 'today' || period === 'yesterday') {
+      const arr: Bucket[] = Array.from({ length: 24 }, (_, h) => ({ key: String(h), sum: 0 }));
+      for (const e of entries) {
+        const d = new Date(e.timestamp);
+        const h = d.getHours();
+        if (h >= 0 && h < 24) arr[h].sum += Number(e.amount) || 0;
+      }
+      return arr;
+    }
+
+    // Daily for multi-day ranges. Determine the day-count from the period.
+    let days = 7;
+    let endDate = new Date();
+    if (period === 'week' || period === 'last7') {
+      days = 7;
+      endDate = new Date();
+    } else if (period === 'month') {
+      const now = new Date();
+      endDate = now;
+      days = now.getDate(); // days elapsed this month
+    } else if (period === 'lastMonth') {
+      const now = new Date();
+      // last day of previous month
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+      days = endDate.getDate();
+    } else if (period === 'custom' && customRange) {
+      // EST date strings 'YYYY-MM-DD' — count inclusive
+      const from = new Date(customRange.from + 'T00:00:00');
+      const to   = new Date(customRange.to   + 'T00:00:00');
+      const ms = to.getTime() - from.getTime();
+      days = Math.max(1, Math.round(ms / 86400000) + 1);
+      endDate = to;
+    }
+    // Cap at ~31 buckets so bars stay legible.
+    days = Math.min(days, 31);
+
+    // Build ascending day keys ending on endDate.
+    const dayKey = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    const arr: Bucket[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(endDate);
+      d.setDate(endDate.getDate() - i);
+      arr.push({ key: dayKey(d), sum: 0 });
+    }
+    const indexByKey = new Map(arr.map((b, i) => [b.key, i]));
+    for (const e of entries) {
+      const d = new Date(e.timestamp);
+      const k = dayKey(d);
+      const idx = indexByKey.get(k);
+      if (idx !== undefined) arr[idx].sum += Number(e.amount) || 0;
+    }
+    return arr;
+  })();
+
+  const maxAbs = Math.max(1, ...buckets.map(b => Math.abs(b.sum)));
+  const hasAny = buckets.some(b => b.sum !== 0);
+  const CHART_H = 110;
+  const HALF = CHART_H / 2;
+
+  // Bucket count drives bar width; keep small gaps between bars.
+  const N = buckets.length;
+  const GAP = N > 14 ? 1 : 2;
+
+  if (!hasAny) {
+    return (
+      <View style={{ height: CHART_H, paddingVertical: 36, justifyContent: 'center' }}>
+        <View style={{ height: 1.5, backgroundColor: DIVIDER, opacity: 0.4 }} />
+        <Text style={{
+          color: LABEL, fontSize: 11, textAlign: 'center', marginTop: 10,
+          letterSpacing: 1, textTransform: 'uppercase', fontWeight: '700', opacity: 0.6,
+        }}>
+          No entries yet
+        </Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 60 }}>
-      {Array.from({ length: 28 }).map((_, i) => (
-        <View
-          key={i}
-          style={{
-            flex: 1,
-            height: 1.5,
-            backgroundColor: i % 2 === 0 ? c : 'transparent',
-            opacity: 0.55,
-          }}
-        />
-      ))}
+    <View style={{ height: CHART_H, paddingVertical: 8, justifyContent: 'center' }}>
+      <View style={{ height: CHART_H - 16, flexDirection: 'row', alignItems: 'center', gap: GAP }}>
+        {buckets.map((b, i) => {
+          const ratio = Math.abs(b.sum) / maxAbs; // 0..1
+          const h = Math.max(b.sum !== 0 ? 2 : 0, ratio * (HALF - 8));
+          const positive = b.sum >= 0;
+          return (
+            <View key={i} style={{ flex: 1, height: '100%', justifyContent: 'center', position: 'relative' }}>
+              {/* zero baseline */}
+              <View style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 1, backgroundColor: DIVIDER, opacity: 0.4 }} />
+              {/* bar */}
+              {b.sum !== 0 && (
+                <View style={{
+                  position: 'absolute',
+                  left: 0, right: 0,
+                  top: positive ? `${50 - (h / (CHART_H - 16)) * 100}%` : '50%',
+                  height: h,
+                  backgroundColor: positive ? positiveColor : negativeColor,
+                  opacity: 0.85,
+                  borderRadius: 2,
+                }} />
+              )}
+            </View>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -2062,8 +2178,15 @@ export default function DashboardScreen() {
                   </PressScale>
                 </View>
 
-                {/* Dashed sparkline */}
-                <DashedLine color={profitColor} />
+                {/* Profit chart — hourly for single-day views, daily otherwise */}
+                <ProfitChart
+                  entries={entries}
+                  period={period}
+                  customRange={customRange}
+                  dayOffset={effectiveDayOffset}
+                  positiveColor={GREEN}
+                  negativeColor={RED}
+                />
 
                 {/* Three stats with count-up */}
                 <View style={{ flexDirection: 'row' }}>
