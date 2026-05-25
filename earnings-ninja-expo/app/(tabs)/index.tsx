@@ -1155,7 +1155,7 @@ function AddEntryModal({ visible, onClose, prefill }: {
       return;
     }
     const res = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       quality: 0.6, base64: true, allowsEditing: false,
     });
     if (!res.canceled) handleAssetResult(res.assets[0]);
@@ -1167,7 +1167,7 @@ function AddEntryModal({ visible, onClose, prefill }: {
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       quality: 0.6, base64: true, allowsEditing: false,
     });
     if (!res.canceled) handleAssetResult(res.assets[0]);
