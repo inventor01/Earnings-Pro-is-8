@@ -11,6 +11,13 @@ async function getAuthToken(): Promise<string | null> {
   return getToken();
 }
 
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user_id: string;
+  email: string;
+}
+
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const token = await getAuthToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -234,14 +241,58 @@ export const api = {
     return res.json();
   },
 
-  async createEntry(entry: EntryCreate): Promise<Entry> {
+  // Raw uploader — no offline queue. Used by the queue drainer itself so
+  // it can't recurse. Always throws on failure (network or non-2xx) with
+  // the HTTP status in the message so `drainQueue` can classify it.
+  async createEntryRaw(entry: EntryCreate): Promise<Entry> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/entries`, {
       method: 'POST',
       headers,
       body: JSON.stringify(entry),
     });
-    if (!res.ok) throw new Error('Failed to create entry');
+    if (!res.ok) throw new Error(`createEntry failed: ${res.status}`);
+    return res.json();
+  },
+
+  // Public createEntry — same shape, but routes failed network calls to
+  // the offline queue and returns a synthetic Entry so the UI flow
+  // ("you added an entry, here it is on the list") doesn't break. The
+  // queue drains on app foreground (see `_layout.tsx`).
+  async createEntry(entry: EntryCreate): Promise<Entry> {
+    try {
+      return await this.createEntryRaw(entry);
+    } catch (err: any) {
+      const msg = String(err?.message ?? '');
+      // 4xx (except 401/429) = bad payload, don't queue — let the caller
+      // surface the error. 401 = stale auth, also don't queue (user needs
+      // to re-login first). 429 = backend rate limit, also don't queue
+      // (queueing would just compound). Everything else (network failure,
+      // 5xx, 0 status) = transient — enqueue and pretend it succeeded.
+      const isPermanent = /createEntry failed: (40[03456780]|41[0-7])/.test(msg);
+      const isAuthOrRate = /createEntry failed: (401|429)/.test(msg);
+      if (isPermanent || isAuthOrRate) throw err;
+      const { enqueueEntry, synthesizeEntry } = await import('./offlineQueue');
+      const item = await enqueueEntry(entry);
+      return synthesizeEntry(item);
+    }
+  },
+
+  // Sign In with Apple — exchanges the Apple identity token (returned by
+  // expo-apple-authentication's signInAsync) for our own access token.
+  // First-name / last-name are only set by Apple on the very first sign-in
+  // for an account; the caller should pass them along when they're available.
+  async appleSignIn(identity_token: string, first_name?: string, last_name?: string): Promise<AuthResponse> {
+    const res = await fetch(`${API_BASE}/api/auth/apple`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identity_token, first_name, last_name }),
+    });
+    if (!res.ok) {
+      let msg = 'Apple sign-in failed';
+      try { const j = await res.json(); if (j?.detail) msg = j.detail; } catch {}
+      throw new Error(msg);
+    }
     return res.json();
   },
 

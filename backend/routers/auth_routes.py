@@ -55,6 +55,18 @@ class AuthResponse(BaseModel):
 class ForgotPasswordRequest(BaseModel):
     email: str
 
+class AppleSignInRequest(BaseModel):
+    # `identity_token` is the JWT issued by Apple's Sign In with Apple flow
+    # (returned by expo-apple-authentication's `signInAsync`). We verify it
+    # server-side against Apple's JWKS to confirm the user really signed in
+    # with Apple — we never trust client-supplied `user`/`email` alone.
+    identity_token: str
+    # Apple only returns name on FIRST sign-in. The client should cache these
+    # client-side after the first auth and forward them here so we can set
+    # them on account creation. After that they're ignored.
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
@@ -151,6 +163,110 @@ async def _signup(request: SignupRequest, db: Session = Depends(get_db)):
 @auth_limiter.limit("10/minute")
 async def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     return await _login(body, db)
+
+
+# Apple Sign In — verifies an Apple-issued identity token server-side and
+# either creates a new AuthUser (id = `apple:{sub}`) or returns the
+# existing one, then issues our HS256 access token. The Apple `sub` claim
+# is a stable opaque identifier scoped to our bundle id (`aud`). Email may
+# be a private relay address; that's fine, we store whatever Apple gives us.
+APPLE_ISSUER = "https://appleid.apple.com"
+APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
+# Match the iOS bundle id in earnings-ninja-expo/app.json.
+APPLE_AUDIENCE = os.getenv("APPLE_AUDIENCE", "com.earningsninja.app")
+_apple_jwk_client: Optional[jwt.PyJWKClient] = None
+
+
+def _get_apple_jwk_client() -> jwt.PyJWKClient:
+    global _apple_jwk_client
+    if _apple_jwk_client is None:
+        # PyJWKClient caches keys in-memory after first fetch; fine for our
+        # request volume. cache_keys=True is the default.
+        _apple_jwk_client = jwt.PyJWKClient(APPLE_JWKS_URL)
+    return _apple_jwk_client
+
+
+@router.post("/auth/apple", response_model=AuthResponse)
+@auth_limiter.limit("20/minute")
+async def apple_sign_in(request: Request, body: AppleSignInRequest, db: Session = Depends(get_db)):
+    if not body.identity_token:
+        raise HTTPException(status_code=400, detail="identity_token is required")
+
+    # Resolve the signing key from Apple's JWKS by the token's kid header,
+    # then verify signature + issuer + audience + expiration.
+    try:
+        client = _get_apple_jwk_client()
+        signing_key = client.get_signing_key_from_jwt(body.identity_token)
+        payload = jwt.decode(
+            body.identity_token,
+            signing_key.key,
+            algorithms=["ES256", "RS256"],
+            audience=APPLE_AUDIENCE,
+            issuer=APPLE_ISSUER,
+            options={"require": ["sub", "exp", "iss", "aud"]},
+        )
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Apple identity token expired")
+    except jwt.InvalidAudienceError:
+        raise HTTPException(status_code=401, detail="Apple token audience mismatch")
+    except jwt.InvalidIssuerError:
+        raise HTTPException(status_code=401, detail="Apple token issuer mismatch")
+    except Exception as e:
+        # Any other failure (bad signature, malformed, JWKS unreachable) —
+        # treat as auth failure, don't leak details to the client.
+        import logging
+        logging.getLogger(__name__).warning(f"Apple SIWA token verification failed: {e}")
+        raise HTTPException(status_code=401, detail="Invalid Apple identity token")
+
+    apple_sub = payload["sub"]
+    email = payload.get("email")
+    # Apple sends `email_verified` as either bool True or the string "true".
+    email_verified = payload.get("email_verified") in (True, "true")
+    user_id = f"apple:{apple_sub}"
+
+    # Find by apple sub first — this is the only stable identifier we should
+    # ever auto-link on. Do NOT fall back to email match: an attacker who
+    # registers a Sign In with Apple identity could otherwise hijack an
+    # existing email/password account whose email happens to match. Even
+    # though Apple verifies the email before issuing a token, an existing
+    # email/password account is a separate identity we must not silently
+    # take over. Users who want to merge accounts must do so via an
+    # explicit, authenticated link flow (future work).
+    user = db.query(AuthUser).filter(AuthUser.id == user_id).first()
+
+    if not user:
+        # If an existing AuthUser already owns this email, we can't insert a
+        # new row with the same value (AuthUser.email has UNIQUE). Drop the
+        # email on the new Apple-keyed account; the user can set it later
+        # from settings. This preserves account separation without 500ing.
+        email_to_store = email if email_verified else None
+        if email_to_store:
+            collision = db.query(AuthUser).filter(AuthUser.email == email_to_store).first()
+            if collision:
+                email_to_store = None
+        user = AuthUser(
+            id=user_id,
+            email=email_to_store,
+            first_name=body.first_name,
+            last_name=body.last_name,
+            is_demo=False,
+        )
+        db.add(user)
+        db.flush()
+        # Seed default goals so the dashboard isn't empty on first launch.
+        db.add(Goal(user_id=user.id, timeframe=TimeframeType.TODAY,      target_profit=Decimal("200.00"),  goal_name="Daily Goal"))
+        db.add(Goal(user_id=user.id, timeframe=TimeframeType.THIS_WEEK,  target_profit=Decimal("1400.00"), goal_name="Weekly Goal"))
+        db.add(Goal(user_id=user.id, timeframe=TimeframeType.THIS_MONTH, target_profit=Decimal("6000.00"), goal_name="Monthly Goal"))
+        db.commit()
+        db.refresh(user)
+
+    token = create_access_token(user.id, user.email or "")
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "email": user.email or "",
+    }
 
 
 async def _login(request: LoginRequest, db: Session = Depends(get_db)):

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View, Text, TextInput, Pressable,
   ScrollView, ActivityIndicator, KeyboardAvoidingView,
@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/authContext';
 import { api } from '@/lib/api';
 import { useTheme } from '@/lib/theme';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 export default function LoginScreen() {
   const t = useTheme();
@@ -30,6 +31,42 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const [appleLoading, setAppleLoading] = useState(false);
+  const [appleAvailable, setAppleAvailable] = useState(false);
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    AppleAuthentication.isAvailableAsync().then(setAppleAvailable).catch(() => setAppleAvailable(false));
+  }, []);
+
+  const handleAppleSignIn = async () => {
+    setError('');
+    setAppleLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      if (!credential.identityToken) {
+        throw new Error('Apple did not return an identity token');
+      }
+      const res = await api.appleSignIn(
+        credential.identityToken,
+        credential.fullName?.givenName ?? undefined,
+        credential.fullName?.familyName ?? undefined,
+      );
+      login(res.access_token);
+    } catch (e: any) {
+      // `ERR_REQUEST_CANCELED` is the user backing out — don't surface as error.
+      if (e?.code !== 'ERR_REQUEST_CANCELED') {
+        setError(e?.message || 'Apple sign-in failed');
+      }
+    } finally {
+      setAppleLoading(false);
+    }
+  };
 
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
@@ -312,6 +349,28 @@ export default function LoginScreen() {
                 </Text>
             }
           </Pressable>
+
+          {/* Sign in with Apple — iOS only, shown when the device supports SIWA.
+              Apple requires that any iOS app using third-party social login also
+              offer Sign In with Apple as a peer option (App Store guideline 4.8). */}
+          {Platform.OS === 'ios' && appleAvailable && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={
+                t.isDark
+                  ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                  : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+              }
+              cornerRadius={14}
+              style={{
+                width: '100%',
+                height: 50,
+                marginBottom: 12,
+                opacity: appleLoading ? 0.6 : 1,
+              }}
+              onPress={handleAppleSignIn}
+            />
+          )}
 
           {/* Demo Button */}
           <Pressable
