@@ -20,3 +20,4 @@ bcrypt
 aiosmtplib
 resend
 email-validator
+slowapi>=0.1.9

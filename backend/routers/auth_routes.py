@@ -22,7 +22,11 @@ import random
 
 router = APIRouter()
 
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+from backend.auth import SECRET_KEY, JWT_ALGORITHM
+
+# Token lifetime — long enough for mobile users to stay signed in across days
+# without re-auth, short enough that a leaked token has a bounded blast radius.
+ACCESS_TOKEN_TTL = timedelta(days=30)
 
 class LoginRequest(BaseModel):
     credential: str
@@ -59,12 +63,16 @@ def verify_password(password: str, hash_value: str) -> bool:
         return False
 
 def create_access_token(user_id: str, email: str) -> str:
-    """Create JWT token"""
+    """Create a signed JWT with an expiration claim. The `exp` claim is required
+    by `backend.auth.get_current_user` — tokens without it are rejected."""
+    now = datetime.utcnow()
     payload = {
         "sub": user_id,
-        "email": email
+        "email": email,
+        "iat": now,
+        "exp": now + ACCESS_TOKEN_TTL,
     }
-    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+    return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 @router.post("/auth/signup", response_model=AuthResponse)
 async def signup(request: SignupRequest, db: Session = Depends(get_db)):
