@@ -102,6 +102,7 @@ packages = ["cargo", "imagemagick", "libiconv", "libxcrypt", "rustc", "zip"]
 
 [userenv.shared]
 PRELAUNCH_ACCESS_CODE = "en2025"
+JWT_SECRET_KEY = "076e698a2ede6418af974661a21247dea031dd4c6008dcb551c3c1331f1573f4f9dc5896c6a65b5a928c1a36f03d2987"
 
 [deployment]
 deploymentTarget = "autoscale"
