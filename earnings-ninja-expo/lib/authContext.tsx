@@ -28,14 +28,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getToken().then(async (t) => {
       if (t) {
         setToken(t);
+        // Re-push token to the iOS widget on cold-start. Without this the
+        // widget only ever sees a token at explicit login(), so after an
+        // app kill its quick-add tiles fall back to "Sign in" even though
+        // SecureStore still has a valid token.
         widgetSync.onLogin(t);
         try {
           const u = await api.getMe();
           setUser(u);
-        } catch {
-          await clearToken();
-          setToken(null);
-          widgetSync.onLogout();
+        } catch (err: any) {
+          // Only force-logout if the server *explicitly* rejected the token
+          // (401/403). On a transient network error, keep the token so the
+          // next refetch can succeed — punishing the user for a flaky tunnel
+          // means they have to re-log every time they open the app offline.
+          const msg = String(err?.message ?? '');
+          const isAuthFailure = /401|403|unauthor/i.test(msg);
+          if (isAuthFailure) {
+            await clearToken();
+            setToken(null);
+            widgetSync.onLogout();
+          }
         }
       }
       setIsLoading(false);
