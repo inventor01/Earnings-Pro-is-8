@@ -1,10 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from backend.db import get_db
-from backend.models import ApiCredential, PlatformIntegration
+from backend.models import ApiCredential, PlatformIntegration, AuthUser
+from backend.auth import get_current_user, SECRET_KEY, JWT_ALGORITHM
 import httpx
+import jwt
 import os
+import secrets
 
 router = APIRouter()
 
@@ -17,27 +21,88 @@ SHIPT_CLIENT_ID = os.getenv("SHIPT_CLIENT_ID", "demo_shipt_client")
 SHIPT_CLIENT_SECRET = os.getenv("SHIPT_CLIENT_SECRET", "demo_shipt_secret")
 SHIPT_REDIRECT_URI = os.getenv("SHIPT_REDIRECT_URI", "http://localhost:5000/api/oauth/shipt/callback")
 
+# OAuth `state` is a short-lived JWT binding the redirect back to one user.
+# Without this, the callback couldn't tell which logged-in user the
+# authorization-code belongs to (and an attacker could trick a victim into
+# linking the attacker's upstream account to the victim's Earnings Ninja
+# account — classic CSRF on the OAuth callback). The nonce defeats replay.
+OAUTH_STATE_TTL = timedelta(minutes=10)
+
+
+def _issue_oauth_state(user_id: str, platform: str) -> str:
+    now = datetime.utcnow()
+    payload = {
+        "sub": user_id,
+        "platform": platform,
+        "nonce": secrets.token_urlsafe(16),
+        "iat": now,
+        "exp": now + OAUTH_STATE_TTL,
+        "purpose": "oauth_state",
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+
+def _verify_oauth_state(state: str, expected_platform: str) -> str:
+    """Returns the user_id encoded in the state, or raises 400."""
+    try:
+        claims = jwt.decode(
+            state,
+            SECRET_KEY,
+            algorithms=[JWT_ALGORITHM],
+            options={"require": ["sub", "exp", "purpose", "platform"]},
+        )
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="OAuth state expired — restart the connect flow")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=400, detail="OAuth state invalid")
+    if claims.get("purpose") != "oauth_state":
+        raise HTTPException(status_code=400, detail="OAuth state has wrong purpose")
+    if claims.get("platform") != expected_platform:
+        raise HTTPException(status_code=400, detail="OAuth state platform mismatch")
+    return claims["sub"]
+
+
+def _callback_html(message: str) -> HTMLResponse:
+    # OAuth callbacks land in a browser, not the JSON-consuming app. A tiny
+    # HTML page is friendlier than a raw JSON blob and lets the user know to
+    # return to the app.
+    safe = message.replace("<", "&lt;").replace(">", "&gt;")
+    body = (
+        "<!doctype html><meta charset='utf-8'><title>Earnings Ninja</title>"
+        "<style>body{font-family:-apple-system,system-ui,sans-serif;background:#0a0a0a;"
+        "color:#f1f5f9;display:grid;place-items:center;height:100vh;margin:0;text-align:center;padding:24px}"
+        "h1{color:#facc15;margin:0 0 12px;font-size:22px}p{color:#94a3b8;margin:0;max-width:420px}</style>"
+        f"<h1>Earnings Ninja</h1><p>{safe}</p>"
+    )
+    return HTMLResponse(body)
+
 
 @router.get("/oauth/uber/authorize")
-async def uber_authorize():
-    """Redirect to Uber OAuth"""
-    auth_url = "https://login.uber.com/oauth/v2/authorize"
+async def uber_authorize(current_user: AuthUser = Depends(get_current_user)):
+    """Build the Uber OAuth authorize URL bound to the current user."""
+    state = _issue_oauth_state(current_user.id, "UBER")
     params = {
         "client_id": UBER_CLIENT_ID,
         "redirect_uri": UBER_REDIRECT_URI,
         "response_type": "code",
-        "scope": "delivery.read delivery.write"
+        "scope": "delivery.read delivery.write",
+        "state": state,
     }
-    
     query_string = "&".join([f"{k}={v}" for k, v in params.items()])
-    return {"auth_url": f"{auth_url}?{query_string}"}
+    return {"auth_url": f"https://login.uber.com/oauth/v2/authorize?{query_string}"}
 
 
 @router.get("/oauth/uber/callback")
-async def uber_callback(code: str = Query(...), db: Session = Depends(get_db)):
-    """Handle Uber OAuth callback"""
+async def uber_callback(
+    code: str = Query(...),
+    state: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    """Handle Uber OAuth callback. The user_id comes from the signed `state`
+    JWT — never from a query param or session cookie — so the credential
+    is always bound to the user who initiated the connect flow."""
+    user_id = _verify_oauth_state(state, "UBER")
     try:
-        # Exchange code for token
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://login.uber.com/oauth/v2/token",
@@ -46,25 +111,24 @@ async def uber_callback(code: str = Query(...), db: Session = Depends(get_db)):
                     "code": code,
                     "client_id": UBER_CLIENT_ID,
                     "client_secret": UBER_CLIENT_SECRET,
-                    "redirect_uri": UBER_REDIRECT_URI
-                }
+                    "redirect_uri": UBER_REDIRECT_URI,
+                },
             )
-            
+
             if response.status_code != 200:
                 raise HTTPException(status_code=400, detail="Failed to get token from Uber")
-            
+
             token_data = response.json()
             access_token = token_data.get("access_token")
             refresh_token = token_data.get("refresh_token")
             expires_in = token_data.get("expires_in", 3600)
-            
-            # Save credentials
             token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
-            
+
             cred = db.query(ApiCredential).filter(
-                ApiCredential.platform == PlatformIntegration.UBER
+                ApiCredential.user_id == user_id,
+                ApiCredential.platform == PlatformIntegration.UBER,
             ).first()
-            
+
             if cred:
                 cred.access_token = access_token
                 cred.refresh_token = refresh_token
@@ -72,42 +136,46 @@ async def uber_callback(code: str = Query(...), db: Session = Depends(get_db)):
                 cred.is_active = 1
             else:
                 cred = ApiCredential(
+                    user_id=user_id,
                     platform=PlatformIntegration.UBER,
                     access_token=access_token,
                     refresh_token=refresh_token,
                     token_expires_at=token_expires_at,
-                    is_active=1
+                    is_active=1,
                 )
                 db.add(cred)
-            
+
             db.commit()
-            
-            return {"message": "Uber account connected successfully", "platform": "UBER"}
-            
+            return _callback_html("Uber connected. You can close this window and return to the app.")
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/oauth/shipt/authorize")
-async def shipt_authorize():
-    """Redirect to Shipt OAuth"""
-    auth_url = "https://api.shipt.com/oauth/authorize"
+async def shipt_authorize(current_user: AuthUser = Depends(get_current_user)):
+    state = _issue_oauth_state(current_user.id, "SHIPT")
     params = {
         "client_id": SHIPT_CLIENT_ID,
         "redirect_uri": SHIPT_REDIRECT_URI,
         "response_type": "code",
-        "scope": "orders.read orders.write"
+        "scope": "orders.read orders.write",
+        "state": state,
     }
-    
     query_string = "&".join([f"{k}={v}" for k, v in params.items()])
-    return {"auth_url": f"{auth_url}?{query_string}"}
+    return {"auth_url": f"https://api.shipt.com/oauth/authorize?{query_string}"}
 
 
 @router.get("/oauth/shipt/callback")
-async def shipt_callback(code: str = Query(...), db: Session = Depends(get_db)):
-    """Handle Shipt OAuth callback"""
+async def shipt_callback(
+    code: str = Query(...),
+    state: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    user_id = _verify_oauth_state(state, "SHIPT")
     try:
-        # Exchange code for token
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://api.shipt.com/oauth/token",
@@ -116,25 +184,24 @@ async def shipt_callback(code: str = Query(...), db: Session = Depends(get_db)):
                     "code": code,
                     "client_id": SHIPT_CLIENT_ID,
                     "client_secret": SHIPT_CLIENT_SECRET,
-                    "redirect_uri": SHIPT_REDIRECT_URI
-                }
+                    "redirect_uri": SHIPT_REDIRECT_URI,
+                },
             )
-            
+
             if response.status_code != 200:
                 raise HTTPException(status_code=400, detail="Failed to get token from Shipt")
-            
+
             token_data = response.json()
             access_token = token_data.get("access_token")
             refresh_token = token_data.get("refresh_token")
             expires_in = token_data.get("expires_in", 3600)
-            
-            # Save credentials
             token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
-            
+
             cred = db.query(ApiCredential).filter(
-                ApiCredential.platform == PlatformIntegration.SHIPT
+                ApiCredential.user_id == user_id,
+                ApiCredential.platform == PlatformIntegration.SHIPT,
             ).first()
-            
+
             if cred:
                 cred.access_token = access_token
                 cred.refresh_token = refresh_token
@@ -142,50 +209,64 @@ async def shipt_callback(code: str = Query(...), db: Session = Depends(get_db)):
                 cred.is_active = 1
             else:
                 cred = ApiCredential(
+                    user_id=user_id,
                     platform=PlatformIntegration.SHIPT,
                     access_token=access_token,
                     refresh_token=refresh_token,
                     token_expires_at=token_expires_at,
-                    is_active=1
+                    is_active=1,
                 )
                 db.add(cred)
-            
+
             db.commit()
-            
-            return {"message": "Shipt account connected successfully", "platform": "SHIPT"}
-            
+            return _callback_html("Shipt connected. You can close this window and return to the app.")
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/oauth/{platform}/disconnect")
-async def disconnect_platform(platform: str, db: Session = Depends(get_db)):
-    """Disconnect an OAuth account"""
-    platform_enum = PlatformIntegration[platform.upper()]
-    
+async def disconnect_platform(
+    platform: str,
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
+    """Disconnect one of the current user's OAuth connections."""
+    try:
+        platform_enum = PlatformIntegration[platform.upper()]
+    except KeyError:
+        raise HTTPException(status_code=400, detail=f"Unknown platform: {platform}")
+
     cred = db.query(ApiCredential).filter(
-        ApiCredential.platform == platform_enum
+        ApiCredential.user_id == current_user.id,
+        ApiCredential.platform == platform_enum,
     ).first()
-    
+
     if not cred:
         raise HTTPException(status_code=404, detail=f"No connection found for {platform}")
-    
+
     cred.is_active = 0
     db.commit()
-    
     return {"message": f"{platform} account disconnected"}
 
 
 @router.get("/oauth/status")
-async def get_oauth_status(db: Session = Depends(get_db)):
-    """Get status of all OAuth connections"""
-    credentials = db.query(ApiCredential).all()
-    
+async def get_oauth_status(
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
+    """Status of the current user's OAuth connections only."""
+    credentials = db.query(ApiCredential).filter(
+        ApiCredential.user_id == current_user.id,
+    ).all()
+
     status = {}
     for cred in credentials:
         status[cred.platform.value] = {
             "connected": bool(cred.is_active),
-            "token_expires_at": cred.token_expires_at.isoformat() if cred.token_expires_at else None
+            "token_expires_at": cred.token_expires_at.isoformat() if cred.token_expires_at else None,
         }
-    
+
     return status

@@ -108,9 +108,15 @@ class PlatformIntegration(str, enum.Enum):
 
 class ApiCredential(Base):
     __tablename__ = "api_credentials"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    platform = Column(SQLEnum(PlatformIntegration), nullable=False, unique=True)
+    # `user_id` scopes every credential to one AuthUser. Nullable for backward
+    # compatibility with rows created before the multi-user migration; new
+    # rows MUST always be created with `user_id` set (enforced in the OAuth
+    # callback). Composite uniqueness is enforced by __table_args__ below so
+    # one user can connect each platform exactly once.
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=True, index=True)
+    platform = Column(SQLEnum(PlatformIntegration), nullable=False)
     access_token = Column(String, nullable=False)
     refresh_token = Column(String, nullable=True)
     token_expires_at = Column(DateTime, nullable=True)
@@ -118,10 +124,19 @@ class ApiCredential(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
+    __table_args__ = (
+        __import__('sqlalchemy').UniqueConstraint('user_id', 'platform', name='uq_user_platform'),
+    )
+
 class SyncedOrder(Base):
     __tablename__ = "synced_orders"
-    
+
     id = Column(Integer, primary_key=True, index=True)
+    # Without `user_id`, dedupe on (platform, platform_order_id) would let one
+    # user's synced order suppress another user's import when their upstream
+    # accounts share an order id (e.g. both connect the same demo Uber
+    # sandbox). Nullable for legacy rows from the single-tenant era.
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=True, index=True)
     platform = Column(SQLEnum(PlatformIntegration), nullable=False)
     platform_order_id = Column(String, nullable=False, index=True)
     entry_id = Column(Integer, nullable=True)

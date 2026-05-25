@@ -175,7 +175,12 @@ export const api = {
   async getMe(): Promise<User> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/auth/me`, { headers });
-    if (!res.ok) throw new Error('Not authenticated');
+    if (!res.ok) {
+      // Include HTTP status in the message so authContext can distinguish
+      // "server explicitly rejected my token" (401/403 → clear token) from
+      // "the network is flaky" (500/0 → keep token, retry later).
+      throw new Error(`getMe failed: ${res.status}`);
+    }
     return res.json();
   },
 

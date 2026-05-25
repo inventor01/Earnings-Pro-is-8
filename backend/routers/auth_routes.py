@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from backend.db import get_db
@@ -21,6 +23,13 @@ from datetime import datetime, timedelta
 import random
 
 router = APIRouter()
+
+# Rate limits on /auth/* endpoints. The limiter instance lives on app.state
+# (configured in backend/app.py); slowapi resolves it via the `request` param
+# that each decorated handler now accepts. Keys default to remote IP — keep
+# values strict enough to throttle credential-stuffing and signup spam, loose
+# enough that a real user retyping a password isn't locked out.
+auth_limiter = Limiter(key_func=get_remote_address)
 
 from backend.auth import SECRET_KEY, JWT_ALGORITHM
 
@@ -75,7 +84,13 @@ def create_access_token(user_id: str, email: str) -> str:
     return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 @router.post("/auth/signup", response_model=AuthResponse)
-async def signup(request: SignupRequest, db: Session = Depends(get_db)):
+@auth_limiter.limit("5/hour")
+async def signup(request: Request, body: SignupRequest, db: Session = Depends(get_db)):
+    # `request` is required by slowapi; alias the legacy `request` body to `body`.
+    return await _signup(body, db)
+
+
+async def _signup(request: SignupRequest, db: Session = Depends(get_db)):
     """Sign up new user"""
     if not request.email or not request.password:
         raise HTTPException(status_code=400, detail="Email and password are required")
@@ -133,7 +148,12 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
     }
 
 @router.post("/auth/login", response_model=AuthResponse)
-async def login(request: LoginRequest, db: Session = Depends(get_db)):
+@auth_limiter.limit("10/minute")
+async def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
+    return await _login(body, db)
+
+
+async def _login(request: LoginRequest, db: Session = Depends(get_db)):
     """Login user - accepts email or username"""
     if not request.credential or not request.password:
         raise HTTPException(status_code=400, detail="Email/username and password are required")
@@ -186,7 +206,12 @@ async def validate_token(current_user: AuthUser = Depends(get_current_user)) -> 
     }
 
 @router.post("/auth/forgot-password")
-async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+@auth_limiter.limit("5/hour")
+async def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    return await _forgot_password(body, db)
+
+
+async def _forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
     """Request a password reset link"""
     email = request.email.strip()
     

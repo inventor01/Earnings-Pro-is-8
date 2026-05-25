@@ -1,8 +1,27 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 from backend.models import EntryType, AppType, ExpenseCategory, TimeframeType
+
+# Hard cap on inline receipt payloads. Receipts are stored as
+# `data:image/jpeg;base64,…` strings on the Entry row (no object storage yet),
+# so an uncapped column would let a single request blow up SQLite and the
+# rollup queries that scan the table. 2 MB of base64 ≈ 1.5 MB image, which
+# comfortably covers a 0.6-quality JPEG from `expo-image-picker`.
+MAX_RECEIPT_BYTES = 2_000_000
+
+
+def _validate_receipt(v: Optional[str]) -> Optional[str]:
+    if v is None:
+        return v
+    if len(v) > MAX_RECEIPT_BYTES:
+        raise ValueError(
+            f"receipt_url exceeds {MAX_RECEIPT_BYTES} bytes "
+            f"(got {len(v)}). Downscale the image client-side before upload."
+        )
+    return v
+
 
 class EntryCreate(BaseModel):
     timestamp: Optional[datetime] = None
@@ -20,6 +39,9 @@ class EntryCreate(BaseModel):
     is_business_expense: Optional[bool] = False
     during_business_hours: Optional[bool] = False
 
+    _validate_receipt = field_validator("receipt_url")(_validate_receipt)
+
+
 class EntryUpdate(BaseModel):
     timestamp: Optional[datetime] = None
     date: Optional[str] = None
@@ -35,6 +57,9 @@ class EntryUpdate(BaseModel):
     receipt_url: Optional[str] = None
     is_business_expense: Optional[bool] = None
     during_business_hours: Optional[bool] = None
+
+    _validate_receipt = field_validator("receipt_url")(_validate_receipt)
+
 
 class EntryResponse(BaseModel):
     id: int
