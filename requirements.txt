@@ -13,7 +13,8 @@ apscheduler
 flask-dance
 flask-login
 oauthlib
-pyjwt
+pyjwt[crypto]
+cryptography>=42
 psycopg2-binary
 pytz
 bcrypt

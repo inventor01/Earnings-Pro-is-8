@@ -171,23 +171,62 @@ async def shutdown_event():
     except Exception as e:
         logger.error(f"Error during shutdown: {e}")
 
+# CORS — explicit allow-list. `CORS_ALLOWED_ORIGINS` is a comma-separated env
+# var of full origins (scheme + host + optional port). The defaults below
+# cover local dev (Vite frontend on 5000, landing site on 5173) and the
+# Replit preview/dev domain if set. The native iOS app does NOT send an
+# Origin header so CORS doesn't apply to it. Setting `*` was permissive
+# enough that any malicious site could ride a logged-in user's cookies/JWT
+# to our API — now locked down.
+_default_origins = [
+    "http://localhost:5000", "http://localhost:5173",
+    "http://127.0.0.1:5000", "http://127.0.0.1:5173",
+]
+_replit_dev = os.getenv("REPLIT_DEV_DOMAIN")
+if _replit_dev:
+    _default_origins.append(f"https://{_replit_dev}")
+_extra = os.getenv("CORS_ALLOWED_ORIGINS", "")
+_cors_origins = _default_origins + [o.strip() for o in _extra.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
+    # Also accept any *.replit.app and *.replit.dev origin via regex so
+    # deployment and preview URLs work without per-deploy env-var churn.
+    allow_origin_regex=r"^https://([a-z0-9\-]+\.)*replit\.(app|dev)$",
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 
-# Add cache control headers to prevent stale data issues
+
+# Cache-control + security headers. Cache headers prevent stale data on
+# /api/*. Security headers harden every response (HSTS for HTTPS pinning,
+# nosniff to prevent MIME-confusion XSS, frame-deny to prevent clickjacking
+# of any HTML we serve like OAuth callbacks / privacy / support, referrer
+# policy to avoid leaking internal paths to third parties).
 @app.middleware("http")
-async def add_cache_headers(request, call_next):
+async def add_security_and_cache_headers(request, call_next):
     response = await call_next(request)
     path = request.url.path
     if path.startswith("/api"):
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    # SAMEORIGIN (not DENY) so that the FastAPI-served HTML pages
+    # (/privacy, /support, OAuth callback) can be iframed by other pages
+    # under the same origin (e.g. an in-app legal modal). External
+    # iframing is still blocked, which is the actual clickjacking threat.
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    # Only emit HSTS over HTTPS (or via proxy). Browsers ignore it on http://
+    # but emitting it on dev http traffic is noisy.
+    if request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https":
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains",
+        )
     return response
 
 app.include_router(health.router, prefix="/api", tags=["health"])

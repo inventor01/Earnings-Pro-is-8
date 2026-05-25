@@ -82,6 +82,12 @@ export const simpleLight: Theme = {
   ON_PRIMARY: '#ffffff',
 };
 
+// B/W Neon theme — high-contrast monochrome on pure black. Greys had to be
+// bumped from the original 0.73 spec because `#737373` on `#000` is ~4.0:1
+// (fails WCAG AA for body text). Now: MUTED `#bdbdbd` ≈ 11.7:1, LABEL
+// `#9a9a9a` ≈ 7.6:1, BORDER `#3d3d3d` for visible-but-not-loud separators,
+// RED kept as a desaturated muted-but-distinct grey since the theme is
+// strictly B/W (semantics carried by icon shape, not hue).
 export const bwNeon: Theme = {
   name: 'bwNeon',
   label: 'B/W Neon',
@@ -90,21 +96,21 @@ export const bwNeon: Theme = {
   SURFACE: '#0a0a0a',
   CARD_BG: '#141414',
   CARD: '#141414',
-  BORDER: '#2a2a2a',
+  BORDER: '#3d3d3d',
   PRIMARY: '#ffffff',
   ACCENT: '#ffffff',
   PRI_LITE: '#1f1f1f',
-  PRI_DARK: '#d4d4d4',
+  PRI_DARK: '#e5e5e5',
   TEXT: '#ffffff',
   TEXT_MID: '#e5e5e5',
-  MUTED: '#a3a3a3',
-  LABEL: '#737373',
-  DIM: '#737373',
+  MUTED: '#bdbdbd',
+  LABEL: '#9a9a9a',
+  DIM: '#9a9a9a',
   GREEN: '#ffffff',
   GREEN_LT: '#1f1f1f',
-  RED: '#737373',
+  RED: '#bdbdbd',
   RED_LT: '#1f1f1f',
-  DIVIDER: '#1f1f1f',
+  DIVIDER: '#2a2a2a',
   ON_PRIMARY: '#000000',
 };
 

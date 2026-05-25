@@ -30,6 +30,7 @@
       "config": {
         "usesNonExemptEncryption": false
       },
+      "usesAppleSignIn": true,
       "entitlements": {
         "com.apple.security.application-groups": [
           "group.com.earningsninja.shared"
@@ -91,6 +92,7 @@
         }
       ],
       "expo-secure-store",
+      "expo-apple-authentication",
       "@bacons/apple-targets"
     ],
     "experiments": {
