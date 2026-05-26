@@ -8,6 +8,7 @@ from backend.models import (
     AuthUser, Settings, Entry, EntryType, AppType, ExpenseCategory, Goal,
     TimeframeType, PasswordResetToken,
     Friend, Achievement, Congratulation,
+    ApiCredential, SyncedOrder,
 )
 import secrets
 from backend.auth import get_current_user, verify_prelaunch_token
@@ -634,8 +635,9 @@ async def delete_account(
     user_id = current_user.id
 
     # Delete all rows in tables that have a user_id FK to auth_users.id.
-    # ApiCredential / SyncedOrder / DailyUsage / User are legacy single-tenant
-    # tables (no user_id column) and are intentionally left untouched.
+    # SyncedOrder and ApiCredential must be removed before AuthUser to satisfy
+    # FK constraints and to ensure OAuth tokens and synced order data (including
+    # raw_data payloads) are fully purged on account deletion.
     db.query(Congratulation).filter(
         (Congratulation.from_user_id == user_id) | (Congratulation.to_user_id == user_id)
     ).delete(synchronize_session=False)
@@ -647,6 +649,11 @@ async def delete_account(
     db.query(Settings).filter(Settings.user_id == user_id).delete(synchronize_session=False)
     db.query(Entry).filter(Entry.user_id == user_id).delete(synchronize_session=False)
     db.query(PasswordResetToken).filter(PasswordResetToken.user_id == user_id).delete(synchronize_session=False)
+    # Purge OAuth credentials and synced order history so no third-party tokens
+    # or raw platform data outlive the account, and the hourly background sync
+    # cannot use retained credentials after deletion.
+    db.query(SyncedOrder).filter(SyncedOrder.user_id == user_id).delete(synchronize_session=False)
+    db.query(ApiCredential).filter(ApiCredential.user_id == user_id).delete(synchronize_session=False)
     db.query(AuthUser).filter(AuthUser.id == user_id).delete(synchronize_session=False)
 
     db.commit()
