@@ -24,9 +24,10 @@ export function LoginPage() {
 
     try {
       const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/signup';
-      const body = mode === 'login' 
+      const prelaunchToken = sessionStorage.getItem('prelaunch_token');
+      const body = mode === 'login'
         ? { credential, password }
-        : { email: credential, password, username };
+        : { email: credential, password, username, prelaunch_token: prelaunchToken };
       
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -53,9 +54,11 @@ export function LoginPage() {
     setIsDemoLoading(true);
     
     try {
+      const prelaunchToken = sessionStorage.getItem('prelaunch_token');
       const res = await fetch('/api/auth/demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prelaunch_token: prelaunchToken }),
       });
 
       if (!res.ok) {

@@ -10,7 +10,7 @@ from backend.models import (
     Friend, Achievement, Congratulation,
 )
 import secrets
-from backend.auth import get_current_user
+from backend.auth import get_current_user, verify_prelaunch_token
 from backend.services.email_service import send_password_reset_email
 import jwt
 import os
@@ -41,10 +41,30 @@ class LoginRequest(BaseModel):
     credential: str
     password: str
 
+# If PRELAUNCH_ACCESS_CODE is set in the environment, /api/auth/signup and
+# /api/auth/demo require a valid prelaunch_token issued by
+# /api/waitlist/verify-access. Set it to an empty string to disable the gate.
+_PRELAUNCH_ACCESS_CODE = os.getenv("PRELAUNCH_ACCESS_CODE", "")
+
+
+def _require_prelaunch_token(prelaunch_token: Optional[str]) -> None:
+    """Raise 403 if prelaunch mode is active and token is missing or invalid."""
+    if not _PRELAUNCH_ACCESS_CODE:
+        return
+    if not verify_prelaunch_token(prelaunch_token or ""):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="A valid prelaunch access token is required to sign up.",
+        )
+
+
 class SignupRequest(BaseModel):
     email: str
     password: str
     username: Optional[str] = None
+    # Signed token issued by /api/waitlist/verify-access. Required when the
+    # server has PRELAUNCH_ACCESS_CODE configured; ignored otherwise.
+    prelaunch_token: Optional[str] = None
 
 class AuthResponse(BaseModel):
     access_token: str
@@ -99,6 +119,7 @@ def create_access_token(user_id: str, email: str) -> str:
 @auth_limiter.limit("5/hour")
 async def signup(request: Request, body: SignupRequest, db: Session = Depends(get_db)):
     # `request` is required by slowapi; alias the legacy `request` body to `body`.
+    _require_prelaunch_token(body.prelaunch_token)
     return await _signup(body, db)
 
 
@@ -543,13 +564,20 @@ def create_demo_transactions(db: Session, user_id: str):
     
     db.commit()
 
+class DemoRequest(BaseModel):
+    # Signed token issued by /api/waitlist/verify-access. Required when the
+    # server has PRELAUNCH_ACCESS_CODE configured; ignored otherwise.
+    prelaunch_token: Optional[str] = None
+
+
 @router.post("/auth/demo", response_model=AuthResponse)
-async def create_demo_session(db: Session = Depends(get_db)):
-    """Create a unique demo session with isolated data and preloaded transactions
-    
+async def create_demo_session(body: DemoRequest = DemoRequest(), db: Session = Depends(get_db)):
+    """Create a unique demo session with isolated data and preloaded transactions.
+
     Each demo session gets its own temporary user ID with realistic demo data
     showing the last 60 days of delivery driver transactions (fills multiple calendar months).
     """
+    _require_prelaunch_token(body.prelaunch_token)
     demo_session_id = str(uuid.uuid4())
     demo_email = f"demo-{demo_session_id[:8]}@demo.local"
     

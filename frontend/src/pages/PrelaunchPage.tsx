@@ -109,9 +109,15 @@ export function PrelaunchPage({ onGoToLogin }: PrelaunchPageProps) {
       const data = await res.json();
 
       if (res.ok && data.valid) {
+        // Store the server-issued prelaunch token so LoginPage can include it
+        // in signup/demo requests. The server enforces this gate — navigating
+        // directly to /login without a valid token will be rejected.
+        if (data.prelaunch_token) {
+          sessionStorage.setItem('prelaunch_token', data.prelaunch_token);
+        }
         onGoToLogin();
       } else {
-        setAccessError(data.detail || 'Invalid access code');
+        setAccessError(data.message || 'Invalid access code');
       }
     } catch {
       setAccessError('Failed to verify. Please try again.');

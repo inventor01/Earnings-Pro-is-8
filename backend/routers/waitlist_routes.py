@@ -8,6 +8,7 @@ from typing import Optional
 import os
 from backend.db import get_db
 from backend.models import WaitlistSignup
+from backend.auth import create_prelaunch_token
 
 router = APIRouter(prefix="/api/waitlist", tags=["waitlist"])
 
@@ -17,7 +18,7 @@ router = APIRouter(prefix="/api/waitlist", tags=["waitlist"])
 # but cuts off mass-enrollment of victim addresses harvested from a list.
 waitlist_limiter = Limiter(key_func=get_remote_address)
 
-PRELAUNCH_ACCESS_CODE = os.getenv("PRELAUNCH_ACCESS_CODE", "en2025")
+PRELAUNCH_ACCESS_CODE = os.getenv("PRELAUNCH_ACCESS_CODE", "")
 
 class WaitlistRequest(BaseModel):
     email: EmailStr
@@ -75,10 +76,25 @@ class AccessCodeRequest(BaseModel):
 class AccessCodeResponse(BaseModel):
     valid: bool
     message: Optional[str] = None
+    # Returned only when valid=True and prelaunch mode is active. The client
+    # must include this token in subsequent /api/auth/signup and /api/auth/demo
+    # requests so the server can enforce the prelaunch gate without relying on
+    # client-side navigation state.
+    prelaunch_token: Optional[str] = None
 
 @router.post("/verify-access", response_model=AccessCodeResponse)
-def verify_access_code(request: AccessCodeRequest):
-    if request.access_code == PRELAUNCH_ACCESS_CODE:
+@waitlist_limiter.limit("10/minute")
+def verify_access_code(request: Request, body: AccessCodeRequest):
+    # If no prelaunch code is configured the gate is effectively open; any
+    # string is accepted and no token is issued (callers don't need one).
+    if not PRELAUNCH_ACCESS_CODE:
         return AccessCodeResponse(valid=True, message="Access granted!")
+
+    if body.access_code == PRELAUNCH_ACCESS_CODE:
+        # Issue a short-lived signed token the client must present to
+        # /api/auth/signup and /api/auth/demo. This moves enforcement
+        # server-side so bypassing the prelaunch SPA page is not enough.
+        token = create_prelaunch_token()
+        return AccessCodeResponse(valid=True, message="Access granted!", prelaunch_token=token)
     else:
         return AccessCodeResponse(valid=False, message="Invalid access code")
