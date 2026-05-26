@@ -1,200 +1,298 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, or_
+from sqlalchemy import desc, func
 from backend.db import get_db
 from backend.models import AuthUser, Friend, Achievement, Congratulation, Entry, EntryType
 from backend.auth import get_current_user
 from pydantic import BaseModel
-from datetime import datetime, timedelta
-from decimal import Decimal
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 router = APIRouter()
 
+# ---- Schemas --------------------------------------------------------------
+
 class UserLeaderboardItem(BaseModel):
-    id: str
+    # id is included only for the caller's own row and for accepted friends.
+    # For strangers it is omitted so the response cannot be used to map
+    # display names to stable account identifiers (and so the frontend has
+    # nothing to feed back into /add-friend or /send-congrats).
+    id: Optional[str] = None
     username: str
-    email: str
     points: int
     daily_streak: int
-    total_earnings: float
+    # total_earnings is personal financial data. Only friends (mutual consent)
+    # see each other's totals. For strangers we return None.
+    total_earnings: Optional[float] = None
     is_friend: bool = False
     profile_image_url: Optional[str] = None
+    # NOTE: email is intentionally not included. Exposing email addresses on
+    # a public leaderboard to any authenticated user is a confidentiality
+    # leak and enables targeted phishing/harvesting.
 
 class AddFriendRequest(BaseModel):
+    # Email only. Previously also accepted `first_name` as a username, which
+    # made enumeration trivial. Email is at least a verified contact channel.
     friend_email_or_username: str
 
 class SendCongratRequest(BaseModel):
     friend_id: str
     message: str = ""
 
-class LeaderboardResponse(BaseModel):
-    leaderboard: List[UserLeaderboardItem]
-    friends: List[UserLeaderboardItem]
-    achievements: list
+class FriendRequestItem(BaseModel):
+    request_id: int
+    from_username: str
+    profile_image_url: Optional[str] = None
+
+class RespondFriendRequest(BaseModel):
+    request_id: int
+    action: Literal["accept", "decline"]
+
+# ---- Helpers --------------------------------------------------------------
 
 def calculate_user_points(db: Session, user_id: str) -> int:
-    """Calculate points based on earnings and streak"""
+    """Calculate points based on earnings and entry count."""
     entries = db.query(Entry).filter(Entry.user_id == user_id).all()
     total_earnings = sum(float(e.amount) for e in entries if float(e.amount) > 0)
     points = int(total_earnings) + (len(entries) * 10)
     return points
 
 def calculate_total_earnings(db: Session, user_id: str) -> float:
-    """Calculate total earnings for user"""
-    entries = db.query(Entry).filter(
+    """Sum of ORDER-type entry amounts for the user."""
+    total = db.query(func.coalesce(func.sum(Entry.amount), 0)).filter(
         Entry.user_id == user_id,
-        Entry.type == EntryType.ORDER
-    ).all()
-    return float(sum(float(e.amount) for e in entries))
+        Entry.type == EntryType.ORDER,
+    ).scalar()
+    return float(total or 0)
+
+def _display_name(user: AuthUser) -> str:
+    """Public display name. Never falls back to email — that would leak
+    contact info via the username field for users who haven't set a name."""
+    if user.first_name:
+        return user.first_name
+    # Stable but non-identifying placeholder derived from the last 4 chars
+    # of the user id (which for password users is a uuid and for Apple users
+    # is "apple:<sub>"). Doesn't expose email or the full id.
+    suffix = (user.id or "")[-4:] or "0000"
+    return f"Driver {suffix}"
+
+# ---- Endpoints ------------------------------------------------------------
 
 @router.get("/leaderboard")
-async def get_leaderboard(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get leaderboard with friends and achievements"""
-    
-    # Get all users except current user and guest
+async def get_leaderboard(
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Global leaderboard. Strangers' rows include only display name,
+    points, and (placeholder) streak. Email, total earnings, and the
+    stable user id are restricted to accepted friends."""
+
     all_users = db.query(AuthUser).filter(
         AuthUser.id != current_user.id,
-        AuthUser.id != "default-user"
+        AuthUser.id != "default-user",
     ).all()
-    
-    # Build leaderboard
-    leaderboard_items = []
+
+    # Resolve the caller's accepted friend set once, so we can gate which
+    # rows include the privileged fields.
+    friend_ids = {
+        f.friend_id
+        for f in db.query(Friend).filter(
+            Friend.user_id == current_user.id,
+            Friend.status == "accepted",
+        ).all()
+    }
+
+    leaderboard_items: List[UserLeaderboardItem] = []
     for user in all_users:
         points = calculate_user_points(db, user.id)
-        earnings = calculate_total_earnings(db, user.id)
-        
-        # Check if friend
-        friend = db.query(Friend).filter(
-            Friend.user_id == current_user.id,
-            Friend.friend_id == user.id,
-            Friend.status == "accepted"
-        ).first()
-        
-        username = user.first_name if user.first_name else user.email
+        is_friend = user.id in friend_ids
         leaderboard_items.append(UserLeaderboardItem(
-            id=user.id,
-            username=username,
-            email=user.email or "",
+            id=user.id if is_friend else None,
+            username=_display_name(user),
             points=points,
             daily_streak=0,
-            total_earnings=earnings,
-            is_friend=friend is not None,
-            profile_image_url=user.profile_image_url
+            total_earnings=calculate_total_earnings(db, user.id) if is_friend else None,
+            is_friend=is_friend,
+            profile_image_url=user.profile_image_url,
         ))
-    
-    # Sort by points
+
     leaderboard_items.sort(key=lambda x: x.points, reverse=True)
-    
-    # Get current user's friends
-    friend_records = db.query(Friend).filter(
-        Friend.user_id == current_user.id,
-        Friend.status == "accepted"
-    ).all()
-    
-    friend_ids = [f.friend_id for f in friend_records]
-    friends = [item for item in leaderboard_items if item.id in friend_ids]
+    friends = [item for item in leaderboard_items if item.is_friend]
     friends.sort(key=lambda x: x.points, reverse=True)
-    
-    # Get achievements
-    achievements = db.query(Achievement).filter(Achievement.user_id == current_user.id).all()
-    
+
+    achievements = db.query(Achievement).filter(
+        Achievement.user_id == current_user.id
+    ).all()
+
     return {
         "leaderboard": leaderboard_items[:50],
         "friends": friends,
-        "achievements": [{"title": a.title, "description": a.description, "icon": a.icon} for a in achievements]
+        "achievements": [
+            {"title": a.title, "description": a.description, "icon": a.icon}
+            for a in achievements
+        ],
     }
 
 @router.post("/leaderboard/add-friend")
-async def add_friend(request: AddFriendRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Add a friend by email or username"""
-    
-    # Find user by email or username (first_name)
-    friend = db.query(AuthUser).filter(
-        or_(
-            AuthUser.email == request.friend_email_or_username,
-            AuthUser.first_name == request.friend_email_or_username
-        )
-    ).first()
-    
-    if not friend:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    if friend.id == current_user.id:
-        raise HTTPException(status_code=400, detail="Cannot add yourself")
-    
-    # Check if already friends
+async def add_friend(
+    request: AddFriendRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Send a friend request. Always returns the same generic response so
+    that an attacker cannot use this endpoint as an account-existence
+    oracle for arbitrary email addresses. The request is recorded as
+    'pending'; the target must explicitly accept it via
+    /leaderboard/friend-requests/respond. No reverse row is written until
+    acceptance — a user can never be silently added to a stranger's
+    friend list."""
+
+    generic_response = {
+        "success": True,
+        "message": "If that account exists, a friend request has been sent.",
+    }
+
+    raw = (request.friend_email_or_username or "").strip().lower()
+    if not raw:
+        return generic_response
+
+    # Email-only lookup (case-insensitive). Username lookup by first_name
+    # was removed — first_name is not unique, not verified, and made
+    # enumeration trivial.
+    friend = db.query(AuthUser).filter(func.lower(AuthUser.email) == raw).first()
+
+    # Treat "no match" and "self-request" identically to the success path
+    # so response timing/shape doesn't disclose either condition.
+    if not friend or friend.id == current_user.id:
+        return generic_response
+
     existing = db.query(Friend).filter(
         Friend.user_id == current_user.id,
-        Friend.friend_id == friend.id
+        Friend.friend_id == friend.id,
     ).first()
-    
+
     if existing:
-        if existing.status == "accepted":
-            raise HTTPException(status_code=400, detail="Already friends")
-        existing.status = "accepted"
-    else:
-        new_friend = Friend(
-            user_id=current_user.id,
-            friend_id=friend.id,
-            status="accepted"
-        )
-        # Also add reverse friendship
-        reverse_friend = Friend(
-            user_id=friend.id,
-            friend_id=current_user.id,
-            status="accepted"
-        )
-        db.add(new_friend)
-        db.add(reverse_friend)
-    
+        # Idempotent: already pending or already accepted — no-op, same
+        # generic response (don't disclose existing relationship state).
+        return generic_response
+
+    # Insert ONE row only: a pending request from caller -> target. The
+    # reverse row is only written when the target accepts.
+    db.add(Friend(
+        user_id=current_user.id,
+        friend_id=friend.id,
+        status="pending",
+    ))
     db.commit()
-    return {"success": True, "message": "Friend added"}
+    return generic_response
+
+@router.get("/leaderboard/friend-requests")
+async def list_friend_requests(
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Pending friend requests addressed to the caller."""
+    rows = db.query(Friend).filter(
+        Friend.friend_id == current_user.id,
+        Friend.status == "pending",
+    ).order_by(desc(Friend.created_at)).all()
+
+    out: List[FriendRequestItem] = []
+    for row in rows:
+        sender = db.query(AuthUser).filter(AuthUser.id == row.user_id).first()
+        if not sender:
+            continue
+        out.append(FriendRequestItem(
+            request_id=row.id,
+            from_username=_display_name(sender),
+            profile_image_url=sender.profile_image_url,
+        ))
+    return {"requests": out}
+
+@router.post("/leaderboard/friend-requests/respond")
+async def respond_friend_request(
+    body: RespondFriendRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Accept or decline a pending friend request. Only the addressee
+    (friend_id) can respond; the requester cannot self-accept."""
+    req = db.query(Friend).filter(
+        Friend.id == body.request_id,
+        Friend.friend_id == current_user.id,
+        Friend.status == "pending",
+    ).first()
+    if not req:
+        # Generic 404 — don't disclose whether the id exists for someone else.
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    if body.action == "decline":
+        db.delete(req)
+        db.commit()
+        return {"success": True}
+
+    # Accept: mark requester->target as accepted AND create the reverse
+    # row (target->requester) so both sides see each other. The reverse
+    # row is created here, NOT at request time, which is the entire point
+    # of the pending workflow.
+    req.status = "accepted"
+    reverse = db.query(Friend).filter(
+        Friend.user_id == current_user.id,
+        Friend.friend_id == req.user_id,
+    ).first()
+    if reverse:
+        reverse.status = "accepted"
+    else:
+        db.add(Friend(
+            user_id=current_user.id,
+            friend_id=req.user_id,
+            status="accepted",
+        ))
+    db.commit()
+    return {"success": True}
 
 @router.post("/leaderboard/send-congrats")
-async def send_congratulations(request: SendCongratRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Send congratulations to a friend"""
-    
-    friend = db.query(AuthUser).filter(AuthUser.id == request.friend_id).first()
-    if not friend:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Check if they're friends
+async def send_congratulations(
+    request: SendCongratRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Send congratulations to an accepted friend."""
+
     friend_record = db.query(Friend).filter(
         Friend.user_id == current_user.id,
         Friend.friend_id == request.friend_id,
-        Friend.status == "accepted"
+        Friend.status == "accepted",
     ).first()
-    
+
     if not friend_record:
+        # Generic 403 — don't disclose whether the target id exists.
         raise HTTPException(status_code=403, detail="Must be friends to send congratulations")
-    
-    congrats = Congratulation(
+
+    db.add(Congratulation(
         from_user_id=current_user.id,
         to_user_id=request.friend_id,
-        message=request.message or "Great job! 🎉"
-    )
-    db.add(congrats)
+        message=request.message or "Great job! 🎉",
+    ))
     db.commit()
-    
     return {"success": True, "message": "Congratulations sent"}
 
 @router.get("/leaderboard/recent-congrats")
-async def get_recent_congrats(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get recent congratulations received"""
-    
+async def get_recent_congrats(
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Recent congratulations received by the caller."""
     congrats = db.query(Congratulation).filter(
         Congratulation.to_user_id == current_user.id
     ).order_by(desc(Congratulation.created_at)).limit(10).all()
-    
+
     result = []
     for c in congrats:
         from_user = db.query(AuthUser).filter(AuthUser.id == c.from_user_id).first()
         if from_user:
             result.append({
-                "from_username": from_user.first_name or from_user.email,
+                "from_username": _display_name(from_user),
                 "message": c.message,
-                "created_at": c.created_at
+                "created_at": c.created_at,
             })
-    
     return {"congrats": result}
