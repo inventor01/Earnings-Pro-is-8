@@ -3,12 +3,13 @@ import { useTheme } from '../lib/themeContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface LeaderboardUser {
-  id: string;
+  // id is only returned for accepted friends; strangers come back with no id.
+  id?: string;
   username: string;
-  email: string;
   points: number;
   daily_streak: number;
-  total_earnings: number;
+  // total_earnings is only returned for accepted friends.
+  total_earnings?: number;
   is_friend: boolean;
   profile_image_url?: string;
 }
@@ -43,20 +44,28 @@ export function LeaderboardPage({ onBack }: LeaderboardPageProps) {
     }
   });
 
-  // Add friend mutation
+  // Send a friend request by email. The backend always returns the same
+  // generic response whether or not the email matches an account, to
+  // prevent account enumeration. The request lands in the target's
+  // pending queue and is only accepted after they explicitly approve.
+  const [addFriendStatus, setAddFriendStatus] = useState<string>('');
   const addFriendMutation = useMutation({
-    mutationFn: async (emailOrUsername: string) => {
+    mutationFn: async (email: string) => {
       const res = await fetch('/api/leaderboard/add-friend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ friend_email_or_username: emailOrUsername })
+        body: JSON.stringify({ friend_email_or_username: email })
       });
-      if (!res.ok) throw new Error('Failed to add friend');
+      if (!res.ok) throw new Error('Failed to send friend request');
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+      setAddFriendStatus('If that account exists, a friend request was sent.');
       setSearchInput('');
+      queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+    },
+    onError: () => {
+      setAddFriendStatus('Could not send request. Please try again.');
     }
   });
 
@@ -111,18 +120,20 @@ export function LeaderboardPage({ onBack }: LeaderboardPageProps) {
         </div>
         <div className="flex-1">
           <div className="font-semibold">{user.username}</div>
-          <div className={`text-sm ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
-            {user.total_earnings.toFixed(2)} miles earned
-          </div>
+          {user.total_earnings !== undefined && user.total_earnings !== null && (
+            <div className={`text-sm ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>
+              {user.total_earnings.toFixed(2)} miles earned
+            </div>
+          )}
         </div>
       </div>
       <div className="text-right">
         <div className="font-bold text-lg">{user.points}</div>
         <div className={`text-xs ${isDarkTheme ? 'text-slate-400' : 'text-gray-600'}`}>points</div>
       </div>
-      {isFriendView && (
+      {isFriendView && user.id && (
         <button
-          onClick={() => setSelectedFriend(user.id)}
+          onClick={() => setSelectedFriend(user.id!)}
           className={`ml-4 px-3 py-1 rounded text-sm font-medium ${
             isDarkTheme
               ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
@@ -132,19 +143,12 @@ export function LeaderboardPage({ onBack }: LeaderboardPageProps) {
           🎉 Congrats
         </button>
       )}
-      {!isFriendView && !user.is_friend && (
-        <button
-          onClick={() => addFriendMutation.mutate(user.email)}
-          disabled={addFriendMutation.isPending}
-          className={`ml-4 px-3 py-1 rounded text-sm font-medium ${
-            isDarkTheme
-              ? 'bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50'
-              : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'
-          }`}
-        >
-          + Add
-        </button>
-      )}
+      {/* The global leaderboard intentionally does NOT expose a per-row
+          "Add" button anymore. The server no longer returns stranger
+          emails or stable ids in the leaderboard payload (those are
+          privacy leaks). To friend someone you must know and type their
+          email in the search box above, which sends a pending request
+          they have to approve. */}
     </div>
   );
 
@@ -215,8 +219,13 @@ export function LeaderboardPage({ onBack }: LeaderboardPageProps) {
                       : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'
                   }`}
                 >
-                  Add Friend
+                  Send Friend Request
                 </button>
+              )}
+              {addFriendStatus && (
+                <div className={`mt-2 text-sm ${isDarkTheme ? 'text-slate-300' : 'text-gray-700'}`}>
+                  {addFriendStatus}
+                </div>
               )}
             </div>
             <div className="space-y-2">
