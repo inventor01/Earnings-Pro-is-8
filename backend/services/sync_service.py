@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta
 from decimal import Decimal
 from sqlalchemy.orm import Session
-from backend.models import Entry, EntryType, AppType, SyncedOrder, PlatformIntegration, ApiCredential
+from backend.models import Entry, EntryType, AppType, SyncedOrder, PlatformIntegration, ApiCredential, AuthUser
 import os
 
 class UberSyncService:
@@ -181,10 +181,15 @@ async def sync_all_platforms(db: Session):
     NULL user_id are legacy single-tenant rows from before the multi-user
     migration — we skip them because we can't safely attribute the synced
     Entry rows to a user."""
-    credentials = db.query(ApiCredential).filter(
-        ApiCredential.is_active == 1,
-        ApiCredential.user_id.isnot(None),
-    ).all()
+    credentials = (
+        db.query(ApiCredential)
+        .join(AuthUser, AuthUser.id == ApiCredential.user_id)
+        .filter(
+            ApiCredential.is_active == 1,
+            ApiCredential.user_id.isnot(None),
+        )
+        .all()
+    )
 
     start_date = datetime.utcnow() - timedelta(days=7)
     end_date = datetime.utcnow()
