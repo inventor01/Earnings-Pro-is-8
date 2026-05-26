@@ -1,5 +1,6 @@
 import os
 import jwt
+from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
@@ -20,6 +21,46 @@ if not SECRET_KEY:
     )
 
 JWT_ALGORITHM = "HS256"
+
+# ---------------------------------------------------------------------------
+# Prelaunch token helpers
+# ---------------------------------------------------------------------------
+# A prelaunch token is a short-lived JWT issued by /api/waitlist/verify-access
+# when the caller presents a valid access code. The /api/auth/signup and
+# /api/auth/demo endpoints require this token when PRELAUNCH_ACCESS_CODE is
+# configured, enforcing the closed-beta gate server-side.
+
+PRELAUNCH_TOKEN_TTL = timedelta(hours=1)
+
+
+def create_prelaunch_token() -> str:
+    """Issue a short-lived signed JWT proving the caller verified the prelaunch
+    access code. Signed with the app's SECRET_KEY so it cannot be forged."""
+    now = datetime.utcnow()
+    payload = {
+        "purpose": "prelaunch",
+        "iat": now,
+        "exp": now + PRELAUNCH_TOKEN_TTL,
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+
+def verify_prelaunch_token(token: str) -> bool:
+    """Return True if *token* is a valid, unexpired prelaunch token."""
+    if not token:
+        return False
+    try:
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[JWT_ALGORITHM],
+            options={"require": ["exp"]},
+        )
+        return payload.get("purpose") == "prelaunch"
+    except jwt.InvalidTokenError:
+        return False
+
+
 DEFAULT_USER_ID = "default-user"
 
 
