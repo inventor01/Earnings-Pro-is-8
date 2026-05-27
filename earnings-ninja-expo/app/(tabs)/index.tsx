@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, Pressable, Modal,
   RefreshControl, ActivityIndicator, Image, Alert,
   TextInput, KeyboardAvoidingView, Platform,
-  ViewStyle, TextStyle,
+  ViewStyle, TextStyle, StyleSheet,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withSequence, withRepeat, withDelay,
@@ -2032,6 +2032,69 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
 }
 
 // ─── Dashboard Screen ─────────────────────────────────────────────────────────
+// ─── Goal Progress Bar ─────────────────────────────────────────────────────
+// When profit ≥ 0: green/yellow fill at goalPct%, neon glow when at goal.
+// When profit  < 0: empty bar with a subtle red pulse on the track to flag
+// that the user is currently in the red on this period's goal.
+function GoalProgressBar({
+  goalPct, isLoss, color, fallbackTrack,
+}: { goalPct: number; isLoss: boolean; color: string; fallbackTrack: string }) {
+  const pulse = useSharedValue(1);
+
+  useEffect(() => {
+    if (isLoss) {
+      pulse.value = withRepeat(
+        withSequence(
+          withTiming(0.35, { duration: 700, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1,    { duration: 700, easing: Easing.inOut(Easing.ease) }),
+        ),
+        -1,
+        false,
+      );
+    } else {
+      pulse.value = withTiming(1, { duration: 200 });
+    }
+  }, [isLoss, pulse]);
+
+  const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
+
+  return (
+    <View
+      style={{
+        backgroundColor: isLoss ? 'transparent' : fallbackTrack,
+        borderRadius: 6,
+        height: 8,
+        overflow: 'hidden',
+        borderWidth: isLoss ? 1 : 0,
+        borderColor: isLoss ? '#ef4444' : 'transparent',
+      }}
+    >
+      {isLoss ? (
+        // Empty bar (0% fill) with a pulsing red wash to draw the eye.
+        <Animated.View
+          style={[
+            { ...StyleSheet.absoluteFillObject, backgroundColor: '#ef444433' },
+            pulseStyle,
+          ]}
+        />
+      ) : (
+        <View
+          style={{
+            width: `${Math.min(goalPct, 100)}%`,
+            height: '100%',
+            backgroundColor: color,
+            borderRadius: 6,
+            shadowColor: color,
+            shadowOpacity: goalPct >= 100 ? 0.8 : 0.35,
+            shadowRadius: goalPct >= 100 ? 8 : 4,
+            shadowOffset: { width: 0, height: 0 },
+          }}
+        />
+      )}
+    </View>
+  );
+}
+
 export default function DashboardScreen() {
   const {
     BG, SURFACE, CARD_BG, CARD, BORDER, PRIMARY, ACCENT, PRI_LITE, PRI_DARK,
@@ -2248,9 +2311,13 @@ export default function DashboardScreen() {
   const profitColor = isProfit ? GREEN : RED;
   const profitBg    = isProfit ? GREEN_LT : RED_LT;
 
-  // Goal progress
+  // Goal progress. Clamp to [0, 100]: a negative profit is rendered as an
+  // empty bar (with a red pulse — see GoalProgressBar) rather than a
+  // negative-width fill, which RN would error on anyway.
   const safeGoal  = goalTarget ? Number(goalTarget) : 0;
-  const goalPct   = safeGoal > 0 ? Math.min((profit / safeGoal) * 100, 100) : 0;
+  const rawGoalPct = safeGoal > 0 ? (profit / safeGoal) * 100 : 0;
+  const goalPct   = Math.max(0, Math.min(rawGoalPct, 100));
+  const isGoalLoss = safeGoal > 0 && profit < 0;
   const goalColor = goalPct >= 100 ? GREEN : PRIMARY;
 
   // Period label for the date bar. When the user is on the TODAY chip and has
@@ -2712,14 +2779,24 @@ export default function DashboardScreen() {
                         <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
                           {periodLabel} Target
                         </Text>
-                        <Text style={{ color: TEXT, fontSize: 22, fontWeight: '800', marginTop: 2 }}>
-                          {safeGoal > 0 ? `$${profit.toFixed(2)} / $${safeGoal.toFixed(0)}` : 'No goal set'}
+                        <Text style={{
+                          color: isGoalLoss ? RED : TEXT,
+                          fontSize: 22, fontWeight: '800', marginTop: 2,
+                        }}>
+                          {safeGoal > 0
+                            ? (isGoalLoss
+                                ? `−$${Math.abs(profit).toFixed(2)} loss / $${safeGoal.toFixed(0)}`
+                                : `$${profit.toFixed(2)} / $${safeGoal.toFixed(0)}`)
+                            : 'No goal set'}
                         </Text>
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
                         {safeGoal > 0 && (
-                          <Text style={{ color: goalColor, fontSize: 20, fontWeight: '900' }}>
-                            {Math.round(goalPct)}%
+                          <Text style={{
+                            color: isGoalLoss ? RED : goalColor,
+                            fontSize: 20, fontWeight: '900',
+                          }}>
+                            {isGoalLoss ? '0%' : `${Math.round(goalPct)}%`}
                           </Text>
                         )}
                         <Pressable
@@ -2733,17 +2810,22 @@ export default function DashboardScreen() {
                       </View>
                     </View>
                     {/* Progress bar */}
-                    <View style={{ backgroundColor: DIVIDER, borderRadius: 6, height: 8, overflow: 'hidden' }}>
-                      {safeGoal > 0 && (
-                        <View style={{
-                          width: `${Math.min(goalPct, 100)}%`,
-                          height: '100%',
-                          backgroundColor: goalColor,
-                          borderRadius: 6,
-                        }} />
-                      )}
-                    </View>
-                    {goalPct >= 100 && (
+                    {safeGoal > 0 ? (
+                      <GoalProgressBar
+                        goalPct={goalPct}
+                        isLoss={isGoalLoss}
+                        color={goalColor}
+                        fallbackTrack={DIVIDER}
+                      />
+                    ) : (
+                      <View style={{ backgroundColor: DIVIDER, borderRadius: 6, height: 8 }} />
+                    )}
+                    {isGoalLoss && (
+                      <Text style={{ color: RED, fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 8 }}>
+                        ⚠ In the red — expenses exceed earnings this {periodLabel.toLowerCase()}.
+                      </Text>
+                    )}
+                    {!isGoalLoss && goalPct >= 100 && (
                       <Text style={{ color: GREEN, fontSize: 13, fontWeight: '700', textAlign: 'center', marginTop: 8 }}>
                         🎉 Goal Reached!
                       </Text>
