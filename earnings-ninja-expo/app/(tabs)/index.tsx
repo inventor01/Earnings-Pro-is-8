@@ -22,6 +22,7 @@ import * as Haptics from 'expo-haptics';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 import { widgetSync } from '@/lib/widgetSync';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -1138,14 +1139,35 @@ function AddEntryModal({ visible, onClose, prefill }: {
   // via Alert (matches iOS conventions). We store the local `uri` for the
   // thumbnail and the `data:image/jpeg;base64,…` payload for the backend
   // (web client persists receipts the same way — no separate upload endpoint).
-  const handleAssetResult = (asset: ImagePicker.ImagePickerAsset | undefined) => {
+  // Backend caps receipt_url at 2 MB (MAX_RECEIPT_BYTES in backend/schemas.py).
+  // Raw camera photos at quality:0.6 from a modern iPhone are still 3–7 MB
+  // once base64-encoded, which hits the cap and the server returns 422.
+  // We downscale to 1280px max edge and re-compress at 0.5 JPEG — that
+  // keeps a typical receipt well under 500 KB while staying legible.
+  const handleAssetResult = async (asset: ImagePicker.ImagePickerAsset | undefined) => {
     if (!asset) return;
-    setReceiptUri(asset.uri);
-    if (asset.base64) {
-      const mime = asset.mimeType || 'image/jpeg';
-      setReceiptDataUri(`data:${mime};base64,${asset.base64}`);
-    } else {
-      setReceiptDataUri(null);
+    try {
+      const manipulated = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [{ resize: { width: 1280 } }],
+        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+      );
+      setReceiptUri(manipulated.uri);
+      if (manipulated.base64) {
+        setReceiptDataUri(`data:image/jpeg;base64,${manipulated.base64}`);
+      } else {
+        setReceiptDataUri(null);
+      }
+    } catch (e) {
+      // Fall back to the raw asset (may still hit the 2 MB cap, but better
+      // than silently dropping the receipt).
+      setReceiptUri(asset.uri);
+      if (asset.base64) {
+        const mime = asset.mimeType || 'image/jpeg';
+        setReceiptDataUri(`data:${mime};base64,${asset.base64}`);
+      } else {
+        setReceiptDataUri(null);
+      }
     }
   };
   const pickFromCamera = async () => {
@@ -1154,11 +1176,12 @@ function AddEntryModal({ visible, onClose, prefill }: {
       Alert.alert('Camera access denied', 'Enable camera access in Settings to take receipt photos.');
       return;
     }
+    // base64:false — we re-encode in handleAssetResult after downscaling.
     const res = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
-      quality: 0.6, base64: true, allowsEditing: false,
+      quality: 1, base64: false, allowsEditing: false,
     });
-    if (!res.canceled) handleAssetResult(res.assets[0]);
+    if (!res.canceled) await handleAssetResult(res.assets[0]);
   };
   const pickFromLibrary = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -1168,9 +1191,9 @@ function AddEntryModal({ visible, onClose, prefill }: {
     }
     const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      quality: 0.6, base64: true, allowsEditing: false,
+      quality: 1, base64: false, allowsEditing: false,
     });
-    if (!res.canceled) handleAssetResult(res.assets[0]);
+    if (!res.canceled) await handleAssetResult(res.assets[0]);
   };
   const onPickReceipt = () => {
     Alert.alert(
