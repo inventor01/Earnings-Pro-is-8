@@ -1136,13 +1136,13 @@ function AddEntryModal({ visible, onClose, prefill }: {
     }
   }, [visible, prefill]);
 
-  // Default the platform to "Other" for expenses (gas station, parking, etc.
-  // don't belong to a delivery app), and back to "DoorDash" for revenue/orders.
-  // Only nudges when the user is still on the previous-mode default — if they
-  // explicitly picked a platform, we leave their choice alone.
+  // One-way nudge: when the user switches to EXPENSE and the platform is still
+  // the initial DoorDash default, flip to "Other" (gas station / parking etc.
+  // don't belong to a delivery app). We deliberately do NOT auto-revert on the
+  // way back to revenue — if the user picked OTHER on purpose we'd erase that
+  // choice. `reset()` restores DOORDASH when the modal closes & re-opens.
   useEffect(() => {
     if (entryType === 'EXPENSE' && app === 'DOORDASH') setApp('OTHER');
-    else if (entryType !== 'EXPENSE' && app === 'OTHER') setApp('DOORDASH');
   }, [entryType]);
 
   // Image-picker helpers — request permissions, then offer Camera vs Library
@@ -1458,6 +1458,16 @@ function csvRowsToEntries(rows: string[][]): { entries: EntryCreate[]; skipped: 
   const idx = (name: string) => header.indexOf(name);
   const iType = idx('type'), iApp = idx('app');
   const iAmt = idx('amount');
+  // Without these three columns we can't build a single valid EntryCreate.
+  // Bail out with a thrown Error so the caller can show a useful alert
+  // instead of silently reporting "0 imported, N skipped".
+  const missing: string[] = [];
+  if (iType < 0) missing.push('type');
+  if (iApp < 0) missing.push('app');
+  if (iAmt < 0) missing.push('amount');
+  if (missing.length) {
+    throw new Error(`CSV is missing required column${missing.length === 1 ? '' : 's'}: ${missing.join(', ')}.`);
+  }
   const iDate = idx('date'), iTime = idx('time');
   const iMiles = idx('distance_miles') >= 0 ? idx('distance_miles') : idx('miles');
   const iMin   = idx('duration_minutes') >= 0 ? idx('duration_minutes') : idx('minutes');
