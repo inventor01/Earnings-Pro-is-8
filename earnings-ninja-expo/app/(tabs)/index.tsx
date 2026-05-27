@@ -1164,6 +1164,13 @@ function DetailsForm({
                   value={entryDate}
                   mode="datetime"
                   display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  // Force the iOS spinner to render with black wheel text on
+                  // the white modal background. Without these the wheel text
+                  // can come out white-on-white when the device is in dark
+                  // mode (the modal itself is hard-coded light).
+                  themeVariant="light"
+                  textColor="#000000"
+                  accentColor="#000000"
                   onChange={(_, selected) => {
                     if (Platform.OS === 'android') onToggleDatePicker();
                     if (selected) onChangeDate(selected);
