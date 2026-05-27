@@ -247,6 +247,16 @@ export const api = {
   async createEntryRaw(entry: EntryCreate): Promise<Entry> {
     const headers = await getAuthHeaders();
     const body = JSON.stringify(entry);
+    // Hard client-side guard: backend caps receipt_url at 2 MB
+    // (MAX_RECEIPT_BYTES). The Replit proxy silently drops oversized POSTs
+    // (no response ever comes back), which fetch eventually surfaces as a
+    // network error — that gets misclassified as transient and the entry
+    // disappears into the offline queue. Fail loudly here instead.
+    if (body.length > 1_900_000) {
+      const e: any = new Error(`createEntry failed: 413`);
+      e.status = 413;
+      throw e;
+    }
     // TEMP DEBUG — remove once entry-save flow is verified.
     console.log('[createEntryRaw] POST', `${API_BASE}/api/entries`, 'bodyLen=', body.length, 'hasAuth=', !!headers['Authorization']);
     try {
