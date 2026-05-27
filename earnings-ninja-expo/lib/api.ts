@@ -60,6 +60,19 @@ export const EXPENSE_EMOJIS: Record<ExpenseCategory, string> = {
   OTHER: '📋',
 };
 
+// FastAPI serializes naive UTC datetimes without a trailing 'Z', and JS
+// `new Date(...)` then treats the string as device-local time — which is
+// wrong (the value is actually UTC). This helper appends 'Z' when there is
+// no timezone designator so the resulting Date refers to the correct
+// moment in time and `toLocaleTimeString()` etc. show the user's local
+// equivalent. Pass-through for full ISO strings that already include a TZ.
+export function parseServerDate(ts: string | Date): Date {
+  if (ts instanceof Date) return ts;
+  // Already has Z or +HH:MM / -HH:MM offset after the T? Use as-is.
+  if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(ts)) return new Date(ts);
+  return new Date(ts + 'Z');
+}
+
 export interface Entry {
   id: number;
   timestamp: string;

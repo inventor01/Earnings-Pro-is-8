@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory,
-  APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType,
+  APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
 } from '@/lib/api';
 import { useAuth } from '@/lib/authContext';
 import * as Haptics from 'expo-haptics';
@@ -338,7 +338,7 @@ function ProfitChart({
     if (period === 'today' || period === 'yesterday') {
       const arr: Bucket[] = Array.from({ length: 24 }, (_, h) => ({ key: String(h), sum: 0 }));
       for (const e of entries) {
-        const d = new Date(e.timestamp);
+        const d = parseServerDate(e.timestamp);
         const h = d.getHours();
         if (h >= 0 && h < 24) arr[h].sum += Number(e.amount) || 0;
       }
@@ -383,7 +383,7 @@ function ProfitChart({
     }
     const indexByKey = new Map(arr.map((b, i) => [b.key, i]));
     for (const e of entries) {
-      const d = new Date(e.timestamp);
+      const d = parseServerDate(e.timestamp);
       const k = dayKey(d);
       const idx = indexByKey.get(k);
       if (idx !== undefined) arr[idx].sum += Number(e.amount) || 0;
@@ -507,10 +507,10 @@ function EntryRow({
   const { TEXT, LABEL, MUTED, RED, GREEN, DIVIDER, PRIMARY, PRI_LITE } = useTheme();
   const isExpense = entry.amount < 0;
   const appColor  = APP_COLORS[entry.app] || MUTED;
-  const time      = new Date(entry.timestamp).toLocaleTimeString('en-US', {
+  const time      = parseServerDate(entry.timestamp).toLocaleTimeString('en-US', {
     hour: 'numeric', minute: '2-digit', hour12: true,
   });
-  const date      = new Date(entry.timestamp).toLocaleDateString('en-US', {
+  const date      = parseServerDate(entry.timestamp).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric',
   });
 
@@ -1264,7 +1264,7 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
     setNote(editing.note || '');
     setReceiptUri(editing.receipt_url || null);
     setReceiptDataUri(editing.receipt_url || null);
-    setEntryDate(new Date(editing.timestamp));
+    setEntryDate(parseServerDate(editing.timestamp));
     setStep('details');
   }, [visible, editing]);
 
