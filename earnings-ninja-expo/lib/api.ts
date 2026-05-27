@@ -113,15 +113,6 @@ export interface Goal {
   goal_name: string;
 }
 
-export interface SuggestionResponse {
-  suggestion: string;
-  minimum_order: number | null;
-  peak_time: string | null;
-  average_order: number;
-  total_orders: number;
-  reasoning: string;
-}
-
 export interface User {
   id: string;
   email: string;
@@ -340,6 +331,24 @@ export const api = {
     if (!res.ok) throw new Error('Failed to delete entry');
   },
 
+  // Partial-update an entry. Backend (`PUT /api/entries/{id}`) accepts the
+  // same EntryUpdate schema as create — including `date` + `time` strings
+  // which are converted to a UTC timestamp using America/New_York for proper
+  // calendar-day boundaries. Pass only the fields the user actually changed.
+  async updateEntry(id: number, patch: Partial<EntryCreate>): Promise<Entry> {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/api/entries/${id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Failed to update entry: ${res.status} ${text.slice(0, 200)}`);
+    }
+    return res.json();
+  },
+
   async deleteAccount(): Promise<void> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/auth/account`, { method: 'DELETE', headers });
@@ -371,16 +380,4 @@ export const api = {
     return res.json();
   },
 
-  async getSuggestions(): Promise<SuggestionResponse> {
-    const headers = await getAuthHeaders();
-    const now = new Date();
-    const from = new Date(now); from.setHours(0, 0, 0, 0);
-    const to = new Date(now); to.setHours(23, 59, 59, 999);
-    const res = await fetch(
-      `${API_BASE}/api/suggestions?from_date=${from.toISOString()}&to_date=${to.toISOString()}`,
-      { headers }
-    );
-    if (!res.ok) throw new Error('Failed to fetch suggestions');
-    return res.json();
-  },
 };

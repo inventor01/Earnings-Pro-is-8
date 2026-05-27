@@ -24,6 +24,7 @@ import { CalendarModal } from '../../components/CalendarModal';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 import { widgetSync } from '@/lib/widgetSync';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -487,15 +488,33 @@ function StatCard({
 }
 
 // ─── Entry Row ────────────────────────────────────────────────────────────────
-function EntryRow({ entry, onDelete }: { entry: Entry; onDelete: (id: number) => void }) {
-  const { TEXT, LABEL, MUTED, RED, GREEN, DIVIDER } = useTheme();
+// Three modes:
+//   • Normal:        shows edit + delete icons on the right.
+//   • Selection on:  the icons are replaced by a checkbox; tapping anywhere on
+//                    the row toggles selection. Edit/delete are hidden so a
+//                    long press list operation doesn't have ambiguous targets.
+function EntryRow({
+  entry, onDelete, onEdit,
+  selectionMode = false, selected = false, onToggleSelect,
+}: {
+  entry: Entry;
+  onDelete: (id: number) => void;
+  onEdit?: (entry: Entry) => void;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: number) => void;
+}) {
+  const { TEXT, LABEL, MUTED, RED, GREEN, DIVIDER, PRIMARY, PRI_LITE } = useTheme();
   const isExpense = entry.amount < 0;
   const appColor  = APP_COLORS[entry.app] || MUTED;
   const time      = new Date(entry.timestamp).toLocaleTimeString('en-US', {
     hour: 'numeric', minute: '2-digit', hour12: true,
   });
+  const date      = new Date(entry.timestamp).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric',
+  });
 
-  return (
+  const body = (
     <View style={{
       flexDirection: 'row',
       alignItems: 'center',
@@ -503,7 +522,20 @@ function EntryRow({ entry, onDelete }: { entry: Entry; onDelete: (id: number) =>
       paddingHorizontal: 16,
       borderBottomWidth: 1,
       borderBottomColor: DIVIDER,
+      backgroundColor: selectionMode && selected ? PRI_LITE : 'transparent',
     }}>
+      {selectionMode && (
+        <View style={{
+          width: 22, height: 22, borderRadius: 11,
+          borderWidth: 2,
+          borderColor: selected ? PRIMARY : LABEL,
+          backgroundColor: selected ? PRIMARY : 'transparent',
+          alignItems: 'center', justifyContent: 'center',
+          marginRight: 12,
+        }}>
+          {selected && <Ionicons name="checkmark" size={14} color="#000" />}
+        </View>
+      )}
       <View style={{
         width: 38, height: 38, borderRadius: 19,
         backgroundColor: appColor + '18',
@@ -514,13 +546,18 @@ function EntryRow({ entry, onDelete }: { entry: Entry; onDelete: (id: number) =>
         </Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }}>
+        <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
           {APP_LABELS[entry.app]}
           <Text style={{ color: LABEL, fontWeight: '400', fontSize: 12 }}> · {entry.type}</Text>
         </Text>
-        <Text style={{ color: LABEL, fontSize: 11, marginTop: 1 }}>
-          {time}{entry.distance_miles > 0 ? ` · ${Number(entry.distance_miles).toFixed(1)} mi` : ''}
+        <Text style={{ color: LABEL, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
+          {date} · {time}{entry.distance_miles > 0 ? ` · ${Number(entry.distance_miles).toFixed(1)} mi` : ''}
         </Text>
+        {entry.note ? (
+          <Text style={{ color: MUTED, fontSize: 11, marginTop: 2, fontStyle: 'italic' }} numberOfLines={1}>
+            {entry.note}
+          </Text>
+        ) : null}
       </View>
       <Text style={{
         color: isExpense ? RED : GREEN,
@@ -528,10 +565,26 @@ function EntryRow({ entry, onDelete }: { entry: Entry; onDelete: (id: number) =>
       }}>
         {isExpense ? '-' : '+'}${Math.abs(Number(entry.amount)).toFixed(2)}
       </Text>
-      <Pressable onPress={() => onDelete(entry.id)} style={{ marginLeft: 10, padding: 6 }}>
-        <Ionicons name="trash-outline" size={14} color={LABEL} />
-      </Pressable>
+      {!selectionMode && (
+        <>
+          {onEdit && (
+            <Pressable onPress={() => onEdit(entry)} style={{ marginLeft: 8, padding: 6 }} hitSlop={6}>
+              <Ionicons name="pencil-outline" size={14} color={LABEL} />
+            </Pressable>
+          )}
+          <Pressable onPress={() => onDelete(entry.id)} style={{ marginLeft: 4, padding: 6 }} hitSlop={6}>
+            <Ionicons name="trash-outline" size={14} color={LABEL} />
+          </Pressable>
+        </>
+      )}
     </View>
+  );
+
+  if (!selectionMode) return body;
+  return (
+    <Pressable onPress={() => { hTap(); onToggleSelect?.(entry.id); }}>
+      {body}
+    </Pressable>
   );
 }
 
@@ -878,6 +931,7 @@ function DetailsForm({
   isExp, amount, entryType, setEntryType, app, setApp, category, setCategory,
   miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
   receiptUri, onPickReceipt, onRemoveReceipt,
+  entryDate, showDatePicker, onToggleDatePicker, onChangeDate,
 }: {
   isExp: boolean;
   amount: string;
@@ -897,6 +951,10 @@ function DetailsForm({
   receiptUri: string | null;
   onPickReceipt: () => void;
   onRemoveReceipt: () => void;
+  entryDate: Date;
+  showDatePicker: boolean;
+  onToggleDatePicker: () => void;
+  onChangeDate: (d: Date) => void;
 }) {
   return (
     <View style={{ gap: 14 }}>
@@ -1078,6 +1136,44 @@ function DetailsForm({
             </View>
           )}
 
+          {/* Date & Time — defaults to "now" on a fresh entry. Tap to pick a
+              custom date/time. The picker renders inline on iOS (spinner) and
+              as a system modal on Android. */}
+          <View>
+            <FieldLabel>📅 Date & Time</FieldLabel>
+            <Pressable
+              onPress={() => { hTap(); onToggleDatePicker(); }}
+              style={({ pressed }) => ({
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                borderWidth: 1, borderColor: showDatePicker ? '#facc15' : '#e5e7eb',
+                borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
+                backgroundColor: '#f9fafb',
+                opacity: pressed ? 0.85 : 1,
+              })}
+            >
+              <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
+                {entryDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                {'  ·  '}
+                {entryDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+              </Text>
+              <Ionicons name={showDatePicker ? 'chevron-up' : 'chevron-down'} size={16} color="#6b7280" />
+            </Pressable>
+            {showDatePicker && (
+              <View style={{ marginTop: 8, backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden' }}>
+                <DateTimePicker
+                  value={entryDate}
+                  mode="datetime"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={(_, selected) => {
+                    if (Platform.OS === 'android') onToggleDatePicker();
+                    if (selected) onChangeDate(selected);
+                  }}
+                  maximumDate={new Date(Date.now() + 24 * 60 * 60 * 1000)}
+                />
+              </View>
+            )}
+          </View>
+
           {/* Notes */}
           <View>
             <FieldLabel>📝 Notes (optional)</FieldLabel>
@@ -1096,10 +1192,11 @@ function DetailsForm({
 
 // ─── Add Entry Modal ───────────────────────────────────────────────────────────
 type AddEntryPrefill = { type?: 'REVENUE' | 'EXPENSE'; amount?: string };
-function AddEntryModal({ visible, onClose, prefill }: {
+function AddEntryModal({ visible, onClose, prefill, editing }: {
   visible: boolean;
   onClose: () => void;
   prefill?: AddEntryPrefill;
+  editing?: Entry;
 }) {
   const { PRIMARY, ON_PRIMARY } = useTheme();
   const queryClient = useQueryClient();
@@ -1115,17 +1212,24 @@ function AddEntryModal({ visible, onClose, prefill }: {
   const [note, setNote]           = useState('');
   const [receiptUri, setReceiptUri]       = useState<string | null>(null);
   const [receiptDataUri, setReceiptDataUri] = useState<string | null>(null);
+  // Date/time the entry should be filed under. Defaults to "now" — backend
+  // accepts `date`/`time` strings (interpreted in US/Eastern) and converts
+  // to UTC. Editing flow seeds this from the entry's existing timestamp.
+  const [entryDate, setEntryDate]   = useState<Date>(() => new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const reset = () => {
     setStep('calc'); setAmount('0'); setMode('add');
     setEntryType('ORDER'); setApp('DOORDASH'); setCategory('GAS');
     setMiles(''); setMinutes(''); setNote('');
     setReceiptUri(null); setReceiptDataUri(null);
+    setEntryDate(new Date()); setShowDatePicker(false);
   };
 
   // Apply widget-driven prefill whenever the modal opens with a prefill set.
+  // Skipped when we're in edit mode — `editing` takes precedence.
   useEffect(() => {
-    if (!visible || !prefill) return;
+    if (!visible || !prefill || editing) return;
     if (prefill.type === 'EXPENSE') {
       setEntryType('EXPENSE'); setMode('subtract'); setApp('OTHER'); setCategory('OTHER');
     } else if (prefill.type === 'REVENUE') {
@@ -1134,7 +1238,28 @@ function AddEntryModal({ visible, onClose, prefill }: {
     if (prefill.amount && /^\d+(\.\d+)?$/.test(prefill.amount)) {
       setAmount(prefill.amount);
     }
-  }, [visible, prefill]);
+  }, [visible, prefill, editing]);
+
+  // Editing an existing entry: prefill every field from the server row and
+  // jump straight to the details step (skip the calculator pad). The amount
+  // is stored signed in the DB; we strip the sign and set the `mode` to
+  // recover the +/- intent.
+  useEffect(() => {
+    if (!visible || !editing) return;
+    const amt = Math.abs(Number(editing.amount));
+    setAmount(amt.toString());
+    setMode(editing.amount < 0 ? 'subtract' : 'add');
+    setEntryType(editing.type);
+    setApp(editing.app);
+    setCategory((editing.category as ExpenseCategory) || 'GAS');
+    setMiles(editing.distance_miles ? String(editing.distance_miles) : '');
+    setMinutes(editing.duration_minutes ? String(editing.duration_minutes) : '');
+    setNote(editing.note || '');
+    setReceiptUri(editing.receipt_url || null);
+    setReceiptDataUri(editing.receipt_url || null);
+    setEntryDate(new Date(editing.timestamp));
+    setStep('details');
+  }, [visible, editing]);
 
   // One-way nudge: when the user switches to EXPENSE and the platform is still
   // the initial DoorDash default, flip to "Other" (gas station / parking etc.
@@ -1238,10 +1363,31 @@ function AddEntryModal({ visible, onClose, prefill }: {
     onError: () => Alert.alert('Error', 'Failed to save entry.'),
   });
 
+  // PUT mutation used only in the "edit existing entry" flow. Same cache
+  // invalidations as create so dashboard/rollup re-render with the change.
+  const updateMutation = useMutation({
+    mutationFn: ({ id, patch }: { id: number; patch: Partial<EntryCreate> }) => api.updateEntry(id, patch),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      hNotifyOk();
+      reset();
+      onClose();
+    },
+    onError: (e: Error) => Alert.alert('Error', e.message || 'Failed to update entry.'),
+  });
+
+  // Format Date → ('YYYY-MM-DD', 'HH:MM') using device-local components.
+  // Backend treats these as US/Eastern (see EntryCreate handling). This
+  // mirrors the rest of the app, which is effectively EST-only.
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const dateStr = `${entryDate.getFullYear()}-${pad2(entryDate.getMonth() + 1)}-${pad2(entryDate.getDate())}`;
+  const timeStr = `${pad2(entryDate.getHours())}:${pad2(entryDate.getMinutes())}`;
+
   const handleSave = () => {
     const num = parseFloat(amount);
     if (!num || num <= 0) { Alert.alert('Invalid amount', 'Enter an amount > 0'); return; }
-    mutation.mutate({
+    const payload: Partial<EntryCreate> = {
       type: entryType,
       app,
       amount: mode === 'subtract' ? -num : num,
@@ -1250,8 +1396,16 @@ function AddEntryModal({ visible, onClose, prefill }: {
       category: entryType === 'EXPENSE' ? category : undefined,
       note: note || undefined,
       receipt_url: entryType === 'EXPENSE' && receiptDataUri ? receiptDataUri : undefined,
-    });
+      date: dateStr,
+      time: timeStr,
+    };
+    if (editing) {
+      updateMutation.mutate({ id: editing.id, patch: payload });
+    } else {
+      mutation.mutate(payload as EntryCreate);
+    }
   };
+  const isSaving = mutation.isPending || updateMutation.isPending;
 
   const isExp = mode === 'subtract';
 
@@ -1337,6 +1491,10 @@ function AddEntryModal({ visible, onClose, prefill }: {
               receiptUri={receiptUri}
               onPickReceipt={onPickReceipt}
               onRemoveReceipt={onRemoveReceipt}
+              entryDate={entryDate}
+              showDatePicker={showDatePicker}
+              onToggleDatePicker={() => setShowDatePicker(s => !s)}
+              onChangeDate={setEntryDate}
             />
           )}
         </ScrollView>
@@ -1377,7 +1535,7 @@ function AddEntryModal({ visible, onClose, prefill }: {
                     handleSave();
                   }
                 }}
-                disabled={mutation.isPending}
+                disabled={isSaving}
                 android_ripple={{ color: 'rgba(0,0,0,0.15)' }}
                 style={({ pressed }) => ({
                   width: '100%',
@@ -1390,7 +1548,7 @@ function AddEntryModal({ visible, onClose, prefill }: {
                   transform: [{ scale: pressed ? 0.97 : 1 }],
                 })}
               >
-                {step === 'details' && mutation.isPending
+                {step === 'details' && isSaving
                   ? <ActivityIndicator color={ON_PRIMARY} />
                   : (
                     <Text
@@ -1873,6 +2031,24 @@ export default function DashboardScreen() {
   const [addPrefill, setAddPrefill] = useState<AddEntryPrefill | undefined>(undefined);
   const [showSettings, setShowSettings] = useState(false);
 
+  // History list multi-select state. `selectionMode` toggles the row UI into
+  // checkbox-mode; `selectedIds` is the set of currently-selected entry IDs.
+  // `editingEntry` opens AddEntryModal in edit mode when non-null.
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [editingEntry, setEditingEntry] = useState<Entry | undefined>(undefined);
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+  const exitSelectionMode = useCallback(() => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
   // Watch for `?openEntry=1[&type=…&amount=…]` from the iOS widget deep link.
   // Open the AddEntry modal with prefill, then immediately strip the params
   // so the modal doesn't reopen on subsequent navigations.
@@ -1944,12 +2120,52 @@ export default function DashboardScreen() {
     enabled: period !== 'custom',
   });
 
+  // Safety: whenever the currently-visible entry set changes (period switch,
+  // day swipe, search filter, custom-range pick), prune `selectedIds` to the
+  // intersection. Without this, a user could select rows, then change the
+  // filter and tap Delete — and we'd delete entries they can't even see.
+  // We don't auto-exit selection mode, because the user may genuinely want
+  // to continue selecting across a search refinement.
+  useEffect(() => {
+    if (!selectionMode || selectedIds.size === 0) return;
+    const visibleIds = new Set(entries.map(e => e.id));
+    let changed = false;
+    const next = new Set<number>();
+    selectedIds.forEach(id => {
+      if (visibleIds.has(id)) next.add(id); else changed = true;
+    });
+    if (changed) setSelectedIds(next);
+  }, [entries, selectionMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const deleteMutation = useMutation({
     mutationFn: api.deleteEntry,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['rollup'] });
     },
+  });
+
+  // Bulk delete — fires DELETE requests in parallel, then invalidates once
+  // at the end so the list re-renders a single time. The backend has no
+  // batch endpoint, so this is just Promise.allSettled over the per-id
+  // delete. Failures are surfaced as a count in an Alert.
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const results = await Promise.allSettled(ids.map(id => api.deleteEntry(id)));
+      const failed = results.filter(r => r.status === 'rejected').length;
+      return { total: ids.length, failed };
+    },
+    onSuccess: ({ total, failed }) => {
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      exitSelectionMode();
+      if (failed > 0) {
+        Alert.alert('Partial delete', `Deleted ${total - failed} of ${total}. ${failed} failed.`);
+      } else {
+        hNotifyOk();
+      }
+    },
+    onError: () => Alert.alert('Error', 'Bulk delete failed.'),
   });
 
   const upsertGoalMutation = useMutation({
@@ -2528,13 +2744,83 @@ export default function DashboardScreen() {
                   backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER, overflow: 'hidden',
                   shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4,
                 }}>
+                  {selectionMode ? (
+                    // Selection-mode header: replaces the revenue/expense pills
+                    // with Select-All + Delete-N + Cancel controls. Operates on
+                    // the currently-displayed (filtered) entries, so search +
+                    // bulk-delete compose cleanly.
+                    <View style={{
+                      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                      paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: DIVIDER,
+                      backgroundColor: PRI_LITE,
+                    }}>
+                      <Pressable
+                        onPress={() => {
+                          hTap();
+                          const allShownIds = displayedEntries.map(e => e.id);
+                          const allSelected = allShownIds.every(id => selectedIds.has(id));
+                          setSelectedIds(allSelected ? new Set() : new Set(allShownIds));
+                        }}
+                        style={{ paddingHorizontal: 10, paddingVertical: 6 }}
+                      >
+                        <Text style={{ color: PRIMARY, fontSize: 13, fontWeight: '800' }}>
+                          {displayedEntries.every(e => selectedIds.has(e.id)) ? 'Clear all' : 'Select all'}
+                        </Text>
+                      </Pressable>
+                      <Text style={{ color: TEXT, fontSize: 13, fontWeight: '700' }}>
+                        {selectedIds.size} selected
+                      </Text>
+                      <View style={{ flexDirection: 'row', gap: 6 }}>
+                        <Pressable
+                          onPress={() => { hTap(); exitSelectionMode(); }}
+                          style={{ paddingHorizontal: 10, paddingVertical: 6 }}
+                        >
+                          <Text style={{ color: LABEL, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+                        </Pressable>
+                        <Pressable
+                          disabled={selectedIds.size === 0 || bulkDeleteMutation.isPending}
+                          onPress={() => {
+                            hTapHeavy();
+                            const ids = Array.from(selectedIds);
+                            Alert.alert(
+                              `Delete ${ids.length} entr${ids.length === 1 ? 'y' : 'ies'}?`,
+                              'This cannot be undone.',
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                { text: 'Delete', style: 'destructive', onPress: () => bulkDeleteMutation.mutate(ids) },
+                              ],
+                            );
+                          }}
+                          style={({ pressed }) => ({
+                            backgroundColor: selectedIds.size === 0 ? RED_LT : RED,
+                            borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6,
+                            opacity: pressed ? 0.85 : 1,
+                          })}
+                        >
+                          {bulkDeleteMutation.isPending ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                          ) : (
+                            <Text style={{ color: selectedIds.size === 0 ? RED : '#fff', fontSize: 13, fontWeight: '800' }}>
+                              Delete{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
+                            </Text>
+                          )}
+                        </Pressable>
+                      </View>
+                    </View>
+                  ) : (
                   <View style={{
                     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
                     paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: DIVIDER,
                   }}>
-                    <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
-                      {isSearching ? `Results (${filteredEntries.length})` : `Entries (${entries.length})`}
-                    </Text>
+                    <Pressable
+                      onPress={() => { hTap(); setSelectionMode(true); }}
+                      hitSlop={6}
+                    >
+                      <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
+                        {isSearching ? `Results (${filteredEntries.length})` : `Entries (${entries.length})`}
+                        <Text style={{ color: PRIMARY }}>  · Select</Text>
+                      </Text>
+                    </Pressable>
                     <View style={{ flexDirection: 'row', gap: 6 }}>
                       <View style={{ backgroundColor: GREEN_LT, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
                         <Text style={{ color: GREEN, fontSize: 11, fontWeight: '700' }}>+${revenue.toFixed(2)}</Text>
@@ -2544,6 +2830,7 @@ export default function DashboardScreen() {
                       </View>
                     </View>
                   </View>
+                  )}
                   {filteredEntries.length === 0 ? (
                     <View style={{ paddingVertical: 28, alignItems: 'center', gap: 8 }}>
                       <Text style={{ fontSize: 28 }}>🔍</Text>
@@ -2565,6 +2852,10 @@ export default function DashboardScreen() {
                             { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(id) },
                           ]);
                         }}
+                        onEdit={(entry) => { hTap(); setEditingEntry(entry); setShowAdd(true); }}
+                        selectionMode={selectionMode}
+                        selected={selectedIds.has(e.id)}
+                        onToggleSelect={toggleSelect}
                       />
                     ))
                   )}
@@ -2640,7 +2931,8 @@ export default function DashboardScreen() {
       <AddEntryModal
         visible={showAdd}
         prefill={addPrefill}
-        onClose={() => { setShowAdd(false); setAddPrefill(undefined); }}
+        editing={editingEntry}
+        onClose={() => { setShowAdd(false); setAddPrefill(undefined); setEditingEntry(undefined); }}
       />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
       <CalendarModal

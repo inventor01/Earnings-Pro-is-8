@@ -93,7 +93,8 @@
       ],
       "expo-secure-store",
       "expo-apple-authentication",
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
