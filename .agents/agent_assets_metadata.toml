@@ -36,3 +36,9 @@ id = "K0IAF1fCHhv6ZGtrClcWg"
 uri = "file://attached_assets/expo_qr.png"
 type = "image"
 title = "Expo Tunnel QR — exp://ccpvuxk-anonymous-8081.exp.direct"
+
+[[outputs]]
+id = "PnDAHyurbwROKj8t-wk1L"
+uri = "file://.local/exports/expo-qr.png"
+type = "image"
+title = "Earnings Ninja — Expo Go QR"
