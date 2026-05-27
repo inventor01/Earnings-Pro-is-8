@@ -14,7 +14,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  api, Entry, EntryType, AppType, ExpenseCategory,
+  api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType,
 } from '@/lib/api';
 import { useAuth } from '@/lib/authContext';
@@ -23,6 +23,7 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as DocumentPicker from 'expo-document-picker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 import { widgetSync } from '@/lib/widgetSync';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -1135,6 +1136,15 @@ function AddEntryModal({ visible, onClose, prefill }: {
     }
   }, [visible, prefill]);
 
+  // Default the platform to "Other" for expenses (gas station, parking, etc.
+  // don't belong to a delivery app), and back to "DoorDash" for revenue/orders.
+  // Only nudges when the user is still on the previous-mode default — if they
+  // explicitly picked a platform, we leave their choice alone.
+  useEffect(() => {
+    if (entryType === 'EXPENSE' && app === 'DOORDASH') setApp('OTHER');
+    else if (entryType !== 'EXPENSE' && app === 'OTHER') setApp('DOORDASH');
+  }, [entryType]);
+
   // Image-picker helpers — request permissions, then offer Camera vs Library
   // via Alert (matches iOS conventions). We store the local `uri` for the
   // thumbnail and the `data:image/jpeg;base64,…` payload for the backend
@@ -1408,6 +1418,148 @@ function AddEntryModal({ visible, onClose, prefill }: {
 }
 
 // ─── Settings Modal ────────────────────────────────────────────────────────────
+// ─── CSV import (Settings) ────────────────────────────────────────────────────
+// Tiny CSV parser — handles double-quoted fields, escaped quotes (""), CRLF.
+// Returns array of row arrays; first row is treated as header by the caller.
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(field); field = '';
+        if (row.length > 1 || row[0] !== '') rows.push(row);
+        row = [];
+      } else field += c;
+    }
+  }
+  if (field !== '' || row.length > 0) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+const VALID_TYPES = new Set(['ORDER', 'BONUS', 'EXPENSE', 'CANCELLATION']);
+const VALID_APPS  = new Set(['DOORDASH', 'UBEREATS', 'INSTACART', 'GRUBHUB', 'SHIPT', 'OTHER']);
+const VALID_CATS  = new Set(['GAS', 'PARKING', 'TOLLS', 'MAINTENANCE', 'PHONE', 'SUBSCRIPTION', 'FOOD', 'LEISURE', 'OTHER']);
+
+function csvRowsToEntries(rows: string[][]): { entries: EntryCreate[]; skipped: number } {
+  if (rows.length < 2) return { entries: [], skipped: 0 };
+  const header = rows[0].map(h => h.trim().toLowerCase().replace(/[\s-]+/g, '_'));
+  const idx = (name: string) => header.indexOf(name);
+  const iType = idx('type'), iApp = idx('app');
+  const iAmt = idx('amount');
+  const iDate = idx('date'), iTime = idx('time');
+  const iMiles = idx('distance_miles') >= 0 ? idx('distance_miles') : idx('miles');
+  const iMin   = idx('duration_minutes') >= 0 ? idx('duration_minutes') : idx('minutes');
+  const iCat   = idx('category');
+  const iNote  = idx('note') >= 0 ? idx('note') : idx('notes');
+  const out: EntryCreate[] = [];
+  let skipped = 0;
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (row.every(c => c.trim() === '')) continue;
+    const type = (row[iType] || '').trim().toUpperCase();
+    const app  = (row[iApp]  || '').trim().toUpperCase();
+    const amtStr = (row[iAmt] || '').trim().replace(/[$,]/g, '');
+    const amount = parseFloat(amtStr);
+    if (!VALID_TYPES.has(type) || !VALID_APPS.has(app) || !isFinite(amount)) { skipped++; continue; }
+    const cat = iCat >= 0 ? (row[iCat] || '').trim().toUpperCase() : '';
+    const entry: EntryCreate = {
+      type: type as EntryType,
+      app: app as AppType,
+      amount,
+      distance_miles: iMiles >= 0 ? parseFloat(row[iMiles] || '0') || 0 : undefined,
+      duration_minutes: iMin >= 0 ? parseInt(row[iMin] || '0') || 0 : undefined,
+      category: type === 'EXPENSE' && VALID_CATS.has(cat) ? (cat as ExpenseCategory) : undefined,
+      note: iNote >= 0 ? (row[iNote] || '').trim() || undefined : undefined,
+      date: iDate >= 0 ? (row[iDate] || '').trim() || undefined : undefined,
+      time: iTime >= 0 ? (row[iTime] || '').trim() || undefined : undefined,
+    };
+    out.push(entry);
+  }
+  return { entries: out, skipped };
+}
+
+function ImportCsvRow({ onDone }: { onDone: () => void }) {
+  const { SURFACE, BORDER, PRI_LITE, PRIMARY, TEXT, MUTED } = useTheme();
+  const [busy, setBusy] = useState(false);
+
+  const onPick = async () => {
+    if (busy) return;
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ['text/csv', 'text/comma-separated-values', 'public.comma-separated-values-text', '*/*'],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (res.canceled || !res.assets?.[0]) return;
+      setBusy(true);
+      hTap();
+      const asset = res.assets[0];
+      // RN fetch can read file:// URIs into text on iOS.
+      const text = await (await fetch(asset.uri)).text();
+      const rows = parseCsv(text);
+      const { entries, skipped } = csvRowsToEntries(rows);
+      if (entries.length === 0) {
+        Alert.alert('Nothing to import', skipped > 0
+          ? `Found ${skipped} row${skipped === 1 ? '' : 's'} but none had valid type / app / amount columns.`
+          : 'The file looks empty.');
+        return;
+      }
+      const result = await api.importEntries(entries);
+      hNotifyOk();
+      Alert.alert(
+        'Import complete',
+        `Imported ${result.count} entr${result.count === 1 ? 'y' : 'ies'}${skipped > 0 ? `\nSkipped ${skipped} invalid row${skipped === 1 ? '' : 's'}` : ''}.`,
+      );
+      onDone();
+    } catch (e: any) {
+      Alert.alert('Import failed', e?.message || 'Could not read or import the file.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={onPick}
+      disabled={busy}
+      style={{
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER,
+        padding: 14, opacity: busy ? 0.6 : 1,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
+      }}
+    >
+      <View style={{
+        width: 36, height: 36, borderRadius: 18,
+        backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Ionicons name={busy ? 'hourglass' : 'cloud-upload'} size={18} color={PRIMARY} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>
+          {busy ? 'Importing…' : 'Import from CSV'}
+        </Text>
+        <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>
+          Columns: date, time, type, app, amount, distance_miles, duration_minutes, category, note
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={MUTED} />
+    </Pressable>
+  );
+}
+
 function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { BG, SURFACE, BORDER, PRIMARY, PRI_LITE, TEXT, MUTED, LABEL, RED, RED_LT, ON_PRIMARY } = useTheme();
   const { themeName, setThemeName } = useThemeControls();
@@ -1623,6 +1775,21 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             </Pressable>
           );
         })}
+
+        {/* Import / Export — CSV bulk import via expo-document-picker.
+            Parses inline (no external dep). Expected headers (case-insensitive):
+            date, time, type, app, amount, distance_miles, duration_minutes,
+            category, note. Order doesn't matter; unknown columns are ignored. */}
+        <View style={{ height: 28 }} />
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+          📥  Import Data
+        </Text>
+        <ImportCsvRow
+          onDone={() => {
+            queryClient.invalidateQueries({ queryKey: ['entries'] });
+            queryClient.invalidateQueries({ queryKey: ['rollup'] });
+          }}
+        />
 
         {/* Delete Account — Apple Guideline 5.1.1(v) requires apps that support */}
         {/* account creation to also support in-app account deletion. */}

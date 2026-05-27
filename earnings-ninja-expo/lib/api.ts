@@ -191,6 +191,22 @@ export const api = {
     return res.json();
   },
 
+  // Bulk-import entries (used by the CSV import in Settings). Backend skips
+  // any row it can't parse and returns `{ count, message }`.
+  async importEntries(entries: EntryCreate[]): Promise<{ count: number; message: string }> {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/api/entries/import`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(entries),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`importEntries failed: ${res.status} ${text.slice(0, 200)}`);
+    }
+    return res.json();
+  },
+
   async getSettings(): Promise<Settings> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/settings`, { headers });
