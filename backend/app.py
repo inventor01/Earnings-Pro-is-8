@@ -1,8 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -154,21 +153,6 @@ app = FastAPI(title="Delivery Driver Earnings API", docs_url=None, redoc_url=Non
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# TEMP DEBUG: log full validation error detail + offending request body for
-# every 422 so we can see exactly which field is failing. Remove once the
-# /api/entries 422 issue is diagnosed.
-@app.exception_handler(RequestValidationError)
-async def _log_validation_errors(request: Request, exc: RequestValidationError):
-    try:
-        body_preview = (await request.body())[:500].decode("utf-8", errors="replace")
-    except Exception:
-        body_preview = "<unavailable>"
-    logger.warning(
-        "422 on %s %s — errors=%s body=%s",
-        request.method, request.url.path, exc.errors(), body_preview,
-    )
-    return JSONResponse(status_code=422, content={"detail": exc.errors()})
 app.add_middleware(SlowAPIMiddleware)
 
 # Start background jobs on startup

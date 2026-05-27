@@ -273,27 +273,18 @@ export const api = {
       e.status = 413;
       throw e;
     }
-    // TEMP DEBUG — remove once entry-save flow is verified.
-    console.log('[createEntryRaw] POST', `${API_BASE}/api/entries`, 'bodyLen=', body.length, 'hasAuth=', !!headers['Authorization']);
-    try {
-      const res = await fetch(`${API_BASE}/api/entries`, {
-        method: 'POST',
-        headers,
-        body,
-      });
-      console.log('[createEntryRaw] response', res.status);
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        console.log('[createEntryRaw] error body', text.slice(0, 300));
-        const e: any = new Error(`createEntry failed: ${res.status}`);
-        e.status = res.status;
-        throw e;
-      }
-      return res.json();
-    } catch (err: any) {
-      console.log('[createEntryRaw] threw', err?.message, 'status=', err?.status);
-      throw err;
+    const res = await fetch(`${API_BASE}/api/entries`, {
+      method: 'POST',
+      headers,
+      body,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      const e: any = new Error(`createEntry failed: ${res.status} ${text.slice(0, 200)}`);
+      e.status = res.status;
+      throw e;
     }
+    return res.json();
   },
 
   // Public createEntry — same shape, but routes failed network calls to
