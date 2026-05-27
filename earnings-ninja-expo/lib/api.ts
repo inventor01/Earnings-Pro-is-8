@@ -246,17 +246,28 @@ export const api = {
   // thrown Error carries `.status` so callers can classify without regex.
   async createEntryRaw(entry: EntryCreate): Promise<Entry> {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/entries`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(entry),
-    });
-    if (!res.ok) {
-      const e: any = new Error(`createEntry failed: ${res.status}`);
-      e.status = res.status;
-      throw e;
+    const body = JSON.stringify(entry);
+    // TEMP DEBUG — remove once entry-save flow is verified.
+    console.log('[createEntryRaw] POST', `${API_BASE}/api/entries`, 'bodyLen=', body.length, 'hasAuth=', !!headers['Authorization']);
+    try {
+      const res = await fetch(`${API_BASE}/api/entries`, {
+        method: 'POST',
+        headers,
+        body,
+      });
+      console.log('[createEntryRaw] response', res.status);
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        console.log('[createEntryRaw] error body', text.slice(0, 300));
+        const e: any = new Error(`createEntry failed: ${res.status}`);
+        e.status = res.status;
+        throw e;
+      }
+      return res.json();
+    } catch (err: any) {
+      console.log('[createEntryRaw] threw', err?.message, 'status=', err?.status);
+      throw err;
     }
-    return res.json();
   },
 
   // Public createEntry — same shape, but routes failed network calls to
