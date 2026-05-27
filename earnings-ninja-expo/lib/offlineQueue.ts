@@ -105,12 +105,18 @@ export async function drainQueue(
       await uploader(item.payload);
       flushed += 1;
     } catch (err: any) {
-      const msg = String(err?.message ?? '');
-      // Server-side rejection (4xx other than 401/429) is permanent — the
-      // payload itself is bad. Drop it. 401 means the user got logged out
-      // mid-flight; keep the entry so it can drain after re-auth. 429 is
-      // transient.
-      const is4xxPermanent = /\b40[0345678]|41[0-7]\b/.test(msg) && !/\b401\b/.test(msg);
+      // Classify by HTTP status, not message regex (the old regex missed
+      // 422 entirely, so oversized-receipt entries retried forever and
+      // jammed the queue head, blocking every later entry).
+      // - No status        → network failure, keep queued.
+      // - 401/408/429      → transient (stale auth / timeout / rate limit), keep.
+      // - 5xx              → server hiccup, keep.
+      // - Any other 4xx    → payload is permanently bad, drop and continue.
+      const status: number | undefined = err?.status;
+      const is4xxPermanent =
+        typeof status === 'number' &&
+        status >= 400 && status < 500 &&
+        status !== 401 && status !== 408 && status !== 429;
       if (is4xxPermanent) {
         dropped += 1;
         continue;

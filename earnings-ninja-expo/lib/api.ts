@@ -242,8 +242,8 @@ export const api = {
   },
 
   // Raw uploader — no offline queue. Used by the queue drainer itself so
-  // it can't recurse. Always throws on failure (network or non-2xx) with
-  // the HTTP status in the message so `drainQueue` can classify it.
+  // it can't recurse. Always throws on failure (network or non-2xx). The
+  // thrown Error carries `.status` so callers can classify without regex.
   async createEntryRaw(entry: EntryCreate): Promise<Entry> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/entries`, {
@@ -251,7 +251,11 @@ export const api = {
       headers,
       body: JSON.stringify(entry),
     });
-    if (!res.ok) throw new Error(`createEntry failed: ${res.status}`);
+    if (!res.ok) {
+      const e: any = new Error(`createEntry failed: ${res.status}`);
+      e.status = res.status;
+      throw e;
+    }
     return res.json();
   },
 
@@ -263,15 +267,21 @@ export const api = {
     try {
       return await this.createEntryRaw(entry);
     } catch (err: any) {
-      const msg = String(err?.message ?? '');
-      // 4xx (except 401/429) = bad payload, don't queue — let the caller
-      // surface the error. 401 = stale auth, also don't queue (user needs
-      // to re-login first). 429 = backend rate limit, also don't queue
-      // (queueing would just compound). Everything else (network failure,
-      // 5xx, 0 status) = transient — enqueue and pretend it succeeded.
-      const isPermanent = /createEntry failed: (40[03456780]|41[0-7])/.test(msg);
-      const isAuthOrRate = /createEntry failed: (401|429)/.test(msg);
-      if (isPermanent || isAuthOrRate) throw err;
+      // Classify by actual HTTP status, not by string-matching the message
+      // (the old regex missed 422 entirely, which jammed the offline queue
+      // with oversized-receipt entries that retried forever).
+      // - No status   → network failure, queue it.
+      // - 401/408/429 → transient (stale auth / timeout / rate limit), queue.
+      // - 5xx         → server hiccup, queue.
+      // - Other 4xx   → bad payload, surface the error to the caller.
+      const status: number | undefined = err?.status;
+      const isTransient =
+        status === undefined ||
+        status === 401 ||
+        status === 408 ||
+        status === 429 ||
+        (status >= 500 && status < 600);
+      if (!isTransient && status >= 400 && status < 500) throw err;
       const { enqueueEntry, synthesizeEntry } = await import('./offlineQueue');
       const item = await enqueueEntry(entry);
       return synthesizeEntry(item);
