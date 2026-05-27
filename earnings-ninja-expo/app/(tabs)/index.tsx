@@ -21,6 +21,7 @@ import { useAuth } from '@/lib/authContext';
 import * as Haptics from 'expo-haptics';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
+import { TransactionDetailModal } from '../../components/TransactionDetailModal';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
@@ -494,12 +495,13 @@ function StatCard({
 //                    the row toggles selection. Edit/delete are hidden so a
 //                    long press list operation doesn't have ambiguous targets.
 function EntryRow({
-  entry, onDelete, onEdit,
+  entry, onDelete, onEdit, onLongPress,
   selectionMode = false, selected = false, onToggleSelect,
 }: {
   entry: Entry;
   onDelete: (id: number) => void;
   onEdit?: (entry: Entry) => void;
+  onLongPress?: (entry: Entry) => void;
   selectionMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (id: number) => void;
@@ -580,9 +582,14 @@ function EntryRow({
     </View>
   );
 
-  if (!selectionMode) return body;
+  // Long press always opens the detail modal (in or out of selection mode).
+  // Short tap only does something in selection mode (toggle the checkbox).
   return (
-    <Pressable onPress={() => { hTap(); onToggleSelect?.(entry.id); }}>
+    <Pressable
+      onPress={selectionMode ? () => { hTap(); onToggleSelect?.(entry.id); } : undefined}
+      onLongPress={onLongPress ? () => { hTapMed(); onLongPress(entry); } : undefined}
+      delayLongPress={350}
+    >
       {body}
     </Pressable>
   );
@@ -2042,6 +2049,7 @@ export default function DashboardScreen() {
   // checkbox-mode; `selectedIds` is the set of currently-selected entry IDs.
   // `editingEntry` opens AddEntryModal in edit mode when non-null.
   const [selectionMode, setSelectionMode] = useState(false);
+  const [detailEntry, setDetailEntry] = useState<Entry | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [editingEntry, setEditingEntry] = useState<Entry | undefined>(undefined);
   const toggleSelect = useCallback((id: number) => {
@@ -2860,6 +2868,7 @@ export default function DashboardScreen() {
                           ]);
                         }}
                         onEdit={(entry) => { hTap(); setEditingEntry(entry); setShowAdd(true); }}
+                        onLongPress={selectionMode ? undefined : (entry) => setDetailEntry(entry)}
                         selectionMode={selectionMode}
                         selected={selectedIds.has(e.id)}
                         onToggleSelect={toggleSelect}
@@ -2949,6 +2958,21 @@ export default function DashboardScreen() {
           setCustomRange({ from, to });
           setPeriod('custom');
           setDayOffset(0);
+        }}
+      />
+      <TransactionDetailModal
+        visible={!!detailEntry}
+        entry={detailEntry}
+        onClose={() => setDetailEntry(null)}
+        onEdit={(entry) => {
+          setDetailEntry(null);
+          hTap();
+          setEditingEntry(entry);
+          setShowAdd(true);
+        }}
+        onDelete={(id) => {
+          setDetailEntry(null);
+          deleteMutation.mutate(id);
         }}
       />
     </View>
