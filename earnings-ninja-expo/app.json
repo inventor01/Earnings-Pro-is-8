@@ -75,7 +75,10 @@
         "backgroundColor": "#0f172a"
       },
       "package": "com.earningsninja.app",
-      "versionCode": 1
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/icon.png",
@@ -98,6 +101,30 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "bundleIdentifier": "com.earningsninja.app.widget",
+                  "targetName": "EarningsWidget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.earningsninja.shared"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "d0be520b-c231-4a05-9f34-24fd35a24935"
+      }
+    },
+    "owner": "inventor01"
   }
 }
