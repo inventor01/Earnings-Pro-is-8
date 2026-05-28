@@ -7,7 +7,7 @@ import { getToken } from './tokenStorage';
 export const API_BASE =
   process.env.EXPO_PUBLIC_API_BASE ||
   (Constants.expoConfig?.extra?.apiBase as string | undefined) ||
-  'https://earningsninja.app';
+  'https://earnings-pro-is-8-production.up.railway.app';
 
 async function getAuthToken(): Promise<string | null> {
   return getToken();
