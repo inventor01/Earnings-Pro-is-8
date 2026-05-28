@@ -15,7 +15,7 @@ set -u
 cd "$(dirname "$0")/.."
 
 LOG="[watchdog]"
-TUNNEL_URL="https://ccpvuxk-anonymous-8081.exp.direct"
+TUNNEL_URL="https://ccpvuxk-inventor01-8081.exp.direct"
 
 log() { echo "$LOG $*"; }
 
