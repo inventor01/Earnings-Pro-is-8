@@ -3041,6 +3041,25 @@ export default function DashboardScreen() {
           setPeriod('custom');
           setDayOffset(0);
         }}
+        onDeleteEntries={async (ids) => {
+          // Calendar's bulk-erase path. Reuses the per-id delete endpoint
+          // (no batch route on backend) via Promise.allSettled, then
+          // invalidates the same keys the dashboard renders. We always
+          // invalidate (even on partial success) but THROW when any deletes
+          // failed so the calendar keeps the selection visible for retry
+          // and shows error haptic + alert instead of success.
+          const results = await Promise.allSettled(ids.map(id => api.deleteEntry(id)));
+          const failed = results.filter(r => r.status === 'rejected').length;
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['entries'] }),
+            queryClient.invalidateQueries({ queryKey: ['rollup'] }),
+            queryClient.invalidateQueries({ queryKey: ['goal'] }),
+            queryClient.invalidateQueries({ queryKey: ['entries-range'] }),
+          ]);
+          if (failed > 0) {
+            throw new Error(`Deleted ${ids.length - failed} of ${ids.length}. ${failed} could not be deleted.`);
+          }
+        }}
       />
       <TransactionDetailModal
         visible={!!detailEntry}
