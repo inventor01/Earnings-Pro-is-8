@@ -18,7 +18,7 @@
       "bundleIdentifier": "com.earningsninja.app",
       "buildNumber": "1",
       "deploymentTarget": "17.0",
-      "appleTeamId": "REPLACE_WITH_YOUR_10_CHAR_TEAM_ID",
+      "appleTeamId": "77827G7735",
       "infoPlist": {
         "NSCameraUsageDescription": "Earnings Ninja needs camera access to photograph receipts for expense tracking.",
         "NSPhotoLibraryUsageDescription": "Earnings Ninja needs photo library access to attach receipt images to your expenses.",
