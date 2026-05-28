@@ -14,7 +14,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory,
+  api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
 } from '@/lib/api';
 import { useAuth } from '@/lib/authContext';
@@ -1361,6 +1361,48 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
 
   const mutation = useMutation({
     mutationFn: api.createEntry,
+    // Optimistic update: patch every cached `['rollup', ...]` query the
+    // instant the user taps Save so the dashboard KPI numbers tick up
+    // before the network round-trip resolves. Only patch when the entry's
+    // date is today (or unspecified — defaults to today) — backdated
+    // entries land in windows we can't cheaply check from here, so we let
+    // the server-side invalidation handle them.
+    onMutate: async (vars) => {
+      const now = new Date();
+      const p2 = (n: number) => String(n).padStart(2, '0');
+      const todayStr = `${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}`;
+      if (vars.date && vars.date !== todayStr) {
+        return { prev: [] as Array<[readonly unknown[], Rollup | undefined]> };
+      }
+      await queryClient.cancelQueries({ queryKey: ['rollup'] });
+      const prev = queryClient.getQueriesData<Rollup>({ queryKey: ['rollup'] });
+      const isExpense = vars.type === 'EXPENSE';
+      const amt = Math.abs(vars.amount || 0);
+      const addMiles = vars.distance_miles || 0;
+      const addHours = (vars.duration_minutes || 0) / 60;
+      queryClient.setQueriesData<Rollup>({ queryKey: ['rollup'] }, (old) => {
+        if (!old) return old;
+        const revenue  = isExpense ? old.revenue  : old.revenue  + amt;
+        const expenses = isExpense ? old.expenses + amt : old.expenses;
+        const profit   = revenue - expenses;
+        const miles    = old.miles + addMiles;
+        const hours    = old.hours + addHours;
+        return {
+          ...old,
+          revenue,
+          expenses,
+          profit,
+          miles,
+          hours,
+          dollars_per_mile: miles > 0 ? profit / miles : 0,
+          dollars_per_hour: hours > 0 ? profit / hours : 0,
+          goal_progress: old.goal?.target_profit
+            ? profit / old.goal.target_profit
+            : old.goal_progress ?? null,
+        };
+      });
+      return { prev };
+    },
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['rollup'] });
@@ -1374,7 +1416,17 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       reset();
       onClose();
     },
-    onError: () => Alert.alert('Error', 'Failed to save entry.'),
+    onError: (_err, _vars, ctx) => {
+      // Roll back the optimistic patch using the snapshot we took in
+      // onMutate, then invalidate to be doubly sure we converge on truth.
+      if (ctx?.prev) {
+        for (const [key, data] of ctx.prev) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      Alert.alert('Error', 'Failed to save entry.');
+    },
   });
 
   // PUT mutation used only in the "edit existing entry" flow. Same cache
