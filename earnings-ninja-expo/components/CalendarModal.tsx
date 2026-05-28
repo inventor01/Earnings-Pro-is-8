@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, Pressable, Modal, ScrollView, ActivityIndicator,
-  ViewStyle, Platform, useWindowDimensions,
+  ViewStyle, Platform, useWindowDimensions, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -107,19 +107,22 @@ interface CalendarModalProps {
   onClose: () => void;
   /** Called with two YYYY-MM-DD EST dates when the user taps "Apply to Dashboard". */
   onApplyRange?: (fromDateStr: string, toDateStr: string) => void;
+  /** Bulk-delete entry IDs from the parent (which owns the mutation + cache invalidation). */
+  onDeleteEntries?: (ids: number[]) => Promise<void> | void;
 }
 
-export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalProps) {
+export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries }: CalendarModalProps) {
   const { BG, SURFACE, CARD, BORDER, DIVIDER, TEXT, LABEL, MUTED, PRIMARY, GREEN, RED, ON_PRIMARY } = useTheme();
   const insets = useSafeAreaInsets();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear]   = useState(now.getFullYear());
   const [metric, setMetric] = useState<Metric>('profit');
-  // Range selection: rangeStart is set on first tap; rangeEnd is set on second tap.
-  // While only rangeStart is set (rangeEnd === null), it's treated as a 1-day "in progress" range.
-  const [rangeStart, setRangeStart] = useState<string | null>(null);
-  const [rangeEnd, setRangeEnd]     = useState<string | null>(null);
+  // Multi-day selection: tap toggles individual days; long-press fills the
+  // range from the earliest already-selected day (or just selects that day if
+  // none yet). Set of YYYY-MM-DD EST strings.
+  const [selectedDays, setSelectedDays] = useState<Set<string>>(() => new Set());
+  const [erasing, setErasing] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   // Year being browsed inside the picker (separate from `year` so user can scrub years
   // without immediately changing the calendar until they tap a month).
@@ -231,80 +234,155 @@ export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalP
     setYear(t.getFullYear());
   }
 
-  // Normalized [from, to] of the current selection (ascending), or null when nothing is selected.
-  const normalizedRange = useMemo<{ from: string; to: string } | null>(() => {
-    if (!rangeStart) return null;
-    const end = rangeEnd ?? rangeStart;
-    if (rangeStart <= end) return { from: rangeStart, to: end };
-    return { from: end, to: rangeStart };
-  }, [rangeStart, rangeEnd]);
+  // Clear selection on month change — the entries query is scoped to the
+  // visible month (±36h pad), so selected days outside it would be unverifiable
+  // and the erase action would have nothing to operate on.
+  useEffect(() => {
+    setSelectedDays(new Set());
+  }, [month, year]);
 
-  // Entries that fall within the selected range (sorted newest first).
-  const rangeEntries = useMemo(() => {
-    if (!normalizedRange) return [];
+  // Min/max of the current selection (for "Apply to Dashboard" range + display).
+  const selectionBounds = useMemo<{ from: string; to: string } | null>(() => {
+    if (selectedDays.size === 0) return null;
+    const arr = Array.from(selectedDays).sort();
+    return { from: arr[0], to: arr[arr.length - 1] };
+  }, [selectedDays]);
+
+  // Entries that fall on any selected day (sorted newest first).
+  const selectedEntries = useMemo(() => {
+    if (selectedDays.size === 0) return [];
     return entries
-      .filter(e => {
-        const ds = entryDateStr(e);
-        return ds >= normalizedRange.from && ds <= normalizedRange.to;
-      })
+      .filter(e => selectedDays.has(entryDateStr(e)))
       .sort((a, b) => {
         const ta = new Date((a as any).timestamp || (a as any).created_at || 0).getTime();
         const tb = new Date((b as any).timestamp || (b as any).created_at || 0).getTime();
         return tb - ta;
       });
-  }, [normalizedRange, entries]);
+  }, [selectedDays, entries]);
 
-  // Aggregated totals across the selected range.
-  const rangeTotals = useMemo(() => {
-    if (!normalizedRange) return { profit: 0, revenue: 0, expenses: 0, days: 0, entryCount: 0 };
-    let profit = 0, revenue = 0, expenses = 0, days = 0;
-    for (const k of Object.keys(dailyData)) {
-      if (k >= normalizedRange.from && k <= normalizedRange.to) {
-        const d = dailyData[k];
-        profit   += d.profit;
-        revenue  += d.revenue;
-        expenses += d.expenses;
-        if (d.count > 0) days += 1;
-      }
-    }
-    return { profit, revenue, expenses, days, entryCount: rangeEntries.length };
-  }, [normalizedRange, dailyData, rangeEntries]);
+  // Aggregated totals across selected days. `daysWithData` counts only the
+  // subset of selected days that actually contain entries.
+  const selectionTotals = useMemo(() => {
+    let profit = 0, revenue = 0, expenses = 0, daysWithData = 0;
+    selectedDays.forEach(k => {
+      const d = dailyData[k];
+      if (!d) return;
+      profit   += d.profit;
+      revenue  += d.revenue;
+      expenses += d.expenses;
+      if (d.count > 0) daysWithData += 1;
+    });
+    return {
+      profit, revenue, expenses, daysWithData,
+      entryCount: selectedEntries.length,
+      dayCount: selectedDays.size,
+    };
+  }, [selectedDays, dailyData, selectedEntries]);
 
-  // Inclusive count of calendar days in the range (selected days, not just days with data).
-  const rangeDayCount = useMemo(() => {
-    if (!normalizedRange) return 0;
-    const f = parseEstYmd(normalizedRange.from);
-    const t = parseEstYmd(normalizedRange.to);
-    return Math.round((t.getTime() - f.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  }, [normalizedRange]);
+  // All days in the visible month that have at least one entry.
+  const daysWithData = useMemo(
+    () => Object.keys(dailyData).filter(k => dailyData[k].count > 0),
+    [dailyData],
+  );
 
-  // Tap handler that drives 2-tap range selection.
+  // RN Pressable fires `onPress` on release even after a long-press completes.
+  // We set this ref in `handleDayLongPress` so the immediately-following tap
+  // doesn't toggle the endpoint we just included in the range fill.
+  const longPressFiredRef = useRef(false);
+
+  // Tap toggles a single day in/out of the selection.
   function handleDayPress(dateStr: string) {
+    if (longPressFiredRef.current) {
+      longPressFiredRef.current = false;
+      return;
+    }
     hTap();
-    // Start a new range if nothing selected, OR if a complete range exists.
-    if (!rangeStart || (rangeStart && rangeEnd)) {
-      setRangeStart(dateStr);
-      setRangeEnd(null);
-      return;
-    }
-    // Have a start, no end → complete the range.
-    if (dateStr === rangeStart) {
-      // Tapping the same day twice → keep it as a single-day selection (commit it).
-      setRangeEnd(dateStr);
-      return;
-    }
-    if (dateStr < rangeStart) {
-      setRangeEnd(rangeStart);
-      setRangeStart(dateStr);
-    } else {
-      setRangeEnd(dateStr);
-    }
+    setSelectedDays(prev => {
+      const next = new Set(prev);
+      if (next.has(dateStr)) next.delete(dateStr);
+      else next.add(dateStr);
+      return next;
+    });
   }
 
-  function clearRange() {
+  // Long-press fills a range. If nothing is selected, just selects the day.
+  // Otherwise: anchor = earliest already-selected day (or latest if pressed day
+  // is earlier than every selection), fill all days inclusive.
+  function handleDayLongPress(dateStr: string) {
+    longPressFiredRef.current = true;
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    setSelectedDays(prev => {
+      const next = new Set(prev);
+      if (next.size === 0) {
+        next.add(dateStr);
+        return next;
+      }
+      const sorted = Array.from(next).sort();
+      const anchor = dateStr < sorted[0] ? sorted[sorted.length - 1] : sorted[0];
+      const from = anchor < dateStr ? anchor : dateStr;
+      const to   = anchor < dateStr ? dateStr : anchor;
+      // Walk EST days from `from` to `to` inclusive.
+      const start = parseEstYmd(from);
+      const end   = parseEstYmd(to);
+      const cursor = new Date(start);
+      while (cursor.getTime() <= end.getTime()) {
+        const y = cursor.getFullYear();
+        const m = String(cursor.getMonth() + 1).padStart(2, '0');
+        const d = String(cursor.getDate()).padStart(2, '0');
+        next.add(`${y}-${m}-${d}`);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      return next;
+    });
+  }
+
+  function clearSelection() {
     hTap();
-    setRangeStart(null);
-    setRangeEnd(null);
+    setSelectedDays(new Set());
+  }
+
+  function selectAllWithData() {
+    hTap();
+    setSelectedDays(new Set(daysWithData));
+  }
+
+  function confirmErase() {
+    if (selectedEntries.length === 0 || !onDeleteEntries) return;
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    }
+    const dayLabel = `${selectionTotals.daysWithData} selected day${selectionTotals.daysWithData === 1 ? '' : 's'}`;
+    const entryLabel = `${selectedEntries.length} entr${selectedEntries.length === 1 ? 'y' : 'ies'}`;
+    Alert.alert(
+      'Erase selected days?',
+      `Delete all ${entryLabel} from the ${dayLabel}? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Erase',
+          style: 'destructive',
+          onPress: async () => {
+            setErasing(true);
+            const ids = selectedEntries.map(e => e.id);
+            try {
+              await onDeleteEntries(ids);
+              setSelectedDays(new Set());
+              if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+              }
+            } catch (err: any) {
+              if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+              }
+              Alert.alert('Erase failed', err?.message || 'Some entries could not be deleted. Your selection has been kept so you can retry.');
+            } finally {
+              setErasing(false);
+              refetch();
+            }
+          },
+        },
+      ],
+    );
   }
 
   const todayStr = estDateString(new Date());
@@ -616,15 +694,7 @@ export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalP
                 const hasData = !!data && data.count > 0;
                 const isToday = cell.dateStr === todayStr;
                 const dotColor = getDotColor(value, hasData);
-
-                // Range-selection visuals.
-                const isRangeStart = !!normalizedRange && cell.dateStr === normalizedRange.from;
-                const isRangeEnd   = !!normalizedRange && cell.dateStr === normalizedRange.to;
-                const isInRange    = !!normalizedRange &&
-                  cell.dateStr >= normalizedRange.from &&
-                  cell.dateStr <= normalizedRange.to;
-                const isRangeMiddle = isInRange && !isRangeStart && !isRangeEnd;
-                const isEndpoint   = isRangeStart || isRangeEnd;
+                const isSelected = selectedDays.has(cell.dateStr);
 
                 // Day-number color: white by default, yellow if today, profit/loss tint if data.
                 let dayNumColor: string;
@@ -635,13 +705,15 @@ export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalP
                 else if (value < 0)        dayNumColor = RED;
                 else                       dayNumColor = TEXT;
 
-                // Soft yellow tint for in-range middle days.
-                const cellBg = isRangeMiddle ? 'rgba(250,204,21,0.12)' : SURFACE;
+                // Soft yellow wash on selected cells so the neon ring reads cleanly.
+                const cellBg = isSelected ? 'rgba(250,204,21,0.18)' : SURFACE;
 
                 return (
                   <Pressable
                     key={idx}
                     onPress={() => handleDayPress(cell.dateStr)}
+                    onLongPress={() => handleDayLongPress(cell.dateStr)}
+                    delayLongPress={280}
                     style={{
                       width: cellSize,
                       height: cellHeight,
@@ -654,8 +726,8 @@ export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalP
                       overflow: 'hidden',
                     }}
                   >
-                    {/* Endpoint ring overlay (start/end of range) */}
-                    {isEndpoint && (
+                    {/* Neon-yellow ring + glow on every selected day */}
+                    {isSelected && (
                       <View
                         pointerEvents="none"
                         style={{
@@ -663,7 +735,7 @@ export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalP
                           top: 0, left: 0, right: 0, bottom: 0,
                           borderWidth: 2,
                           borderColor: PRIMARY,
-                          ...neonGlow(PRIMARY, 8, 0.6),
+                          ...neonGlow(PRIMARY, 8, 0.65),
                         }}
                       />
                     )}
@@ -672,7 +744,7 @@ export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalP
                       style={{
                         color: dayNumColor,
                         fontSize: 15,
-                        fontWeight: isToday || isEndpoint ? '900' : '600',
+                        fontWeight: isToday || isSelected ? '900' : '600',
                         lineHeight: 18,
                         textAlign: 'center',
                         textAlignVertical: 'center',
@@ -726,10 +798,60 @@ export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalP
             )}
           </View>
 
-          {/* ── Selected Range Detail ───────────────────────────────────────── */}
-          {normalizedRange && (
+          {/* ── Quick Actions ───────────────────────────────────────────────── */}
+          <View style={{
+            flexDirection: 'row', gap: 8,
+            marginHorizontal: 16, marginTop: 14,
+          }}>
+            <PressScale
+              onPress={selectAllWithData}
+              disabled={daysWithData.length === 0}
+              scale={0.95}
+              style={{
+                flex: 1,
+                paddingVertical: 10, paddingHorizontal: 8,
+                borderRadius: 10,
+                borderWidth: 1.5, borderColor: PRIMARY,
+                backgroundColor: 'rgba(250,204,21,0.10)',
+                alignItems: 'center',
+                opacity: daysWithData.length === 0 ? 0.4 : 1,
+                ...(daysWithData.length === 0 ? {} : neonGlow(PRIMARY, 6, 0.3)),
+              }}
+            >
+              <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: PRIMARY, fontWeight: '900', fontSize: 11 }}>
+                ✨ Select All Days w/ Data
+              </Text>
+            </PressScale>
+            <PressScale
+              onPress={clearSelection}
+              disabled={selectedDays.size === 0}
+              scale={0.95}
+              style={{
+                flex: 1,
+                paddingVertical: 10, paddingHorizontal: 8,
+                borderRadius: 10,
+                borderWidth: 1, borderColor: BORDER,
+                backgroundColor: SURFACE,
+                alignItems: 'center',
+                opacity: selectedDays.size === 0 ? 0.4 : 1,
+              }}
+            >
+              <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: LABEL, fontWeight: '800', fontSize: 11 }}>
+                Clear Selection
+              </Text>
+            </PressScale>
+          </View>
+          <Text style={{
+            color: MUTED, fontSize: 10, marginTop: 6, marginHorizontal: 16,
+            textAlign: 'center',
+          }}>
+            Tap days to select · long-press to fill a range
+          </Text>
+
+          {/* ── Selected Days Detail ────────────────────────────────────────── */}
+          {selectionBounds && (
             <View style={{
-              marginHorizontal: 16, marginTop: 18, marginBottom: 24,
+              marginHorizontal: 16, marginTop: 14, marginBottom: 24,
               backgroundColor: SURFACE, borderRadius: 14,
               borderWidth: 1, borderColor: PRIMARY,
               ...neonGlow(PRIMARY, 6, 0.25),
@@ -742,69 +864,46 @@ export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalP
               }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: PRIMARY, fontSize: 14, fontWeight: '900' }}>
-                    {normalizedRange.from === normalizedRange.to
-                      ? formatHumanDate(normalizedRange.from)
-                      : `${formatHumanDate(normalizedRange.from)} → ${formatHumanDate(normalizedRange.to)}`}
+                    {selectionTotals.dayCount} day{selectionTotals.dayCount === 1 ? '' : 's'} selected
                   </Text>
                   <Text style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>
-                    {rangeDayCount} day{rangeDayCount === 1 ? '' : 's'}
-                    {!rangeEnd ? ' · tap another day to extend' : ''}
+                    {selectionBounds.from === selectionBounds.to
+                      ? formatHumanDate(selectionBounds.from)
+                      : `${formatHumanDate(selectionBounds.from)} → ${formatHumanDate(selectionBounds.to)}`}
                   </Text>
                 </View>
-                <Pressable onPress={clearRange} hitSlop={10}>
+                <Pressable onPress={clearSelection} hitSlop={10}>
                   <Ionicons name="close" size={18} color={LABEL} />
                 </Pressable>
               </View>
 
-              {/* Range stats */}
-              {rangeTotals.entryCount === 0 ? (
-                <View style={{ padding: 18, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 28 }}>🗓️</Text>
-                  <Text style={{ color: MUTED, fontSize: 13, marginTop: 8 }}>
-                    No entries in this range.
-                  </Text>
-                </View>
-              ) : (
-                <View style={{
-                  flexDirection: 'row',
-                  paddingVertical: 12, paddingHorizontal: 14,
-                  borderBottomWidth: 1, borderBottomColor: DIVIDER,
-                }}>
-                  <DayStat label="Profit"   value={`$${rangeTotals.profit.toFixed(2)}`}   color={rangeTotals.profit >= 0 ? GREEN : RED} />
-                  <DayStat label="Revenue"  value={`$${rangeTotals.revenue.toFixed(2)}`}  color={GREEN} />
-                  <DayStat label="Expenses" value={`$${rangeTotals.expenses.toFixed(2)}`} color={RED} last />
-                </View>
-              )}
+              {/* Summary stats — Entries / Revenue / Expenses / Net Profit */}
+              <View style={{
+                flexDirection: 'row',
+                paddingVertical: 12, paddingHorizontal: 8,
+                borderBottomWidth: 1, borderBottomColor: DIVIDER,
+              }}>
+                <DayStat label="Entries"  value={`${selectionTotals.entryCount}`}             color={TEXT} />
+                <DayStat label="Revenue"  value={`$${selectionTotals.revenue.toFixed(2)}`}    color={GREEN} />
+                <DayStat label="Expenses" value={`$${selectionTotals.expenses.toFixed(2)}`}   color={RED} />
+                <DayStat label="Net"      value={`$${selectionTotals.profit.toFixed(2)}`}     color={selectionTotals.profit >= 0 ? GREEN : RED} last />
+              </View>
 
-              {/* Action row */}
+              {/* Apply to Dashboard */}
               <View style={{
                 flexDirection: 'row', gap: 10,
-                paddingHorizontal: 14, paddingVertical: 12,
+                paddingHorizontal: 14, paddingTop: 12,
               }}>
                 <Pressable
-                  onPress={clearRange}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 12, borderRadius: 10,
-                    borderWidth: 1, borderColor: BORDER,
-                    alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: 'transparent',
-                  }}
-                >
-                  <Text style={{ color: LABEL, fontWeight: '800', fontSize: 13 }}>
-                    Clear
-                  </Text>
-                </Pressable>
-                <Pressable
                   onPress={() => {
-                    if (!normalizedRange || !onApplyRange) return;
+                    if (!selectionBounds || !onApplyRange) return;
                     hTap();
-                    onApplyRange(normalizedRange.from, normalizedRange.to);
+                    onApplyRange(selectionBounds.from, selectionBounds.to);
                     onClose();
                   }}
                   disabled={!onApplyRange}
                   style={{
-                    flex: 2,
+                    flex: 1,
                     paddingVertical: 12, borderRadius: 10,
                     backgroundColor: PRIMARY,
                     alignItems: 'center', justifyContent: 'center',
@@ -813,7 +912,46 @@ export function CalendarModal({ visible, onClose, onApplyRange }: CalendarModalP
                   }}
                 >
                   <Text style={{ color: '#000', fontWeight: '900', fontSize: 14 }}>
-                    Apply to Dashboard
+                    Apply Range to Dashboard
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Erase Selected Days — destructive */}
+              <View style={{ paddingHorizontal: 14, paddingTop: 10, paddingBottom: 14 }}>
+                <Pressable
+                  onPress={confirmErase}
+                  disabled={
+                    !onDeleteEntries ||
+                    selectedEntries.length === 0 ||
+                    erasing
+                  }
+                  style={{
+                    paddingVertical: 13, borderRadius: 10,
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5, borderColor: RED,
+                    alignItems: 'center', justifyContent: 'center',
+                    flexDirection: 'row', gap: 8,
+                    opacity:
+                      !onDeleteEntries || selectedEntries.length === 0 || erasing
+                        ? 0.45
+                        : 1,
+                    ...(selectedEntries.length > 0 && !erasing
+                      ? neonGlow(RED, 10, 0.6)
+                      : {}),
+                  }}
+                >
+                  {erasing ? (
+                    <ActivityIndicator color={RED} />
+                  ) : (
+                    <Ionicons name="trash-outline" size={16} color={RED} />
+                  )}
+                  <Text style={{ color: RED, fontWeight: '900', fontSize: 13, letterSpacing: 0.3 }}>
+                    {erasing
+                      ? 'Erasing…'
+                      : selectedEntries.length === 0
+                        ? 'No entries on selected days'
+                        : `Erase Selected Day${selectionTotals.daysWithData === 1 ? '' : 's'} (${selectedEntries.length})`}
                   </Text>
                 </Pressable>
               </View>
