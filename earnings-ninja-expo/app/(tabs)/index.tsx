@@ -1371,37 +1371,75 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       const now = new Date();
       const p2 = (n: number) => String(n).padStart(2, '0');
       const todayStr = `${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}`;
-      if (vars.date && vars.date !== todayStr) {
-        return { prev: [] as Array<[readonly unknown[], Rollup | undefined]> };
-      }
-      await queryClient.cancelQueries({ queryKey: ['rollup'] });
-      const prev = queryClient.getQueriesData<Rollup>({ queryKey: ['rollup'] });
-      const isExpense = vars.type === 'EXPENSE';
-      const amt = Math.abs(vars.amount || 0);
-      const addMiles = vars.distance_miles || 0;
-      const addHours = (vars.duration_minutes || 0) / 60;
-      queryClient.setQueriesData<Rollup>({ queryKey: ['rollup'] }, (old) => {
+      const isToday = !vars.date || vars.date === todayStr;
+
+      // ---- Entries list: optimistic prepend into EVERY cached ['entries'] list.
+      // Works for any date — the server invalidation will refetch each window
+      // and drop the row from any list whose timeframe doesn't actually contain
+      // the entry's timestamp. Brief (<200ms) cross-window flash is acceptable
+      // and far better than the previous "wait for the server" experience.
+      await queryClient.cancelQueries({ queryKey: ['entries'] });
+      const prevEntries = queryClient.getQueriesData<Entry[]>({ queryKey: ['entries'] });
+      const dateStr = vars.date || todayStr;
+      const timeStr = vars.time || `${p2(now.getHours())}:${p2(now.getMinutes())}`;
+      const syntheticTs = `${dateStr}T${timeStr}:00`;
+      const syntheticEntry: Entry = {
+        id: -Date.now(), // unique negative id so it can't collide with real rows
+        timestamp: syntheticTs,
+        type: vars.type,
+        app: vars.app,
+        amount: vars.type === 'EXPENSE' ? -Math.abs(vars.amount || 0) : Math.abs(vars.amount || 0),
+        distance_miles: vars.distance_miles || 0,
+        duration_minutes: vars.duration_minutes || 0,
+        category: vars.category,
+        note: vars.note,
+        receipt_url: vars.receipt_url,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      };
+      queryClient.setQueriesData<Entry[]>({ queryKey: ['entries'] }, (old) => {
         if (!old) return old;
-        const revenue  = isExpense ? old.revenue  : old.revenue  + amt;
-        const expenses = isExpense ? old.expenses + amt : old.expenses;
-        const profit   = revenue - expenses;
-        const miles    = old.miles + addMiles;
-        const hours    = old.hours + addHours;
-        return {
-          ...old,
-          revenue,
-          expenses,
-          profit,
-          miles,
-          hours,
-          dollars_per_mile: miles > 0 ? profit / miles : 0,
-          dollars_per_hour: hours > 0 ? profit / hours : 0,
-          goal_progress: old.goal?.target_profit
-            ? profit / old.goal.target_profit
-            : old.goal_progress ?? null,
-        };
+        // Insert preserving timestamp-desc ordering used by the server.
+        const next = [syntheticEntry, ...old];
+        next.sort((a, b) => (a.timestamp < b.timestamp ? 1 : a.timestamp > b.timestamp ? -1 : 0));
+        return next;
       });
-      return { prev };
+
+      // ---- Rollup KPIs: only patch when the entry is for today, because the
+      // window-specific math (TODAY vs THIS_WEEK vs custom range) is hard to
+      // recompute correctly here for backdated entries. The server invalidation
+      // in onSuccess reconciles ~200ms later for those cases.
+      let prevRollup: Array<[readonly unknown[], Rollup | undefined]> = [];
+      if (isToday) {
+        await queryClient.cancelQueries({ queryKey: ['rollup'] });
+        prevRollup = queryClient.getQueriesData<Rollup>({ queryKey: ['rollup'] });
+        const isExpense = vars.type === 'EXPENSE';
+        const amt = Math.abs(vars.amount || 0);
+        const addMiles = vars.distance_miles || 0;
+        const addHours = (vars.duration_minutes || 0) / 60;
+        queryClient.setQueriesData<Rollup>({ queryKey: ['rollup'] }, (old) => {
+          if (!old) return old;
+          const revenue  = isExpense ? old.revenue  : old.revenue  + amt;
+          const expenses = isExpense ? old.expenses + amt : old.expenses;
+          const profit   = revenue - expenses;
+          const miles    = old.miles + addMiles;
+          const hours    = old.hours + addHours;
+          return {
+            ...old,
+            revenue,
+            expenses,
+            profit,
+            miles,
+            hours,
+            dollars_per_mile: miles > 0 ? profit / miles : 0,
+            dollars_per_hour: hours > 0 ? profit / hours : 0,
+            goal_progress: old.goal?.target_profit
+              ? profit / old.goal.target_profit
+              : old.goal_progress ?? null,
+          };
+        });
+      }
+      return { prev: prevRollup, prevEntries };
     },
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
@@ -1417,14 +1455,20 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       onClose();
     },
     onError: (_err, _vars, ctx) => {
-      // Roll back the optimistic patch using the snapshot we took in
+      // Roll back both optimistic patches using the snapshots we took in
       // onMutate, then invalidate to be doubly sure we converge on truth.
       if (ctx?.prev) {
         for (const [key, data] of ctx.prev) {
           queryClient.setQueryData(key, data);
         }
       }
+      if (ctx?.prevEntries) {
+        for (const [key, data] of ctx.prevEntries) {
+          queryClient.setQueryData(key, data);
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
       Alert.alert('Error', 'Failed to save entry.');
     },
   });
