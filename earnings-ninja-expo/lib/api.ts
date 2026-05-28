@@ -1,11 +1,13 @@
 import Constants from 'expo-constants';
 import { getToken } from './tokenStorage';
 
-// Priority: EXPO_PUBLIC env var → app.json extra → fallback dev URL
+// Priority: EXPO_PUBLIC env var → app.json extra → production fallback.
+// Production fallback points at the Railway-hosted backend so the shipped
+// iOS build keeps working even if the Replit dev environment is offline.
 export const API_BASE =
   process.env.EXPO_PUBLIC_API_BASE ||
   (Constants.expoConfig?.extra?.apiBase as string | undefined) ||
-  'https://b21ea173-8d4d-4445-a8db-6d8c912d7dc4-00-l5lnc6lhje6p.picard.replit.dev';
+  'https://earningsninja.app';
 
 async function getAuthToken(): Promise<string | null> {
   return getToken();
