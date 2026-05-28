@@ -66,8 +66,12 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
                 overflow: 'hidden',
               }}
             >
-              {/* Stop propagation so taps inside the card don't dismiss */}
-              <Pressable onPress={() => {}}>
+              {/* Stop propagation so taps inside the card don't dismiss.
+                  flexShrink: 1 + column layout lets the ScrollView claim every
+                  pixel between the fixed header and fixed action bar, so all
+                  content (receipt image, notes, etc.) is reachable by scrolling
+                  no matter the screen size. */}
+              <Pressable onPress={() => {}} style={{ flexShrink: 1, flexDirection: 'column' }}>
                 {/* Header */}
                 <View style={{
                   paddingHorizontal: 18, paddingTop: 16, paddingBottom: 14,
@@ -97,7 +101,12 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
                   </Pressable>
                 </View>
 
-                <ScrollView style={{ maxHeight: 440 }} contentContainerStyle={{ padding: 18, gap: 14 }}>
+                <ScrollView
+                  style={{ flexShrink: 1 }}
+                  contentContainerStyle={{ padding: 18, gap: 14, paddingBottom: 24 }}
+                  showsVerticalScrollIndicator
+                  bounces
+                >
                   {/* Amount */}
                   <View style={{
                     backgroundColor: CARD,
