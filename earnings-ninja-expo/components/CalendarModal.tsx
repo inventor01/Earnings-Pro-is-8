@@ -291,16 +291,23 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
   const longPressFiredRef = useRef(false);
 
   // Tap toggles a single day in/out of the selection.
+  // IMPORTANT: decide add-vs-remove from the *current* selectedDays here,
+  // BEFORE entering the updater. The functional updater can be invoked
+  // more than once per call (StrictMode dev double-invoke, concurrent
+  // render replay), and a toggle written as `if (has) delete else add`
+  // inside the updater would flip twice and cancel itself out — that's
+  // the "only the most recent tap stays selected" bug.
   function handleDayPress(dateStr: string) {
     if (longPressFiredRef.current) {
       longPressFiredRef.current = false;
       return;
     }
     hTap();
+    const willAdd = !selectedDays.has(dateStr);
     setSelectedDays(prev => {
       const next = new Set(prev);
-      if (next.has(dateStr)) next.delete(dateStr);
-      else next.add(dateStr);
+      if (willAdd) next.add(dateStr);
+      else next.delete(dateStr);
       return next;
     });
   }
@@ -713,7 +720,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                     key={idx}
                     onPress={() => handleDayPress(cell.dateStr)}
                     onLongPress={() => handleDayLongPress(cell.dateStr)}
-                    delayLongPress={280}
+                    delayLongPress={500}
                     style={{
                       width: cellSize,
                       height: cellHeight,
