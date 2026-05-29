@@ -1439,20 +1439,27 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
           };
         });
       }
+      // Close the modal immediately so the user sees the already-patched
+      // dashboard right away, instead of waiting for the network round-trip
+      // to the backend (which can be slow / cold-start). Use a neutral tap
+      // haptic here — the *success* notification haptic is reserved for
+      // onSuccess so we don't signal success on an entry that later 4xx-fails
+      // and gets rolled back in onError.
+      hTap();
+      reset();
+      onClose();
       return { prev: prevRollup, prevEntries };
     },
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['rollup'] });
       queryClient.invalidateQueries({ queryKey: ['goal'] });
+      hNotifyOk();
       // Remember the last app the user logged revenue against — the iOS
       // widget's quick-add buttons use this as the platform.
       if (vars.type === 'ORDER' && vars.app) {
         widgetSync.pushLastApp(vars.app);
       }
-      hNotifyOk();
-      reset();
-      onClose();
     },
     onError: (_err, _vars, ctx) => {
       // Roll back both optimistic patches using the snapshots we took in
