@@ -53,3 +53,6 @@ dist-ssr/
 attached_assets/
 .replit
 replit.nix
+
+# Replit global tool cache (dotslash, eas-cli, npm, etc.) — must never be uploaded to EAS Build
+.cache/
