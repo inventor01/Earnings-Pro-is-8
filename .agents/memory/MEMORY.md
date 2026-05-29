@@ -1,0 +1,1 @@
+- [EAS / Expo build & OTA gotchas](eas-expo-build.md) — react/react-dom must be pinned in lockstep for `npm ci`; OTA needs channel↔branch link; fingerprint policy gates native changes.
