@@ -1,1 +1,2 @@
 - [EAS / Expo build & OTA gotchas](eas-expo-build.md) — react/react-dom must be pinned in lockstep for `npm ci`; OTA needs channel↔branch link; fingerprint policy gates native changes.
+- [EAS OTA not landing](eas-ota-not-landing.md) — OTA published+served correctly but never appears? suspect device runs an older binary w/o expo-updates (identical version+buildNumber blocks reinstall); enable autoIncrement on internal profiles.
