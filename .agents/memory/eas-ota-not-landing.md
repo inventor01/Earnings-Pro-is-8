@@ -21,6 +21,23 @@ When an `eas update` looks correctly published yet the change never shows up on 
 
 **Root-cause that bit us:** two internal-distribution iOS builds both had version `1.0.0` / build number `1`. The first (pre-OTA) had no expo-updates; the second added it. Installing the second over the first did **not** replace the app — iOS treats identical version+build as "already installed" — so the phone kept running the updater-less binary.
 
-**Fix:** delete the app and reinstall the expo-updates build fresh. **Prevent recurrence:** set `autoIncrement: true` on internal `eas.json` build profiles (was only on `production`) so every build gets a distinct build number and installs cleanly over the prior one.
+**Fix:** delete the app and reinstall the expo-updates build fresh. To give future builds distinct build numbers, `autoIncrement: true` on internal `eas.json` profiles helps — BUT read the fingerprint trap below first, because editing `eas.json` changes the runtimeVersion fingerprint.
 
 **Two-launch rule (real, but not this bug):** with default `fallbackToCacheTimeout: 0`, launch #1 downloads in background, launch #2 (after full quit) applies. Rule out the binary issue above before chasing launch timing.
+
+## Fingerprint trap: editing eas.json/app.json silently breaks OTA delivery to installed builds
+
+**Why:** `runtimeVersion: { policy: "fingerprint" }` means an OTA only reaches a build whose native fingerprint == the update's runtimeVersion. **`eas.json` IS a fingerprint source** (confirmed via `npx expo-updates fingerprint:generate` — it lists `eas.json` among ~205 file sources, alongside `app.json`, native dirs, patches, autolinking config). So a one-line `eas.json` edit (e.g. adding `autoIncrement: true` to the `preview` profile) changes the fingerprint hash, and an `eas update` published from that tree gets the NEW runtimeVersion — which no already-installed build matches. The update lands on the branch and looks published, but every installed device silently ignores it.
+
+**How to apply:** Before publishing an OTA meant for an *already-installed* build, confirm the working tree fingerprints to that build's runtimeVersion:
+```
+npx expo-updates fingerprint:generate --platform ios   # JSON; top-level .hash is the RTV
+```
+Cross-check against the installed build's RTV (`eas update:list --branch <ch>` shows the RTV of updates that DID reach it, or `eas build:view <id>`). If they differ, find the fingerprint-source file you changed (commonly `eas.json`, `app.json`, a new native dep, an icon/splash) and revert it to its build-time content, then recompute until the hash matches. Only THEN publish. JS/TS source changes do NOT affect the fingerprint — that's exactly what OTA is for.
+
+## Publishing eas update from the Replit env (the part that actually fights you)
+- **Detached background processes get reaped** (~1-2 min, silent, nondeterministic kill point) regardless of `setsid nohup … & disown`. They will never finish a ~3-5 min export+upload. This is NOT OOM — fewer metro workers did not help and the kill point varied (73/87/93/95%).
+- **Use a temporary workflow instead** (`configureWorkflow({name, command:"bash /tmp/wrapper.sh", outputType:"console"})`, no `waitForPort`). Workflows persist across tool calls. Wrapper pattern: run the publish, `touch /tmp/done` sentinel, then `sleep infinity` so the supervisor doesn't restart-loop the one-shot. Poll for the sentinel, verify with `eas update:list`, then `removeWorkflow`.
+- **Keep the metro cache warm** (do NOT `rm -rf /tmp/metro-cache` between attempts) — a warm cache bundles in ~30-40s vs ~90s cold, so the publish finishes well within a workflow's life.
+- `CI=1` gives line-by-line metro progress (no spinner buffering). iOS-only (`--platform ios`) halves the work.
+- Backend/Frontend/Landing workflows **auto-restart** when killed, so you can't free RAM that way; killing them with `pkill` also kills your own shell (exit 143). Don't bother.
