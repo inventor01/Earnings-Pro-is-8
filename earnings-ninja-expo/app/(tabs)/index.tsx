@@ -2512,6 +2512,7 @@ export default function DashboardScreen() {
             >
               EARNINGS{' '}
               <Text style={{ color: PRIMARY }}>NINJA</Text>
+              <Text style={{ color: '#22c55e', fontSize: 11, fontWeight: '700' }}>  OTA ✓</Text>
             </Text>
           </View>
           {/* Right icon group: fixed-size, never shrinks, always visible. */}
