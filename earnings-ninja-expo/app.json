@@ -3,6 +3,12 @@
     "name": "Earnings Ninja",
     "slug": "earnings-ninja",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d0be520b-c231-4a05-9f34-24fd35a24935"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
