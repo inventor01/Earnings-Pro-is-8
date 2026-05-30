@@ -1530,9 +1530,22 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       return { prev: prevRollup, prevEntries };
     },
     onSuccess: (_data, vars) => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
-      queryClient.invalidateQueries({ queryKey: ['goal'] });
+      // `createEntry` returns a synthetic, NEGATIVE-id Entry when the POST
+      // failed (flaky network while driving) and the entry was only QUEUED
+      // offline — the server does NOT have the row yet. Invalidating in that
+      // case refetches stale server data and WIPES the optimistic dashboard
+      // patch, so the KPI ticks up for a moment and then snaps back to the old
+      // number (it only "sticks" after the queue drains on next foreground —
+      // i.e. after the user reopens the app). So only reconcile with the
+      // server when the entry was actually persisted (positive id); otherwise
+      // keep the optimistic state and let the foreground drain in _layout.tsx
+      // invalidate once the row really lands.
+      const persisted = typeof _data?.id === 'number' && _data.id > 0;
+      if (persisted) {
+        queryClient.invalidateQueries({ queryKey: ['entries'] });
+        queryClient.invalidateQueries({ queryKey: ['rollup'] });
+        queryClient.invalidateQueries({ queryKey: ['goal'] });
+      }
       hNotifyOk();
       // Remember the last app the user logged revenue against — the iOS
       // widget's quick-add buttons use this as the platform, and the Add Entry
