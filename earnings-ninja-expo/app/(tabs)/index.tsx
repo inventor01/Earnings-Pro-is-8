@@ -29,6 +29,11 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 import { widgetSync } from '@/lib/widgetSync';
 import { useLocalSearchParams, router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Persists the platform the user most recently logged an ORDER against, so the
+// Add Entry modal can default new orders to it (Expenses still default to OTHER).
+const LAST_ORDER_APP_KEY = 'last_order_app';
 
 // Safe haptics — silently ignored on simulators / devices without haptic engine
 const hTap = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -935,7 +940,7 @@ function FormInput({
 }
 
 function DetailsForm({
-  isExp, amount, entryType, setEntryType, app, setApp, category, setCategory,
+  isExp, amount, entryType, setEntryType, app, setApp, appAutoFilled, lastAppLabel, category, setCategory,
   miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
   receiptUri, onPickReceipt, onRemoveReceipt,
   entryDate, showDatePicker, onToggleDatePicker, onChangeDate,
@@ -946,6 +951,8 @@ function DetailsForm({
   setEntryType: (t: EntryType) => void;
   app: AppType;
   setApp: (a: AppType) => void;
+  appAutoFilled: boolean;
+  lastAppLabel: string;
   category: ExpenseCategory;
   setCategory: (c: ExpenseCategory) => void;
   miles: string;
@@ -1038,7 +1045,22 @@ function DetailsForm({
           {/* App (hidden for EXPENSE — mirrors web) */}
           {entryType !== 'EXPENSE' && (
             <View>
-              <FieldLabel>🚗 App</FieldLabel>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <FieldLabel>🚗 App</FieldLabel>
+                {appAutoFilled && (
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 4,
+                    backgroundColor: '#dcfce7', borderColor: '#86efac', borderWidth: 1,
+                    borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3,
+                    marginBottom: 6,
+                  }}>
+                    <Ionicons name="time-outline" size={11} color="#15803d" />
+                    <Text style={{ color: '#15803d', fontSize: 11, fontWeight: '700' }}>
+                      Last used: {lastAppLabel}
+                    </Text>
+                  </View>
+                )}
+              </View>
               <PillSelect
                 scroll
                 options={APPS.map(a => ({ key: a.key, label: a.label, color: a.color + '55' }))}
@@ -1231,6 +1253,15 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
   // to UTC. Editing flow seeds this from the entry's existing timestamp.
   const [entryDate, setEntryDate]   = useState<Date>(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  // True while the platform was auto-filled from the last-used order platform
+  // and the user hasn't manually overridden it. Drives the "Last used: …" hint.
+  const [appAutoFilled, setAppAutoFilled] = useState(false);
+  // The async last-used read can resolve after the user has already picked a
+  // platform or switched the entry type. These refs let the late callback bail
+  // out instead of clobbering a manual choice or an EXPENSE→Other nudge.
+  const appTouchedRef = useRef(false);
+  const entryTypeRef  = useRef<EntryType>(entryType);
+  useEffect(() => { entryTypeRef.current = entryType; }, [entryType]);
 
   const reset = () => {
     setStep('calc'); setAmount('0'); setMode('add');
@@ -1238,6 +1269,15 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
     setMiles(''); setMinutes(''); setNote('');
     setReceiptUri(null); setReceiptDataUri(null);
     setEntryDate(new Date()); setShowDatePicker(false);
+    setAppAutoFilled(false);
+  };
+
+  // User manually changed the platform → drop the auto-fill flag (and its hint)
+  // and mark the picker "touched" so a late last-used read can't overwrite it.
+  const handleAppChange = (a: AppType) => {
+    appTouchedRef.current = true;
+    setApp(a);
+    setAppAutoFilled(false);
   };
 
   // Apply widget-driven prefill whenever the modal opens with a prefill set.
@@ -1252,6 +1292,30 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
     if (prefill.amount && /^\d+(\.\d+)?$/.test(prefill.amount)) {
       setAmount(prefill.amount);
     }
+  }, [visible, prefill, editing]);
+
+  // Default new ORDER entries to the platform the user last logged an order
+  // against (persisted in AsyncStorage). Read fresh from storage on each open
+  // so we always reflect the latest save. Skipped for edits and for EXPENSE
+  // prefills (expenses keep defaulting to OTHER).
+  useEffect(() => {
+    if (!visible) return;
+    // Fresh open → no manual interaction yet.
+    appTouchedRef.current = false;
+    if (editing || prefill?.type === 'EXPENSE') return;
+    let cancelled = false;
+    AsyncStorage.getItem(LAST_ORDER_APP_KEY).then((stored) => {
+      // Bail if the modal closed, the user already picked a platform, or the
+      // entry is no longer an ORDER (e.g. switched to EXPENSE) — never clobber
+      // a manual choice or the EXPENSE→Other default with this late read.
+      if (cancelled || !stored) return;
+      if (appTouchedRef.current || entryTypeRef.current !== 'ORDER') return;
+      if (VALID_APPS.has(stored) && stored !== 'OTHER') {
+        setApp(stored as AppType);
+        setAppAutoFilled(true);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
   }, [visible, prefill, editing]);
 
   // Editing an existing entry: prefill every field from the server row and
@@ -1281,7 +1345,10 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
   // way back to revenue — if the user picked OTHER on purpose we'd erase that
   // choice. `reset()` restores DOORDASH when the modal closes & re-opens.
   useEffect(() => {
-    if (entryType === 'EXPENSE' && app === 'DOORDASH') setApp('OTHER');
+    if (entryType === 'EXPENSE' && (app === 'DOORDASH' || appAutoFilled)) {
+      setApp('OTHER');
+      setAppAutoFilled(false);
+    }
   }, [entryType]);
 
   // Image-picker helpers — request permissions, then offer Camera vs Library
@@ -1456,9 +1523,11 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       queryClient.invalidateQueries({ queryKey: ['goal'] });
       hNotifyOk();
       // Remember the last app the user logged revenue against — the iOS
-      // widget's quick-add buttons use this as the platform.
+      // widget's quick-add buttons use this as the platform, and the Add Entry
+      // modal defaults new orders to it (read back via LAST_ORDER_APP_KEY).
       if (vars.type === 'ORDER' && vars.app) {
         widgetSync.pushLastApp(vars.app);
+        AsyncStorage.setItem(LAST_ORDER_APP_KEY, vars.app).catch(() => {});
       }
     },
     onError: (_err, _vars, ctx) => {
@@ -1595,7 +1664,9 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
               entryType={entryType}
               setEntryType={setEntryType}
               app={app}
-              setApp={setApp}
+              setApp={handleAppChange}
+              appAutoFilled={appAutoFilled && entryType !== 'EXPENSE'}
+              lastAppLabel={APPS.find(a => a.key === app)?.label ?? app}
               category={category}
               setCategory={setCategory}
               miles={miles}
