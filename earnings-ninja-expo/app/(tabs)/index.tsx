@@ -3658,12 +3658,11 @@ export default function DashboardScreen() {
                     <Pressable
                       onPress={() => { hTap(); setSelectionMode(true); }}
                       hitSlop={6}
-                      style={{ flexShrink: 1, marginRight: 8 }}
+                      style={{ flex: 1, minWidth: 0, marginRight: 8 }}
                     >
                       <Text
                         numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.8}
+                        ellipsizeMode="tail"
                         style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}
                       >
                         {isSearching ? `Results (${filteredEntries.length})` : `Entries (${entries.length})`}
