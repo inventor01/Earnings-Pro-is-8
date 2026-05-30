@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, Entry, APP_LABELS, APP_COLORS } from '../lib/api';
 import { useTheme } from '../lib/theme';
+import { useHiddenMode, MASK } from '../lib/hiddenMode';
 
 // ─── Theme palette is read inside each component via useTheme() ──────────────
 // Heat-map intensity overlays (kept module-level since alpha-tinted shades
@@ -113,6 +114,7 @@ interface CalendarModalProps {
 
 export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries }: CalendarModalProps) {
   const { BG, SURFACE, CARD, BORDER, DIVIDER, TEXT, LABEL, MUTED, PRIMARY, GREEN, RED, ON_PRIMARY } = useTheme();
+  const { hidden } = useHiddenMode();
   const insets = useSafeAreaInsets();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
@@ -557,7 +559,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                 color: monthTotals.profit >= 0 ? GREEN : RED,
                 fontSize: 14, fontWeight: '900', marginTop: 2,
               }}>
-                ${monthTotals.profit.toFixed(0)}
+                {hidden ? MASK : `$${monthTotals.profit.toFixed(0)}`}
               </Text>
             </View>
             <View style={{ width: 1, backgroundColor: BORDER, marginVertical: 8 }} />
@@ -570,7 +572,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                 Revenue
               </Text>
               <Text style={{ color: GREEN, fontSize: 14, fontWeight: '900', marginTop: 2 }}>
-                ${monthTotals.revenue.toFixed(0)}
+                {hidden ? MASK : `$${monthTotals.revenue.toFixed(0)}`}
               </Text>
             </View>
             <View style={{ width: 1, backgroundColor: BORDER, marginVertical: 8 }} />
@@ -583,7 +585,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                 Expenses
               </Text>
               <Text style={{ color: RED, fontSize: 14, fontWeight: '900', marginTop: 2 }}>
-                ${monthTotals.expenses.toFixed(0)}
+                {hidden ? MASK : `$${monthTotals.expenses.toFixed(0)}`}
               </Text>
             </View>
             <View style={{ width: 1, backgroundColor: BORDER, marginVertical: 8 }} />
@@ -797,9 +799,9 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
               </>
             ) : (
               <>
-                <LegendItem color={GREEN_LT} label="< $50" />
-                <LegendItem color={GREEN_MD} label="$50-100" />
-                <LegendItem color={GREEN_HI} label="> $100" />
+                <LegendItem color={GREEN_LT} label={hidden ? 'Low' : '< $50'} />
+                <LegendItem color={GREEN_MD} label={hidden ? 'Medium' : '$50-100'} />
+                <LegendItem color={GREEN_HI} label={hidden ? 'High' : '> $100'} />
                 <LegendItem color={RED_LT} label="Loss" />
               </>
             )}
@@ -891,9 +893,9 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                 borderBottomWidth: 1, borderBottomColor: DIVIDER,
               }}>
                 <DayStat label="Entries"  value={`${selectionTotals.entryCount}`}             color={TEXT} />
-                <DayStat label="Revenue"  value={`$${selectionTotals.revenue.toFixed(2)}`}    color={GREEN} />
-                <DayStat label="Expenses" value={`$${selectionTotals.expenses.toFixed(2)}`}   color={RED} />
-                <DayStat label="Net"      value={`$${selectionTotals.profit.toFixed(2)}`}     color={selectionTotals.profit >= 0 ? GREEN : RED} last />
+                <DayStat label="Revenue"  value={hidden ? MASK : `$${selectionTotals.revenue.toFixed(2)}`}    color={GREEN} />
+                <DayStat label="Expenses" value={hidden ? MASK : `$${selectionTotals.expenses.toFixed(2)}`}   color={RED} />
+                <DayStat label="Net"      value={hidden ? MASK : `$${selectionTotals.profit.toFixed(2)}`}     color={selectionTotals.profit >= 0 ? GREEN : RED} last />
               </View>
 
               {/* Apply to Dashboard */}

@@ -5,6 +5,7 @@ import {
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
+import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import {
   Entry, APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, parseServerDate,
 } from '@/lib/api';
@@ -22,6 +23,7 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
     TEXT, LABEL, MUTED, RED, GREEN, DIVIDER, PRIMARY, ON_PRIMARY,
     SURFACE, CARD, BORDER,
   } = useTheme();
+  const { hidden } = useHiddenMode();
 
   if (!entry) return null;
 
@@ -127,7 +129,7 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
                       color: isExpense ? RED : GREEN,
                       fontSize: 36, fontWeight: '900', marginTop: 4,
                     }}>
-                      {isExpense ? '−' : '+'}${Math.abs(Number(entry.amount)).toFixed(2)}
+                      {hidden ? MASK : `${isExpense ? '−' : '+'}$${Math.abs(Number(entry.amount)).toFixed(2)}`}
                     </Text>
                   </View>
 

@@ -27,6 +27,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
+import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import { widgetSync } from '@/lib/widgetSync';
 import { useLocalSearchParams, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -90,13 +91,16 @@ function PressScale({
 
 // ─── AnimatedNumber: smooth count-up via requestAnimationFrame ───────────────
 function AnimatedNumber({
-  value, format, style, duration = 700,
+  value, format, style, duration = 700, hideable = true,
 }: {
   value: number;
   format: (n: number) => string;
   style?: TextStyle | TextStyle[];
   duration?: number;
+  // Monetary values are hidden in Hidden Mode; counts pass hideable={false}.
+  hideable?: boolean;
 }) {
+  const { hidden } = useHiddenMode();
   const [display, setDisplay] = useState(value);
   // Track the latest *rendered* value so that if a new target arrives
   // mid-animation we tween from where we currently are (no snap/jitter).
@@ -121,6 +125,7 @@ function AnimatedNumber({
     return () => cancelAnimationFrame(raf);
   }, [value, duration]);
 
+  if (hidden && hideable) return <Text style={style}>{MASK}</Text>;
   return <Text style={style}>{format(display)}</Text>;
 }
 
@@ -453,7 +458,7 @@ function ProfitChart({
 
 // ─── Small Stat Card (subtle yellow neon outline + animated value) ──────────
 function StatCard({
-  label, value, icon, numericValue, format, accent,
+  label, value, icon, numericValue, format, accent, hideable = true,
 }: {
   label: string;
   value: string;
@@ -461,8 +466,10 @@ function StatCard({
   numericValue?: number;
   format?: (n: number) => string;
   accent?: string;
+  hideable?: boolean;
 }) {
   const { SURFACE, TEXT, LABEL, PRIMARY } = useTheme();
+  const { hidden } = useHiddenMode();
   const acc = accent ?? PRIMARY;
   return (
     <View style={[
@@ -481,10 +488,13 @@ function StatCard({
         <AnimatedNumber
           value={numericValue}
           format={format}
+          hideable={hideable}
           style={{ color: TEXT, fontSize: 17, fontWeight: '800' }}
         />
       ) : (
-        <Text style={{ color: TEXT, fontSize: 17, fontWeight: '800' }}>{value}</Text>
+        <Text style={{ color: TEXT, fontSize: 17, fontWeight: '800' }}>
+          {hidden && hideable ? MASK : value}
+        </Text>
       )}
       <Text style={{ color: LABEL, fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 2 }}>
         {label}
@@ -512,6 +522,7 @@ function EntryRow({
   onToggleSelect?: (id: number) => void;
 }) {
   const { TEXT, LABEL, MUTED, RED, GREEN, DIVIDER, PRIMARY, PRI_LITE } = useTheme();
+  const { hidden } = useHiddenMode();
   const isExpense = entry.amount < 0;
   const appColor  = APP_COLORS[entry.app] || MUTED;
   const time      = parseServerDate(entry.timestamp).toLocaleTimeString('en-US', {
@@ -570,7 +581,7 @@ function EntryRow({
         color: isExpense ? RED : GREEN,
         fontSize: 15, fontWeight: '700',
       }}>
-        {isExpense ? '-' : '+'}${Math.abs(Number(entry.amount)).toFixed(2)}
+        {hidden ? MASK : `${isExpense ? '-' : '+'}$${Math.abs(Number(entry.amount)).toFixed(2)}`}
       </Text>
       {!selectionMode && (
         <>
@@ -1919,6 +1930,7 @@ function ImportCsvRow({ onDone }: { onDone: () => void }) {
 function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { BG, SURFACE, BORDER, PRIMARY, PRI_LITE, TEXT, MUTED, LABEL, RED, RED_LT, ON_PRIMARY } = useTheme();
   const { themeName, setThemeName } = useThemeControls();
+  const { hidden, toggle: toggleHidden } = useHiddenMode();
   const { logout, user } = useAuth();
   const queryClient = useQueryClient();
   const [editingGoal, setEditingGoal] = useState<TimeframeType | null>(null);
@@ -2014,6 +2026,42 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           <Ionicons name="chevron-forward" size={18} color={MUTED} />
         </Pressable>
 
+        {/* Privacy */}
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+          🕶️ Privacy
+        </Text>
+        <Pressable
+          onPress={() => { hTap(); toggleHidden(); }}
+          style={[
+            {
+              flexDirection: 'row', alignItems: 'center', gap: 12,
+              backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1,
+              borderColor: hidden ? PRIMARY : BORDER,
+              padding: 14, marginBottom: 24,
+            },
+            hidden ? neonGlow(PRIMARY, 10, 0.25) : undefined,
+          ].filter(Boolean) as ViewStyle[]}
+        >
+          <View style={{
+            width: 36, height: 36, borderRadius: 18,
+            backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Ionicons name={hidden ? 'eye-off' : 'eye'} size={18} color={PRIMARY} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Enable Hidden Mode</Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>Hide all dollar amounts across the app</Text>
+          </View>
+          {/* Pill-style toggle (no native Switch — keeps Dark Neon look) */}
+          <View style={{
+            width: 48, height: 28, borderRadius: 14, padding: 3,
+            backgroundColor: hidden ? PRIMARY : BORDER,
+            alignItems: hidden ? 'flex-end' : 'flex-start', justifyContent: 'center',
+          }}>
+            <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: hidden ? ON_PRIMARY : SURFACE }} />
+          </View>
+        </Pressable>
+
         {/* Profit Goals */}
         <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
           🏆 Profit Goals
@@ -2032,7 +2080,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                   <Text style={{ color: TEXT, fontSize: 15, fontWeight: '600' }}>{row.label}</Text>
                 </View>
                 <Text style={{ color: PRIMARY, fontSize: 18, fontWeight: '800' }}>
-                  {target > 0 ? `$${target.toFixed(0)}` : 'Not set'}
+                  {target > 0 ? (hidden ? MASK : `$${target.toFixed(0)}`) : 'Not set'}
                 </Text>
               </View>
               {editingGoal === row.tf ? (
@@ -2300,6 +2348,7 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
     BG, SURFACE, BORDER, PRIMARY, PRI_LITE, TEXT, TEXT_MID, MUTED, LABEL,
     GREEN, GREEN_LT, RED, RED_LT, DIVIDER, ON_PRIMARY,
   } = useTheme();
+  const { hidden } = useHiddenMode();
   const insets = useSafeAreaInsets();
   const [aPeriod, setAPeriod] = useState<AnalyticsPeriod>('week');
 
@@ -2400,15 +2449,15 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
   const profit  = rollup?.profit ?? 0;
   const isProfit = profit >= 0;
 
-  const kpis: { label: string; value: string; color?: string }[] = [
-    { label: 'Net Profit',     value: `${isProfit ? '' : '-'}$${Math.abs(profit).toFixed(2)}`, color: isProfit ? GREEN : RED },
-    { label: '$ / Hour',       value: `$${(rollup?.dollars_per_hour ?? 0).toFixed(2)}`, color: PRIMARY },
-    { label: '$ / Mile',       value: `$${(rollup?.dollars_per_mile ?? 0).toFixed(2)}` },
-    { label: 'Avg Order',      value: `$${(rollup?.average_order_value ?? 0).toFixed(2)}` },
+  const kpis: { label: string; value: string; color?: string; hide?: boolean }[] = [
+    { label: 'Net Profit',     value: `${isProfit ? '' : '-'}$${Math.abs(profit).toFixed(2)}`, color: isProfit ? GREEN : RED, hide: true },
+    { label: '$ / Hour',       value: `$${(rollup?.dollars_per_hour ?? 0).toFixed(2)}`, color: PRIMARY, hide: true },
+    { label: '$ / Mile',       value: `$${(rollup?.dollars_per_mile ?? 0).toFixed(2)}`, hide: true },
+    { label: 'Avg Order',      value: `$${(rollup?.average_order_value ?? 0).toFixed(2)}`, hide: true },
     { label: 'Total Miles',    value: `${(rollup?.miles ?? 0).toFixed(1)}` },
     { label: 'Total Hours',    value: `${(rollup?.hours ?? 0).toFixed(1)}` },
     { label: 'Miles / Day',    value: `${milesPerDay.toFixed(1)}` },
-    { label: 'Revenue',        value: `$${(rollup?.revenue ?? 0).toFixed(0)}`, color: GREEN },
+    { label: 'Revenue',        value: `$${(rollup?.revenue ?? 0).toFixed(0)}`, color: GREEN, hide: true },
   ];
 
   const sectionTitle = (text: string) => (
@@ -2480,7 +2529,7 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
                     {k.label}
                   </Text>
                   <Text style={{ color: k.color ?? TEXT, fontSize: 20, fontWeight: '900', marginTop: 6 }}>
-                    {k.value}
+                    {hidden && k.hide ? MASK : k.value}
                   </Text>
                 </View>
               ))}
@@ -2507,7 +2556,7 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
               ) : (
                 <>
                   <Text style={{ color: RED, fontSize: 22, fontWeight: '900', marginBottom: 14 }}>
-                    ${categoryData.total.toFixed(2)} <Text style={{ color: MUTED, fontSize: 12, fontWeight: '700' }}>total spend</Text>
+                    {hidden ? MASK : `$${categoryData.total.toFixed(2)}`} <Text style={{ color: MUTED, fontSize: 12, fontWeight: '700' }}>total spend</Text>
                   </Text>
                   {categoryData.rows.map(r => (
                     <View key={r.cat} style={{ marginBottom: 12 }}>
@@ -2516,7 +2565,7 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
                           {EXPENSE_EMOJIS[r.cat]} {r.cat.charAt(0) + r.cat.slice(1).toLowerCase()}
                         </Text>
                         <Text style={{ color: TEXT, fontSize: 13, fontWeight: '800' }}>
-                          ${r.amt.toFixed(2)} <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700' }}>· {r.pct.toFixed(0)}%</Text>
+                          {hidden ? MASK : `$${r.amt.toFixed(2)}`} <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700' }}>· {r.pct.toFixed(0)}%</Text>
                         </Text>
                       </View>
                       <View style={{ height: 8, borderRadius: 4, backgroundColor: DIVIDER, overflow: 'hidden' }}>
@@ -2543,7 +2592,7 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
                         <Text style={{ color: TEXT_MID, fontSize: 13, fontWeight: '600' }}>{APP_LABELS[r.app]}</Text>
                         <Text style={{ color: pos ? GREEN : RED, fontSize: 13, fontWeight: '800' }}>
-                          {pos ? '' : '-'}${Math.abs(r.amt).toFixed(2)}
+                          {hidden ? MASK : `${pos ? '' : '-'}$${Math.abs(r.amt).toFixed(2)}`}
                         </Text>
                       </View>
                       <View style={{ height: 8, borderRadius: 4, backgroundColor: DIVIDER, overflow: 'hidden' }}>
@@ -2566,6 +2615,7 @@ export default function DashboardScreen() {
     BG, SURFACE, CARD_BG, CARD, BORDER, PRIMARY, ACCENT, PRI_LITE, PRI_DARK,
     TEXT, TEXT_MID, MUTED, LABEL, DIM, GREEN, GREEN_LT, RED, RED_LT, DIVIDER, ON_PRIMARY,
   } = useTheme();
+  const { hidden, toggle: toggleHidden } = useHiddenMode();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<Period>('today');
@@ -2962,6 +3012,21 @@ export default function DashboardScreen() {
             </PressScale>
             <PressScale
               hitSlop={8}
+              onPress={() => { hTap(); toggleHidden(); }}
+              style={[
+                {
+                  width: 36, height: 36, borderRadius: 10,
+                  backgroundColor: hidden ? PRIMARY : BG,
+                  borderWidth: 1, borderColor: hidden ? PRIMARY : BORDER,
+                  alignItems: 'center', justifyContent: 'center',
+                },
+                hidden ? neonGlow(PRIMARY, 8, 0.45) : undefined,
+              ].filter(Boolean) as ViewStyle[]}
+            >
+              <Ionicons name={hidden ? 'eye-off' : 'eye'} size={17} color={hidden ? ON_PRIMARY : MUTED} />
+            </PressScale>
+            <PressScale
+              hitSlop={8}
               onPress={() => { hTap(); setShowSettings(true); }}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
@@ -2969,6 +3034,22 @@ export default function DashboardScreen() {
             </PressScale>
           </View>
         </View>
+
+        {/* ── Numbers Hidden banner ─────────────────────────────────────────── */}
+        {hidden && (
+          <View style={[
+            {
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              backgroundColor: PRI_LITE, borderBottomWidth: 1, borderBottomColor: PRIMARY + '55',
+              paddingVertical: 8, paddingHorizontal: 16,
+            },
+          ]}>
+            <Ionicons name="eye-off" size={14} color={PRIMARY} />
+            <Text style={{ color: PRIMARY, fontSize: 12, fontWeight: '700', letterSpacing: 0.5 }}>
+              Numbers Hidden — tap the eye to show
+            </Text>
+          </View>
+        )}
 
         {/* ── Period Tabs ───────────────────────────────────────────────────── */}
         <View style={{ backgroundColor: SURFACE, borderBottomWidth: 1, borderBottomColor: BORDER }}>
@@ -3207,9 +3288,9 @@ export default function DashboardScreen() {
                 {/* Three stats with count-up */}
                 <View style={{ flexDirection: 'row' }}>
                   {[
-                    { label: 'EXPENSES',  numeric: Math.abs(expenses), format: (n: number) => `$${Math.round(n)}` },
-                    { label: 'ORDERS',    numeric: orderCount,         format: (n: number) => `${Math.round(n)}` },
-                    { label: 'AVG ORDER', numeric: avgOrder,           format: (n: number) => `$${Math.round(n)}` },
+                    { label: 'EXPENSES',  numeric: Math.abs(expenses), format: (n: number) => `$${Math.round(n)}`, hideable: true },
+                    { label: 'ORDERS',    numeric: orderCount,         format: (n: number) => `${Math.round(n)}`,  hideable: false },
+                    { label: 'AVG ORDER', numeric: avgOrder,           format: (n: number) => `$${Math.round(n)}`, hideable: true },
                   ].map((stat, i) => (
                     <View
                       key={stat.label}
@@ -3227,6 +3308,7 @@ export default function DashboardScreen() {
                       <AnimatedNumber
                         value={stat.numeric}
                         format={stat.format}
+                        hideable={stat.hideable}
                         style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginTop: 2 }}
                       />
                     </View>
@@ -3242,7 +3324,7 @@ export default function DashboardScreen() {
                   <StatCard label="$/Mile" icon="📍" value={`$${perMile.toFixed(2)}`} numericValue={perMile} format={(n) => `$${n.toFixed(2)}`} />
                 </View>
                 <View style={{ flex: 1, maxWidth: '48%' }}>
-                  <StatCard label="Miles"  icon="🚗" value={miles.toFixed(1)}         numericValue={miles}   format={(n) => n.toFixed(1)} />
+                  <StatCard label="Miles"  icon="🚗" value={miles.toFixed(1)}         numericValue={miles}   format={(n) => n.toFixed(1)} hideable={false} />
                 </View>
               </View>
 
@@ -3328,9 +3410,11 @@ export default function DashboardScreen() {
                           fontSize: 22, fontWeight: '800', marginTop: 2,
                         }}>
                           {safeGoal > 0
-                            ? (isGoalLoss
-                                ? `−$${Math.abs(profit).toFixed(2)} loss / $${safeGoal.toFixed(0)}`
-                                : `$${profit.toFixed(2)} / $${safeGoal.toFixed(0)}`)
+                            ? (hidden
+                                ? MASK
+                                : (isGoalLoss
+                                    ? `−$${Math.abs(profit).toFixed(2)} loss / $${safeGoal.toFixed(0)}`
+                                    : `$${profit.toFixed(2)} / $${safeGoal.toFixed(0)}`))
                             : 'No goal set'}
                         </Text>
                       </View>
@@ -3465,10 +3549,10 @@ export default function DashboardScreen() {
                     </Pressable>
                     <View style={{ flexDirection: 'row', gap: 6 }}>
                       <View style={{ backgroundColor: GREEN_LT, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                        <Text style={{ color: GREEN, fontSize: 11, fontWeight: '700' }}>+${revenue.toFixed(2)}</Text>
+                        <Text style={{ color: GREEN, fontSize: 11, fontWeight: '700' }}>{hidden ? MASK : `+$${revenue.toFixed(2)}`}</Text>
                       </View>
                       <View style={{ backgroundColor: RED_LT, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                        <Text style={{ color: RED, fontSize: 11, fontWeight: '700' }}>-${Math.abs(expenses).toFixed(2)}</Text>
+                        <Text style={{ color: RED, fontSize: 11, fontWeight: '700' }}>{hidden ? MASK : `-$${Math.abs(expenses).toFixed(2)}`}</Text>
                       </View>
                     </View>
                   </View>
