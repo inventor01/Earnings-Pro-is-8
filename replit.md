@@ -40,6 +40,10 @@ The backend is built with FastAPI (Python 3.11) and SQLAlchemy ORM for SQLite. T
 - **@expo/vector-icons**: Icons used in the application.
 - **expo-secure-store**: Secure storage for authentication tokens.
 - **expo-linking**: Deep linking functionality.
+## Recent Changes (May 30, 2026 — Default to last-used platform for Orders)
+- **Add Entry modal now defaults new ORDER entries to the last-used platform** (persisted in AsyncStorage under `last_order_app`, written on each successful ORDER save alongside the existing `widgetSync.pushLastApp`). A small green "Last used: <Platform>" pill shows next to the 🚗 App selector when the platform was auto-filled; it clears the moment the user manually changes the platform. Expenses still default to OTHER, and edit mode / widget prefill are unaffected. All in `earnings-ninja-expo/app/(tabs)/index.tsx` (no native deps → OTA-deployable).
+- **Async-default race guard**: the last-used read happens on modal open and could resolve after the user picked a platform or switched to EXPENSE. Guarded with `appTouchedRef` (set on manual change, reset per open) + `entryTypeRef` so the late callback bails instead of clobbering a manual choice or the EXPENSE→Other nudge. See `.agents/memory/addentry-modal-defaults.md`.
+
 ## Recent Changes (May 30, 2026 — History sort + Analytics page)
 - **Sort transactions (History list)**: added a Sort header icon (between calendar & settings) opening a Dark Neon bottom-sheet with Newest First (default), Oldest First, Highest Amount, Lowest Amount, By Platform (A–Z). Active sort shows a checkmark, a PRIMARY-highlighted header icon, and a short label on the "Entries (N)" line. Sorting runs over the already search-filtered list and composes with multi-select/calendar/search. All in `earnings-ninja-expo/app/(tabs)/index.tsx` (no native deps → OTA-deployable).
 - **Multi-select pruning fix**: bulk-select pruning now keys off the search-filtered visible set (`filteredEntries`), not the raw period set, so narrowing a search can no longer leave hidden rows selected for deletion. See `.agents/memory/history-list-selection.md`.
