@@ -29,6 +29,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import { widgetSync } from '@/lib/widgetSync';
+import { exportEntriesCsv } from '@/lib/csvExport';
 import { useLocalSearchParams, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -1927,6 +1928,65 @@ function ImportCsvRow({ onDone }: { onDone: () => void }) {
   );
 }
 
+function ExportCsvRow() {
+  const { SURFACE, BORDER, PRI_LITE, PRIMARY, TEXT, MUTED } = useTheme();
+  const [busy, setBusy] = useState(false);
+
+  const onExport = async () => {
+    if (busy) return;
+    try {
+      setBusy(true);
+      hTap();
+      // Pull the entire history with a deliberately wide date window so the
+      // export is not limited to the currently-selected dashboard period.
+      const from = new Date('2000-01-01T00:00:00Z').toISOString();
+      const to = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const all = await api.getEntriesInRange(from, to, 100000);
+      const result = await exportEntriesCsv(all, 'earnings-ninja-all');
+      if (result === 'empty') {
+        Alert.alert('Nothing to export', 'You have no entries yet.');
+      } else if (result === 'unavailable') {
+        Alert.alert('Sharing unavailable', 'Could not open the share sheet on this device.');
+      } else {
+        hNotifyOk();
+      }
+    } catch (e: any) {
+      Alert.alert('Export failed', e?.message || 'Could not export your entries.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={onExport}
+      disabled={busy}
+      style={{
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER,
+        padding: 14, opacity: busy ? 0.6 : 1,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
+      }}
+    >
+      <View style={{
+        width: 36, height: 36, borderRadius: 18,
+        backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Ionicons name={busy ? 'hourglass' : 'cloud-download'} size={18} color={PRIMARY} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>
+          {busy ? 'Exporting…' : 'Export to CSV'}
+        </Text>
+        <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>
+          Save all of your entries as a spreadsheet file
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={MUTED} />
+    </Pressable>
+  );
+}
+
 function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { BG, SURFACE, BORDER, PRIMARY, PRI_LITE, TEXT, MUTED, LABEL, RED, RED_LT, ON_PRIMARY } = useTheme();
   const { themeName, setThemeName } = useThemeControls();
@@ -2186,7 +2246,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             category, note. Order doesn't matter; unknown columns are ignored. */}
         <View style={{ height: 28 }} />
         <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
-          📥  Import Data
+          📂  Import / Export Data
         </Text>
         <ImportCsvRow
           onDone={() => {
@@ -2194,6 +2254,8 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             queryClient.invalidateQueries({ queryKey: ['rollup'] });
           }}
         />
+        <View style={{ height: 12 }} />
+        <ExportCsvRow />
 
         {/* Delete Account — Apple Guideline 5.1.1(v) requires apps that support */}
         {/* account creation to also support in-app account deletion. */}
@@ -2631,6 +2693,7 @@ export default function DashboardScreen() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [detailEntry, setDetailEntry] = useState<Entry | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [exportingSel, setExportingSel] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | undefined>(undefined);
   const toggleSelect = useCallback((id: number) => {
     setSelectedIds(prev => {
@@ -3501,6 +3564,48 @@ export default function DashboardScreen() {
                           style={{ paddingHorizontal: 10, paddingVertical: 6 }}
                         >
                           <Text style={{ color: LABEL, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+                        </Pressable>
+                        <Pressable
+                          disabled={exportingSel}
+                          onPress={async () => {
+                            // Export the selected entries; if nothing is
+                            // explicitly selected, fall back to the entire
+                            // currently-filtered/visible set.
+                            const set = selectedIds.size > 0
+                              ? filteredEntries.filter(e => selectedIds.has(e.id))
+                              : filteredEntries;
+                            if (set.length === 0) {
+                              Alert.alert('Nothing to export', 'There are no entries in the current view.');
+                              return;
+                            }
+                            try {
+                              setExportingSel(true);
+                              hTap();
+                              const result = await exportEntriesCsv(set, 'earnings-ninja-selection');
+                              if (result === 'unavailable') {
+                                Alert.alert('Sharing unavailable', 'Could not open the share sheet on this device.');
+                              } else if (result === 'shared') {
+                                hNotifyOk();
+                              }
+                            } catch (e: any) {
+                              Alert.alert('Export failed', e?.message || 'Could not export these entries.');
+                            } finally {
+                              setExportingSel(false);
+                            }
+                          }}
+                          style={({ pressed }) => ({
+                            backgroundColor: PRI_LITE, borderRadius: 8,
+                            paddingHorizontal: 12, paddingVertical: 6,
+                            opacity: pressed || exportingSel ? 0.85 : 1,
+                          })}
+                        >
+                          {exportingSel ? (
+                            <ActivityIndicator size="small" color={PRIMARY} />
+                          ) : (
+                            <Text style={{ color: PRIMARY, fontSize: 13, fontWeight: '800' }}>
+                              Export{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
+                            </Text>
+                          )}
                         </Pressable>
                         <Pressable
                           disabled={selectedIds.size === 0 || bulkDeleteMutation.isPending}
