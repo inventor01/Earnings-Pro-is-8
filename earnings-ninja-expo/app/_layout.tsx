@@ -9,6 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from '@/lib/authContext';
 import { ThemeProvider } from '@/lib/theme';
+import { HiddenModeProvider } from '@/lib/hiddenMode';
 import { api } from '@/lib/api';
 import { drainQueue, getQueueDepth } from '@/lib/offlineQueue';
 
@@ -109,10 +110,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
-            <AuthProvider>
-              <StatusBar style="light" backgroundColor="#0a0a0a" />
-              <RootNav />
-            </AuthProvider>
+            <HiddenModeProvider>
+              <AuthProvider>
+                <StatusBar style="light" backgroundColor="#0a0a0a" />
+                <RootNav />
+              </AuthProvider>
+            </HiddenModeProvider>
           </ThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
