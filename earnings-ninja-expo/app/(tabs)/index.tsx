@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, ScrollView, Pressable, Modal,
   RefreshControl, ActivityIndicator, Image, Alert,
@@ -2198,6 +2198,298 @@ function GoalProgressBar({
   );
 }
 
+// ─── Transaction sorting ─────────────────────────────────────────────────────
+type SortKey = 'newest' | 'oldest' | 'highest' | 'lowest' | 'platform';
+const SORT_OPTIONS: { key: SortKey; label: string; short: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: 'newest',   label: 'Newest First',      short: 'Newest',   icon: 'arrow-down' },
+  { key: 'oldest',   label: 'Oldest First',      short: 'Oldest',   icon: 'arrow-up' },
+  { key: 'highest',  label: 'Highest Amount',    short: 'Highest',  icon: 'trending-up' },
+  { key: 'lowest',   label: 'Lowest Amount',     short: 'Lowest',   icon: 'trending-down' },
+  { key: 'platform', label: 'By Platform (A–Z)', short: 'Platform', icon: 'apps' },
+];
+
+// ─── Analytics ───────────────────────────────────────────────────────────────
+// Analytics is a full-screen modal opened from a prominent dashboard button
+// (the app has no bottom tab bar). It reuses the pure-View ProfitChart and
+// theme tokens so it stays 100% OTA-deployable (no native chart libraries).
+type AnalyticsPeriod = 'week' | 'month' | 'last30' | 'all';
+const ANALYTICS_PERIODS: { key: AnalyticsPeriod; label: string }[] = [
+  { key: 'week',   label: 'This Week' },
+  { key: 'month',  label: 'This Month' },
+  { key: 'last30', label: 'Last 30 Days' },
+  { key: 'all',    label: 'All Time' },
+];
+
+// Local YYYY-MM-DD (backend interprets these as inclusive EST calendar days).
+const ymdLocal = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const {
+    BG, SURFACE, BORDER, PRIMARY, PRI_LITE, TEXT, TEXT_MID, MUTED, LABEL,
+    GREEN, GREEN_LT, RED, RED_LT, DIVIDER, ON_PRIMARY,
+  } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [aPeriod, setAPeriod] = useState<AnalyticsPeriod>('week');
+
+  // `todayStamp` (local YYYY-MM-DD) is part of every query key so the cached
+  // range refetches automatically after a midnight rollover while the app
+  // stays open. The actual range is resolved fresh inside each queryFn so the
+  // from/to dates can never be frozen to a stale day.
+  const todayStamp = ymdLocal(new Date());
+
+  // Map the selected analytics period onto either a named backend timeframe
+  // (week/month — guarantees the numbers match the dashboard) or an explicit
+  // from/to range (last30/all). Aggregation is all done client-side.
+  const resolveRange = (p: AnalyticsPeriod): { timeframe: string | null; fromIso: string | null; toIso: string | null } => {
+    const today = new Date();
+    if (p === 'week')  return { timeframe: 'THIS_WEEK',  fromIso: null, toIso: null };
+    if (p === 'month') return { timeframe: 'THIS_MONTH', fromIso: null, toIso: null };
+    if (p === 'last30') {
+      const from = new Date(today); from.setDate(today.getDate() - 29);
+      return { timeframe: null, fromIso: ymdLocal(from), toIso: ymdLocal(today) };
+    }
+    return { timeframe: null, fromIso: '2020-01-01', toIso: ymdLocal(today) };
+  };
+
+  const rollupQuery = useQuery({
+    queryKey: ['analytics-rollup', aPeriod, todayStamp],
+    queryFn: () => {
+      const r = resolveRange(aPeriod);
+      return r.timeframe ? api.getRollup(r.timeframe) : api.getRollupInRange(r.fromIso!, r.toIso!);
+    },
+    enabled: visible,
+  });
+  const entriesQuery = useQuery({
+    queryKey: ['analytics-entries', aPeriod, todayStamp],
+    queryFn: () => {
+      const r = resolveRange(aPeriod);
+      return r.timeframe ? api.getEntries(r.timeframe, 5000) : api.getEntriesInRange(r.fromIso!, r.toIso!, 5000);
+    },
+    enabled: visible,
+  });
+
+  const rollup = rollupQuery.data;
+  const entries = entriesQuery.data ?? [];
+  const loading = rollupQuery.isLoading || entriesQuery.isLoading;
+
+  // Spend per category — expenses only (stored as negative amounts), summed by
+  // their category as positive totals, with each share of the total spend.
+  const categoryData = useMemo(() => {
+    const map = new Map<ExpenseCategory, number>();
+    for (const e of entries) {
+      if (e.type !== 'EXPENSE') continue;
+      const cat = (e.category ?? 'OTHER') as ExpenseCategory;
+      map.set(cat, (map.get(cat) ?? 0) + Math.abs(Number(e.amount) || 0));
+    }
+    const total = Array.from(map.values()).reduce((a, b) => a + b, 0);
+    const rows = Array.from(map.entries())
+      .map(([cat, amt]) => ({ cat, amt, pct: total > 0 ? (amt / total) * 100 : 0 }))
+      .sort((a, b) => b.amt - a.amt);
+    return { total, rows };
+  }, [entries]);
+
+  // Top platforms by NET earnings (signed sum per app — mirrors the backend's
+  // by_app rollup, so expenses/cancellations logged under a platform net out).
+  const platformData = useMemo(() => {
+    const map = new Map<AppType, number>();
+    for (const e of entries) {
+      const a = e.app as AppType;
+      map.set(a, (map.get(a) ?? 0) + (Number(e.amount) || 0));
+    }
+    const rows = Array.from(map.entries())
+      .map(([app, amt]) => ({ app, amt }))
+      .sort((a, b) => b.amt - a.amt);
+    const maxAbs = Math.max(1, ...rows.map(r => Math.abs(r.amt)));
+    return { rows, maxAbs };
+  }, [entries]);
+
+  // Miles per active day — divide total miles by the number of distinct
+  // calendar days that actually have entries, so idle days (esp. in All Time)
+  // don't deflate the average.
+  const milesPerDay = useMemo(() => {
+    const totalMiles = rollup?.miles ?? 0;
+    const dayKeys = new Set<string>();
+    for (const e of entries) {
+      const d = parseServerDate(e.timestamp);
+      dayKeys.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+    }
+    const activeDays = Math.max(1, dayKeys.size);
+    return totalMiles / activeDays;
+  }, [entries, rollup]);
+
+  // The profit-trend chart shows the last 7 days (week) or last 30 days
+  // (everything else), reusing the dashboard's pure-View ProfitChart.
+  const trendCustomRange = useMemo(() => {
+    const today = new Date();
+    const from = new Date(today); from.setDate(today.getDate() - 29);
+    return { from: ymdLocal(from), to: ymdLocal(today) };
+  }, []);
+
+  const profit  = rollup?.profit ?? 0;
+  const isProfit = profit >= 0;
+
+  const kpis: { label: string; value: string; color?: string }[] = [
+    { label: 'Net Profit',     value: `${isProfit ? '' : '-'}$${Math.abs(profit).toFixed(2)}`, color: isProfit ? GREEN : RED },
+    { label: '$ / Hour',       value: `$${(rollup?.dollars_per_hour ?? 0).toFixed(2)}`, color: PRIMARY },
+    { label: '$ / Mile',       value: `$${(rollup?.dollars_per_mile ?? 0).toFixed(2)}` },
+    { label: 'Avg Order',      value: `$${(rollup?.average_order_value ?? 0).toFixed(2)}` },
+    { label: 'Total Miles',    value: `${(rollup?.miles ?? 0).toFixed(1)}` },
+    { label: 'Total Hours',    value: `${(rollup?.hours ?? 0).toFixed(1)}` },
+    { label: 'Miles / Day',    value: `${milesPerDay.toFixed(1)}` },
+    { label: 'Revenue',        value: `$${(rollup?.revenue ?? 0).toFixed(0)}`, color: GREEN },
+  ];
+
+  const sectionTitle = (text: string) => (
+    <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, marginTop: 4 }}>
+      {text}
+    </Text>
+  );
+
+  const card: ViewStyle = {
+    backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER,
+    padding: 16, marginBottom: 20,
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}>
+        {/* Header */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+          <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>📊 Analytics</Text>
+          <Pressable onPress={onClose} style={{ padding: 6 }}>
+            <Ionicons name="close-circle" size={28} color={MUTED} />
+          </Pressable>
+        </View>
+
+        {/* Period filter */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 22 }}>
+          {ANALYTICS_PERIODS.map(p => {
+            const active = aPeriod === p.key;
+            return (
+              <PressScale
+                key={p.key}
+                onPress={() => { hTap(); setAPeriod(p.key); }}
+                scale={0.95}
+                style={[
+                  {
+                    paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1,
+                    backgroundColor: active ? PRIMARY : SURFACE,
+                    borderColor: active ? PRIMARY : BORDER,
+                  },
+                  active ? neonGlow(PRIMARY, 8, 0.3) : undefined,
+                ].filter(Boolean) as ViewStyle[]}
+              >
+                <Text style={{ color: active ? ON_PRIMARY : TEXT_MID, fontSize: 13, fontWeight: active ? '800' : '600' }}>
+                  {p.label}
+                </Text>
+              </PressScale>
+            );
+          })}
+        </View>
+
+        {loading ? (
+          <View style={{ paddingVertical: 80, alignItems: 'center' }}>
+            <ActivityIndicator color={PRIMARY} />
+          </View>
+        ) : (
+          <>
+            {/* KPI grid */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+              {kpis.map(k => (
+                <View
+                  key={k.label}
+                  style={{
+                    width: '47%', flexGrow: 1,
+                    backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER,
+                    paddingVertical: 14, paddingHorizontal: 14,
+                  }}
+                >
+                  <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
+                    {k.label}
+                  </Text>
+                  <Text style={{ color: k.color ?? TEXT, fontSize: 20, fontWeight: '900', marginTop: 6 }}>
+                    {k.value}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Profit trend */}
+            <View style={card}>
+              {sectionTitle(aPeriod === 'week' ? '📈 Profit Trend (last 7 days)' : '📈 Profit Trend (last 30 days)')}
+              <ProfitChart
+                entries={entries}
+                period={aPeriod === 'week' ? 'week' : 'custom'}
+                customRange={aPeriod === 'week' ? null : trendCustomRange}
+                dayOffset={0}
+                positiveColor={GREEN}
+                negativeColor={RED}
+              />
+            </View>
+
+            {/* Spend per category */}
+            <View style={card}>
+              {sectionTitle('💸 Spend by Category')}
+              {categoryData.rows.length === 0 ? (
+                <Text style={{ color: MUTED, fontSize: 13, paddingVertical: 8 }}>No expenses logged in this period.</Text>
+              ) : (
+                <>
+                  <Text style={{ color: RED, fontSize: 22, fontWeight: '900', marginBottom: 14 }}>
+                    ${categoryData.total.toFixed(2)} <Text style={{ color: MUTED, fontSize: 12, fontWeight: '700' }}>total spend</Text>
+                  </Text>
+                  {categoryData.rows.map(r => (
+                    <View key={r.cat} style={{ marginBottom: 12 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                        <Text style={{ color: TEXT_MID, fontSize: 13, fontWeight: '600' }}>
+                          {EXPENSE_EMOJIS[r.cat]} {r.cat.charAt(0) + r.cat.slice(1).toLowerCase()}
+                        </Text>
+                        <Text style={{ color: TEXT, fontSize: 13, fontWeight: '800' }}>
+                          ${r.amt.toFixed(2)} <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700' }}>· {r.pct.toFixed(0)}%</Text>
+                        </Text>
+                      </View>
+                      <View style={{ height: 8, borderRadius: 4, backgroundColor: DIVIDER, overflow: 'hidden' }}>
+                        <View style={[{ height: '100%', width: `${Math.max(2, r.pct)}%`, borderRadius: 4, backgroundColor: PRIMARY }, neonGlow(PRIMARY, 5, 0.25)]} />
+                      </View>
+                    </View>
+                  ))}
+                </>
+              )}
+            </View>
+
+            {/* Top platforms */}
+            <View style={card}>
+              {sectionTitle('🏆 Top Platforms by Earnings')}
+              {platformData.rows.length === 0 ? (
+                <Text style={{ color: MUTED, fontSize: 13, paddingVertical: 8 }}>No entries in this period.</Text>
+              ) : (
+                platformData.rows.map(r => {
+                  const pos = r.amt >= 0;
+                  const barColor = APP_COLORS[r.app] ?? GREEN;
+                  const width = Math.max(2, (Math.abs(r.amt) / platformData.maxAbs) * 100);
+                  return (
+                    <View key={r.app} style={{ marginBottom: 12 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                        <Text style={{ color: TEXT_MID, fontSize: 13, fontWeight: '600' }}>{APP_LABELS[r.app]}</Text>
+                        <Text style={{ color: pos ? GREEN : RED, fontSize: 13, fontWeight: '800' }}>
+                          {pos ? '' : '-'}${Math.abs(r.amt).toFixed(2)}
+                        </Text>
+                      </View>
+                      <View style={{ height: 8, borderRadius: 4, backgroundColor: DIVIDER, overflow: 'hidden' }}>
+                        <View style={[{ height: '100%', width: `${width}%`, borderRadius: 4, backgroundColor: pos ? barColor : RED }, neonGlow(pos ? barColor : RED, 5, 0.25)]} />
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </Modal>
+  );
+}
+
 export default function DashboardScreen() {
   const {
     BG, SURFACE, CARD_BG, CARD, BORDER, PRIMARY, ACCENT, PRI_LITE, PRI_DARK,
@@ -2210,6 +2502,7 @@ export default function DashboardScreen() {
   const [showAdd, setShowAdd] = useState(false);
   const [addPrefill, setAddPrefill] = useState<AddEntryPrefill | undefined>(undefined);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   // History list multi-select state. `selectionMode` toggles the row UI into
   // checkbox-mode; `selectedIds` is the set of currently-selected entry IDs.
@@ -2247,6 +2540,11 @@ export default function DashboardScreen() {
   const [showAllEntries, setShowAllEntries] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  // Transaction sort order for the History list. Defaults to newest-first
+  // (the order the backend already returns). `showSortMenu` toggles the
+  // bottom-sheet picker.
+  const [sortBy, setSortBy] = useState<SortKey>('newest');
+  const [showSortMenu, setShowSortMenu] = useState(false);
   // Clear the query whenever the search bar closes. Decoupled from the tap
   // handler so the toggle stays a pure functional update — no side effects
   // inside the setState updater (avoids React 19 strict-mode double-fire).
@@ -2300,23 +2598,6 @@ export default function DashboardScreen() {
     queryFn: () => api.getGoal(tf),
     enabled: period !== 'custom',
   });
-
-  // Safety: whenever the currently-visible entry set changes (period switch,
-  // day swipe, search filter, custom-range pick), prune `selectedIds` to the
-  // intersection. Without this, a user could select rows, then change the
-  // filter and tap Delete — and we'd delete entries they can't even see.
-  // We don't auto-exit selection mode, because the user may genuinely want
-  // to continue selecting across a search refinement.
-  useEffect(() => {
-    if (!selectionMode || selectedIds.size === 0) return;
-    const visibleIds = new Set(entries.map(e => e.id));
-    let changed = false;
-    const next = new Set<number>();
-    selectedIds.forEach(id => {
-      if (visibleIds.has(id)) next.add(id); else changed = true;
-    });
-    if (changed) setSelectedIds(next);
-  }, [entries, selectionMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const deleteMutation = useMutation({
     mutationFn: api.deleteEntry,
@@ -2407,7 +2688,58 @@ export default function DashboardScreen() {
         ].join(' ').toLowerCase();
         return fields.includes(q);
       });
-  const displayedEntries = showAllEntries ? filteredEntries : filteredEntries.slice(0, 8);
+  // Sort the (already search-filtered) entries. Sorting is applied after
+  // filtering so search + sort compose, and counts/totals stay correct
+  // (sorting never changes the set, only the order).
+  const sortedEntries = useMemo(() => {
+    const arr = [...filteredEntries];
+    switch (sortBy) {
+      case 'oldest':
+        arr.sort((a, b) => parseServerDate(a.timestamp).getTime() - parseServerDate(b.timestamp).getTime());
+        break;
+      case 'highest':
+        arr.sort((a, b) => Number(b.amount) - Number(a.amount));
+        break;
+      case 'lowest':
+        arr.sort((a, b) => Number(a.amount) - Number(b.amount));
+        break;
+      case 'platform':
+        arr.sort((a, b) => {
+          const la = (APP_LABELS[a.app] ?? a.app).toLowerCase();
+          const lb = (APP_LABELS[b.app] ?? b.app).toLowerCase();
+          if (la !== lb) return la < lb ? -1 : 1;
+          // Tie-break alphabetical platforms by newest-first.
+          return parseServerDate(b.timestamp).getTime() - parseServerDate(a.timestamp).getTime();
+        });
+        break;
+      case 'newest':
+      default:
+        arr.sort((a, b) => parseServerDate(b.timestamp).getTime() - parseServerDate(a.timestamp).getTime());
+        break;
+    }
+    return arr;
+  }, [filteredEntries, sortBy]);
+  const displayedEntries = showAllEntries ? sortedEntries : sortedEntries.slice(0, 8);
+
+  // Safety: whenever the currently-visible entry set changes (period switch,
+  // day swipe, search filter, custom-range pick), prune `selectedIds` to the
+  // intersection of what's actually shown. Keyed to `filteredEntries` (the
+  // search-filtered set) so refining a search can't leave hidden rows
+  // selected — bulk-delete operates on `selectedIds`, so we must never retain
+  // an id the user can no longer see. Sorting doesn't change membership, so
+  // it isn't a dependency. We don't auto-exit selection mode, because the
+  // user may genuinely want to keep selecting across a search refinement.
+  useEffect(() => {
+    if (!selectionMode || selectedIds.size === 0) return;
+    const visibleIds = new Set(filteredEntries.map(e => e.id));
+    let changed = false;
+    const next = new Set<number>();
+    selectedIds.forEach(id => {
+      if (visibleIds.has(id)) next.add(id); else changed = true;
+    });
+    if (changed) setSelectedIds(next);
+  }, [filteredEntries, selectionMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const orderCount = entries.filter(e => Number(e.amount) > 0).length;
 
   const isProfit   = profit >= 0;
@@ -2544,6 +2876,18 @@ export default function DashboardScreen() {
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="calendar-outline" size={17} color={MUTED} />
+            </PressScale>
+            <PressScale
+              hitSlop={8}
+              onPress={() => { hTap(); setShowSortMenu(true); }}
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                backgroundColor: sortBy !== 'newest' ? PRIMARY : BG,
+                borderWidth: 1, borderColor: sortBy !== 'newest' ? PRIMARY : BORDER,
+                alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="swap-vertical" size={17} color={sortBy !== 'newest' ? ON_PRIMARY : MUTED} />
             </PressScale>
             <PressScale
               hitSlop={8}
@@ -2831,6 +3175,32 @@ export default function DashboardScreen() {
                 </View>
               </View>
 
+              {/* ── Analytics entry point (full-screen modal) ──────────────── */}
+              <PressScale
+                onPress={() => { hTap(); setShowAnalytics(true); }}
+                scale={0.97}
+                style={[
+                  {
+                    flexDirection: 'row', alignItems: 'center', gap: 14,
+                    backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1.5, borderColor: PRIMARY,
+                    paddingVertical: 16, paddingHorizontal: 16,
+                  },
+                  neonGlow(PRIMARY, 12, 0.3),
+                ]}
+              >
+                <View style={{
+                  width: 40, height: 40, borderRadius: 12,
+                  backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Ionicons name="stats-chart" size={22} color={PRIMARY} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: TEXT, fontSize: 16, fontWeight: '800' }}>View Analytics</Text>
+                  <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>Spend, $/hour, miles & top platforms</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={PRIMARY} />
+              </PressScale>
+
               {/* ── Goals Section (hidden in custom-range mode — goals are tied to fixed timeframes) ──── */}
               {period !== 'custom' && (
               <View>
@@ -3018,6 +3388,7 @@ export default function DashboardScreen() {
                     >
                       <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
                         {isSearching ? `Results (${filteredEntries.length})` : `Entries (${entries.length})`}
+                        <Text style={{ color: MUTED }}>{`  · ${SORT_OPTIONS.find(o => o.key === sortBy)?.short ?? 'Newest'}`}</Text>
                         <Text style={{ color: PRIMARY }}>  · Select</Text>
                       </Text>
                     </Pressable>
@@ -3136,6 +3507,55 @@ export default function DashboardScreen() {
         onClose={() => { setShowAdd(false); setAddPrefill(undefined); setEditingEntry(undefined); }}
       />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
+      <AnalyticsModal visible={showAnalytics} onClose={() => setShowAnalytics(false)} />
+      {/* ── Sort Menu (Dark Neon bottom sheet) ────────────────────────────── */}
+      <Modal visible={showSortMenu} transparent animationType="fade" onRequestClose={() => setShowSortMenu(false)}>
+        <Pressable
+          onPress={() => setShowSortMenu(false)}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+        >
+          <Pressable
+            onPress={(e) => e.stopPropagation?.()}
+            style={{
+              backgroundColor: SURFACE,
+              borderTopLeftRadius: 24, borderTopRightRadius: 24,
+              borderTopWidth: 1, borderColor: BORDER,
+              paddingTop: 10,
+              paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 20,
+              paddingHorizontal: 16,
+            }}
+          >
+            <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: BORDER, marginBottom: 14 }} />
+            <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginBottom: 2, marginLeft: 4 }}>Sort transactions</Text>
+            {SORT_OPTIONS.map(opt => {
+              const active = sortBy === opt.key;
+              return (
+                <PressScale
+                  key={opt.key}
+                  onPress={() => { hTap(); setSortBy(opt.key); setShowSortMenu(false); }}
+                  scale={0.97}
+                  style={[
+                    {
+                      flexDirection: 'row', alignItems: 'center', gap: 14,
+                      paddingVertical: 14, paddingHorizontal: 14, marginTop: 8,
+                      borderRadius: 14, borderWidth: 1,
+                      backgroundColor: active ? PRI_LITE : BG,
+                      borderColor: active ? PRIMARY : BORDER,
+                    },
+                    active ? neonGlow(PRIMARY, 5, 0.18) : undefined,
+                  ].filter(Boolean) as ViewStyle[]}
+                >
+                  <Ionicons name={opt.icon} size={20} color={active ? PRIMARY : MUTED} />
+                  <Text style={{ flex: 1, color: active ? TEXT : TEXT_MID, fontSize: 15, fontWeight: active ? '800' : '600' }}>
+                    {opt.label}
+                  </Text>
+                  {active && <Ionicons name="checkmark-circle" size={22} color={PRIMARY} />}
+                </PressScale>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
       <CalendarModal
         visible={showCalendar}
         onClose={() => setShowCalendar(false)}

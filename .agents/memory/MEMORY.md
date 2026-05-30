@@ -1,2 +1,3 @@
 - [EAS / Expo build & OTA gotchas](eas-expo-build.md) — react/react-dom must be pinned in lockstep for `npm ci`; OTA needs channel↔branch link; fingerprint policy gates native changes.
 - [EAS OTA not landing](eas-ota-not-landing.md) — OTA published but never appears: old binary w/o expo-updates, or eas.json/app.json edit changed the fingerprint RTV so no installed build matches; +how to publish from Replit.
+- [History list multi-select pruning](history-list-selection.md) — bulk-select pruning must intersect selectedIds with the search-filtered visible set, or hidden rows get deleted.
