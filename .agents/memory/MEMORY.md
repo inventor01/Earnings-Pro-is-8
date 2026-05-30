@@ -3,3 +3,4 @@
 - [History list multi-select pruning](history-list-selection.md) — bulk-select pruning must intersect selectedIds with the search-filtered visible set, or hidden rows get deleted.
 - [Add Entry modal defaults & async races](addentry-modal-defaults.md) — async-loaded defaults (e.g. last-used platform) must re-check current state via refs before setting, or they clobber manual choices.
 - [Hidden Mode (stealth)](hidden-mode.md) — masks all money values app-wide; provider MUST default hidden=true until AsyncStorage hydrates or previously-hidden users leak real $ on the first frame.
+- [CSV Export (Expo mobile)](csv-export.md) — export must emit date/time in US/Eastern (not device-local) or import shifts timestamps; columns/order + signed amount must match the importer.
