@@ -3645,19 +3645,25 @@ export default function DashboardScreen() {
                     <Pressable
                       onPress={() => { hTap(); setSelectionMode(true); }}
                       hitSlop={6}
+                      style={{ flexShrink: 1, marginRight: 8 }}
                     >
-                      <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
+                      <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
+                        style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}
+                      >
                         {isSearching ? `Results (${filteredEntries.length})` : `Entries (${entries.length})`}
-                        <Text style={{ color: MUTED }}>{`  · ${SORT_OPTIONS.find(o => o.key === sortBy)?.short ?? 'Newest'}`}</Text>
-                        <Text style={{ color: PRIMARY }}>  · Select</Text>
+                        <Text style={{ color: MUTED }}>{` · ${SORT_OPTIONS.find(o => o.key === sortBy)?.short ?? 'Newest'}`}</Text>
+                        <Text style={{ color: PRIMARY }}> · Select</Text>
                       </Text>
                     </Pressable>
-                    <View style={{ flexDirection: 'row', gap: 6 }}>
-                      <View style={{ backgroundColor: GREEN_LT, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                        <Text style={{ color: GREEN, fontSize: 11, fontWeight: '700' }}>{hidden ? MASK : `+$${revenue.toFixed(2)}`}</Text>
+                    <View style={{ flexDirection: 'row', gap: 6, flexShrink: 0 }}>
+                      <View style={{ backgroundColor: GREEN_LT, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 }}>
+                        <Text style={{ color: GREEN, fontSize: 10, fontWeight: '700' }}>{hidden ? MASK : `+$${revenue.toFixed(2)}`}</Text>
                       </View>
-                      <View style={{ backgroundColor: RED_LT, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                        <Text style={{ color: RED, fontSize: 11, fontWeight: '700' }}>{hidden ? MASK : `-$${Math.abs(expenses).toFixed(2)}`}</Text>
+                      <View style={{ backgroundColor: RED_LT, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 }}>
+                        <Text style={{ color: RED, fontSize: 10, fontWeight: '700' }}>{hidden ? MASK : `-$${Math.abs(expenses).toFixed(2)}`}</Text>
                       </View>
                     </View>
                   </View>
