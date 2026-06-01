@@ -4,6 +4,7 @@ import {
   RefreshControl, ActivityIndicator, Image, Alert,
   TextInput, KeyboardAvoidingView, Platform,
   ViewStyle, TextStyle, StyleSheet,
+  NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withSequence, withRepeat, withDelay,
@@ -2772,6 +2773,36 @@ export default function DashboardScreen() {
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<Period>('today');
   const [refreshing, setRefreshing] = useState(false);
+
+  // ── Scroll-to-Top floating button ─────────────────────────────────────
+  // Ref to the main History/dashboard ScrollView so the FAB can animate it
+  // back to the top. `showScrollTop` only flips when the scroll offset crosses
+  // the threshold (returning prev when unchanged lets React bail out of a
+  // re-render on every scroll frame). A reanimated shared value drives the
+  // fade/scale in-out so the heavy Dashboard tree isn't re-rendered per frame.
+  const scrollRef = useRef<ScrollView>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const fabAnim = useSharedValue(0);
+  const onHistoryScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y;
+    const next = y > 400;
+    setShowScrollTop(prev => (prev === next ? prev : next));
+  }, []);
+  useEffect(() => {
+    fabAnim.value = withTiming(showScrollTop ? 1 : 0, { duration: 200, easing: Easing.out(Easing.quad) });
+  }, [showScrollTop, fabAnim]);
+  const fabStyle = useAnimatedStyle(() => ({
+    opacity: fabAnim.value,
+    transform: [
+      { scale: 0.7 + fabAnim.value * 0.3 },
+      { translateY: (1 - fabAnim.value) * 10 },
+    ],
+  }));
+  const scrollToTop = useCallback(() => {
+    hTap();
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
   const [showAdd, setShowAdd] = useState(false);
   const [addPrefill, setAddPrefill] = useState<AddEntryPrefill | undefined>(undefined);
   const [showSettings, setShowSettings] = useState(false);
@@ -3195,6 +3226,9 @@ export default function DashboardScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
       <ScrollView
+        ref={scrollRef}
+        onScroll={onHistoryScroll}
+        scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
         contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
@@ -3925,6 +3959,45 @@ export default function DashboardScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* ── Scroll-to-Top FAB (neon glow, floats above the Add Entry bar) ──── */}
+      <Animated.View
+        pointerEvents={showScrollTop ? 'auto' : 'none'}
+        style={[
+          {
+            position: 'absolute',
+            right: 20,
+            bottom: insets.bottom + 100,
+            zIndex: 998,
+          },
+          fabStyle,
+        ]}
+      >
+        <Pressable
+          onPress={scrollToTop}
+          accessibilityRole="button"
+          accessibilityLabel="Scroll to top"
+          android_ripple={{ color: 'rgba(0,0,0,0.15)', borderless: true }}
+          style={({ pressed }) => ({
+            width: 52,
+            height: 52,
+            borderRadius: 26,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: SURFACE,
+            borderWidth: 1.5,
+            borderColor: PRIMARY,
+            shadowColor: PRIMARY,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.9,
+            shadowRadius: 12,
+            elevation: 10,
+            transform: [{ scale: pressed ? 0.9 : 1 }],
+          })}
+        >
+          <Ionicons name="arrow-up" size={26} color={PRIMARY} />
+        </Pressable>
+      </Animated.View>
 
       {/* ── Sticky "Add Entry" bar (heavy neon yellow halo) ─────────────────── */}
       <View
