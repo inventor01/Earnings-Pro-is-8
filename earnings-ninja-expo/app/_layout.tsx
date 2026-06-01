@@ -58,6 +58,10 @@ function RootNav() {
           queryClient.invalidateQueries({ queryKey: ['entries'] });
           queryClient.invalidateQueries({ queryKey: ['rollup'] });
           queryClient.invalidateQueries({ queryKey: ['goal'] });
+          // Analytics modal reads its own cache keys — invalidate so a
+          // drained offline entry is reflected when Analytics next opens.
+          queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
+          queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
         }
       } finally {
         draining.current = false;

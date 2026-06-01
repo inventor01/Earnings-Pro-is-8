@@ -1599,6 +1599,12 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
         queryClient.invalidateQueries({ queryKey: ['entries'] });
         queryClient.invalidateQueries({ queryKey: ['rollup'] });
         queryClient.invalidateQueries({ queryKey: ['goal'] });
+        // The Analytics modal reads its own cache keys (['analytics-rollup'] /
+        // ['analytics-entries']); the prefixes above don't match them, so with
+        // the global 30s staleTime reopening Analytics shortly after an add
+        // would show stale data missing the new entry. Invalidate them too.
+        queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
+        queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
       }
       hNotifyOk();
       // Remember the last app the user logged revenue against — the iOS
@@ -1635,6 +1641,8 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
       hNotifyOk();
       reset();
       onClose();
@@ -2395,6 +2403,8 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           onDone={() => {
             queryClient.invalidateQueries({ queryKey: ['entries'] });
             queryClient.invalidateQueries({ queryKey: ['rollup'] });
+            queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
+            queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
           }}
         />
         <View style={{ height: 12 }} />
@@ -3085,6 +3095,10 @@ export default function DashboardScreen() {
     queryClient.invalidateQueries({ queryKey: ['rollup'] });
     queryClient.invalidateQueries({ queryKey: ['goal'] });
     queryClient.invalidateQueries({ queryKey: ['entries-range'] });
+    // Analytics modal uses its own cache keys — invalidate them so a delete
+    // (single / bulk / calendar erase) is reflected when Analytics reopens.
+    queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
+    queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
   }, [queryClient]);
 
   const deleteMutation = useMutation({
