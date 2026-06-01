@@ -1,1 +1,1 @@
-- [expo-notifications push entitlement](expo-notifications-push-entitlement.md) — config plugin forces aps-environment/Push capability; for local-only notifications drop the plugin from app.json (keep the npm package).
+- [expo-notifications push entitlement](expo-notifications-push-entitlement.md) — SDK54 auto-applies the plugin; for local-only notifications add a local stripper plugin to drop aps-environment.
