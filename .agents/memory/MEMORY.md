@@ -1,2 +1,3 @@
 - [Optimistic update vs offline queue (KPI snap-back)](optimistic-update-offline-queue.md) — add-entry KPI ticked up then reverted; never invalidate after a merely-queued write (guard on positive server id).
+- [Optimistic delete → rollup/goal-bar](optimistic-delete-rollup.md) — on delete patch ONLY the active rollupKey (not all ['rollup']); recompute avg_order_value from ORDER-type rows only; reconcile after.
 - [Motivation Notifications](motivation-notifications.md) — local daily notifications use re-armed one-shots (not DAILY repeats); Hidden Mode change must force-reschedule so no $ lingers on a lock screen; native module → eas build, not OTA.
