@@ -2,13 +2,28 @@ import React from 'react';
 import {
   View, Text, Pressable, Modal, ScrollView, Image, Alert,
 } from 'react-native';
-import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, withTiming, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import {
   Entry, APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, parseServerDate,
 } from '@/lib/api';
+
+// Smooth, non-bouncy card entrance: a controlled opacity fade + a slight
+// scale-up (0.96 → 1) driven purely by withTiming. Replaces the previous
+// ZoomIn.springify() which had an unwanted bounce. Closing stays smooth via
+// the parent <Modal animationType="fade" />.
+const cardEnter = () => {
+  'worklet';
+  return {
+    initialValues: { opacity: 0, transform: [{ scale: 0.96 }] },
+    animations: {
+      opacity: withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) }),
+      transform: [{ scale: withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) }) }],
+    },
+  };
+};
 
 interface Props {
   visible: boolean;
@@ -53,7 +68,7 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
         <Pressable style={{ flex: 1 }} onPress={onClose}>
           <View style={{ flex: 1, justifyContent: 'center', padding: 18 }}>
             <Animated.View
-              entering={ZoomIn.duration(180).springify().damping(18)}
+              entering={cardEnter}
               style={{
                 backgroundColor: SURFACE,
                 borderRadius: 20,
