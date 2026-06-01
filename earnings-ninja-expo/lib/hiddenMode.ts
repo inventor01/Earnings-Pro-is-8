@@ -8,7 +8,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // orders, miles, hours, percentages) stay visible. Persisted in AsyncStorage so
 // the setting survives restarts.
 
-const STORAGE_KEY = 'hidden_mode';
+// Exported so non-React modules (e.g. the notification scheduler, which runs
+// outside the provider tree) can read the persisted Hidden Mode state directly.
+export const HIDDEN_MODE_KEY = 'hidden_mode';
+const STORAGE_KEY = HIDDEN_MODE_KEY;
 
 // Mask shown in place of any dollar value when Hidden Mode is on.
 export const MASK = '•••';

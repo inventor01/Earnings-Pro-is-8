@@ -28,6 +28,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
+import { syncNotifState, enableMotivation, disableMotivation } from '@/lib/notifications';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv } from '@/lib/csvExport';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -2009,6 +2010,44 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   const [editingGoal, setEditingGoal] = useState<TimeframeType | null>(null);
   const [goalInput, setGoalInput] = useState('');
 
+  // Daily motivation notifications toggle. Hydrated from the persisted flag on
+  // open so it reflects the real OS/AsyncStorage state.
+  const [notifOn, setNotifOn] = useState(false);
+  const [notifBusy, setNotifBusy] = useState(false);
+  // Re-check on every open (not just first mount): reconciles the persisted flag
+  // against live OS permission, so the toggle self-heals if the user revoked
+  // notifications in the iOS Settings app while ours was left on.
+  useEffect(() => {
+    if (!visible) return;
+    let alive = true;
+    syncNotifState().then((v) => { if (alive) setNotifOn(v); });
+    return () => { alive = false; };
+  }, [visible]);
+
+  const onToggleNotif = async () => {
+    if (notifBusy) return;
+    hTap();
+    setNotifBusy(true);
+    try {
+      if (notifOn) {
+        await disableMotivation();
+        setNotifOn(false);
+      } else {
+        const ok = await enableMotivation(hidden);
+        if (ok) {
+          setNotifOn(true);
+        } else {
+          Alert.alert(
+            'Notifications are off',
+            'Turn on notifications for Earnings Ninja in iOS Settings to get your daily motivation and evening recap.',
+          );
+        }
+      }
+    } finally {
+      setNotifBusy(false);
+    }
+  };
+
   const goalToday = useQuery({ queryKey: ['goal', 'TODAY'],      queryFn: () => api.getGoal('TODAY') });
   const goalWeek  = useQuery({ queryKey: ['goal', 'THIS_WEEK'],  queryFn: () => api.getGoal('THIS_WEEK') });
   const goalMonth = useQuery({ queryKey: ['goal', 'THIS_MONTH'], queryFn: () => api.getGoal('THIS_MONTH') });
@@ -2132,6 +2171,44 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             alignItems: hidden ? 'flex-end' : 'flex-start', justifyContent: 'center',
           }}>
             <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: hidden ? ON_PRIMARY : SURFACE }} />
+          </View>
+        </Pressable>
+
+        {/* Notifications */}
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+          🔔 Notifications
+        </Text>
+        <Pressable
+          onPress={onToggleNotif}
+          disabled={notifBusy}
+          style={[
+            {
+              flexDirection: 'row', alignItems: 'center', gap: 12,
+              backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1,
+              borderColor: notifOn ? PRIMARY : BORDER,
+              padding: 14, marginBottom: 24,
+              opacity: notifBusy ? 0.6 : 1,
+            },
+            notifOn ? neonGlow(PRIMARY, 10, 0.25) : undefined,
+          ].filter(Boolean) as ViewStyle[]}
+        >
+          <View style={{
+            width: 36, height: 36, borderRadius: 18,
+            backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Ionicons name={notifOn ? 'notifications' : 'notifications-off'} size={18} color={PRIMARY} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Daily Motivation</Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>Morning hype + an evening recap of your day</Text>
+          </View>
+          {/* Pill-style toggle (no native Switch — keeps Dark Neon look) */}
+          <View style={{
+            width: 48, height: 28, borderRadius: 14, padding: 3,
+            backgroundColor: notifOn ? PRIMARY : BORDER,
+            alignItems: notifOn ? 'flex-end' : 'flex-start', justifyContent: 'center',
+          }}>
+            <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: notifOn ? ON_PRIMARY : SURFACE }} />
           </View>
         </Pressable>
 

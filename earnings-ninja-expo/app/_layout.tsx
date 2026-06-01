@@ -9,9 +9,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from '@/lib/authContext';
 import { ThemeProvider } from '@/lib/theme';
-import { HiddenModeProvider } from '@/lib/hiddenMode';
+import { HiddenModeProvider, useHiddenMode } from '@/lib/hiddenMode';
 import { api } from '@/lib/api';
 import { drainQueue, getQueueDepth } from '@/lib/offlineQueue';
+import { refreshMotivationSchedule } from '@/lib/notifications';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -21,6 +22,7 @@ const queryClient = new QueryClient({
 
 function RootNav() {
   const { token, isLoading } = useAuth();
+  const { hidden } = useHiddenMode();
   const queryClient = useQueryClient();
   const draining = useRef(false);
 
@@ -61,12 +63,27 @@ function RootNav() {
         draining.current = false;
       }
     };
+    // Re-arm the daily motivation notifications with the latest numbers. No-ops
+    // when the feature is disabled. Runs alongside the queue drain so the
+    // evening recap reflects data from the most recent app open.
+    const refreshNotifs = () => { refreshMotivationSchedule().catch(() => {}); };
+
     tryDrain();
+    refreshNotifs();
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') tryDrain();
+      if (state === 'active') { tryDrain(); refreshNotifs(); }
     });
     return () => sub.remove();
   }, [token, queryClient]);
+
+  // Re-author the scheduled notifications the instant Hidden Mode changes, so a
+  // dollar amount can never linger in an already-queued notification (and surface
+  // on a public lock screen) after the user masks their numbers. `force` bypasses
+  // the foreground cooldown; the call no-ops when notifications are disabled.
+  useEffect(() => {
+    if (!token) return;
+    refreshMotivationSchedule({ hidden, force: true }).catch(() => {});
+  }, [hidden, token]);
 
   // Deep links from the iOS widget land here. The widget tile fires
   // `earningsninja://entry/new` (and the QuickAddIntent uses the same scheme
