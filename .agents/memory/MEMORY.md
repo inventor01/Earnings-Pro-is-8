@@ -3,3 +3,4 @@
 - [Motivation Notifications](motivation-notifications.md) — local daily notifications use re-armed one-shots (not DAILY repeats); Hidden Mode change must force-reschedule so no $ lingers on a lock screen; native module → eas build, not OTA.
 - [Scroll-to-Top FAB](scroll-to-top-fab.md) — onScroll on the heavy Dashboard ScrollView must flip visibility only on threshold-cross (return prev when unchanged); animate via reanimated shared value, not per-frame setState.
 - [Period swipe navigation](period-swipe-navigation.md) — dashboard time-period swipe/chevron nav is frontend-only vs the deployed backend; EST range math, cache-key, and daily-goal invariants to preserve.
+- [Analytics cache invalidation](analytics-cache-invalidation.md) — Analytics modal uses a separate ['analytics-*'] React-Query namespace; EVERY entry-write path must invalidate it or 30s staleTime serves stale analytics.
