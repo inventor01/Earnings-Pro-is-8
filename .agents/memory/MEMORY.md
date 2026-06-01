@@ -2,3 +2,4 @@
 - [Optimistic delete → rollup/goal-bar](optimistic-delete-rollup.md) — on delete patch ONLY the active rollupKey (not all ['rollup']); recompute avg_order_value from ORDER-type rows only; reconcile after.
 - [Motivation Notifications](motivation-notifications.md) — local daily notifications use re-armed one-shots (not DAILY repeats); Hidden Mode change must force-reschedule so no $ lingers on a lock screen; native module → eas build, not OTA.
 - [Scroll-to-Top FAB](scroll-to-top-fab.md) — onScroll on the heavy Dashboard ScrollView must flip visibility only on threshold-cross (return prev when unchanged); animate via reanimated shared value, not per-frame setState.
+- [Period swipe navigation](period-swipe-navigation.md) — dashboard time-period swipe/chevron nav is frontend-only vs the deployed backend; EST range math, cache-key, and daily-goal invariants to preserve.

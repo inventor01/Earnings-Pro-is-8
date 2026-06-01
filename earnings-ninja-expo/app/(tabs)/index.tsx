@@ -309,6 +309,58 @@ function formatShortDate(yyyymmdd: string): string {
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// ── Period-swipe date math (EST, matches backend/services/period.py) ──────────
+// All calendar arithmetic is done on a UTC-anchored Date so it's independent of
+// the device timezone; only the *initial* "today" is resolved in US/Eastern so
+// the windows line up exactly with the server's EST day/week/month boundaries.
+function estTodayUTC(): Date {
+  const s = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); // YYYY-MM-DD
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+function fmtUTCDate(dt: Date): string {
+  return dt.toISOString().slice(0, 10); // YYYY-MM-DD
+}
+// Given a period chip + integer offset (0 = the live, current window), return the
+// EST {from,to} date range to query — OR null when the offset-0 timeframe path
+// should be used instead (preserves exact current behavior + goal semantics for
+// the live window, and lets day-periods use the backend's day_offset param).
+function navRangeFor(
+  period: 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth' | 'custom',
+  offset: number,
+): { from: string; to: string } | null {
+  if (offset === 0) return null;
+  // Day-periods use the backend day_offset path; custom never swipes.
+  if (period === 'today' || period === 'yesterday' || period === 'custom') return null;
+  const base = estTodayUTC();
+  if (period === 'week') {
+    // Live "This Week" = Monday..today. For other offsets, full Mon..Sun weeks.
+    const dow = (base.getUTCDay() + 6) % 7; // 0 = Monday
+    const mon = new Date(base); mon.setUTCDate(base.getUTCDate() - dow + offset * 7);
+    const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6);
+    return { from: fmtUTCDate(mon), to: fmtUTCDate(sun) };
+  }
+  if (period === 'last7') {
+    // Rolling 7-day window [today-6 .. today], shifted by `offset` weeks.
+    const end = new Date(base); end.setUTCDate(base.getUTCDate() + offset * 7);
+    const start = new Date(end); start.setUTCDate(end.getUTCDate() - 6);
+    return { from: fmtUTCDate(start), to: fmtUTCDate(end) };
+  }
+  if (period === 'month') {
+    // Live "This Month" = 1st..today. For other offsets, full calendar months.
+    const first = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + offset, 1));
+    const last = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + offset + 1, 0));
+    return { from: fmtUTCDate(first), to: fmtUTCDate(last) };
+  }
+  if (period === 'lastMonth') {
+    // Base = previous calendar month; `offset` shifts further full months.
+    const first = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() - 1 + offset, 1));
+    const last = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + offset, 0));
+    return { from: fmtUTCDate(first), to: fmtUTCDate(last) };
+  }
+  return null;
+}
+
 const APPS: { key: AppType; label: string; color: string }[] = [
   { key: 'DOORDASH',  label: 'DoorDash',  color: '#FF3008' },
   { key: 'UBEREATS',  label: 'Uber Eats', color: '#06C167' },
@@ -2860,32 +2912,59 @@ export default function DashboardScreen() {
   // When the user picks a range from the calendar, period === 'custom' and this
   // holds the YYYY-MM-DD bounds (inclusive, EST).
   const [customRange, setCustomRange] = useState<{ from: string; to: string } | null>(null);
-  // Day offset for swipe-to-change-day on the "Today" period (0 = today, -1 = yesterday, etc).
-  // Only meaningful when period === 'today'. Reset whenever the user switches periods.
-  const [dayOffset, setDayOffset] = useState(0);
+  // Swipe navigation offset. 0 = the live, current window for the selected chip.
+  // Steps by the chip's natural unit: ±1 day for Today/Yesterday, ±1 week for
+  // This Week / Last 7 Days, ±1 calendar month for This Month / Last Month.
+  // Reset to 0 whenever the user switches chips. Unused for the custom range.
+  const [navOffset, setNavOffset] = useState(0);
 
   const tf = period === 'custom'
     ? 'TODAY' // unused — but keeps query keys typed cleanly
     : PERIODS.find(p => p.key === period)!.tf;
 
-  // Effective day offset is only applied when we're on the TODAY chip; otherwise 0.
-  const effectiveDayOffset = period === 'today' ? dayOffset : 0;
+  // Day-granular periods navigate via the backend's day_offset param (only valid
+  // for the TODAY timeframe). Today: offset N → day_offset N. Yesterday: the live
+  // window is already -1, so offset N → day_offset N-1.
+  const isDayPeriod = period === 'today' || period === 'yesterday';
+  const dayApiOffset = period === 'today' ? navOffset
+    : period === 'yesterday' ? navOffset - 1
+    : 0;
 
-  // Stable cache keys that include the range when in custom mode so React Query
-  // doesn't share data across different ranges. Day offset is also part of the
-  // key so each day has its own cache slot.
+  // Aggregate periods (week/month) at a non-zero offset resolve to an explicit
+  // EST date range queried via the range endpoints. null → use the timeframe path
+  // (offset 0, day-periods, or custom), which preserves goal semantics.
+  const navRange = navRangeFor(period, navOffset);
+
+  // effectiveDayOffset stays the single-day offset actually shown (used by the
+  // widget-sync "is this really today?" guard and the chart's hourly view).
+  const effectiveDayOffset = isDayPeriod ? dayApiOffset : 0;
+
+  // Day-periods (today/yesterday, any swipe offset) share the single daily goal
+  // (the TODAY goal target), so the goal bar is consistent whether you reach a
+  // given day via the Today chip swiped back or the Yesterday chip. Aggregate
+  // periods keep their own weekly/monthly goal. Read + edit use the same key.
+  const goalTf = isDayPeriod ? 'TODAY' : tf;
+
+  // Stable cache keys: custom range, nav range (aggregate offset), or the plain
+  // timeframe+day_offset path. Each distinct window gets its own cache slot.
   const rollupKey  = period === 'custom'
     ? ['rollup', 'custom', customRange?.from, customRange?.to]
-    : ['rollup', tf, effectiveDayOffset];
+    : navRange
+    ? ['rollup', tf, 'nav', navRange.from, navRange.to]
+    : ['rollup', isDayPeriod ? 'TODAY' : tf, effectiveDayOffset];
   const entriesKey = period === 'custom'
     ? ['entries', 'custom', customRange?.from, customRange?.to]
-    : ['entries', tf, effectiveDayOffset];
+    : navRange
+    ? ['entries', tf, 'nav', navRange.from, navRange.to]
+    : ['entries', isDayPeriod ? 'TODAY' : tf, effectiveDayOffset];
 
   const { data: rollup, isLoading: rollupLoading } = useQuery({
     queryKey: rollupKey,
     queryFn: () => period === 'custom' && customRange
       ? api.getRollupInRange(customRange.from, customRange.to)
-      : api.getRollup(tf, effectiveDayOffset),
+      : navRange
+      ? api.getRollupInRange(navRange.from, navRange.to)
+      : api.getRollup(isDayPeriod ? 'TODAY' : tf, effectiveDayOffset),
     enabled: period !== 'custom' || !!customRange,
   });
 
@@ -2893,14 +2972,16 @@ export default function DashboardScreen() {
     queryKey: entriesKey,
     queryFn: () => period === 'custom' && customRange
       ? api.getEntriesInRange(customRange.from, customRange.to)
-      : api.getEntries(tf, 200, effectiveDayOffset),
+      : navRange
+      ? api.getEntriesInRange(navRange.from, navRange.to)
+      : api.getEntries(isDayPeriod ? 'TODAY' : tf, 200, effectiveDayOffset),
     enabled: period !== 'custom' || !!customRange,
   });
 
   // Goals only exist for the fixed timeframes — disable the goal query in custom mode.
   const { data: goal, refetch: refetchGoal } = useQuery({
-    queryKey: ['goal', tf],
-    queryFn: () => api.getGoal(tf),
+    queryKey: ['goal', goalTf],
+    queryFn: () => api.getGoal(goalTf),
     enabled: period !== 'custom',
   });
 
@@ -3047,7 +3128,7 @@ export default function DashboardScreen() {
   });
 
   const upsertGoalMutation = useMutation({
-    mutationFn: ({ target }: { target: number }) => api.upsertGoal(tf, target),
+    mutationFn: ({ target }: { target: number }) => api.upsertGoal(goalTf, target),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goal'] });
       refetchGoal();
@@ -3171,10 +3252,10 @@ export default function DashboardScreen() {
   const isGoalLoss = safeGoal > 0 && profit < 0;
   const goalColor = goalPct >= 100 ? GREEN : PRIMARY;
 
-  // Period label for the date bar. When the user is on the TODAY chip and has
-  // swiped to a different day, replace the static "Today" label with the actual
-  // weekday/date the dashboard is now showing (e.g. "Yesterday • Apr 29").
-  const dayNavActive = period === 'today';
+  // Period label for the date bar. Day-periods show the actual weekday/date being
+  // viewed (e.g. "Yesterday • Apr 29"); a navigated aggregate window shows its
+  // date span (e.g. "Apr 21 – Apr 27"); the live window shows the chip label.
+  const navActive = period !== 'custom';
   const dateLabelForOffset = (off: number) => {
     const d = new Date();
     d.setDate(d.getDate() + off);
@@ -3185,20 +3266,32 @@ export default function DashboardScreen() {
     const wd = d.toLocaleDateString('en-US', { weekday: 'short' });
     return `${wd}, ${md}`;
   };
-  const periodLabel = dayNavActive
-    ? dateLabelForOffset(dayOffset)
-    : PERIOD_LABELS[period];
+  const periodLabel = period === 'custom'
+    ? `${PERIOD_LABELS[period]} earnings`
+    : isDayPeriod
+    ? dateLabelForOffset(dayApiOffset)
+    : navRange
+    ? `${formatShortDate(navRange.from)} – ${formatShortDate(navRange.to)}`
+    : `${PERIOD_LABELS[period]} earnings`;
 
-  // ── Swipe-to-change-day gesture (mirrors web SummaryCard.tsx) ────────────
-  // Swipe LEFT  → next day (dayOffset + 1)
-  // Swipe RIGHT → previous day (dayOffset - 1)
-  // Threshold: |dx| > 50 AND |dx| > |dy|. Disabled when not on the TODAY chip.
-  const goToDay = useCallback((delta: number) => {
-    setDayOffset(prev => prev + delta);
+  // ── Swipe-to-navigate gesture ────────────────────────────────────────────
+  // Swipe LEFT  → forward in time (offset + 1: later day / next week / next month)
+  // Swipe RIGHT → back in time    (offset - 1: earlier day / prev week / prev month)
+  // Threshold: |dx| > 50 AND |dx| > |dy|. Disabled only on the custom range.
+  // cardShift drives a brief slide so the hero card feels like it moves with the
+  // swipe while the KPIs/Goal bar recompute for the new window.
+  const cardShift = useSharedValue(0);
+  const cardSlideStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: cardShift.value }],
+  }));
+  const goToOffset = useCallback((delta: number) => {
+    setNavOffset(prev => prev + delta);
+    cardShift.value = delta > 0 ? 28 : -28;
+    cardShift.value = withTiming(0, { duration: 240 });
     hTap();
-  }, []);
+  }, [cardShift]);
   const swipeGesture = Gesture.Pan()
-    .enabled(dayNavActive)
+    .enabled(navActive)
     .activeOffsetX([-15, 15])
     .failOffsetY([-20, 20])
     .onEnd((e) => {
@@ -3206,7 +3299,7 @@ export default function DashboardScreen() {
       const dx = e.translationX;
       const dy = e.translationY;
       if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
-        runOnJS(goToDay)(dx < 0 ? 1 : -1);
+        runOnJS(goToOffset)(dx < 0 ? 1 : -1);
       }
     });
 
@@ -3357,7 +3450,7 @@ export default function DashboardScreen() {
               return (
                 <PressScale
                   key={p.key}
-                  onPress={() => { hTap(); setPeriod(p.key); setDayOffset(0); }}
+                  onPress={() => { hTap(); setPeriod(p.key); setNavOffset(0); }}
                   scale={0.92}
                   style={[
                     {
@@ -3380,7 +3473,7 @@ export default function DashboardScreen() {
             {/* Custom Range chip — only shown after the user picks a range from the calendar. */}
             {customRange && (
               <PressScale
-                onPress={() => { hTap(); setPeriod('custom'); setDayOffset(0); }}
+                onPress={() => { hTap(); setPeriod('custom'); setNavOffset(0); }}
                 scale={0.92}
                 style={[
                   {
@@ -3410,7 +3503,7 @@ export default function DashboardScreen() {
                     e.stopPropagation?.();
                     hTap();
                     setCustomRange(null);
-                    if (period === 'custom') { setPeriod('today'); setDayOffset(0); }
+                    if (period === 'custom') { setPeriod('today'); setNavOffset(0); }
                   }}
                   hitSlop={8}
                   style={{ marginLeft: 2 }}
@@ -3493,7 +3586,7 @@ export default function DashboardScreen() {
           ) : (
             <>
               {/* ── Main Hero Card with neon glow (toggle Profit↔Revenue) ──── */}
-              {/* Horizontal swipe on this card cycles dayOffset ± 1 when on the TODAY chip. */}
+              {/* Horizontal swipe on this card steps the nav offset (± day/week/month). */}
               <GestureDetector gesture={swipeGesture}>
               <Animated.View style={[
                 {
@@ -3505,6 +3598,7 @@ export default function DashboardScreen() {
                 },
                 neonGlow(heroColor, 14, 0.22),
                 profitPopStyle,
+                cardSlideStyle,
               ]}>
                 {/* Title row: label on the left, tappable alternate metric inline on the right */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
@@ -3548,36 +3642,37 @@ export default function DashboardScreen() {
                   style={{ color: heroColor, fontSize: 48, fontWeight: '900', lineHeight: 56, marginTop: 4 }}
                 />
 
-                {/* Date range row — chevrons cycle days when on the TODAY chip. */}
+                {/* Date range row — chevrons step the nav offset (back / forward in time). */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
                   <PressScale
-                    onPress={() => goToDay(-1)}
-                    disabled={!dayNavActive}
+                    onPress={() => goToOffset(-1)}
+                    disabled={!navActive}
                     scale={0.85}
                     hitSlop={12}
-                    style={{ padding: 4, opacity: dayNavActive ? 1 : 0.35 }}
+                    style={{ padding: 4, opacity: navActive ? 1 : 0.35 }}
                   >
-                    <Ionicons name="chevron-back" size={18} color={dayNavActive ? PRIMARY : LABEL} />
+                    <Ionicons name="chevron-back" size={18} color={navActive ? PRIMARY : LABEL} />
                   </PressScale>
                   <Text style={{ color: MUTED, fontSize: 13, fontWeight: '500', flex: 1, textAlign: 'center' }}>
-                    {dayNavActive ? periodLabel : `${periodLabel} earnings`}
+                    {periodLabel}
                   </Text>
                   <PressScale
-                    onPress={() => goToDay(1)}
-                    disabled={!dayNavActive}
+                    onPress={() => goToOffset(1)}
+                    disabled={!navActive}
                     scale={0.85}
                     hitSlop={12}
-                    style={{ padding: 4, opacity: dayNavActive ? 1 : 0.35 }}
+                    style={{ padding: 4, opacity: navActive ? 1 : 0.35 }}
                   >
-                    <Ionicons name="chevron-forward" size={18} color={dayNavActive ? PRIMARY : LABEL} />
+                    <Ionicons name="chevron-forward" size={18} color={navActive ? PRIMARY : LABEL} />
                   </PressScale>
                 </View>
 
-                {/* Profit chart — hourly for single-day views, daily otherwise */}
+                {/* Profit chart — hourly for single-day views, daily otherwise. A
+                    navigated aggregate window renders as a custom daily range. */}
                 <ProfitChart
                   entries={entries}
-                  period={period}
-                  customRange={customRange}
+                  period={navRange ? 'custom' : period}
+                  customRange={navRange ?? customRange}
                   dayOffset={effectiveDayOffset}
                   positiveColor={GREEN}
                   negativeColor={RED}
@@ -4101,7 +4196,7 @@ export default function DashboardScreen() {
         onApplyRange={(from, to) => {
           setCustomRange({ from, to });
           setPeriod('custom');
-          setDayOffset(0);
+          setNavOffset(0);
         }}
         onDeleteEntries={async (ids) => {
           // Calendar's bulk-erase path. Reuses the per-id delete endpoint
