@@ -103,7 +103,8 @@
       "expo-secure-store",
       "expo-apple-authentication",
       "@bacons/apple-targets",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "./plugins/withLocalNotificationsOnly"
     ],
     "experiments": {
       "typedRoutes": true
