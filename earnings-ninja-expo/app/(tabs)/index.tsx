@@ -2873,27 +2873,134 @@ export default function DashboardScreen() {
     enabled: period !== 'custom',
   });
 
+  // ── Optimistic delete plumbing (shared by single / multi-select / calendar) ──
+  // Deleting an entry must IMMEDIATELY reset the dashboard KPIs and the goal
+  // progress bar to reflect the remaining entries — without waiting for the
+  // network round-trip. The goal % is derived from `rollup.profit`
+  // (rawGoalPct = profit / target), so the key move is patching `profit` in the
+  // cached rollup the instant a row is removed. That also drives the negative
+  // case: when the remaining profit drops below 0, `isGoalLoss` flips and the
+  // bar switches to the empty red-pulse state. Snapshots are kept for rollback
+  // and the server is invalidated afterwards to converge on the truth.
+  type DeleteCtx = {
+    prevRollup: Array<[readonly unknown[], Rollup | undefined]>;
+    prevEntries: Array<[readonly unknown[], Entry[] | undefined]>;
+  };
+
+  const optimisticRemove = useCallback(async (ids: number[]): Promise<DeleteCtx> => {
+    await queryClient.cancelQueries({ queryKey: ['rollup'] });
+    await queryClient.cancelQueries({ queryKey: ['entries'] });
+    // Snapshot ALL rollup/entries caches for an exact rollback, but only PATCH
+    // the ACTIVE period's rollup. The deleted rows belong to the list the user
+    // is deleting from (the active entries cache), so applying the delta to the
+    // active rollup is correct; applying it to every cached window (TODAY/WEEK/
+    // MONTH/dayOffset/custom) could write wrong values into windows that don't
+    // contain these rows. The reconcile invalidation below refreshes the rest.
+    const prevRollup  = queryClient.getQueriesData<Rollup>({ queryKey: ['rollup'] });
+    const prevEntries = queryClient.getQueriesData<Entry[]>({ queryKey: ['entries'] });
+    const idSet = new Set(ids);
+
+    // The rows being deleted, taken from the active entries cache. If NONE of
+    // the deleted ids are in the active period (e.g. a calendar delete of an
+    // out-of-period row), we leave the active rollup untouched and let the
+    // reconcile refetch handle it — patching here would recompute values from a
+    // 200-row-capped cache and introduce drift for a window that didn't change.
+    const activeEntries = queryClient.getQueryData<Entry[]>(entriesKey) ?? [];
+    const removed = activeEntries.filter(e => idSet.has(e.id));
+
+    if (removed.length > 0) {
+      // Sum the removed rows' contribution. Amount is SIGNED (expenses /
+      // cancellations are negative), so key off the sign rather than the type:
+      // amount >= 0 reduces revenue, amount < 0 reduces expenses.
+      let dRevenue = 0, dExpenses = 0, dMiles = 0, dHours = 0;
+      for (const e of removed) {
+        const amt = Number(e.amount) || 0;
+        if (amt >= 0) dRevenue += amt; else dExpenses += Math.abs(amt);
+        dMiles += Number(e.distance_miles) || 0;
+        dHours += (Number(e.duration_minutes) || 0) / 60;
+      }
+
+      // average_order_value mirrors the backend: sum of ORDER-type amounts
+      // divided by the ORDER-type count (NOT all positive rows — BONUS is
+      // excluded). Recompute from the entries that REMAIN in the active period.
+      const remainingOrders = activeEntries.filter(e => !idSet.has(e.id) && e.type === 'ORDER');
+      const remainingOrderRevenue = remainingOrders.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      const remainingOrderCount = remainingOrders.length;
+
+      queryClient.setQueryData<Rollup>(rollupKey, (old) => {
+        if (!old) return old;
+        const revenue  = old.revenue  - dRevenue;
+        const expenses = old.expenses - dExpenses;
+        const profit   = revenue - expenses;
+        const miles    = old.miles - dMiles;
+        const hours    = old.hours - dHours;
+        return {
+          ...old,
+          revenue,
+          expenses,
+          profit,
+          miles,
+          hours,
+          dollars_per_mile: miles > 0 ? profit / miles : 0,
+          dollars_per_hour: hours > 0 ? profit / hours : 0,
+          average_order_value: remainingOrderCount > 0 ? remainingOrderRevenue / remainingOrderCount : 0,
+          goal_progress: old.goal?.target_profit
+            ? profit / old.goal.target_profit
+            : old.goal_progress ?? null,
+        };
+      });
+    }
+
+    // Removing rows by id from EVERY entries cache is always safe — a row only
+    // lives in caches whose window contains it — so the History list stays in
+    // sync regardless of which period view is mounted.
+    queryClient.setQueriesData<Entry[]>({ queryKey: ['entries'] }, (old) =>
+      Array.isArray(old) ? old.filter(e => !idSet.has(e.id)) : old,
+    );
+
+    return { prevRollup, prevEntries };
+  }, [queryClient, rollupKey, entriesKey]);
+
+  const rollbackRemove = useCallback((ctx?: DeleteCtx) => {
+    if (!ctx) return;
+    for (const [key, data] of ctx.prevRollup)  queryClient.setQueryData(key, data);
+    for (const [key, data] of ctx.prevEntries) queryClient.setQueryData(key, data);
+  }, [queryClient]);
+
+  // Reconcile every dashboard-feeding cache with the server after a delete.
+  const reconcileAfterDelete = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['entries'] });
+    queryClient.invalidateQueries({ queryKey: ['rollup'] });
+    queryClient.invalidateQueries({ queryKey: ['goal'] });
+    queryClient.invalidateQueries({ queryKey: ['entries-range'] });
+  }, [queryClient]);
+
   const deleteMutation = useMutation({
     mutationFn: api.deleteEntry,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+    onMutate: (id: number) => optimisticRemove([id]),
+    onError: (_e, _id, ctx) => {
+      rollbackRemove(ctx);
+      reconcileAfterDelete();
+      Alert.alert('Error', 'Failed to delete entry.');
     },
+    onSuccess: () => { reconcileAfterDelete(); },
   });
 
   // Bulk delete — fires DELETE requests in parallel, then invalidates once
   // at the end so the list re-renders a single time. The backend has no
   // batch endpoint, so this is just Promise.allSettled over the per-id
-  // delete. Failures are surfaced as a count in an Alert.
+  // delete. Failures are surfaced as a count in an Alert. The optimistic patch
+  // removes ALL ids up front; if some deletes fail, the reconcile refetch
+  // brings the surviving rows (and their KPI contribution) back.
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: number[]) => {
       const results = await Promise.allSettled(ids.map(id => api.deleteEntry(id)));
       const failed = results.filter(r => r.status === 'rejected').length;
       return { total: ids.length, failed };
     },
+    onMutate: (ids: number[]) => optimisticRemove(ids),
     onSuccess: ({ total, failed }) => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      reconcileAfterDelete();
       exitSelectionMode();
       if (failed > 0) {
         Alert.alert('Partial delete', `Deleted ${total - failed} of ${total}. ${failed} failed.`);
@@ -2901,7 +3008,11 @@ export default function DashboardScreen() {
         hNotifyOk();
       }
     },
-    onError: () => Alert.alert('Error', 'Bulk delete failed.'),
+    onError: (_e, _ids, ctx) => {
+      rollbackRemove(ctx);
+      reconcileAfterDelete();
+      Alert.alert('Error', 'Bulk delete failed.');
+    },
   });
 
   const upsertGoalMutation = useMutation({
@@ -3921,19 +4032,17 @@ export default function DashboardScreen() {
         }}
         onDeleteEntries={async (ids) => {
           // Calendar's bulk-erase path. Reuses the per-id delete endpoint
-          // (no batch route on backend) via Promise.allSettled, then
-          // invalidates the same keys the dashboard renders. We always
-          // invalidate (even on partial success) but THROW when any deletes
-          // failed so the calendar keeps the selection visible for retry
-          // and shows error haptic + alert instead of success.
+          // (no batch route on backend) via Promise.allSettled. We optimistically
+          // strip the rows from the rollup/entries caches first so the dashboard
+          // KPIs + goal bar reset instantly, then reconcile with the server. On
+          // any failure we roll the optimistic patch back and THROW so the
+          // calendar keeps the selection visible for retry and shows error
+          // haptic + alert instead of success (the reconcile refetch still runs).
+          const ctx = await optimisticRemove(ids);
           const results = await Promise.allSettled(ids.map(id => api.deleteEntry(id)));
           const failed = results.filter(r => r.status === 'rejected').length;
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['entries'] }),
-            queryClient.invalidateQueries({ queryKey: ['rollup'] }),
-            queryClient.invalidateQueries({ queryKey: ['goal'] }),
-            queryClient.invalidateQueries({ queryKey: ['entries-range'] }),
-          ]);
+          if (failed > 0) rollbackRemove(ctx);
+          reconcileAfterDelete();
           if (failed > 0) {
             throw new Error(`Deleted ${ids.length - failed} of ${ids.length}. ${failed} could not be deleted.`);
           }
