@@ -132,6 +132,20 @@ export async function drainQueue(
   return { flushed, failed: 0, dropped };
 }
 
+// Remove a still-queued (offline, never-persisted) entry by the negative
+// synthetic id that `synthesizeEntry` derived from its `queuedAt`. Used by
+// `deleteEntry` so deleting an offline row drops it from the queue instead of
+// firing a doomed DELETE for a server id that doesn't exist — and so the
+// background drainer won't later re-create the row the user just deleted.
+// Returns true when a queued item was actually found and removed.
+export async function removeQueuedBySyntheticId(syntheticId: number): Promise<boolean> {
+  const items = await readQueue();
+  const next = items.filter(it => -Math.floor(it.queuedAt / 1000) !== syntheticId);
+  if (next.length === items.length) return false;
+  await writeQueue(next);
+  return true;
+}
+
 export async function clearQueue(): Promise<void> {
   await AsyncStorage.removeItem(QUEUE_KEY);
 }

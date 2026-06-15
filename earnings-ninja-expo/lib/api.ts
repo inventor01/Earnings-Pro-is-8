@@ -344,9 +344,26 @@ export const api = {
   },
 
   async deleteEntry(id: number): Promise<void> {
+    // Optimistic-create and offline-queued rows use a NEGATIVE synthetic id —
+    // the server never persisted a row under that id. Firing a DELETE for it
+    // returns 404, which is the root cause of the "Failed to delete" seen when
+    // deleting a just-added entry on the first attempt (the retry only worked
+    // because the failed delete's refetch had meanwhile swapped in the real
+    // id). For these ids, drop the row from the offline queue instead so the
+    // background drainer won't recreate it, and treat the delete as done.
+    if (id < 0) {
+      try {
+        const { removeQueuedBySyntheticId } = await import('./offlineQueue');
+        await removeQueuedBySyntheticId(id);
+      } catch {}
+      return;
+    }
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/entries/${id}`, { method: 'DELETE', headers });
-    if (!res.ok) throw new Error('Failed to delete entry');
+    // Treat an already-gone row (404) as success — the goal state (row absent)
+    // is achieved, and surfacing an error here would wrongly roll the optimistic
+    // removal back and re-show a row the server no longer has.
+    if (!res.ok && res.status !== 404) throw new Error('Failed to delete entry');
   },
 
   // Partial-update an entry. Backend (`PUT /api/entries/{id}`) accepts the

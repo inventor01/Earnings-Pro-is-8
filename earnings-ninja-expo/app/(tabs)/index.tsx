@@ -1730,9 +1730,9 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       hTap();
       reset();
       onClose();
-      return { prev: prevRollup, prevEntries };
+      return { prev: prevRollup, prevEntries, syntheticId: syntheticEntry.id };
     },
-    onSuccess: (_data, vars) => {
+    onSuccess: (_data, vars, ctx) => {
       // `createEntry` returns a synthetic, NEGATIVE-id Entry when the POST
       // failed (flaky network while driving) and the entry was only QUEUED
       // offline — the server does NOT have the row yet. Invalidating in that
@@ -1745,6 +1745,16 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       // invalidate once the row really lands.
       const persisted = typeof _data?.id === 'number' && _data.id > 0;
       if (persisted) {
+        // Swap the optimistic synthetic-id row for the real server row IN PLACE
+        // so the list immediately carries the real (positive) id. Without this
+        // the row keeps its negative synthetic id until the async refetch lands,
+        // and a delete/edit fired in that window targets an id the server never
+        // had → 404 ("Failed to delete" on the first attempt, works on retry).
+        if (ctx?.syntheticId !== undefined) {
+          queryClient.setQueriesData<Entry[]>({ queryKey: ['entries'] }, (old) =>
+            Array.isArray(old) ? old.map(e => (e.id === ctx.syntheticId ? _data : e)) : old,
+          );
+        }
         queryClient.invalidateQueries({ queryKey: ['entries'] });
         queryClient.invalidateQueries({ queryKey: ['rollup'] });
         queryClient.invalidateQueries({ queryKey: ['goal'] });
