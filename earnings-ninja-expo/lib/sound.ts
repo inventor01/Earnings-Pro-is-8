@@ -1,11 +1,12 @@
-import type { Audio as AudioNS } from 'expo-av';
+import type { AudioPlayer } from 'expo-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// expo-av is a NATIVE module. It's imported lazily (require, inside try/catch)
-// rather than at module top-level so that if this JS ever lands on a binary that
-// predates the native module (e.g. an OTA pushed to an older build), it cannot
-// crash the app on startup — the sound simply no-ops. The type-only import above
-// is erased at compile time and never triggers a runtime load.
+// expo-audio is a NATIVE module (the SDK 54 successor to the now-removed
+// expo-av). It is loaded LAZILY via require() inside a try/catch rather than at
+// module top-level so that if this JS ever lands on a binary that predates the
+// native module (e.g. an OTA pushed to an older build), it cannot crash the app
+// on startup — the sound simply no-ops. The type-only import above is erased at
+// compile time and never triggers a runtime load.
 
 // ─── Ka-Ching sound effect ───────────────────────────────────────────────────
 // Plays a short cash-register "ka-ching" when the user successfully logs an
@@ -14,16 +15,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 //
 // Opt-out only: defaults ON (an unset flag is treated as enabled) because the
 // sound is the whole point of the feature; the Settings toggle persists the
-// user's choice. expo-av is a NATIVE module, so this only works in a build that
-// bundled it — it will no-op until the next EAS build.
+// user's choice. expo-audio is a NATIVE module, so this only works in a build
+// that bundled it — it will no-op until the next EAS build.
 
 export const SOUND_ENABLED_KEY = 'sound_enabled';
 
-// A single cached Sound instance, lazily loaded on first play and then replayed
+// A single cached AudioPlayer, lazily created on first play and then replayed
 // from position 0. Keeping one loaded instance avoids the decode latency of
 // re-creating it on every rapid entry save.
-let sound: AudioNS.Sound | null = null;
-let loading: Promise<void> | null = null;
+let player: AudioPlayer | null = null;
+let audioModeSet = false;
 
 export async function getSoundEnabled(): Promise<boolean> {
   try {
@@ -44,43 +45,37 @@ export async function setSoundEnabled(v: boolean): Promise<void> {
   }
 }
 
-async function ensureLoaded(): Promise<void> {
-  if (sound) return;
-  if (!loading) {
-    loading = (async () => {
-      // Lazy native require: see top-of-file note. Throws on a binary without
-      // the native module, which the catch below turns into a silent no-op.
-      const { Audio } = require('expo-av') as typeof import('expo-av');
-      // Play through the iOS silent switch — the sound only fires on a
-      // deliberate user action (saving an entry) and is fully opt-outable, so
-      // a driver on silent still gets the satisfying confirmation they enabled.
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-      const { sound: s } = await Audio.Sound.createAsync(
-        require('../assets/kaching.wav'),
-      );
-      sound = s;
-    })();
+function ensurePlayer(): AudioPlayer | null {
+  if (player) return player;
+  // Lazy native require: see top-of-file note. Throws on a binary without the
+  // native module, which the catch in playKaching turns into a silent no-op.
+  const { createAudioPlayer, setAudioModeAsync } =
+    require('expo-audio') as typeof import('expo-audio');
+  if (!audioModeSet) {
+    // Play through the iOS silent switch — the sound only fires on a deliberate
+    // user action (saving an entry) and is fully opt-outable, so a driver on
+    // silent still gets the satisfying confirmation they enabled. Best-effort;
+    // a failure here must not block creating/playing the sound.
+    setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+    audioModeSet = true;
   }
-  try {
-    await loading;
-  } catch {
-    // Reset so a later play can retry the load instead of being stuck on a
-    // rejected promise.
-    loading = null;
-    sound = null;
-  }
+  // createAudioPlayer is synchronous and loads the bundled asset eagerly, so the
+  // player is ready to play essentially immediately for a small local file.
+  player = createAudioPlayer(require('../assets/kaching.wav'));
+  return player;
 }
 
 // Play the ka-ching, honoring the Settings toggle. Entirely best-effort: any
-// failure (asset missing in an OTA-only build, audio session busy, etc.) is
-// swallowed so it can never disrupt the save flow.
+// failure (asset missing in an OTA-only build, native module absent, audio
+// session busy, etc.) is swallowed so it can never disrupt the save flow.
 export async function playKaching(): Promise<void> {
   try {
     if (!(await getSoundEnabled())) return;
-    await ensureLoaded();
-    if (!sound) return;
-    await sound.setPositionAsync(0);
-    await sound.playAsync();
+    const p = ensurePlayer();
+    if (!p) return;
+    // Rewind so rapid back-to-back saves each retrigger from the start.
+    p.seekTo(0);
+    p.play();
   } catch {
     // no-op
   }
