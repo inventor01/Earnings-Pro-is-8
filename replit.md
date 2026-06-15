@@ -48,10 +48,11 @@ The backend is built with FastAPI (Python 3.11) and SQLAlchemy ORM for SQLite. T
 - Standard pre-ship checks for mobile work: `npx tsc --noEmit` (exit 0) + `npx expo export --platform ios` (exit 0).
 
 ## Outstanding [USER ACTION] items
-- Run a future `eas build --platform ios --profile preview` to bake the updater + pending native deps (CSV export, notifications) into the installed app; OTA only works from that build forward.
+- Run a future `eas build --platform ios --profile preview` to bake the updater + pending native deps (CSV export, notifications, **expo-av ka-ching sound**) into the installed app; OTA only works from that build forward.
 - Enable the **Sign In with Apple** capability on App ID `com.earningsninja.app` in the Apple Developer portal before the first EAS build.
 
 ## Recent Changes (condensed — full detail in git history + `.agents/memory/`)
+- **Jun 15 — Ka-Ching sound effect (optional)**: cash-register sound on successful entry save (covers iOS widget quick-add via the shared save mutation) + foreground motivation notifications; Settings pill toggle, defaults ON. Uses `expo-av` (NEW native dep → next EAS build, not OTA). Lazy-required + best-effort so it no-ops on pre-native builds. `.agents/memory/kaching-sound-effect.md`.
 - **Jun 1 — Analytics instant refresh fix**: Analytics modal reads its own React-Query namespace (`['analytics-rollup']`/`['analytics-entries']`); entry add/edit/delete/import + offline-drain now invalidate those keys too, so it no longer shows stale data within the 30s `staleTime`. `.agents/memory/analytics-cache-invalidation.md`.
 - **Jun 1 — Transaction Detail modal de-bounced**: replaced `ZoomIn.springify()` with a `withTiming` fade + slight scale-up worklet; close still via `<Modal animationType="fade" />`.
 - **Jun 1 — Period swipe/chevron nav from ANY period**: signed `navOffset` steps by the chip's natural unit (day/week/month) over EST ranges; distinct cache keys per window; day-periods share the daily TODAY goal. `.agents/memory/period-swipe-navigation.md`.

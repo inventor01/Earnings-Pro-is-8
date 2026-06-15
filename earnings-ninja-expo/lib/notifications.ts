@@ -25,6 +25,11 @@ const EVENING_HOUR = 20;
 const MORNING_ID = 'motivation-morning';
 const EVENING_ID = 'motivation-evening';
 
+// The full set of motivation-notification identifiers. Exported so the root
+// notification listener can tell our motivation nudges apart from any other
+// (future) local notification before playing the ka-ching sound effect.
+export const MOTIVATION_IDS: string[] = [MORNING_ID, EVENING_ID];
+
 // Foreground display behaviour. Without a handler iOS suppresses banners while
 // the app is in the foreground; we want the driver to see the nudge regardless.
 Notifications.setNotificationHandler({

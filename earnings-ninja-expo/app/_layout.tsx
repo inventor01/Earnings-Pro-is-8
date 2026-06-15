@@ -12,7 +12,9 @@ import { ThemeProvider } from '@/lib/theme';
 import { HiddenModeProvider, useHiddenMode } from '@/lib/hiddenMode';
 import { api } from '@/lib/api';
 import { drainQueue, getQueueDepth } from '@/lib/offlineQueue';
-import { refreshMotivationSchedule } from '@/lib/notifications';
+import { refreshMotivationSchedule, MOTIVATION_IDS } from '@/lib/notifications';
+import { playKaching } from '@/lib/sound';
+import * as Notifications from 'expo-notifications';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -88,6 +90,20 @@ function RootNav() {
     if (!token) return;
     refreshMotivationSchedule({ hidden, force: true }).catch(() => {});
   }, [hidden, token]);
+
+  // Play the ka-ching sound effect when one of our motivation notifications is
+  // delivered while the app is in the foreground (iOS only fires this listener
+  // for foreground deliveries). Gated by the Settings sound toggle inside
+  // playKaching(); other (future) local notifications are ignored by id.
+  useEffect(() => {
+    const sub = Notifications.addNotificationReceivedListener((n) => {
+      const id = n.request?.identifier;
+      if (id && MOTIVATION_IDS.includes(id)) {
+        playKaching().catch(() => {});
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   // Deep links from the iOS widget land here. The widget tile fires
   // `earningsninja://entry/new` (and the QuickAddIntent uses the same scheme

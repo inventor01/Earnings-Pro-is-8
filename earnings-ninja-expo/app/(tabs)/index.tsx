@@ -30,6 +30,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import { syncNotifState, enableMotivation, disableMotivation } from '@/lib/notifications';
+import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv } from '@/lib/csvExport';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -1669,6 +1670,12 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
         queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
       }
       hNotifyOk();
+      // Satisfying cash-register "ka-ching" on a successful save. This is the
+      // single save path for BOTH manual adds and iOS widget quick-adds (the
+      // widget deep-links into this same modal/mutation), so it covers both.
+      // No-ops when the Settings sound toggle is off or in an OTA-only build
+      // that predates the expo-av native module.
+      playKaching();
       // Remember the last app the user logged revenue against — the iOS
       // widget's quick-add buttons use this as the platform, and the Add Entry
       // modal defaults new orders to it (read back via LAST_ORDER_APP_KEY).
@@ -2238,6 +2245,8 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   // open so it reflects the real OS/AsyncStorage state.
   const [notifOn, setNotifOn] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
+  // Ka-Ching sound effect toggle (defaults ON; persisted in AsyncStorage).
+  const [soundOn, setSoundOn] = useState(true);
   // Re-check on every open (not just first mount): reconciles the persisted flag
   // against live OS permission, so the toggle self-heals if the user revoked
   // notifications in the iOS Settings app while ours was left on.
@@ -2245,8 +2254,21 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
     if (!visible) return;
     let alive = true;
     syncNotifState().then((v) => { if (alive) setNotifOn(v); });
+    getSoundEnabled().then((v) => { if (alive) setSoundOn(v); });
     return () => { alive = false; };
   }, [visible]);
+
+  // Toggle the ka-ching sound effect. Play a sample when turning it ON so the
+  // user immediately hears what they enabled.
+  const onToggleSound = () => {
+    hTap();
+    setSoundOn((prev) => {
+      const next = !prev;
+      setSoundEnabled(next);
+      if (next) playKaching();
+      return next;
+    });
+  };
 
   const onToggleNotif = async () => {
     if (notifBusy) return;
@@ -2433,6 +2455,42 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             alignItems: notifOn ? 'flex-end' : 'flex-start', justifyContent: 'center',
           }}>
             <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: notifOn ? ON_PRIMARY : SURFACE }} />
+          </View>
+        </Pressable>
+
+        {/* Sound */}
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+          🔊 Sound
+        </Text>
+        <Pressable
+          onPress={onToggleSound}
+          style={[
+            {
+              flexDirection: 'row', alignItems: 'center', gap: 12,
+              backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1,
+              borderColor: soundOn ? PRIMARY : BORDER,
+              padding: 14, marginBottom: 24,
+            },
+            soundOn ? neonGlow(PRIMARY, 10, 0.25) : undefined,
+          ].filter(Boolean) as ViewStyle[]}
+        >
+          <View style={{
+            width: 36, height: 36, borderRadius: 18,
+            backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Ionicons name={soundOn ? 'volume-high' : 'volume-mute'} size={18} color={PRIMARY} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Ka-Ching Sound</Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>Cash-register sound when you log an entry</Text>
+          </View>
+          {/* Pill-style toggle (no native Switch — keeps Dark Neon look) */}
+          <View style={{
+            width: 48, height: 28, borderRadius: 14, padding: 3,
+            backgroundColor: soundOn ? PRIMARY : BORDER,
+            alignItems: soundOn ? 'flex-end' : 'flex-start', justifyContent: 'center',
+          }}>
+            <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: soundOn ? ON_PRIMARY : SURFACE }} />
           </View>
         </Pressable>
 
