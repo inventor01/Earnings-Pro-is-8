@@ -15,6 +15,20 @@ extension Color {
     static let neonYellow = Color(red: 0.98,  green: 0.80,  blue: 0.082) // #facc15
     static let neonGreen  = Color(red: 0.13,  green: 0.77,  blue: 0.37)  // #22c55e
     static let neonRed    = Color(red: 0.94,  green: 0.27,  blue: 0.27)  // #ef4444
+
+    // Light theme — clean white surfaces; brand neon (yellow/green/red) reused.
+    static let lightBg    = Color(red: 0.972, green: 0.980, blue: 0.988) // #f8fafc
+    static let lightCard  = Color(red: 0.93,  green: 0.95,  blue: 0.97)  // ~#eef2f7
+    static let lightMuted = Color(red: 0.392, green: 0.455, blue: 0.545) // #64748b
+    static let lightText  = Color(red: 0.059, green: 0.090, blue: 0.165) // #0f172a
+    static let lightGold  = Color(red: 0.631, green: 0.384, blue: 0.027) // #a16207 (readable accent on white)
+
+    // Theme-aware pickers (true = light). Brand neon stays identical in both.
+    static func wBg(_ light: Bool) -> Color         { light ? lightBg    : neonBg }
+    static func wCard(_ light: Bool) -> Color       { light ? lightCard  : neonCard }
+    static func wMuted(_ light: Bool) -> Color      { light ? lightMuted : neonMuted }
+    static func wText(_ light: Bool) -> Color       { light ? lightText  : neonText }
+    static func wAccentText(_ light: Bool) -> Color { light ? lightGold  : neonYellow }
 }
 
 // ─── Shared storage helpers ──────────────────────────────────────────────────
@@ -35,6 +49,12 @@ struct WidgetStore {
     /// QuickAddIntent uses this so we don't need a per-button platform picker.
     static var lastApp: String {
         defaults()?.string(forKey: "last_app") ?? "DOORDASH"
+    }
+
+    /// App theme pushed by `lib/widgetSync.ts` ("dark" | "light"). Defaults to
+    /// dark so the widget matches the app's default appearance.
+    static var isLight: Bool {
+        defaults()?.string(forKey: "theme") == "light"
     }
 
     /// True only when the user has logged into the app at least once AND the
@@ -93,7 +113,7 @@ struct QuickAmountButton: View {
                 .frame(maxWidth: .infinity, minHeight: 32)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.neonCard)
+                        .fill(Color.wCard(WidgetStore.isLight))
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(isExpense ? Color.neonRed.opacity(0.4) : Color.neonGreen.opacity(0.4), lineWidth: 1)
@@ -144,11 +164,11 @@ struct SignInPlaceholder: View {
                 .font(.system(size: 32))
             Text("Sign in to Earnings Ninja")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(.neonMuted)
+                .foregroundColor(.wMuted(WidgetStore.isLight))
                 .multilineTextAlignment(.center)
             Text("Tap to open")
                 .font(.system(size: 9, weight: .bold))
-                .foregroundColor(.neonYellow)
+                .foregroundColor(.wAccentText(WidgetStore.isLight))
                 .tracking(1)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -167,7 +187,7 @@ struct EarningsWidgetSmallView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("TODAY")
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(.neonMuted)
+                    .foregroundColor(.wMuted(WidgetStore.isLight))
                     .tracking(1.2)
                 Text(formatProfit(entry.profit))
                     .font(.system(size: 22, weight: .heavy))
@@ -206,7 +226,7 @@ struct EarningsWidgetMediumView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("TODAY")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.neonMuted)
+                            .foregroundColor(.wMuted(WidgetStore.isLight))
                             .tracking(1.5)
                         Text(formatProfit(entry.profit))
                             .font(.system(size: 28, weight: .heavy))
@@ -359,7 +379,7 @@ struct EarningsWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             EarningsWidgetEntryView(entry: entry)
-                .containerBackground(for: .widget) { Color.neonBg }
+                .containerBackground(for: .widget) { Color.wBg(WidgetStore.isLight) }
         }
         .configurationDisplayName("Earnings Ninja")
         .description("Quick add revenue or expense entries.")

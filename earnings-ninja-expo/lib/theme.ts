@@ -1,8 +1,11 @@
 import { createContext, useContext, useEffect, useState, useCallback, createElement } from 'react';
 import type { ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { widgetSync } from './widgetSync';
 
-export type ThemeName = 'darkNeon' | 'simpleLight' | 'bwNeon';
+// Two themes only: 'dark' (default, the neon Car-Dashboard look) and 'light'
+// (clean white background that keeps the exact brand neon accents + glows).
+export type ThemeName = 'dark' | 'light';
 
 export interface Theme {
   name: ThemeName;
@@ -13,7 +16,8 @@ export interface Theme {
   CARD_BG: string;
   CARD: string;
   BORDER: string;
-  PRIMARY: string;
+  PRIMARY: string;      // neon brand accent — fills, glows, borders, active states
+  PRIMARY_TXT: string;  // accent used as FOREGROUND text/icons (readable on the BG)
   ACCENT: string;
   PRI_LITE: string;
   PRI_DARK: string;
@@ -30,9 +34,10 @@ export interface Theme {
   ON_PRIMARY: string;
 }
 
-export const darkNeon: Theme = {
-  name: 'darkNeon',
-  label: 'Dark Neon',
+// ── Dark (default) — true-black with neon glow ──────────────────────────────
+export const dark: Theme = {
+  name: 'dark',
+  label: 'Dark',
   isDark: true,
   BG: '#0a0a0a',
   SURFACE: '#111111',
@@ -40,6 +45,7 @@ export const darkNeon: Theme = {
   CARD: '#1a1a1a',
   BORDER: '#262626',
   PRIMARY: '#facc15',
+  PRIMARY_TXT: '#facc15',   // neon yellow is perfectly readable on black
   ACCENT: '#facc15',
   PRI_LITE: '#2a2410',
   PRI_DARK: '#ca8a04',
@@ -56,71 +62,51 @@ export const darkNeon: Theme = {
   ON_PRIMARY: '#000000',
 };
 
-export const simpleLight: Theme = {
-  name: 'simpleLight',
-  label: 'Simple Light',
+// ── Light — clean white with the SAME brand neon accents/glows ──────────────
+// PRIMARY stays neon yellow (#facc15) so fills, glows, progress bars, borders
+// and active states keep the exact brand pop. Because neon yellow is unreadable
+// as text on white, PRIMARY_TXT switches to a deep brand gold (#a16207, ~5.4:1
+// on white = WCAG AA) for accent text/icons. GREEN keeps the brand #22c55e.
+export const light: Theme = {
+  name: 'light',
+  label: 'Light',
   isDark: false,
   BG: '#f8fafc',
   SURFACE: '#ffffff',
-  CARD_BG: '#f1f5f9',
-  CARD: '#f1f5f9',
+  CARD_BG: '#ffffff',
+  CARD: '#ffffff',
   BORDER: '#e2e8f0',
-  PRIMARY: '#2563eb',
-  ACCENT: '#2563eb',
-  PRI_LITE: '#dbeafe',
-  PRI_DARK: '#1d4ed8',
+  PRIMARY: '#facc15',
+  PRIMARY_TXT: '#a16207',
+  ACCENT: '#facc15',
+  PRI_LITE: '#fef9c3',
+  PRI_DARK: '#ca8a04',
   TEXT: '#0f172a',
   TEXT_MID: '#334155',
   MUTED: '#64748b',
   LABEL: '#94a3b8',
   DIM: '#94a3b8',
-  GREEN: '#16a34a',
+  GREEN: '#22c55e',
   GREEN_LT: '#dcfce7',
-  RED: '#dc2626',
+  RED: '#ef4444',
   RED_LT: '#fee2e2',
-  DIVIDER: '#e2e8f0',
-  ON_PRIMARY: '#ffffff',
-};
-
-// B/W Neon theme — high-contrast monochrome on pure black. Greys had to be
-// bumped from the original 0.73 spec because `#737373` on `#000` is ~4.0:1
-// (fails WCAG AA for body text). Now: MUTED `#bdbdbd` ≈ 11.7:1, LABEL
-// `#9a9a9a` ≈ 7.6:1, BORDER `#3d3d3d` for visible-but-not-loud separators,
-// RED kept as a desaturated muted-but-distinct grey since the theme is
-// strictly B/W (semantics carried by icon shape, not hue).
-export const bwNeon: Theme = {
-  name: 'bwNeon',
-  label: 'B/W Neon',
-  isDark: true,
-  BG: '#000000',
-  SURFACE: '#0a0a0a',
-  CARD_BG: '#141414',
-  CARD: '#141414',
-  BORDER: '#3d3d3d',
-  PRIMARY: '#ffffff',
-  ACCENT: '#ffffff',
-  PRI_LITE: '#1f1f1f',
-  PRI_DARK: '#e5e5e5',
-  TEXT: '#ffffff',
-  TEXT_MID: '#e5e5e5',
-  MUTED: '#bdbdbd',
-  LABEL: '#9a9a9a',
-  DIM: '#9a9a9a',
-  GREEN: '#ffffff',
-  GREEN_LT: '#1f1f1f',
-  RED: '#bdbdbd',
-  RED_LT: '#1f1f1f',
-  DIVIDER: '#2a2a2a',
+  DIVIDER: '#e8edf2',
   ON_PRIMARY: '#000000',
 };
 
 export const THEMES: Record<ThemeName, Theme> = {
-  darkNeon,
-  simpleLight,
-  bwNeon,
+  dark,
+  light,
 };
 
 const STORAGE_KEY = 'theme_name';
+
+// Map any persisted value (incl. legacy 3-theme names) to a current ThemeName.
+function normalizeThemeName(v: string | null | undefined): ThemeName {
+  if (v === 'light' || v === 'simpleLight') return 'light';
+  // 'dark', 'darkNeon', 'bwNeon', null, or anything unknown -> dark (default)
+  return 'dark';
+}
 
 interface ThemeContextValue {
   theme: Theme;
@@ -129,23 +115,31 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: darkNeon,
-  themeName: 'darkNeon',
+  theme: dark,
+  themeName: 'dark',
   setThemeName: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [themeName, setThemeNameState] = useState<ThemeName>('darkNeon');
+  const [themeName, setThemeNameState] = useState<ThemeName>('dark');
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((v) => {
-        if (v && (v === 'darkNeon' || v === 'simpleLight' || v === 'bwNeon')) {
-          setThemeNameState(v as ThemeName);
+        const normalized = normalizeThemeName(v);
+        setThemeNameState(normalized);
+        // Rewrite legacy / unknown values so storage stays canonical.
+        if (v !== normalized) {
+          AsyncStorage.setItem(STORAGE_KEY, normalized).catch(() => {});
         }
       })
       .catch(() => {});
   }, []);
+
+  // Keep the iOS Home Screen widget's appearance in sync with the app theme.
+  useEffect(() => {
+    widgetSync.pushTheme(themeName);
+  }, [themeName]);
 
   const setThemeName = useCallback((name: ThemeName) => {
     setThemeNameState(name);
