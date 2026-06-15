@@ -1038,6 +1038,68 @@ function DetailsForm({
 }) {
   return (
     <View style={{ gap: 14 }}>
+      {/* Live $/Mile Estimator — pinned at the TOP of the details page. Neon
+          card that recomputes profit-per-mile in real time as the amount &
+          miles inputs change. Hidden for EXPENSE entries (no miles). Dark-Neon
+          styled; the glow + value color rate the run (green/yellow/orange). */}
+      {entryType !== 'EXPENSE' && (() => {
+        const amtNum   = parseFloat(amount) || 0;
+        const milesNum = parseFloat(miles)  || 0;
+        const hasData  = milesNum > 0 && amtNum > 0;
+        const perMile  = hasData ? amtNum / milesNum : 0;
+        const rate =
+          perMile >= 2 ? { c: '#22c55e', label: 'Great rate 🔥' }
+          : perMile >= 1 ? { c: '#facc15', label: 'Decent rate' }
+          : { c: '#fb923c', label: 'Low rate' };
+        const accent = hasData ? rate.c : '#22c55e';
+        return (
+          <View style={[{
+            borderRadius: 16,
+            overflow: 'hidden',
+            borderWidth: 1.5,
+            borderColor: accent,
+            backgroundColor: '#0a0a0a',
+          }, neonGlow(accent, 18, hasData ? 0.6 : 0.28)]}>
+            <LinearGradient
+              colors={['#0f172a', '#0a0a0a']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={{
+                paddingHorizontal: 16, paddingVertical: 14,
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  color: '#94a3b8', fontSize: 11, fontWeight: '800',
+                  letterSpacing: 0.6, textTransform: 'uppercase',
+                }}>
+                  💵 Est. $/Mile
+                </Text>
+                <Text style={{
+                  color: hasData ? accent : '#64748b',
+                  fontSize: 12, fontWeight: '700', marginTop: 4,
+                }}>
+                  {hasData
+                    ? `$${amtNum.toFixed(2)} ÷ ${milesNum.toFixed(1)} mi · ${rate.label}`
+                    : 'Enter amount & miles to see your rate'}
+                </Text>
+              </View>
+              <Text style={{
+                color: accent,
+                fontSize: 30, fontWeight: '900',
+                textShadowColor: accent,
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: hasData ? 14 : 0,
+                opacity: hasData ? 1 : 0.5,
+              }}>
+                {hasData ? `$${perMile.toFixed(2)}` : '—'}
+              </Text>
+            </LinearGradient>
+          </View>
+        );
+      })()}
+
       {/* Amount summary — tap to edit, mirrors blue→purple from CalcPad */}
       <Pressable
         onPress={onEditAmount}
@@ -1230,68 +1292,6 @@ function DetailsForm({
               </View>
             </View>
           )}
-
-          {/* Live $/Mile Estimator — neon card that recomputes profit-per-mile
-              in real time as the amount & miles inputs change. Hidden for
-              EXPENSE entries (no miles). Dark-Neon styled to pop on the white
-              sheet; the glow + value color rate the run (green/yellow/orange). */}
-          {entryType !== 'EXPENSE' && (() => {
-            const amtNum   = parseFloat(amount) || 0;
-            const milesNum = parseFloat(miles)  || 0;
-            const hasData  = milesNum > 0 && amtNum > 0;
-            const perMile  = hasData ? amtNum / milesNum : 0;
-            const rate =
-              perMile >= 2 ? { c: '#22c55e', label: 'Great rate 🔥' }
-              : perMile >= 1 ? { c: '#facc15', label: 'Decent rate' }
-              : { c: '#fb923c', label: 'Low rate' };
-            const accent = hasData ? rate.c : '#22c55e';
-            return (
-              <View style={[{
-                borderRadius: 16,
-                overflow: 'hidden',
-                borderWidth: 1.5,
-                borderColor: accent,
-                backgroundColor: '#0a0a0a',
-              }, neonGlow(accent, 18, hasData ? 0.6 : 0.28)]}>
-                <LinearGradient
-                  colors={['#0f172a', '#0a0a0a']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                  style={{
-                    paddingHorizontal: 16, paddingVertical: 14,
-                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                    gap: 12,
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={{
-                      color: '#94a3b8', fontSize: 11, fontWeight: '800',
-                      letterSpacing: 0.6, textTransform: 'uppercase',
-                    }}>
-                      💵 Est. $/Mile
-                    </Text>
-                    <Text style={{
-                      color: hasData ? accent : '#64748b',
-                      fontSize: 12, fontWeight: '700', marginTop: 4,
-                    }}>
-                      {hasData
-                        ? `$${amtNum.toFixed(2)} ÷ ${milesNum.toFixed(1)} mi · ${rate.label}`
-                        : 'Enter amount & miles to see your rate'}
-                    </Text>
-                  </View>
-                  <Text style={{
-                    color: accent,
-                    fontSize: 30, fontWeight: '900',
-                    textShadowColor: accent,
-                    textShadowOffset: { width: 0, height: 0 },
-                    textShadowRadius: hasData ? 14 : 0,
-                    opacity: hasData ? 1 : 0.5,
-                  }}>
-                    {hasData ? `$${perMile.toFixed(2)}` : '—'}
-                  </Text>
-                </LinearGradient>
-              </View>
-            );
-          })()}
 
           {/* Date & Time — defaults to "now" on a fresh entry. Tap to pick a
               custom date/time. The picker renders inline on iOS (spinner) and

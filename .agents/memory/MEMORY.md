@@ -1,2 +1,3 @@
 - [expo-notifications push entitlement](expo-notifications-push-entitlement.md) — SDK54 auto-applies the plugin; for local-only notifications add a local stripper plugin to drop aps-environment.
 - [Optimistic signed-amount follows entry TYPE](optimistic-signed-amount.md) — client rollup patches must sign abs(amount) by entry type like the backend, or type-flip edits patch the wrong direction.
+- [Running eas update (OTA)](eas-update-long-running.md) — bundling outlasts the 2-min bash cap & detached procs get reaped; run it as a one-shot workflow.
