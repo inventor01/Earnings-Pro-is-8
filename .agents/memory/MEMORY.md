@@ -3,3 +3,4 @@
 - [Running eas update (OTA)](eas-update-long-running.md) — bundling outlasts the 2-min bash cap & detached procs get reaped; run it as a one-shot workflow.
 - [Period swipe navigation](period-swipe-navigation.md) — frontend-only time-window nav (EST math, cache keys) + Today/Yesterday chip auto-syncs with swipe/chevron; aggregate periods intentionally not chip-synced.
 - [Ka-Ching sound effect](kaching-sound-effect.md) — expo-av lazy-required + best-effort so OTA to a pre-native build no-ops instead of crashing; native-build-gated; foreground-only notif sound by design.
+- [Lock Screen widget quick-add](lockscreen-widget.md) — quick-add buttons live on accessoryRectangular only; QuickAddIntent uses authenticationPolicy=.alwaysAllowed so it runs while locked (write-only, safe).

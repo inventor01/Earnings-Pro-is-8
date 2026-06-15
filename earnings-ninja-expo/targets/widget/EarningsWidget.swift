@@ -104,6 +104,36 @@ struct QuickAmountButton: View {
     }
 }
 
+// ─── Compact quick-amount button (Lock Screen accessoryRectangular) ──────────
+// iOS 17 allows interactive App Intent buttons inside Lock Screen widgets. The
+// Lock Screen renders accessory widgets in `.vibrant` mode, so the system tints
+// everything monochrome — we use a clear fill + thin stroke so the outline reads
+// cleanly under that tint instead of fighting it with neon fills. Sized small to
+// fit the short (~72pt) rectangular accessory next to the profit line.
+@available(iOS 17.0, *)
+struct LockQuickAmountButton: View {
+    let amount: Int
+    let kind: String   // "revenue" | "expense"
+    let isExpense: Bool
+
+    var body: some View {
+        Button(intent: QuickAddIntent(kind: kind, amount: Double(amount))) {
+            Text("\(isExpense ? "−" : "+")$\(amount)")
+                .font(.system(size: 12, weight: .heavy))
+                .frame(maxWidth: .infinity, minHeight: 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.clear)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(lineWidth: 1)
+                        )
+                )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 // ─── Sign-in placeholder ─────────────────────────────────────────────────────
 // Shown when no auth_token exists in the App Group OR api_base is not HTTPS.
 // Tapping opens the app via the widgetURL on the parent view.
@@ -223,9 +253,12 @@ struct EarningsWidgetMediumView: View {
 }
 
 // ─── Lock Screen widget views ────────────────────────────────────────────────
-// iOS 16+ accessory families. Single tap opens the app (Lock Screen widgets
-// can't host interactive buttons until iOS 17, and even then quick-add
-// fits poorly on a 2-line glanceable surface — so we keep these glance-only).
+// iOS 16+ accessory families. `inline` and `circular` are too cramped for
+// controls, so they stay glance-only (single tap opens the app). The
+// `rectangular` family is roomy enough to show today's profit AND, on iOS 17+,
+// host interactive + Revenue / − Expense quick-add buttons right on the Lock
+// Screen — same App Intent the Home Screen widget uses, so it works fully via
+// the shared App Group without opening the app.
 @available(iOS 16.0, *)
 struct EarningsWidgetInlineView: View {
     let entry: EarningsEntry
@@ -252,16 +285,38 @@ struct EarningsWidgetCircularView: View {
 struct EarningsWidgetRectangularView: View {
     let entry: EarningsEntry
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text("EARNINGS NINJA")
-                .font(.system(size: 9, weight: .bold))
-                .tracking(1.2)
-            if entry.isReady {
-                Text("Today: \(formatProfit(entry.profit))")
-                    .font(.system(size: 13, weight: .heavy))
-                Text("Tap to add entry")
-                    .font(.system(size: 9))
-            } else {
+        if entry.isReady {
+            VStack(alignment: .leading, spacing: 3) {
+                // Profit header line.
+                HStack(spacing: 4) {
+                    Text("🥷")
+                        .font(.system(size: 11))
+                    Text("TODAY")
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(1)
+                    Spacer(minLength: 2)
+                    Text(formatProfit(entry.profit))
+                        .font(.system(size: 13, weight: .heavy))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
+                // Interactive quick-add row (iOS 17+). On iOS 16 the buttons
+                // aren't available, so fall back to the tap-to-open hint.
+                if #available(iOS 17.0, *) {
+                    HStack(spacing: 5) {
+                        LockQuickAmountButton(amount: 10, kind: "revenue", isExpense: false)
+                        LockQuickAmountButton(amount: 10, kind: "expense", isExpense: true)
+                    }
+                } else {
+                    Text("Tap to add entry")
+                        .font(.system(size: 9))
+                }
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("EARNINGS NINJA")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(1.2)
                 Text("Tap to sign in")
                     .font(.system(size: 11, weight: .semibold))
             }
