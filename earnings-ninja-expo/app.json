@@ -104,7 +104,8 @@
       "expo-apple-authentication",
       "@bacons/apple-targets",
       "@react-native-community/datetimepicker",
-      "./plugins/withLocalNotificationsOnly"
+      "./plugins/withLocalNotificationsOnly",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true
