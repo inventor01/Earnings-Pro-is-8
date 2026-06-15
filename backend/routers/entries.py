@@ -48,7 +48,9 @@ async def create_entry(entry: EntryCreate, db: Session = Depends(get_db), curren
         duration_minutes=entry.duration_minutes or 0,
         category=entry.category,
         note=entry.note,
-        receipt_url=entry.receipt_url
+        receipt_url=entry.receipt_url,
+        is_business_expense=entry.is_business_expense or False,
+        during_business_hours=entry.during_business_hours or False
     )
     db.add(db_entry)
     db.commit()

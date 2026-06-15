@@ -87,6 +87,7 @@ export interface Entry {
   category?: ExpenseCategory;
   note?: string;
   receipt_url?: string;
+  is_business_expense?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -102,6 +103,7 @@ export interface EntryCreate {
   date?: string;
   time?: string;
   receipt_url?: string;
+  is_business_expense?: boolean;
 }
 
 export interface Rollup {

@@ -580,6 +580,8 @@ function EntryRow({
   const { TEXT, LABEL, MUTED, RED, GREEN, DIVIDER, PRIMARY, PRI_LITE } = useTheme();
   const { hidden } = useHiddenMode();
   const isExpense = entry.amount < 0;
+  const isBusiness = !!entry.is_business_expense;
+  const BIZ = '#3b82f6';
   const appColor  = APP_COLORS[entry.app] || MUTED;
   const time      = parseServerDate(entry.timestamp).toLocaleTimeString('en-US', {
     hour: 'numeric', minute: '2-digit', hour12: true,
@@ -612,17 +614,24 @@ function EntryRow({
       )}
       <View style={{
         width: 38, height: 38, borderRadius: 19,
-        backgroundColor: appColor + '18',
+        backgroundColor: isBusiness ? BIZ + '22' : appColor + '18',
         alignItems: 'center', justifyContent: 'center', marginRight: 12,
       }}>
-        <Text style={{ fontSize: 14, fontWeight: '900', color: appColor }}>
-          {(APP_LABELS[entry.app] || 'O')[0]}
-        </Text>
+        {isBusiness ? (
+          <Text style={{ fontSize: 16 }}>💼</Text>
+        ) : (
+          <Text style={{ fontSize: 14, fontWeight: '900', color: appColor }}>
+            {(APP_LABELS[entry.app] || 'O')[0]}
+          </Text>
+        )}
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
           {APP_LABELS[entry.app]}
           <Text style={{ color: LABEL, fontWeight: '400', fontSize: 12 }}> · {entry.type}</Text>
+          {isBusiness ? (
+            <Text style={{ color: BIZ, fontWeight: '700', fontSize: 12 }}> · 💼 Business</Text>
+          ) : null}
         </Text>
         <Text style={{ color: LABEL, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
           {date} · {time}{entry.distance_miles > 0 ? ` · ${Number(entry.distance_miles).toFixed(1)} mi` : ''}
@@ -1028,6 +1037,7 @@ function FormInput({
 
 function DetailsForm({
   isExp, amount, entryType, setEntryType, app, setApp, appAutoFilled, lastAppLabel, category, setCategory,
+  isBusiness, setIsBusiness,
   miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
   receiptUri, onPickReceipt, onRemoveReceipt,
   entryDate, showDatePicker, onToggleDatePicker, onChangeDate,
@@ -1042,6 +1052,8 @@ function DetailsForm({
   lastAppLabel: string;
   category: ExpenseCategory;
   setCategory: (c: ExpenseCategory) => void;
+  isBusiness: boolean;
+  setIsBusiness: (b: boolean) => void;
   miles: string;
   setMiles: (s: string) => void;
   minutes: string;
@@ -1239,6 +1251,44 @@ function DetailsForm({
             </View>
           )}
 
+          {/* Business expense toggle (only for EXPENSE) — flags the expense as
+              tax-deductible. Stored as is_business_expense; surfaced with a
+              distinct briefcase/blue indicator in lists + an Analytics summary. */}
+          {entryType === 'EXPENSE' && (
+            <View>
+              <FieldLabel>💼 Business Expense</FieldLabel>
+              <Pressable
+                onPress={() => { hTap(); setIsBusiness(!isBusiness); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                  borderWidth: 1.5,
+                  borderColor: isBusiness ? '#2563eb' : '#e5e7eb',
+                  backgroundColor: isBusiness ? '#eff6ff' : '#f9fafb',
+                  borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, gap: 12,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                  <Text style={{ fontSize: 20 }}>{isBusiness ? '💼' : '🧾'}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
+                      Is this a business expense?
+                    </Text>
+                    <Text style={{ color: '#6b7280', fontSize: 11, marginTop: 1 }}>
+                      Tax-deductible · tracked separately in Analytics
+                    </Text>
+                  </View>
+                </View>
+                <View style={{
+                  width: 46, height: 28, borderRadius: 14, padding: 3,
+                  backgroundColor: isBusiness ? '#2563eb' : '#cbd5e1',
+                  alignItems: isBusiness ? 'flex-end' : 'flex-start', justifyContent: 'center',
+                }}>
+                  <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#ffffff' }} />
+                </View>
+              </Pressable>
+            </View>
+          )}
+
           {/* Receipt photo (only for EXPENSE) — uses CALC palette since this
               modal stays on the white "Add Entry" sheet regardless of theme. */}
           {entryType === 'EXPENSE' && (
@@ -1405,6 +1455,8 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
   const [note, setNote]           = useState('');
   const [receiptUri, setReceiptUri]       = useState<string | null>(null);
   const [receiptDataUri, setReceiptDataUri] = useState<string | null>(null);
+  // Tax-deductible flag for EXPENSE entries (the "business expense?" toggle).
+  const [isBusiness, setIsBusiness] = useState(false);
   // Date/time the entry should be filed under. Defaults to "now" — backend
   // accepts `date`/`time` strings (interpreted in US/Eastern) and converts
   // to UTC. Editing flow seeds this from the entry's existing timestamp.
@@ -1425,6 +1477,7 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
     setEntryType('ORDER'); setApp('DOORDASH'); setCategory('GAS');
     setMiles(''); setMinutes(''); setNote('');
     setReceiptUri(null); setReceiptDataUri(null);
+    setIsBusiness(false);
     setEntryDate(new Date()); setShowDatePicker(false);
     setAppAutoFilled(false);
   };
@@ -1494,6 +1547,7 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
     setNote(editing.note || '');
     setReceiptUri(editing.receipt_url || null);
     setReceiptDataUri(editing.receipt_url || null);
+    setIsBusiness(!!editing.is_business_expense);
     setEntryDate(parseServerDate(editing.timestamp));
     setStep('details');
   }, [visible, editing]);
@@ -1620,6 +1674,7 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
         category: vars.category,
         note: vars.note,
         receipt_url: vars.receipt_url,
+        is_business_expense: vars.is_business_expense,
         created_at: now.toISOString(),
         updated_at: now.toISOString(),
       };
@@ -1818,6 +1873,7 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
           category: patch.category ?? e.category,
           note: patch.note ?? e.note,
           receipt_url: patch.receipt_url ?? e.receipt_url,
+          is_business_expense: patch.is_business_expense ?? e.is_business_expense,
           timestamp: newTs,
           updated_at: now.toISOString(),
         } : e);
@@ -1869,6 +1925,7 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       category: entryType === 'EXPENSE' ? category : undefined,
       note: note || undefined,
       receipt_url: entryType === 'EXPENSE' && receiptDataUri ? receiptDataUri : undefined,
+      is_business_expense: entryType === 'EXPENSE' ? isBusiness : false,
       date: dateStr,
       time: timeStr,
     };
@@ -1956,6 +2013,8 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
               lastAppLabel={APPS.find(a => a.key === app)?.label ?? app}
               category={category}
               setCategory={setCategory}
+              isBusiness={isBusiness}
+              setIsBusiness={setIsBusiness}
               miles={miles}
               setMiles={setMiles}
               minutes={minutes}
@@ -3097,6 +3156,21 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
   }, [entries, aPeriod, isSingleDay]);
   const hasExpenseTrend = expenseTrend.some(v => v > 0);
 
+  // Business (tax-deductible) expense summary — magnitude + count of EXPENSE
+  // entries flagged is_business_expense. Also reports the deductible share of
+  // total spend so drivers can see how much of their outflow is write-off-able.
+  const businessExpenses = useMemo(() => {
+    let total = 0, count = 0, allOutflow = 0;
+    for (const e of entries) {
+      const amt = Number(e.amount) || 0;
+      if (amt >= 0) continue;
+      allOutflow += -amt;
+      if (e.is_business_expense) { total += -amt; count += 1; }
+    }
+    const share = allOutflow > 0 ? (total / allOutflow) * 100 : 0;
+    return { total, count, share };
+  }, [entries]);
+
   // Profit-trend chart driver — reuses the dashboard's pure-View ProfitChart.
   const chartPeriod: 'today' | 'yesterday' | 'week' | 'month' | 'custom' =
     aPeriod === 'today' ? 'today'
@@ -3203,6 +3277,29 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
                 </View>
               ))}
             </View>
+
+            {/* Business (tax-deductible) expense summary — only shown when there
+                is at least one flagged business expense in the period. */}
+            {businessExpenses.count > 0 && (
+              <View style={{
+                backgroundColor: '#3b82f612', borderRadius: 16,
+                borderWidth: 1, borderColor: '#3b82f655',
+                padding: 16, marginBottom: 20,
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <Text style={{ fontSize: 18 }}>💼</Text>
+                  <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>
+                    Business Expenses (Tax-Deductible)
+                  </Text>
+                </View>
+                <Text style={{ color: TEXT, fontSize: 24, fontWeight: '900' }}>
+                  {hidden ? MASK : money(businessExpenses.total)}
+                </Text>
+                <Text style={{ color: LABEL, fontSize: 12, marginTop: 4 }}>
+                  {businessExpenses.count} {businessExpenses.count === 1 ? 'expense' : 'expenses'} · {businessExpenses.share.toFixed(0)}% of total spend
+                </Text>
+              </View>
+            )}
 
             {/* Highlight strip — best day / peak hour / best weekday */}
             {!isSingleDay && (bestDay || hasHourly) && (
@@ -3644,6 +3741,7 @@ function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 }}>
                   {shown.map((e, i) => {
                     const g = outflowGroup(e);
+                    const biz = !!e.is_business_expense;
                     const title = g === 'CANCELLATION' ? `Cancellation · ${APP_LABELS[e.app]}` : groupLabel(g);
                     const when = parseServerDate(e.timestamp);
                     return (
@@ -3657,14 +3755,15 @@ function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => 
                       >
                         <View style={{
                           width: 40, height: 40, borderRadius: 12,
-                          backgroundColor: RED + '18',
+                          backgroundColor: biz ? '#3b82f622' : RED + '18',
                           alignItems: 'center', justifyContent: 'center', marginRight: 12,
                         }}>
-                          <Text style={{ fontSize: 18 }}>{groupEmoji(g)}</Text>
+                          <Text style={{ fontSize: 18 }}>{biz ? '💼' : groupEmoji(g)}</Text>
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>
                             {title}
+                            {biz ? <Text style={{ color: '#3b82f6', fontWeight: '700' }}>  💼 Business</Text> : null}
                           </Text>
                           <Text style={{ color: LABEL, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
                             {when.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
