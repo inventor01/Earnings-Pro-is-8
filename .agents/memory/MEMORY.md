@@ -7,3 +7,5 @@
 - [Entry date in US/Eastern](entry-date-eastern.md) — entry create/update must serialize date/time in America/New_York (reuse easternDateTime), or non-EST first-order-of-day misfiles into Yesterday.
 - [Expenses KPI includes cancellations](expenses-kpi-includes-cancellations.md) — EXPENSES KPI = abs(amount) over ALL negative rows (incl CANCELLATION); expense drill-downs must filter amount<0, not type==='EXPENSE', to reconcile.
 - [create_entry drops fields](entry-create-drops-fields.md) — entries CREATE uses an explicit Entry(...) constructor (UPDATE uses setattr); new persisted fields must be added to the constructor or they silently drop on create.
+- [Demo/Signup 403 = prelaunch gate](demo-signup-prelaunch-gate.md) — /auth/demo & /auth/signup return 403 when PRELAUNCH_ACCESS_CODE is set (needs prelaunch_token); not a bug. Mobile demo needs prelaunch OFF.
+- [All-time cumulative rollup query](all-time-rollup-query.md) — lifetime totals via getRollupInRange must cap upper bound at `now` (not far-future) to exclude future-dated entries; bucket cache key to the hour.
