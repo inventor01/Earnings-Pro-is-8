@@ -1599,9 +1599,16 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       // and far better than the previous "wait for the server" experience.
       await queryClient.cancelQueries({ queryKey: ['entries'] });
       const prevEntries = queryClient.getQueriesData<Entry[]>({ queryKey: ['entries'] });
-      const dateStr = vars.date || todayStr;
-      const timeStr = vars.time || `${p2(now.getHours())}:${p2(now.getMinutes())}`;
-      const syntheticTs = `${dateStr}T${timeStr}:00`;
+      // The synthetic row MUST carry the same instant convention the server
+      // stores (UTC). The History list sorts via parseServerDate(), which
+      // treats a tz-less timestamp as UTC; building the synthetic ts from the
+      // EST wall-clock strings (`${date}T${time}:00`, no 'Z') made a brand-new
+      // "now" entry get parsed ~4-5h in the PAST, so it sorted BELOW recent
+      // rows and didn't appear at the top until an app restart refetched the
+      // real UTC row. `entryDate` is the actual instant the user picked (the
+      // EST date/time sent to the API are just its projection), so its ISO
+      // string ('Z'-suffixed UTC) sorts correctly and matches the server row.
+      const syntheticTs = entryDate.toISOString();
       const syntheticEntry: Entry = {
         id: -Date.now(), // unique negative id so it can't collide with real rows
         timestamp: syntheticTs,
@@ -1619,9 +1626,12 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       };
       queryClient.setQueriesData<Entry[]>({ queryKey: ['entries'] }, (old) => {
         if (!old) return old;
-        // Insert preserving timestamp-desc ordering used by the server.
+        // Insert preserving timestamp-desc ordering used by the server. Sort via
+        // parseServerDate (the SAME comparator the History list uses) so the
+        // synthetic 'Z'-suffixed ISO ts and the server's tz-less UTC strings are
+        // compared as real instants rather than raw strings.
         const next = [syntheticEntry, ...old];
-        next.sort((a, b) => (a.timestamp < b.timestamp ? 1 : a.timestamp > b.timestamp ? -1 : 0));
+        next.sort((a, b) => parseServerDate(b.timestamp).getTime() - parseServerDate(a.timestamp).getTime());
         return next;
       });
 
