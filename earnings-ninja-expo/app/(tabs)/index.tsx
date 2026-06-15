@@ -32,7 +32,7 @@ import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import { syncNotifState, enableMotivation, disableMotivation } from '@/lib/notifications';
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
 import { widgetSync } from '@/lib/widgetSync';
-import { exportEntriesCsv } from '@/lib/csvExport';
+import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
 import { useLocalSearchParams, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -1310,9 +1310,12 @@ function DetailsForm({
               })}
             >
               <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
-                {entryDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                {/* Show the US/Eastern wall-clock the entry will actually file
+                    under (Today/Yesterday are EST), so the label matches the
+                    saved day even for non-EST users. */}
+                {entryDate.toLocaleDateString('en-US', { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                 {'  ·  '}
-                {entryDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                {entryDate.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true })}
               </Text>
               <Ionicons name={showDatePicker ? 'chevron-up' : 'chevron-down'} size={16} color="#6b7280" />
             </Pressable>
@@ -1820,12 +1823,12 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
     },
   });
 
-  // Format Date → ('YYYY-MM-DD', 'HH:MM') using device-local components.
-  // Backend treats these as US/Eastern (see EntryCreate handling). This
-  // mirrors the rest of the app, which is effectively EST-only.
-  const pad2 = (n: number) => String(n).padStart(2, '0');
-  const dateStr = `${entryDate.getFullYear()}-${pad2(entryDate.getMonth() + 1)}-${pad2(entryDate.getDate())}`;
-  const timeStr = `${pad2(entryDate.getHours())}:${pad2(entryDate.getMinutes())}`;
+  // Format the entry instant → ('YYYY-MM-DD', 'HH:MM') in US/Eastern wall-clock.
+  // The backend interprets these strings as EST and the Today/Yesterday views are
+  // EST-based, so we MUST emit Eastern (NOT device-local) components — otherwise a
+  // non-EST user's first order after the EST midnight rollover (e.g. 9pm Pacific)
+  // gets mislabeled and lands in Yesterday. Reuses the CSV exporter's helper.
+  const { date: dateStr, time: timeStr } = easternDateTime(entryDate);
 
   const handleSave = () => {
     const num = parseFloat(amount);
