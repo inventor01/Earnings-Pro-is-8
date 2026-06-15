@@ -3468,6 +3468,16 @@ export default function DashboardScreen() {
   // widget-sync "is this really today?" guard and the chart's hourly view).
   const effectiveDayOffset = isDayPeriod ? dayApiOffset : 0;
 
+  // Canonical day offset (0 = today, -1 = yesterday, …) kept in a ref so the
+  // swipe/chevron handler can step it synchronously. This makes rapid repeated
+  // taps that cross the Today↔Yesterday boundary accumulate correctly instead
+  // of dropping steps to a stale `period`/`navOffset` closure. Re-synced after
+  // every commit (covers chip taps, which set period/navOffset directly).
+  const dayOffsetRef = useRef(0);
+  useEffect(() => {
+    dayOffsetRef.current = isDayPeriod ? dayApiOffset : 0;
+  }, [isDayPeriod, dayApiOffset]);
+
   // Day-periods (today/yesterday, any swipe offset) share the single daily goal
   // (the TODAY goal target), so the goal bar is consistent whether you reach a
   // given day via the Today chip swiped back or the Yesterday chip. Aggregate
@@ -3818,11 +3828,30 @@ export default function DashboardScreen() {
     transform: [{ translateX: cardShift.value }],
   }));
   const goToOffset = useCallback((delta: number) => {
-    setNavOffset(prev => prev + delta);
+    if (isDayPeriod) {
+      // For day-periods, the canonical day shown (0 = today, -1 = yesterday, …)
+      // is independent of which chip is active. Step it by `delta` (via a ref so
+      // rapid taps accumulate), then re-derive the chip so the Today / Yesterday
+      // tab always matches the day actually being viewed (offsets 0 and -1 land
+      // exactly on a named chip; further days keep the Yesterday chip as the
+      // "past" anchor). The resulting day_offset — and therefore the cache key +
+      // daily goal — is identical regardless of which chip we arrive through.
+      const nextDayOffset = dayOffsetRef.current + delta;
+      dayOffsetRef.current = nextDayOffset;
+      if (nextDayOffset >= 0) {
+        setPeriod('today');
+        setNavOffset(nextDayOffset);
+      } else {
+        setPeriod('yesterday');
+        setNavOffset(nextDayOffset + 1);
+      }
+    } else {
+      setNavOffset(prev => prev + delta);
+    }
     cardShift.value = delta > 0 ? 28 : -28;
     cardShift.value = withTiming(0, { duration: 240 });
     hTap();
-  }, [cardShift]);
+  }, [cardShift, isDayPeriod]);
   const swipeGesture = Gesture.Pan()
     .enabled(navActive)
     .activeOffsetX([-15, 15])
