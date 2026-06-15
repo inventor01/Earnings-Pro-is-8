@@ -3924,18 +3924,6 @@ export default function DashboardScreen() {
             </PressScale>
             <PressScale
               hitSlop={8}
-              onPress={() => { hTap(); setShowSortMenu(true); }}
-              style={{
-                width: 36, height: 36, borderRadius: 10,
-                backgroundColor: sortBy !== 'newest' ? PRIMARY : BG,
-                borderWidth: 1, borderColor: sortBy !== 'newest' ? PRIMARY : BORDER,
-                alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <Ionicons name="swap-vertical" size={17} color={sortBy !== 'newest' ? ON_PRIMARY : MUTED} />
-            </PressScale>
-            <PressScale
-              hitSlop={8}
               onPress={() => { hTap(); toggleHidden(); }}
               style={[
                 {
@@ -4505,22 +4493,47 @@ export default function DashboardScreen() {
                     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
                     paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: DIVIDER,
                   }}>
-                    <Pressable
-                      onPress={() => { hTap(); setSelectionMode(true); }}
-                      hitSlop={6}
-                      style={{ flex: 1, minWidth: 0, marginRight: 8 }}
-                    >
-                      <Text
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                        style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}
+                    {/* Left group: Entries/Select label (truncates first) + the
+                        Sort control, moved here for quick access right above the
+                        transaction list. Right group keeps just the two totals
+                        badges, so the row never overflows on narrow screens. */}
+                    <View style={{ flexShrink: 1, minWidth: 0, marginRight: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Pressable
+                        onPress={() => { hTap(); setSelectionMode(true); }}
+                        hitSlop={6}
+                        style={{ flexShrink: 1, minWidth: 0 }}
                       >
-                        {isSearching ? `Results (${filteredEntries.length})` : `Entries (${entries.length})`}
-                        <Text style={{ color: MUTED }}>{` · ${SORT_OPTIONS.find(o => o.key === sortBy)?.short ?? 'Newest'}`}</Text>
-                        <Text style={{ color: PRIMARY }}> · Select</Text>
-                      </Text>
-                    </Pressable>
-                    <View style={{ flexDirection: 'row', gap: 6, flexShrink: 0 }}>
+                        <Text
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                          style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}
+                        >
+                          {isSearching ? `Results (${filteredEntries.length})` : `Entries (${entries.length})`}
+                          <Text style={{ color: PRIMARY }}> · Select</Text>
+                        </Text>
+                      </Pressable>
+                      {/* Sort pill — opens the same Dark-Neon sort sheet; highlights when not Newest. */}
+                      <PressScale
+                        hitSlop={6}
+                        onPress={() => { hTap(); setShowSortMenu(true); }}
+                        style={[
+                          {
+                            flexShrink: 0,
+                            flexDirection: 'row', alignItems: 'center', gap: 4,
+                            paddingHorizontal: 9, paddingVertical: 5, borderRadius: 999,
+                            backgroundColor: sortBy !== 'newest' ? PRIMARY : BG,
+                            borderWidth: 1, borderColor: sortBy !== 'newest' ? PRIMARY : BORDER,
+                          },
+                          sortBy !== 'newest' ? neonGlow(PRIMARY, 6, 0.3) : undefined,
+                        ].filter(Boolean) as ViewStyle[]}
+                      >
+                        <Ionicons name="swap-vertical" size={13} color={sortBy !== 'newest' ? ON_PRIMARY : MUTED} />
+                        <Text style={{ color: sortBy !== 'newest' ? ON_PRIMARY : TEXT_MID, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                          {SORT_OPTIONS.find(o => o.key === sortBy)?.short ?? 'Newest'}
+                        </Text>
+                      </PressScale>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                       <View style={{ backgroundColor: GREEN_LT, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 }}>
                         <Text style={{ color: GREEN, fontSize: 10, fontWeight: '700' }}>{hidden ? MASK : `+$${revenue.toFixed(2)}`}</Text>
                       </View>
