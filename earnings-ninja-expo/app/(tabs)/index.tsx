@@ -1696,20 +1696,121 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
     },
   });
 
-  // PUT mutation used only in the "edit existing entry" flow. Same cache
-  // invalidations as create so dashboard/rollup re-render with the change.
+  // PUT mutation used only in the "edit existing entry" flow.
+  // Optimistic update so an EDIT reflects on the dashboard INSTANTLY (KPI
+  // cards, Profit Hero, Goal bar) instead of waiting for the network round-
+  // trip — mirroring the create/delete optimistic flows. We apply the NET
+  // delta (new − old) of the edited row to every cached `['rollup']` query and
+  // swap the row in every cached `['entries']` list; the onSuccess invalidation
+  // reconciles ~200ms later (and corrects any window that didn't actually
+  // contain the row). Snapshots are kept for an exact rollback on error.
   const updateMutation = useMutation({
     mutationFn: ({ id, patch }: { id: number; patch: Partial<EntryCreate> }) => api.updateEntry(id, patch),
+    onMutate: async ({ id, patch }) => {
+      await queryClient.cancelQueries({ queryKey: ['rollup'] });
+      await queryClient.cancelQueries({ queryKey: ['entries'] });
+      const prevRollup  = queryClient.getQueriesData<Rollup>({ queryKey: ['rollup'] });
+      const prevEntries = queryClient.getQueriesData<Entry[]>({ queryKey: ['entries'] });
+
+      // Locate the pre-edit row (prefer the cache; fall back to the `editing`
+      // prop that populated the form) so we can compute an exact delta.
+      const cachedOld = prevEntries
+        .flatMap(([, list]) => list ?? [])
+        .find(e => e.id === id);
+      const oldEntry = cachedOld ?? editing;
+      if (!oldEntry) { hTap(); reset(); onClose(); return { prevRollup, prevEntries }; }
+
+      // Amount is SIGNED (expenses/cancellations negative). Re-derive the new
+      // sign from the (possibly changed) TYPE exactly like the backend does
+      // (PUT /entries normalizes: EXPENSE/CANCELLATION → negative, else
+      // positive, using abs of the magnitude) so a type-flip edit
+      // (ORDER↔EXPENSE) patches the dashboard in the correct direction.
+      const pos = (n: number) => (n >= 0 ? n : 0);
+      const oldSigned = Number(oldEntry.amount) || 0;
+      const effType = patch.type ?? oldEntry.type;
+      const rawMag = Math.abs(patch.amount != null ? Number(patch.amount) : oldSigned);
+      const newSigned = (effType === 'EXPENSE' || effType === 'CANCELLATION') ? -rawMag : rawMag;
+      const oldMiles  = Number(oldEntry.distance_miles) || 0;
+      const newMiles  = patch.distance_miles != null ? Number(patch.distance_miles) : oldMiles;
+      const oldMin    = Number(oldEntry.duration_minutes) || 0;
+      const newMin    = patch.duration_minutes != null ? Number(patch.duration_minutes) : oldMin;
+
+      const dRevenue  = pos(newSigned) - pos(oldSigned);
+      const dExpenses = pos(-newSigned) - pos(-oldSigned);
+      const dMiles    = newMiles - oldMiles;
+      const dHours    = (newMin - oldMin) / 60;
+
+      queryClient.setQueriesData<Rollup>({ queryKey: ['rollup'] }, (old) => {
+        if (!old) return old;
+        const revenue  = old.revenue  + dRevenue;
+        const expenses = old.expenses + dExpenses;
+        const profit   = revenue - expenses;
+        const miles    = old.miles + dMiles;
+        const hours    = old.hours + dHours;
+        return {
+          ...old,
+          revenue,
+          expenses,
+          profit,
+          miles,
+          hours,
+          dollars_per_mile: miles > 0 ? profit / miles : 0,
+          dollars_per_hour: hours > 0 ? profit / hours : 0,
+          goal_progress: old.goal?.target_profit
+            ? profit / old.goal.target_profit
+            : old.goal_progress ?? null,
+        };
+      });
+
+      // Recompute the row's timestamp if its date/time changed, then swap the
+      // row in every cached entries list (re-sorting to keep timestamp-desc).
+      const p2 = (n: number) => String(n).padStart(2, '0');
+      const now = new Date();
+      const dateStr2 = patch.date || oldEntry.timestamp.slice(0, 10);
+      const timeStr2 = patch.time || oldEntry.timestamp.slice(11, 16) || `${p2(now.getHours())}:${p2(now.getMinutes())}`;
+      const newTs = (patch.date || patch.time) ? `${dateStr2}T${timeStr2}:00` : oldEntry.timestamp;
+      queryClient.setQueriesData<Entry[]>({ queryKey: ['entries'] }, (old) => {
+        if (!Array.isArray(old)) return old;
+        const next = old.map(e => e.id === id ? {
+          ...e,
+          type: patch.type ?? e.type,
+          app: patch.app ?? e.app,
+          amount: newSigned,
+          distance_miles: newMiles,
+          duration_minutes: newMin,
+          category: patch.category ?? e.category,
+          note: patch.note ?? e.note,
+          receipt_url: patch.receipt_url ?? e.receipt_url,
+          timestamp: newTs,
+          updated_at: now.toISOString(),
+        } : e);
+        next.sort((a, b) => (a.timestamp < b.timestamp ? 1 : a.timestamp > b.timestamp ? -1 : 0));
+        return next;
+      });
+
+      // Close the modal right away so the user lands on the already-patched
+      // dashboard, identical to the create flow. Neutral tap haptic here; the
+      // success haptic fires in onSuccess once the server confirms.
+      hTap();
+      reset();
+      onClose();
+      return { prevRollup, prevEntries };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['goal'] });
       queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
       queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
       hNotifyOk();
-      reset();
-      onClose();
     },
-    onError: (e: Error) => Alert.alert('Error', e.message || 'Failed to update entry.'),
+    onError: (e, _vars, ctx) => {
+      if (ctx?.prevRollup)  for (const [key, data] of ctx.prevRollup)  queryClient.setQueryData(key, data);
+      if (ctx?.prevEntries) for (const [key, data] of ctx.prevEntries) queryClient.setQueryData(key, data);
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      Alert.alert('Error', (e as Error)?.message || 'Failed to update entry.');
+    },
   });
 
   // Format Date → ('YYYY-MM-DD', 'HH:MM') using device-local components.
