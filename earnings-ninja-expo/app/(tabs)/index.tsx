@@ -373,7 +373,7 @@ const APPS: { key: AppType; label: string; color: string }[] = [
 ];
 
 const EXPENSE_CATS: ExpenseCategory[] = [
-  'GAS', 'PARKING', 'TOLLS', 'MAINTENANCE', 'PHONE', 'SUBSCRIPTION', 'FOOD', 'OTHER',
+  'GAS', 'PARKING', 'TOLLS', 'MAINTENANCE', 'PHONE', 'SUBSCRIPTION', 'FOOD', 'CHARITY', 'OTHER',
 ];
 
 // ─── Profit Chart ─────────────────────────────────────────────────────────────
@@ -2143,7 +2143,7 @@ function parseCsv(text: string): string[][] {
 
 const VALID_TYPES = new Set(['ORDER', 'BONUS', 'EXPENSE', 'CANCELLATION']);
 const VALID_APPS  = new Set(['DOORDASH', 'UBEREATS', 'INSTACART', 'GRUBHUB', 'SHIPT', 'OTHER']);
-const VALID_CATS  = new Set(['GAS', 'PARKING', 'TOLLS', 'MAINTENANCE', 'PHONE', 'SUBSCRIPTION', 'FOOD', 'LEISURE', 'OTHER']);
+const VALID_CATS  = new Set(['GAS', 'PARKING', 'TOLLS', 'MAINTENANCE', 'PHONE', 'SUBSCRIPTION', 'FOOD', 'LEISURE', 'CHARITY', 'OTHER']);
 
 function csvRowsToEntries(rows: string[][]): { entries: EntryCreate[]; skipped: number } {
   if (rows.length < 2) return { entries: [], skipped: 0 };

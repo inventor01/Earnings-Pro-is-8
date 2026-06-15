@@ -27,6 +27,7 @@ class ExpenseCategory(str, enum.Enum):
     SUBSCRIPTION = "SUBSCRIPTION"
     FOOD = "FOOD"
     LEISURE = "LEISURE"
+    CHARITY = "CHARITY"
     OTHER = "OTHER"
 
 class AuthUser(Base):
