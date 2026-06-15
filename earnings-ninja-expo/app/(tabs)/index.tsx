@@ -3432,6 +3432,267 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
   );
 }
 
+// ─── Expenses List ────────────────────────────────────────────────────────────
+// Full-screen modal opened by tapping the dashboard's EXPENSES KPI. Lists every
+// negative outflow for the selected period with a per-category filter, summing
+// the shown rows in a neon header card. Reuses the SAME `['analytics-entries', …]`
+// React-Query key as the Analytics modal so it shares the cache and the existing
+// add/edit/delete invalidations keep it fresh (see analytics-cache-invalidation).
+//
+// "Outflows" = every entry with a negative amount, i.e. EXPENSE entries AND
+// order CANCELLATIONs. This matches the dashboard EXPENSES KPI (rollup.expenses,
+// computed server-side as the magnitude of ALL negative amounts), so the
+// drill-down total reconciles exactly with the number the user tapped.
+type OutflowGroup = ExpenseCategory | 'CANCELLATION';
+type ExpenseCatFilter = OutflowGroup | 'ALL';
+// Maps an outflow entry to its filter group: expenses keep their category;
+// cancellations collapse into a synthetic 'CANCELLATION' group.
+const outflowGroup = (e: Entry): OutflowGroup =>
+  e.type === 'CANCELLATION' ? 'CANCELLATION' : ((e.category as ExpenseCategory) || 'OTHER');
+const groupEmoji = (g: OutflowGroup): string => (g === 'CANCELLATION' ? '❌' : EXPENSE_EMOJIS[g]);
+const groupLabel = (g: OutflowGroup): string => (g === 'CANCELLATION' ? 'Cancellation' : g);
+function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const {
+    BG, SURFACE, BORDER, PRIMARY, TEXT, TEXT_MID, MUTED, LABEL,
+    RED, RED_LT, DIVIDER, ON_PRIMARY,
+  } = useTheme();
+  const { hidden } = useHiddenMode();
+  const insets = useSafeAreaInsets();
+  const [ePeriod, setEPeriod] = useState<AnalyticsPeriod>('month');
+  const [catFilter, setCatFilter] = useState<ExpenseCatFilter>('ALL');
+
+  // Mirrors AnalyticsModal: todayStamp keys the query so it refetches after a
+  // midnight rollover, and the range is resolved fresh inside the queryFn.
+  const todayStamp = ymdLocal(new Date());
+  const resolveRange = (p: AnalyticsPeriod): { timeframe: string | null; fromIso: string | null; toIso: string | null } => {
+    const today = new Date();
+    if (p === 'today')     return { timeframe: 'TODAY',     fromIso: null, toIso: null };
+    if (p === 'yesterday') return { timeframe: 'YESTERDAY', fromIso: null, toIso: null };
+    if (p === 'week')  return { timeframe: 'THIS_WEEK',  fromIso: null, toIso: null };
+    if (p === 'month') return { timeframe: 'THIS_MONTH', fromIso: null, toIso: null };
+    if (p === 'last30') {
+      const from = new Date(today); from.setDate(today.getDate() - 29);
+      return { timeframe: null, fromIso: ymdLocal(from), toIso: ymdLocal(today) };
+    }
+    return { timeframe: null, fromIso: '2020-01-01', toIso: ymdLocal(today) };
+  };
+
+  const entriesQuery = useQuery({
+    queryKey: ['analytics-entries', ePeriod, todayStamp],
+    queryFn: () => {
+      const r = resolveRange(ePeriod);
+      return r.timeframe ? api.getEntries(r.timeframe, 5000) : api.getEntriesInRange(r.fromIso!, r.toIso!, 5000);
+    },
+    enabled: visible,
+  });
+  const loading = entriesQuery.isLoading;
+
+  // All negative outflows (EXPENSE + CANCELLATION, stored as negative amounts),
+  // most-recent first — matches the dashboard EXPENSES KPI.
+  const allExpenses = useMemo(() => {
+    const list = (entriesQuery.data ?? []).filter(e => Number(e.amount) < 0);
+    return [...list].sort(
+      (a, b) => parseServerDate(b.timestamp).getTime() - parseServerDate(a.timestamp).getTime(),
+    );
+  }, [entriesQuery.data]);
+
+  // Per-group totals (magnitude) drive the filter chips + their counts.
+  const catStats = useMemo(() => {
+    const m = new Map<OutflowGroup, { total: number; count: number }>();
+    for (const e of allExpenses) {
+      const g = outflowGroup(e);
+      const cur = m.get(g) ?? { total: 0, count: 0 };
+      cur.total += Math.abs(Number(e.amount));
+      cur.count += 1;
+      m.set(g, cur);
+    }
+    return [...m.entries()].sort((a, b) => b[1].total - a[1].total);
+  }, [allExpenses]);
+
+  const shown = useMemo(
+    () => (catFilter === 'ALL' ? allExpenses : allExpenses.filter(e => outflowGroup(e) === catFilter)),
+    [allExpenses, catFilter],
+  );
+  const shownTotal = useMemo(
+    () => shown.reduce((s, e) => s + Math.abs(Number(e.amount)), 0),
+    [shown],
+  );
+
+  const money = (v: number) => `$${Math.abs(v).toFixed(2)}`;
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: BG }}>
+        {/* Header */}
+        <View style={{
+          flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+          paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: 14,
+          borderBottomWidth: 1, borderBottomColor: DIVIDER,
+        }}>
+          <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>💸 Expenses</Text>
+          <Pressable onPress={onClose} style={{ padding: 6 }}>
+            <Ionicons name="close-circle" size={28} color={MUTED} />
+          </Pressable>
+        </View>
+
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Period filter */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
+            {ANALYTICS_PERIODS.map(p => {
+              const active = ePeriod === p.key;
+              return (
+                <PressScale
+                  key={p.key}
+                  onPress={() => { hTap(); setEPeriod(p.key); }}
+                  scale={0.95}
+                  style={[
+                    {
+                      paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1,
+                      backgroundColor: active ? PRIMARY : SURFACE,
+                      borderColor: active ? PRIMARY : BORDER,
+                    },
+                    active ? neonGlow(PRIMARY, 8, 0.3) : undefined,
+                  ].filter(Boolean) as ViewStyle[]}
+                >
+                  <Text style={{ color: active ? ON_PRIMARY : TEXT_MID, fontSize: 13, fontWeight: active ? '800' : '600' }}>
+                    {p.label}
+                  </Text>
+                </PressScale>
+              );
+            })}
+          </View>
+
+          {loading ? (
+            <View style={{ paddingVertical: 80, alignItems: 'center' }}>
+              <ActivityIndicator color={PRIMARY} />
+            </View>
+          ) : (
+            <>
+              {/* Total card (neon, RED accent) */}
+              <View style={[
+                {
+                  backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1.5, borderColor: RED,
+                  paddingVertical: 18, paddingHorizontal: 18, marginBottom: 18,
+                },
+                neonGlow(RED, 12, 0.28),
+              ]}>
+                <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2 }}>
+                  {catFilter === 'ALL' ? 'Total Spent' : `${groupEmoji(catFilter)} ${groupLabel(catFilter)}`}
+                </Text>
+                <Text style={{ color: RED, fontSize: 34, fontWeight: '900', marginTop: 4 }}>
+                  {hidden ? MASK : money(shownTotal)}
+                </Text>
+                <Text style={{ color: MUTED, fontSize: 12, fontWeight: '600', marginTop: 2 }}>
+                  {shown.length} {shown.length === 1 ? 'item' : 'items'}
+                </Text>
+              </View>
+
+              {/* Category filter chips */}
+              {catStats.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
+                  <PressScale
+                    onPress={() => { hTap(); setCatFilter('ALL'); }}
+                    scale={0.95}
+                    style={{
+                      paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1,
+                      backgroundColor: catFilter === 'ALL' ? RED_LT : SURFACE,
+                      borderColor: catFilter === 'ALL' ? RED : BORDER,
+                    }}
+                  >
+                    <Text style={{ color: catFilter === 'ALL' ? RED : TEXT_MID, fontSize: 12, fontWeight: '700' }}>
+                      All ({allExpenses.length})
+                    </Text>
+                  </PressScale>
+                  {catStats.map(([g, s]) => {
+                    const active = catFilter === g;
+                    return (
+                      <PressScale
+                        key={g}
+                        onPress={() => { hTap(); setCatFilter(active ? 'ALL' : g); }}
+                        scale={0.95}
+                        style={{
+                          paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1,
+                          backgroundColor: active ? RED_LT : SURFACE,
+                          borderColor: active ? RED : BORDER,
+                        }}
+                      >
+                        <Text style={{ color: active ? RED : TEXT_MID, fontSize: 12, fontWeight: '700' }}>
+                          {groupEmoji(g)} {groupLabel(g)} ({s.count})
+                        </Text>
+                      </PressScale>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Expense list */}
+              {shown.length === 0 ? (
+                <View style={{ paddingVertical: 60, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 40, marginBottom: 10 }}>🧾</Text>
+                  <Text style={{ color: MUTED, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>
+                    No expenses or cancellations for this period.
+                  </Text>
+                </View>
+              ) : (
+                <View style={{
+                  backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER,
+                  overflow: 'hidden',
+                }}>
+                  {shown.map((e, i) => {
+                    const g = outflowGroup(e);
+                    const title = g === 'CANCELLATION' ? `Cancellation · ${APP_LABELS[e.app]}` : groupLabel(g);
+                    const when = parseServerDate(e.timestamp);
+                    return (
+                      <View
+                        key={e.id}
+                        style={{
+                          flexDirection: 'row', alignItems: 'center',
+                          paddingVertical: 12, paddingHorizontal: 16,
+                          borderTopWidth: i === 0 ? 0 : 1, borderTopColor: DIVIDER,
+                        }}
+                      >
+                        <View style={{
+                          width: 40, height: 40, borderRadius: 12,
+                          backgroundColor: RED + '18',
+                          alignItems: 'center', justifyContent: 'center', marginRight: 12,
+                        }}>
+                          <Text style={{ fontSize: 18 }}>{groupEmoji(g)}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>
+                            {title}
+                          </Text>
+                          <Text style={{ color: LABEL, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
+                            {when.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            {' · '}
+                            {when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                          </Text>
+                          {e.note ? (
+                            <Text style={{ color: MUTED, fontSize: 11, marginTop: 2, fontStyle: 'italic' }} numberOfLines={1}>
+                              {e.note}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <Text style={{ color: RED, fontSize: 15, fontWeight: '800' }}>
+                          {hidden ? MASK : `-${money(Number(e.amount))}`}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </>
+          )}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
 export default function DashboardScreen() {
   const {
     BG, SURFACE, CARD_BG, CARD, BORDER, PRIMARY, ACCENT, PRI_LITE, PRI_DARK,
@@ -3476,6 +3737,7 @@ export default function DashboardScreen() {
   const [addPrefill, setAddPrefill] = useState<AddEntryPrefill | undefined>(undefined);
   const [showSettings, setShowSettings] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showExpenses, setShowExpenses] = useState(false);
 
   // History list multi-select state. `selectionMode` toggles the row UI into
   // checkbox-mode; `selectedIds` is the set of currently-selected entry IDs.
@@ -4319,31 +4581,43 @@ export default function DashboardScreen() {
                 {/* Three stats with count-up */}
                 <View style={{ flexDirection: 'row' }}>
                   {[
-                    { label: 'EXPENSES',  numeric: Math.abs(expenses), format: (n: number) => `$${Math.round(n)}`, hideable: true },
+                    { label: 'EXPENSES',  numeric: Math.abs(expenses), format: (n: number) => `$${Math.round(n)}`, hideable: true, onPress: () => { hTap(); setShowExpenses(true); } },
                     { label: 'ORDERS',    numeric: orderCount,         format: (n: number) => `${Math.round(n)}`,  hideable: false },
                     { label: 'AVG ORDER', numeric: avgOrder,           format: (n: number) => `$${Math.round(n)}`, hideable: true },
-                  ].map((stat, i) => (
-                    <View
-                      key={stat.label}
-                      style={{
-                        flex: 1,
-                        alignItems: 'center',
-                        borderLeftWidth: i > 0 ? 1 : 0,
-                        borderLeftColor: DIVIDER,
-                        paddingVertical: 4,
-                      }}
-                    >
-                      <Text style={{ color: LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                        {stat.label}
-                      </Text>
-                      <AnimatedNumber
-                        value={stat.numeric}
-                        format={stat.format}
-                        hideable={stat.hideable}
-                        style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginTop: 2 }}
-                      />
-                    </View>
-                  ))}
+                  ].map((stat, i) => {
+                    const cell = (
+                      <>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          <Text style={{ color: stat.onPress ? PRIMARY : LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                            {stat.label}
+                          </Text>
+                          {stat.onPress && <Ionicons name="chevron-forward" size={9} color={PRIMARY} />}
+                        </View>
+                        <AnimatedNumber
+                          value={stat.numeric}
+                          format={stat.format}
+                          hideable={stat.hideable}
+                          style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginTop: 2 }}
+                        />
+                      </>
+                    );
+                    const cellStyle = {
+                      flex: 1,
+                      alignItems: 'center' as const,
+                      borderLeftWidth: i > 0 ? 1 : 0,
+                      borderLeftColor: DIVIDER,
+                      paddingVertical: 4,
+                    };
+                    return stat.onPress ? (
+                      <PressScale key={stat.label} onPress={stat.onPress} scale={0.95} style={cellStyle}>
+                        {cell}
+                      </PressScale>
+                    ) : (
+                      <View key={stat.label} style={cellStyle}>
+                        {cell}
+                      </View>
+                    );
+                  })}
                 </View>
 
               </Animated.View>
@@ -4805,6 +5079,7 @@ export default function DashboardScreen() {
       />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
       <AnalyticsModal visible={showAnalytics} onClose={() => setShowAnalytics(false)} />
+      <ExpensesModal visible={showExpenses} onClose={() => setShowExpenses(false)} />
       {/* ── Sort Menu (Dark Neon bottom sheet) ────────────────────────────── */}
       <Modal visible={showSortMenu} transparent animationType="fade" onRequestClose={() => setShowSortMenu(false)}>
         <Pressable
