@@ -54,3 +54,18 @@ or "Edit Goal" writes a key nobody reads).
 ("Yesterday"/"Tomorrow") stay correct; only the date string can be off-by-one near
 midnight on non-ET devices. Converting all bucketing to EST is a separate, riskier
 refactor — out of scope for the swipe fix.
+
+## Swipe/chevron ↔ period-chip sync (Today/Yesterday)
+`goToOffset` syncs the highlighted chip to the day actually shown for DAY-periods:
+it steps a canonical day offset (0=today, -1=yesterday, …) held in `dayOffsetRef`
+(stepped synchronously so rapid taps don't drop to a stale closure; re-synced via
+effect after each commit, which also covers chip taps), then re-derives the chip —
+`>=0` → `today`/navOffset=offset, `<0` → `yesterday`/navOffset=offset+1. So
+Today↔Yesterday track the viewed day, monotonic across the boundary both ways, and
+the derived `day_offset` (cache key + daily goal) is identical via either chip.
+
+**Why aggregate periods were NOT chip-synced:** week/last7 have no sibling chip for
+their offset windows. month↔lastMonth *would* map cleanly (month@-1 ≈ lastMonth@0),
+but goals only exist for TODAY/THIS_WEEK/THIS_MONTH — `goalTf='LAST_MONTH'` has no
+settable goal, so switching the chip there would drop the goal bar. Left as
+navOffset-only (header shows the exact range) to avoid that regression.
