@@ -16,6 +16,7 @@ export default function LoginScreen() {
   const CARD = t.SURFACE;
   const BORDER = t.BORDER;
   const ACCENT = t.PRIMARY;
+  const ACCENT_TXT = t.PRIMARY_TXT;
   const GREEN = t.GREEN;
   const TEXT = t.TEXT;
   const MUTED = t.MUTED;
@@ -292,7 +293,7 @@ export default function LoginScreen() {
               hitSlop={8}
               style={{ alignSelf: 'flex-end', marginTop: 4, marginBottom: 14, paddingVertical: 4 }}
             >
-              <Text style={{ color: ACCENT, fontSize: 13, fontWeight: '700' }}>
+              <Text style={{ color: ACCENT_TXT, fontSize: 13, fontWeight: '700' }}>
                 Forgot password?
               </Text>
             </Pressable>

@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/reac
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from '@/lib/authContext';
-import { ThemeProvider } from '@/lib/theme';
+import { ThemeProvider, useTheme } from '@/lib/theme';
 import { HiddenModeProvider, useHiddenMode } from '@/lib/hiddenMode';
 import { api } from '@/lib/api';
 import { drainQueue, getQueueDepth } from '@/lib/offlineQueue';
@@ -25,6 +25,7 @@ const queryClient = new QueryClient({
 function RootNav() {
   const { token, isLoading } = useAuth();
   const { hidden } = useHiddenMode();
+  const { BG, isDark } = useTheme();
   const queryClient = useQueryClient();
   const draining = useRef(false);
 
@@ -133,11 +134,14 @@ function RootNav() {
   }, [isLoading, token]);
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0a0a0a' } }}>
-      <Stack.Screen name="login" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="index" />
-    </Stack>
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: BG } }}>
+        <Stack.Screen name="login" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="index" />
+      </Stack>
+    </>
   );
 }
 
@@ -149,7 +153,6 @@ export default function RootLayout() {
           <ThemeProvider>
             <HiddenModeProvider>
               <AuthProvider>
-                <StatusBar style="light" backgroundColor="#0a0a0a" />
                 <RootNav />
               </AuthProvider>
             </HiddenModeProvider>

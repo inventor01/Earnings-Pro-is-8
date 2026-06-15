@@ -2194,7 +2194,7 @@ function csvRowsToEntries(rows: string[][]): { entries: EntryCreate[]; skipped: 
 }
 
 function ImportCsvRow({ onDone }: { onDone: () => void }) {
-  const { SURFACE, BORDER, PRI_LITE, PRIMARY, TEXT, MUTED } = useTheme();
+  const { SURFACE, BORDER, PRI_LITE, PRIMARY, PRIMARY_TXT, TEXT, MUTED } = useTheme();
   const [busy, setBusy] = useState(false);
 
   const onPick = async () => {
@@ -2248,7 +2248,7 @@ function ImportCsvRow({ onDone }: { onDone: () => void }) {
         width: 36, height: 36, borderRadius: 18,
         backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
       }}>
-        <Ionicons name={busy ? 'hourglass' : 'cloud-upload'} size={18} color={PRIMARY} />
+        <Ionicons name={busy ? 'hourglass' : 'cloud-upload'} size={18} color={PRIMARY_TXT} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>
@@ -2264,7 +2264,7 @@ function ImportCsvRow({ onDone }: { onDone: () => void }) {
 }
 
 function ExportCsvRow() {
-  const { SURFACE, BORDER, PRI_LITE, PRIMARY, TEXT, MUTED } = useTheme();
+  const { SURFACE, BORDER, PRI_LITE, PRIMARY, PRIMARY_TXT, TEXT, MUTED } = useTheme();
   const [busy, setBusy] = useState(false);
 
   const onExport = async () => {
@@ -2307,7 +2307,7 @@ function ExportCsvRow() {
         width: 36, height: 36, borderRadius: 18,
         backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
       }}>
-        <Ionicons name={busy ? 'hourglass' : 'cloud-download'} size={18} color={PRIMARY} />
+        <Ionicons name={busy ? 'hourglass' : 'cloud-download'} size={18} color={PRIMARY_TXT} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>
@@ -2323,7 +2323,7 @@ function ExportCsvRow() {
 }
 
 function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const { BG, SURFACE, BORDER, PRIMARY, PRI_LITE, TEXT, MUTED, LABEL, RED, RED_LT, ON_PRIMARY } = useTheme();
+  const { BG, SURFACE, BORDER, PRIMARY, PRIMARY_TXT, PRI_LITE, TEXT, MUTED, LABEL, RED, RED_LT, ON_PRIMARY } = useTheme();
   const { themeName, setThemeName } = useThemeControls();
   const { hidden, toggle: toggleHidden } = useHiddenMode();
   const { logout, user } = useAuth();
@@ -2465,7 +2465,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             width: 36, height: 36, borderRadius: 18,
             backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
           }}>
-            <Ionicons name="refresh" size={18} color={PRIMARY} />
+            <Ionicons name="refresh" size={18} color={PRIMARY_TXT} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Refresh data</Text>
@@ -2494,7 +2494,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             width: 36, height: 36, borderRadius: 18,
             backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
           }}>
-            <Ionicons name={hidden ? 'eye-off' : 'eye'} size={18} color={PRIMARY} />
+            <Ionicons name={hidden ? 'eye-off' : 'eye'} size={18} color={PRIMARY_TXT} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Enable Hidden Mode</Text>
@@ -2532,7 +2532,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             width: 36, height: 36, borderRadius: 18,
             backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
           }}>
-            <Ionicons name={notifOn ? 'notifications' : 'notifications-off'} size={18} color={PRIMARY} />
+            <Ionicons name={notifOn ? 'notifications' : 'notifications-off'} size={18} color={PRIMARY_TXT} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Daily Motivation</Text>
@@ -2568,7 +2568,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             width: 36, height: 36, borderRadius: 18,
             backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
           }}>
-            <Ionicons name={soundOn ? 'volume-high' : 'volume-mute'} size={18} color={PRIMARY} />
+            <Ionicons name={soundOn ? 'volume-high' : 'volume-mute'} size={18} color={PRIMARY_TXT} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Ka-Ching Sound</Text>
@@ -2601,7 +2601,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                   <Text style={{ fontSize: 18 }}>{row.emoji}</Text>
                   <Text style={{ color: TEXT, fontSize: 15, fontWeight: '600' }}>{row.label}</Text>
                 </View>
-                <Text style={{ color: PRIMARY, fontSize: 18, fontWeight: '800' }}>
+                <Text style={{ color: PRIMARY_TXT, fontSize: 18, fontWeight: '800' }}>
                   {target > 0 ? (hidden ? MASK : `$${target.toFixed(0)}`) : 'Not set'}
                 </Text>
               </View>
@@ -2645,7 +2645,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                     backgroundColor: PRI_LITE,
                   }}
                 >
-                  <Text style={{ color: PRIMARY, fontSize: 13, fontWeight: '700' }}>
+                  <Text style={{ color: PRIMARY_TXT, fontSize: 13, fontWeight: '700' }}>
                     {target > 0 ? '✏️ Edit Goal' : '+ Set Goal'}
                   </Text>
                 </Pressable>
@@ -2690,13 +2690,12 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
               <View style={{ flex: 1 }}>
                 <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>{th.label}</Text>
                 <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>
-                  {name === 'darkNeon' ? 'True-black with neon glow' :
-                   name === 'simpleLight' ? 'Clean white with blue accents' :
-                   'High-contrast black & white'}
+                  {name === 'dark' ? 'True-black with neon glow' :
+                   'Clean white with neon accents'}
                 </Text>
               </View>
               {active && (
-                <Ionicons name="checkmark-circle" size={22} color={PRIMARY} />
+                <Ionicons name="checkmark-circle" size={22} color={PRIMARY_TXT} />
               )}
             </Pressable>
           );
@@ -2960,7 +2959,7 @@ function VBarChart({
 
 function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const {
-    BG, SURFACE, BORDER, PRIMARY, PRI_LITE, TEXT, TEXT_MID, MUTED, LABEL,
+    BG, SURFACE, BORDER, PRIMARY, PRIMARY_TXT, PRI_LITE, TEXT, TEXT_MID, MUTED, LABEL,
     GREEN, GREEN_LT, RED, RED_LT, DIVIDER, ON_PRIMARY,
   } = useTheme();
   const { hidden } = useHiddenMode();
@@ -3193,8 +3192,8 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
     { label: 'Net Profit',     value: money(profit), color: isProfit ? GREEN : RED, hide: true },
     { label: 'Revenue',        value: `$${(rollup?.revenue ?? 0).toFixed(0)}`, color: GREEN, hide: true },
     { label: 'Expenses',       value: `$${Math.abs(rollup?.expenses ?? 0).toFixed(0)}`, color: RED, hide: true },
-    { label: '$ / Hour',       value: `$${(rollup?.dollars_per_hour ?? 0).toFixed(2)}`, color: PRIMARY, hide: true },
-    { label: '$ / Mile',       value: `$${(rollup?.dollars_per_mile ?? 0).toFixed(2)}`, color: PRIMARY, hide: true },
+    { label: '$ / Hour',       value: `$${(rollup?.dollars_per_hour ?? 0).toFixed(2)}`, color: PRIMARY_TXT, hide: true },
+    { label: '$ / Mile',       value: `$${(rollup?.dollars_per_mile ?? 0).toFixed(2)}`, color: PRIMARY_TXT, hide: true },
     { label: 'Avg Order',      value: `$${(rollup?.average_order_value ?? 0).toFixed(2)}`, hide: true },
     { label: 'Orders',         value: `${totalOrders}` },
     { label: 'Avg / Day',      value: money(dailyAverages.profit), color: isProfit ? GREEN : RED, hide: true, },
@@ -3254,7 +3253,7 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
 
         {loading ? (
           <View style={{ paddingVertical: 80, alignItems: 'center' }}>
-            <ActivityIndicator color={PRIMARY} />
+            <ActivityIndicator color={PRIMARY_TXT} />
           </View>
         ) : (
           <>
@@ -3321,7 +3320,7 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
                     borderWidth: 1, borderColor: PRIMARY, padding: 14,
                   }, neonGlow(PRIMARY, 7, 0.18)]}>
                     <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>⚡ Peak Hour</Text>
-                    <Text style={{ color: PRIMARY, fontSize: 20, fontWeight: '900', marginTop: 6 }}>{hourTick(peakHour)}–{hourTick((peakHour + 1) % 24)}</Text>
+                    <Text style={{ color: PRIMARY_TXT, fontSize: 20, fontWeight: '900', marginTop: 6 }}>{hourTick(peakHour)}–{hourTick((peakHour + 1) % 24)}</Text>
                     <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', marginTop: 2 }}>Most earnings</Text>
                   </View>
                 )}
@@ -3349,7 +3348,7 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
               ) : (
                 <>
                   <Text style={{ color: TEXT_MID, fontSize: 12, fontWeight: '600', marginBottom: 12 }}>
-                    Best hour: <Text style={{ color: PRIMARY, fontWeight: '900' }}>{hourTick(peakHour)}–{hourTick((peakHour + 1) % 24)}</Text>
+                    Best hour: <Text style={{ color: PRIMARY_TXT, fontWeight: '900' }}>{hourTick(peakHour)}–{hourTick((peakHour + 1) % 24)}</Text>
                     {!hidden && <Text style={{ color: MUTED }}>  ·  {money(hourly[peakHour])}</Text>}
                   </Text>
                   <VBarChart
@@ -3460,7 +3459,7 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
                     scale={0.97}
                     style={{ marginTop: 12, alignItems: 'center', paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: BORDER }}
                   >
-                    <Text style={{ color: PRIMARY, fontSize: 13, fontWeight: '800' }}>
+                    <Text style={{ color: PRIMARY_TXT, fontSize: 13, fontWeight: '800' }}>
                       {showAllDays ? 'Show less' : `Show all ${dayAgg.length} days`}
                     </Text>
                   </PressScale>
@@ -3551,7 +3550,7 @@ const groupEmoji = (g: OutflowGroup): string => (g === 'CANCELLATION' ? '❌' : 
 const groupLabel = (g: OutflowGroup): string => (g === 'CANCELLATION' ? 'Cancellation' : g);
 function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const {
-    BG, SURFACE, BORDER, PRIMARY, TEXT, TEXT_MID, MUTED, LABEL,
+    BG, SURFACE, BORDER, PRIMARY, PRIMARY_TXT, TEXT, TEXT_MID, MUTED, LABEL,
     RED, RED_LT, DIVIDER, ON_PRIMARY,
   } = useTheme();
   const { hidden } = useHiddenMode();
@@ -3666,7 +3665,7 @@ function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
           {loading ? (
             <View style={{ paddingVertical: 80, alignItems: 'center' }}>
-              <ActivityIndicator color={PRIMARY} />
+              <ActivityIndicator color={PRIMARY_TXT} />
             </View>
           ) : (
             <>
@@ -3795,10 +3794,11 @@ function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
 export default function DashboardScreen() {
   const {
-    BG, SURFACE, CARD_BG, CARD, BORDER, PRIMARY, ACCENT, PRI_LITE, PRI_DARK,
+    BG, SURFACE, CARD_BG, CARD, BORDER, PRIMARY, PRIMARY_TXT, ACCENT, PRI_LITE, PRI_DARK,
     TEXT, TEXT_MID, MUTED, LABEL, DIM, GREEN, GREEN_LT, RED, RED_LT, DIVIDER, ON_PRIMARY,
   } = useTheme();
   const { hidden, toggle: toggleHidden } = useHiddenMode();
+  const { themeName, setThemeName } = useThemeControls();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<Period>('today');
@@ -4384,7 +4384,7 @@ export default function DashboardScreen() {
               style={{ flexShrink: 1, fontSize: 18, fontWeight: '900', letterSpacing: 0.3, color: TEXT }}
             >
               EARNINGS{' '}
-              <Text style={{ color: PRIMARY }}>NINJA</Text>
+              <Text style={{ color: PRIMARY_TXT }}>NINJA</Text>
             </Text>
           </View>
           {/* Right icon group: fixed-size, never shrinks, always visible. */}
@@ -4435,6 +4435,13 @@ export default function DashboardScreen() {
             </PressScale>
             <PressScale
               hitSlop={8}
+              onPress={() => { hTap(); setThemeName(themeName === 'dark' ? 'light' : 'dark'); }}
+              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name={themeName === 'dark' ? 'sunny' : 'moon'} size={17} color={MUTED} />
+            </PressScale>
+            <PressScale
+              hitSlop={8}
               onPress={() => { hTap(); setShowSettings(true); }}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
@@ -4452,8 +4459,8 @@ export default function DashboardScreen() {
               paddingVertical: 8, paddingHorizontal: 16,
             },
           ]}>
-            <Ionicons name="eye-off" size={14} color={PRIMARY} />
-            <Text style={{ color: PRIMARY, fontSize: 12, fontWeight: '700', letterSpacing: 0.5 }}>
+            <Ionicons name="eye-off" size={14} color={PRIMARY_TXT} />
+            <Text style={{ color: PRIMARY_TXT, fontSize: 12, fontWeight: '700', letterSpacing: 0.5 }}>
               Numbers Hidden — tap the eye to show
             </Text>
           </View>
@@ -4594,7 +4601,7 @@ export default function DashboardScreen() {
               gap: 10,
               ...neonGlow(PRIMARY, 6, 0.25),
             }}>
-              <Ionicons name="search" size={18} color={PRIMARY} />
+              <Ionicons name="search" size={18} color={PRIMARY_TXT} />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -4745,7 +4752,7 @@ export default function DashboardScreen() {
                           <Text style={{ color: stat.onPress ? PRIMARY : LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
                             {stat.label}
                           </Text>
-                          {stat.onPress && <Ionicons name="chevron-forward" size={9} color={PRIMARY} />}
+                          {stat.onPress && <Ionicons name="chevron-forward" size={9} color={PRIMARY_TXT} />}
                         </View>
                         <AnimatedNumber
                           value={stat.numeric}
@@ -4804,13 +4811,13 @@ export default function DashboardScreen() {
                   width: 40, height: 40, borderRadius: 12,
                   backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Ionicons name="stats-chart" size={22} color={PRIMARY} />
+                  <Ionicons name="stats-chart" size={22} color={PRIMARY_TXT} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: TEXT, fontSize: 16, fontWeight: '800' }}>View Analytics</Text>
                   <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>Spend, $/hour, miles & top platforms</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={PRIMARY} />
+                <Ionicons name="chevron-forward" size={20} color={PRIMARY_TXT} />
               </PressScale>
 
               {/* ── Goals Section (hidden in custom-range mode — goals are tied to fixed timeframes) ──── */}
@@ -4890,7 +4897,7 @@ export default function DashboardScreen() {
                           onPress={() => { setGoalInput(goalTarget ? goalTarget.toString() : ''); setEditingGoal(true); }}
                           style={{ marginTop: 4 }}
                         >
-                          <Text style={{ color: PRIMARY, fontSize: 12, fontWeight: '600' }}>
+                          <Text style={{ color: PRIMARY_TXT, fontSize: 12, fontWeight: '600' }}>
                             {safeGoal > 0 ? 'Edit' : '+ Set Goal'}
                           </Text>
                         </Pressable>
@@ -4947,7 +4954,7 @@ export default function DashboardScreen() {
                         }}
                         style={{ paddingHorizontal: 10, paddingVertical: 6 }}
                       >
-                        <Text style={{ color: PRIMARY, fontSize: 13, fontWeight: '800' }}>
+                        <Text style={{ color: PRIMARY_TXT, fontSize: 13, fontWeight: '800' }}>
                           {displayedEntries.every(e => selectedIds.has(e.id)) ? 'Clear all' : 'Select all'}
                         </Text>
                       </Pressable>
@@ -4996,9 +5003,9 @@ export default function DashboardScreen() {
                           })}
                         >
                           {exportingSel ? (
-                            <ActivityIndicator size="small" color={PRIMARY} />
+                            <ActivityIndicator size="small" color={PRIMARY_TXT} />
                           ) : (
-                            <Text style={{ color: PRIMARY, fontSize: 13, fontWeight: '800' }}>
+                            <Text style={{ color: PRIMARY_TXT, fontSize: 13, fontWeight: '800' }}>
                               Export{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
                             </Text>
                           )}
@@ -5054,7 +5061,7 @@ export default function DashboardScreen() {
                           style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}
                         >
                           {isSearching ? `Results (${filteredEntries.length})` : `Entries (${entries.length})`}
-                          <Text style={{ color: PRIMARY }}> · Select</Text>
+                          <Text style={{ color: PRIMARY_TXT }}> · Select</Text>
                         </Text>
                       </Pressable>
                       {/* Sort pill — opens the same Dark-Neon sort sheet; highlights when not Newest. */}
@@ -5122,7 +5129,7 @@ export default function DashboardScreen() {
                       onPress={() => setShowAllEntries(s => !s)}
                       style={{ padding: 14, alignItems: 'center', borderTopWidth: 1, borderTopColor: DIVIDER }}
                     >
-                      <Text style={{ color: PRIMARY, fontSize: 13, fontWeight: '700' }}>
+                      <Text style={{ color: PRIMARY_TXT, fontSize: 13, fontWeight: '700' }}>
                         {showAllEntries
                           ? '▲ Show less'
                           : `▼ Show all ${filteredEntries.length} ${isSearching ? 'results' : 'entries'}`}
@@ -5181,7 +5188,7 @@ export default function DashboardScreen() {
             transform: [{ scale: pressed ? 0.9 : 1 }],
           })}
         >
-          <Ionicons name="arrow-up" size={26} color={PRIMARY} />
+          <Ionicons name="arrow-up" size={26} color={PRIMARY_TXT} />
         </Pressable>
       </Animated.View>
 
@@ -5275,7 +5282,7 @@ export default function DashboardScreen() {
                   <Text style={{ flex: 1, color: active ? TEXT : TEXT_MID, fontSize: 15, fontWeight: active ? '800' : '600' }}>
                     {opt.label}
                   </Text>
-                  {active && <Ionicons name="checkmark-circle" size={22} color={PRIMARY} />}
+                  {active && <Ionicons name="checkmark-circle" size={22} color={PRIMARY_TXT} />}
                 </PressScale>
               );
             })}

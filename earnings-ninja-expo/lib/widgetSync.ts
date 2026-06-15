@@ -60,4 +60,13 @@ export const widgetSync = {
     if (!WidgetBridge.isAvailable()) return;
     WidgetBridge.setItem('last_app', app);
   },
+
+  /** Call after login and whenever the user switches Dark/Light so the Home
+   *  Screen widget can match the app's appearance. (Lock Screen accessory
+   *  widgets are rendered monochrome/tinted by iOS regardless of this value.) */
+  async pushTheme(name: 'dark' | 'light') {
+    if (!WidgetBridge.isAvailable()) return;
+    WidgetBridge.setItem('theme', name);
+    WidgetBridge.reloadAllTimelines();
+  },
 };

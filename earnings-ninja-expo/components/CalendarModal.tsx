@@ -113,7 +113,7 @@ interface CalendarModalProps {
 }
 
 export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries }: CalendarModalProps) {
-  const { BG, SURFACE, CARD, BORDER, DIVIDER, TEXT, LABEL, MUTED, PRIMARY, GREEN, RED, ON_PRIMARY } = useTheme();
+  const { BG, SURFACE, CARD, BORDER, DIVIDER, TEXT, LABEL, MUTED, PRIMARY, PRIMARY_TXT, GREEN, RED, ON_PRIMARY } = useTheme();
   const { hidden } = useHiddenMode();
   const insets = useSafeAreaInsets();
   const now = new Date();
@@ -416,8 +416,8 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
             style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingRight: 12 }}
             scale={0.92}
           >
-            <Ionicons name="chevron-back" size={22} color={PRIMARY} />
-            <Text style={{ color: PRIMARY, fontSize: 16, fontWeight: '800' }}>Back</Text>
+            <Ionicons name="chevron-back" size={22} color={PRIMARY_TXT} />
+            <Text style={{ color: PRIMARY_TXT, fontSize: 16, fontWeight: '800' }}>Back</Text>
           </PressScale>
           <Text style={{ color: TEXT, fontSize: 17, fontWeight: '900', letterSpacing: 0.3 }}>
             📅 Calendar
@@ -434,7 +434,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
             }}
             scale={0.94}
           >
-            <Text style={{ color: PRIMARY, fontWeight: '900', fontSize: 12 }}>Today</Text>
+            <Text style={{ color: PRIMARY_TXT, fontWeight: '900', fontSize: 12 }}>Today</Text>
           </PressScale>
         </View>
 
@@ -474,10 +474,10 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
               }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={{ color: PRIMARY, fontSize: 20, fontWeight: '900', letterSpacing: 0.4 }}>
+                <Text style={{ color: PRIMARY_TXT, fontSize: 20, fontWeight: '900', letterSpacing: 0.4 }}>
                   {MONTH_NAMES[month]}
                 </Text>
-                <Ionicons name="chevron-down" size={16} color={PRIMARY} />
+                <Ionicons name="chevron-down" size={16} color={PRIMARY_TXT} />
               </View>
               <Text style={{ color: LABEL, fontSize: 12, fontWeight: '700', marginTop: 2 }}>
                 {year}
@@ -638,7 +638,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
           {/* ── Calendar Grid ───────────────────────────────────────────────── */}
           {isLoading ? (
             <View style={{ paddingVertical: 60, alignItems: 'center' }}>
-              <ActivityIndicator color={PRIMARY} />
+              <ActivityIndicator color={PRIMARY_TXT} />
               <Text style={{ color: MUTED, marginTop: 10, fontSize: 12 }}>Loading month…</Text>
             </View>
           ) : isError ? (
@@ -661,7 +661,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                 }}
                 scale={0.94}
               >
-                <Text style={{ color: PRIMARY, fontWeight: '900', fontSize: 13 }}>Retry</Text>
+                <Text style={{ color: PRIMARY_TXT, fontWeight: '900', fontSize: 13 }}>Retry</Text>
               </PressScale>
             </View>
           ) : (
@@ -827,7 +827,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                 ...(daysWithData.length === 0 ? {} : neonGlow(PRIMARY, 6, 0.3)),
               }}
             >
-              <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: PRIMARY, fontWeight: '900', fontSize: 11 }}>
+              <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: PRIMARY_TXT, fontWeight: '900', fontSize: 11 }}>
                 ✨ Select All Days w/ Data
               </Text>
             </PressScale>
@@ -872,7 +872,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                 borderBottomWidth: 1, borderBottomColor: DIVIDER,
               }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: PRIMARY, fontSize: 14, fontWeight: '900' }}>
+                  <Text style={{ color: PRIMARY_TXT, fontSize: 14, fontWeight: '900' }}>
                     {selectionTotals.dayCount} day{selectionTotals.dayCount === 1 ? '' : 's'} selected
                   </Text>
                   <Text style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>
@@ -1015,7 +1015,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
               >
                 <Ionicons name="chevron-back" size={18} color={TEXT} />
               </PressScale>
-              <Text style={{ color: PRIMARY, fontSize: 22, fontWeight: '900', letterSpacing: 0.4 }}>
+              <Text style={{ color: PRIMARY_TXT, fontSize: 22, fontWeight: '900', letterSpacing: 0.4 }}>
                 {pickerYear}
               </Text>
               <PressScale
@@ -1104,7 +1104,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                   ...neonGlow(PRIMARY, 6, 0.3),
                 }}
               >
-                <Text style={{ color: PRIMARY, fontWeight: '900', fontSize: 13 }}>Jump to Today</Text>
+                <Text style={{ color: PRIMARY_TXT, fontWeight: '900', fontSize: 13 }}>Jump to Today</Text>
               </PressScale>
               <PressScale
                 onPress={() => { hTap(); setPickerOpen(false); }}
