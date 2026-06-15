@@ -918,12 +918,18 @@ function PillSelect<T extends string>({
   onChange,
   accent = CALC.HEADER_BG,
   scroll = false,
+  dot = false,
 }: {
   options: { key: T; label: string; color?: string }[];
   value: T;
   onChange: (v: T) => void;
   accent?: string;
   scroll?: boolean;
+  // `dot` mode (used by the Platform selector): show a leading colored dot per
+  // option so brands stay distinguishable even when unselected, and fill the
+  // selected chip with the solid brand color + white text for an unmistakable
+  // active state. Other selectors (Type / Category) keep the default styling.
+  dot?: boolean;
 }) {
   const Row = (
     <View style={{ flexDirection: 'row', flexWrap: scroll ? 'nowrap' : 'wrap', gap: 8 }}>
@@ -935,6 +941,9 @@ function PillSelect<T extends string>({
             key={o.key}
             onPress={() => { hTap(); onChange(o.key); }}
             style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: dot ? 7 : 0,
               paddingHorizontal: 14,
               paddingVertical: 11,
               borderRadius: 12,
@@ -955,8 +964,19 @@ function PillSelect<T extends string>({
               } : null),
             })}
           >
+            {dot && (
+              <View style={{
+                width: 10, height: 10, borderRadius: 5,
+                // On a selected (solid-brand) chip a white dot reads cleanly;
+                // unselected chips show the true brand color as a swatch.
+                backgroundColor: selected ? '#ffffff' : (o.color || '#6b7280'),
+                ...(selected ? null : { borderWidth: 1, borderColor: '#00000022' }),
+              }} />
+            )}
             <Text style={{
-              color: selected ? '#0f172a' : '#6b7280',
+              // dot-mode selected chips use a solid brand fill → white text;
+              // default selected chips use the light yellow accent → dark text.
+              color: selected ? (dot ? '#ffffff' : '#0f172a') : '#6b7280',
               fontWeight: selected ? '900' : '600',
               fontSize: 14,
             }}>
@@ -1171,12 +1191,12 @@ function DetailsForm({
             />
           </View>
 
-          {/* App (hidden for EXPENSE — mirrors web) */}
+          {/* Platform / App (hidden for EXPENSE — mirrors web) */}
           {entryType !== 'EXPENSE' && (
             <View>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <FieldLabel>🚗 App</FieldLabel>
-                {appAutoFilled && (
+                <FieldLabel>🚗 Platform</FieldLabel>
+                {appAutoFilled ? (
                   <View style={{
                     flexDirection: 'row', alignItems: 'center', gap: 4,
                     backgroundColor: '#dcfce7', borderColor: '#86efac', borderWidth: 1,
@@ -1188,11 +1208,16 @@ function DetailsForm({
                       Last used: {lastAppLabel}
                     </Text>
                   </View>
+                ) : (
+                  <Text style={{ color: '#9ca3af', fontSize: 11, fontWeight: '600', marginBottom: 6 }}>
+                    Which app was this on?
+                  </Text>
                 )}
               </View>
               <PillSelect
                 scroll
-                options={APPS.map(a => ({ key: a.key, label: a.label, color: a.color + '55' }))}
+                dot
+                options={APPS.map(a => ({ key: a.key, label: a.label, color: a.color }))}
                 value={app}
                 onChange={setApp}
               />
@@ -1442,7 +1467,9 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       // a manual choice or the EXPENSE→Other default with this late read.
       if (cancelled || !stored) return;
       if (appTouchedRef.current || entryTypeRef.current !== 'ORDER') return;
-      if (VALID_APPS.has(stored) && stored !== 'OTHER') {
+      // The key is written ONLY on a successful ORDER save, so any stored value
+      // (including OTHER) reflects a real order platform and is safe to restore.
+      if (VALID_APPS.has(stored)) {
         setApp(stored as AppType);
         setAppAutoFilled(true);
       }
