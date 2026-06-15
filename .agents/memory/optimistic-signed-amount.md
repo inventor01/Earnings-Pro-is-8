@@ -23,3 +23,11 @@ before computing revenue/expense deltas. Edit flow also broadcasts the delta to
 all `['rollup']` caches and reconciles via the onSuccess invalidate (same
 accepted tradeoff as the create flow); always invalidate `['goal']` too so the
 goal bar/target refreshes.
+
+## Aggregations: use sign, not type, for inflow/outflow
+When splitting entries into revenue vs expenses/outflow (e.g. Analytics daily
+breakdown, expense trend), key off the **sign of `amount`** (`amt >= 0` = inflow,
+`amt < 0` = outflow magnitude) — NOT `type === 'EXPENSE'`. A `CANCELLATION` is a
+negative amount that is NOT type EXPENSE; type-based expense sums silently drop it
+and break the invariant `net === revenue - expenses`. ORDER/BONUS are always
+positive, EXPENSE/CANCELLATION always negative.

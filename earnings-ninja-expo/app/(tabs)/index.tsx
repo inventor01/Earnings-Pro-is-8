@@ -2709,17 +2709,106 @@ const SORT_OPTIONS: { key: SortKey; label: string; short: string; icon: keyof ty
 // Analytics is a full-screen modal opened from a prominent dashboard button
 // (the app has no bottom tab bar). It reuses the pure-View ProfitChart and
 // theme tokens so it stays 100% OTA-deployable (no native chart libraries).
-type AnalyticsPeriod = 'week' | 'month' | 'last30' | 'all';
+type AnalyticsPeriod = 'today' | 'yesterday' | 'week' | 'month' | 'last30' | 'all';
 const ANALYTICS_PERIODS: { key: AnalyticsPeriod; label: string }[] = [
-  { key: 'week',   label: 'This Week' },
-  { key: 'month',  label: 'This Month' },
-  { key: 'last30', label: 'Last 30 Days' },
-  { key: 'all',    label: 'All Time' },
+  { key: 'today',     label: 'Today' },
+  { key: 'yesterday', label: 'Yesterday' },
+  { key: 'week',      label: 'This Week' },
+  { key: 'month',     label: 'This Month' },
+  { key: 'last30',    label: 'Last 30 Days' },
+  { key: 'all',       label: 'All Time' },
 ];
+
+const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const hourTick = (h: number) => {
+  const am = h < 12;
+  const hh = h % 12 === 0 ? 12 : h % 12;
+  return `${hh}${am ? 'a' : 'p'}`;
+};
+const fmtDayLabel = (d: Date) =>
+  d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 
 // Local YYYY-MM-DD (backend interprets these as inclusive EST calendar days).
 const ymdLocal = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// Signed vertical neon bar chart, reused for the hourly-earnings, weekday and
+// expense-trend distributions. Pure-View (no native chart lib) so it's OTA-safe.
+// Bars draw from a centre baseline; the tallest bar gets a brighter neon glow.
+function VBarChart({
+  buckets,
+  positiveColor,
+  negativeColor,
+  height = 110,
+  labels,
+}: {
+  buckets: number[];
+  positiveColor: string;
+  negativeColor: string;
+  height?: number;
+  labels?: (string | null)[];
+}) {
+  const { LABEL, DIVIDER } = useTheme();
+  const maxAbs = Math.max(1, ...buckets.map(b => Math.abs(b)));
+  const hasAny = buckets.some(b => b !== 0);
+  const peak = buckets.reduce((mi, v, i, a) => (Math.abs(v) > Math.abs(a[mi]) ? i : mi), 0);
+  const N = buckets.length;
+  const GAP = N > 14 ? 1 : 3;
+  const HALF = height / 2;
+
+  if (!hasAny) {
+    return (
+      <View style={{ height, justifyContent: 'center' }}>
+        <View style={{ height: 1.5, backgroundColor: DIVIDER, opacity: 0.4 }} />
+        <Text style={{
+          color: LABEL, fontSize: 11, textAlign: 'center', marginTop: 10,
+          letterSpacing: 1, textTransform: 'uppercase', fontWeight: '700', opacity: 0.6,
+        }}>
+          No data yet
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      <View style={{ height, flexDirection: 'row', alignItems: 'center', gap: GAP }}>
+        {buckets.map((v, i) => {
+          const ratio = Math.abs(v) / maxAbs;
+          const h = Math.max(v !== 0 ? 3 : 0, ratio * (HALF - 6));
+          const positive = v >= 0;
+          const color = positive ? positiveColor : negativeColor;
+          const isPeak = i === peak && v !== 0;
+          return (
+            <View key={i} style={{ flex: 1, height: '100%', justifyContent: 'center', position: 'relative' }}>
+              <View style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 1, backgroundColor: DIVIDER, opacity: 0.35 }} />
+              {v !== 0 && (
+                <View style={[
+                  {
+                    position: 'absolute', left: 0, right: 0,
+                    top: positive ? `${50 - (h / height) * 100}%` : '50%',
+                    height: h, backgroundColor: color,
+                    opacity: isPeak ? 1 : 0.65, borderRadius: 3,
+                  },
+                  isPeak ? neonGlow(color, 8, 0.55) : null,
+                ].filter(Boolean) as ViewStyle[]} />
+              )}
+            </View>
+          );
+        })}
+      </View>
+      {labels && (
+        <View style={{ flexDirection: 'row', marginTop: 7, gap: GAP }}>
+          {labels.map((l, i) => (
+            <View key={i} style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{ color: LABEL, fontSize: 9, fontWeight: '700' }} numberOfLines={1}>{l ?? ''}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
 
 function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const {
@@ -2729,6 +2818,7 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
   const { hidden } = useHiddenMode();
   const insets = useSafeAreaInsets();
   const [aPeriod, setAPeriod] = useState<AnalyticsPeriod>('week');
+  const [showAllDays, setShowAllDays] = useState(false);
 
   // `todayStamp` (local YYYY-MM-DD) is part of every query key so the cached
   // range refetches automatically after a midnight rollover while the app
@@ -2741,6 +2831,8 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
   // from/to range (last30/all). Aggregation is all done client-side.
   const resolveRange = (p: AnalyticsPeriod): { timeframe: string | null; fromIso: string | null; toIso: string | null } => {
     const today = new Date();
+    if (p === 'today')     return { timeframe: 'TODAY',     fromIso: null, toIso: null };
+    if (p === 'yesterday') return { timeframe: 'YESTERDAY', fromIso: null, toIso: null };
     if (p === 'week')  return { timeframe: 'THIS_WEEK',  fromIso: null, toIso: null };
     if (p === 'month') return { timeframe: 'THIS_MONTH', fromIso: null, toIso: null };
     if (p === 'last30') {
@@ -2824,18 +2916,129 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
     return { from: ymdLocal(from), to: ymdLocal(today) };
   }, []);
 
+  const isSingleDay = aPeriod === 'today' || aPeriod === 'yesterday';
+
+  // Per-day aggregation across the loaded entries — the backbone for the daily
+  // breakdown list, top-earning-days ranking and the per-day averages.
+  const dayAgg = useMemo(() => {
+    const map = new Map<string, { date: Date; net: number; revenue: number; expenses: number; miles: number; minutes: number; orders: number }>();
+    for (const e of entries) {
+      const d = parseServerDate(e.timestamp);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      let rec = map.get(key);
+      if (!rec) {
+        rec = { date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), net: 0, revenue: 0, expenses: 0, miles: 0, minutes: 0, orders: 0 };
+        map.set(key, rec);
+      }
+      // Sign-based so the daily invariant always holds: revenue = positive
+      // inflows, expenses = magnitude of ALL negative outflows (EXPENSE AND
+      // CANCELLATION), so net === revenue - expenses for every day.
+      const amt = Number(e.amount) || 0;
+      rec.net += amt;
+      if (amt >= 0) rec.revenue += amt;
+      else rec.expenses += -amt;
+      rec.miles += Number(e.distance_miles) || 0;
+      rec.minutes += Number(e.duration_minutes) || 0;
+      if (e.type === 'ORDER') rec.orders += 1;
+    }
+    return Array.from(map.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [entries]);
+
+  const activeDays = Math.max(1, dayAgg.length);
+  const totalOrders = useMemo(() => entries.filter(e => e.type === 'ORDER').length, [entries]);
+
+  // Per-active-day averages (idle days excluded so they don't deflate the mean).
+  const dailyAverages = useMemo(() => ({
+    profit: (rollup?.profit ?? 0) / activeDays,
+    revenue: (rollup?.revenue ?? 0) / activeDays,
+    orders: totalOrders / activeDays,
+  }), [rollup, activeDays, totalOrders]);
+
+  // Best / worst days by net profit, and the top-earning-days ranking.
+  const topDays = useMemo(() => [...dayAgg].sort((a, b) => b.net - a.net).slice(0, 5), [dayAgg]);
+  const bestDay = topDays[0];
+
+  // Hourly earnings distribution — sum of POSITIVE earning entries by hour of
+  // day (gross income, expenses excluded), revealing the most lucrative hours.
+  const hourly = useMemo(() => {
+    const arr = Array<number>(24).fill(0);
+    for (const e of entries) {
+      if (e.type === 'EXPENSE') continue;
+      const amt = Number(e.amount) || 0;
+      if (amt <= 0) continue;
+      arr[parseServerDate(e.timestamp).getHours()] += amt;
+    }
+    return arr;
+  }, [entries]);
+  const peakHour = useMemo(() => hourly.reduce((mi, v, i, a) => (v > a[mi] ? i : mi), 0), [hourly]);
+  const hasHourly = hourly.some(v => v > 0);
+
+  // Net profit by weekday (Sun..Sat) across the whole loaded period.
+  const weekday = useMemo(() => {
+    const arr = Array<number>(7).fill(0);
+    for (const e of entries) arr[parseServerDate(e.timestamp).getDay()] += Number(e.amount) || 0;
+    return arr;
+  }, [entries]);
+  const bestWeekday = useMemo(() => weekday.reduce((mi, v, i, a) => (v > a[mi] ? i : mi), 0), [weekday]);
+
+  // Daily expense trend — continuous calendar days (gaps shown as zero) so the
+  // shape reads as a real time series, capped at 31 bars for legibility.
+  const expenseTrend = useMemo(() => {
+    if (isSingleDay) return [];
+    let days = 7;
+    const endDate = new Date();
+    if (aPeriod === 'week') days = 7;
+    else if (aPeriod === 'month') days = endDate.getDate();
+    else days = 30;
+    days = Math.min(days, 31);
+    const keyOf = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const idx = new Map<string, number>();
+    const arr = Array<number>(days).fill(0);
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(endDate); d.setDate(endDate.getDate() - i);
+      idx.set(keyOf(d), days - 1 - i);
+    }
+    for (const e of entries) {
+      // All negative outflows (EXPENSE + CANCELLATION), matching dayAgg.
+      const amt = Number(e.amount) || 0;
+      if (amt >= 0) continue;
+      const j = idx.get(keyOf(parseServerDate(e.timestamp)));
+      if (j !== undefined) arr[j] += -amt;
+    }
+    return arr;
+  }, [entries, aPeriod, isSingleDay]);
+  const hasExpenseTrend = expenseTrend.some(v => v > 0);
+
+  // Profit-trend chart driver — reuses the dashboard's pure-View ProfitChart.
+  const chartPeriod: 'today' | 'yesterday' | 'week' | 'month' | 'custom' =
+    aPeriod === 'today' ? 'today'
+    : aPeriod === 'yesterday' ? 'yesterday'
+    : aPeriod === 'week' ? 'week'
+    : aPeriod === 'month' ? 'month'
+    : 'custom';
+  const chartTitle =
+    isSingleDay ? '📈 Profit by Hour'
+    : aPeriod === 'week' ? '📈 Profit Trend (this week)'
+    : aPeriod === 'month' ? '📈 Profit Trend (this month)'
+    : '📈 Profit Trend (last 30 days)';
+
   const profit  = rollup?.profit ?? 0;
   const isProfit = profit >= 0;
+  const money = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(n).toFixed(2)}`;
 
   const kpis: { label: string; value: string; color?: string; hide?: boolean }[] = [
-    { label: 'Net Profit',     value: `${isProfit ? '' : '-'}$${Math.abs(profit).toFixed(2)}`, color: isProfit ? GREEN : RED, hide: true },
+    { label: 'Net Profit',     value: money(profit), color: isProfit ? GREEN : RED, hide: true },
+    { label: 'Revenue',        value: `$${(rollup?.revenue ?? 0).toFixed(0)}`, color: GREEN, hide: true },
+    { label: 'Expenses',       value: `$${Math.abs(rollup?.expenses ?? 0).toFixed(0)}`, color: RED, hide: true },
     { label: '$ / Hour',       value: `$${(rollup?.dollars_per_hour ?? 0).toFixed(2)}`, color: PRIMARY, hide: true },
-    { label: '$ / Mile',       value: `$${(rollup?.dollars_per_mile ?? 0).toFixed(2)}`, hide: true },
+    { label: '$ / Mile',       value: `$${(rollup?.dollars_per_mile ?? 0).toFixed(2)}`, color: PRIMARY, hide: true },
     { label: 'Avg Order',      value: `$${(rollup?.average_order_value ?? 0).toFixed(2)}`, hide: true },
+    { label: 'Orders',         value: `${totalOrders}` },
+    { label: 'Avg / Day',      value: money(dailyAverages.profit), color: isProfit ? GREEN : RED, hide: true, },
+    { label: 'Active Days',    value: `${dayAgg.length}` },
     { label: 'Total Miles',    value: `${(rollup?.miles ?? 0).toFixed(1)}` },
     { label: 'Total Hours',    value: `${(rollup?.hours ?? 0).toFixed(1)}` },
     { label: 'Miles / Day',    value: `${milesPerDay.toFixed(1)}` },
-    { label: 'Revenue',        value: `$${(rollup?.revenue ?? 0).toFixed(0)}`, color: GREEN, hide: true },
   ];
 
   const sectionTitle = (text: string) => (
@@ -2913,18 +3116,171 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
               ))}
             </View>
 
+            {/* Highlight strip — best day / peak hour / best weekday */}
+            {!isSingleDay && (bestDay || hasHourly) && (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+                {bestDay && bestDay.net > 0 && (
+                  <View style={[{
+                    flexGrow: 1, minWidth: '47%', backgroundColor: SURFACE, borderRadius: 16,
+                    borderWidth: 1, borderColor: GREEN, padding: 14,
+                  }, neonGlow(GREEN, 7, 0.18)]}>
+                    <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>🔥 Best Day</Text>
+                    <Text style={{ color: GREEN, fontSize: 20, fontWeight: '900', marginTop: 6 }}>{hidden ? MASK : money(bestDay.net)}</Text>
+                    <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', marginTop: 2 }}>{fmtDayLabel(bestDay.date)}</Text>
+                  </View>
+                )}
+                {hasHourly && (
+                  <View style={[{
+                    flexGrow: 1, minWidth: '47%', backgroundColor: SURFACE, borderRadius: 16,
+                    borderWidth: 1, borderColor: PRIMARY, padding: 14,
+                  }, neonGlow(PRIMARY, 7, 0.18)]}>
+                    <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>⚡ Peak Hour</Text>
+                    <Text style={{ color: PRIMARY, fontSize: 20, fontWeight: '900', marginTop: 6 }}>{hourTick(peakHour)}–{hourTick((peakHour + 1) % 24)}</Text>
+                    <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', marginTop: 2 }}>Most earnings</Text>
+                  </View>
+                )}
+              </View>
+            )}
+
             {/* Profit trend */}
             <View style={card}>
-              {sectionTitle(aPeriod === 'week' ? '📈 Profit Trend (last 7 days)' : '📈 Profit Trend (last 30 days)')}
+              {sectionTitle(chartTitle)}
               <ProfitChart
                 entries={entries}
-                period={aPeriod === 'week' ? 'week' : 'custom'}
-                customRange={aPeriod === 'week' ? null : trendCustomRange}
+                period={chartPeriod}
+                customRange={chartPeriod === 'custom' ? trendCustomRange : null}
                 dayOffset={0}
                 positiveColor={GREEN}
                 negativeColor={RED}
               />
             </View>
+
+            {/* Earnings by hour of day */}
+            <View style={card}>
+              {sectionTitle('⏰ Earnings by Hour')}
+              {!hasHourly ? (
+                <Text style={{ color: MUTED, fontSize: 13, paddingVertical: 8 }}>No earnings logged in this period.</Text>
+              ) : (
+                <>
+                  <Text style={{ color: TEXT_MID, fontSize: 12, fontWeight: '600', marginBottom: 12 }}>
+                    Best hour: <Text style={{ color: PRIMARY, fontWeight: '900' }}>{hourTick(peakHour)}–{hourTick((peakHour + 1) % 24)}</Text>
+                    {!hidden && <Text style={{ color: MUTED }}>  ·  {money(hourly[peakHour])}</Text>}
+                  </Text>
+                  <VBarChart
+                    buckets={hourly}
+                    positiveColor={PRIMARY}
+                    negativeColor={RED}
+                    height={120}
+                    labels={hourly.map((_, h) => (h % 6 === 0 ? hourTick(h) : null))}
+                  />
+                </>
+              )}
+            </View>
+
+            {/* Earnings by weekday (multi-day only) */}
+            {!isSingleDay && (
+              <View style={card}>
+                {sectionTitle('📆 Profit by Weekday')}
+                {weekday.every(v => v === 0) ? (
+                  <Text style={{ color: MUTED, fontSize: 13, paddingVertical: 8 }}>Not enough data yet.</Text>
+                ) : (
+                  <>
+                    <Text style={{ color: TEXT_MID, fontSize: 12, fontWeight: '600', marginBottom: 12 }}>
+                      Strongest day: <Text style={{ color: GREEN, fontWeight: '900' }}>{WEEKDAY_LABELS[bestWeekday]}</Text>
+                    </Text>
+                    <VBarChart
+                      buckets={weekday}
+                      positiveColor={GREEN}
+                      negativeColor={RED}
+                      height={120}
+                      labels={WEEKDAY_LABELS}
+                    />
+                  </>
+                )}
+              </View>
+            )}
+
+            {/* Expense trend (multi-day only) */}
+            {!isSingleDay && (
+              <View style={card}>
+                {sectionTitle('📉 Daily Expense Trend')}
+                {!hasExpenseTrend ? (
+                  <Text style={{ color: MUTED, fontSize: 13, paddingVertical: 8 }}>No expenses logged in this period.</Text>
+                ) : (
+                  <VBarChart
+                    buckets={expenseTrend.map(v => -v)}
+                    positiveColor={RED}
+                    negativeColor={RED}
+                    height={100}
+                  />
+                )}
+              </View>
+            )}
+
+            {/* Top earning days (multi-day only) */}
+            {!isSingleDay && dayAgg.length > 0 && (
+              <View style={card}>
+                {sectionTitle('🏅 Top Earning Days')}
+                {topDays.map((d, i) => {
+                  const pos = d.net >= 0;
+                  return (
+                    <View key={d.date.getTime()} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: i === topDays.length - 1 ? 0 : 12 }}>
+                      <View style={[{
+                        width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: i === 0 ? PRIMARY : SURFACE, borderWidth: 1, borderColor: i === 0 ? PRIMARY : BORDER, marginRight: 12,
+                      }, i === 0 ? neonGlow(PRIMARY, 6, 0.3) : undefined].filter(Boolean) as ViewStyle[]}>
+                        <Text style={{ color: i === 0 ? ON_PRIMARY : TEXT_MID, fontSize: 12, fontWeight: '900' }}>{i + 1}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700' }}>{fmtDayLabel(d.date)}</Text>
+                        <Text style={{ color: MUTED, fontSize: 11, fontWeight: '600' }}>{d.orders} orders · {d.miles.toFixed(1)} mi</Text>
+                      </View>
+                      <Text style={{ color: pos ? GREEN : RED, fontSize: 15, fontWeight: '900' }}>{hidden ? MASK : money(d.net)}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
+            {/* Daily breakdown (multi-day only) */}
+            {!isSingleDay && dayAgg.length > 0 && (
+              <View style={card}>
+                {sectionTitle('🗓️ Daily Breakdown')}
+                {(showAllDays ? dayAgg : dayAgg.slice(0, 7)).map((d, i, shown) => {
+                  const pos = d.net >= 0;
+                  return (
+                    <View
+                      key={d.date.getTime()}
+                      style={{
+                        flexDirection: 'row', alignItems: 'center', paddingVertical: 10,
+                        borderTopWidth: i === 0 ? 0 : 1, borderTopColor: DIVIDER,
+                      }}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: TEXT, fontSize: 13, fontWeight: '700' }}>{fmtDayLabel(d.date)}</Text>
+                        <Text style={{ color: MUTED, fontSize: 11, fontWeight: '600', marginTop: 2 }}>
+                          {hidden ? MASK : `$${d.revenue.toFixed(0)} in`}
+                          {d.expenses > 0 && <Text style={{ color: RED }}>{hidden ? '' : `  ·  $${d.expenses.toFixed(0)} out`}</Text>}
+                          <Text>{`  ·  ${d.orders} ord`}</Text>
+                        </Text>
+                      </View>
+                      <Text style={{ color: pos ? GREEN : RED, fontSize: 14, fontWeight: '900' }}>{hidden ? MASK : money(d.net)}</Text>
+                    </View>
+                  );
+                })}
+                {dayAgg.length > 7 && (
+                  <PressScale
+                    onPress={() => { hTap(); setShowAllDays(v => !v); }}
+                    scale={0.97}
+                    style={{ marginTop: 12, alignItems: 'center', paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: BORDER }}
+                  >
+                    <Text style={{ color: PRIMARY, fontSize: 13, fontWeight: '800' }}>
+                      {showAllDays ? 'Show less' : `Show all ${dayAgg.length} days`}
+                    </Text>
+                  </PressScale>
+                )}
+              </View>
+            )}
 
             {/* Spend per category */}
             <View style={card}>
