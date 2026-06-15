@@ -29,7 +29,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 
 export type EntryType = 'ORDER' | 'BONUS' | 'EXPENSE' | 'CANCELLATION';
 export type AppType = 'DOORDASH' | 'UBEREATS' | 'INSTACART' | 'GRUBHUB' | 'SHIPT' | 'OTHER';
-export type ExpenseCategory = 'GAS' | 'PARKING' | 'TOLLS' | 'MAINTENANCE' | 'PHONE' | 'SUBSCRIPTION' | 'FOOD' | 'LEISURE' | 'OTHER';
+export type ExpenseCategory = 'GAS' | 'PARKING' | 'TOLLS' | 'MAINTENANCE' | 'PHONE' | 'SUBSCRIPTION' | 'FOOD' | 'LEISURE' | 'CHARITY' | 'OTHER';
 export type TimeframeType = 'TODAY' | 'YESTERDAY' | 'THIS_WEEK' | 'LAST_7_DAYS' | 'THIS_MONTH' | 'LAST_MONTH';
 
 export const APP_LABELS: Record<AppType, string> = {
@@ -59,6 +59,7 @@ export const EXPENSE_EMOJIS: Record<ExpenseCategory, string> = {
   SUBSCRIPTION: '📦',
   FOOD: '🍔',
   LEISURE: '🎮',
+  CHARITY: '🤲',
   OTHER: '📋',
 };
 
