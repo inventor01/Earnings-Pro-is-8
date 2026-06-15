@@ -24,7 +24,7 @@ function csvEscape(value: string): string {
 // converts them to UTC, so we must emit Eastern wall-clock values (NOT the
 // device's local time) for an entry to round-trip back to the same instant
 // regardless of the exporting device's timezone.
-function easternDateTime(d: Date): { date: string; time: string } {
+export function easternDateTime(d: Date): { date: string; time: string } {
   // en-CA formats as YYYY-MM-DD / HH:MM in 24h, which matches the importer.
   const date = d.toLocaleDateString('en-CA', {
     timeZone: 'America/New_York',
