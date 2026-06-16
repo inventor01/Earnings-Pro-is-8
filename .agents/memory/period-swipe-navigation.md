@@ -69,3 +69,21 @@ their offset windows. month↔lastMonth *would* map cleanly (month@-1 ≈ lastMo
 but goals only exist for TODAY/THIS_WEEK/THIS_MONTH — `goalTf='LAST_MONTH'` has no
 settable goal, so switching the chip there would drop the goal bar. Left as
 navOffset-only (header shows the exact range) to avoid that regression.
+
+## Display-only chip highlight while swiping through days (decoupled from data)
+When swiping through individual DAYS, the highlighted tab now acts as a "how far back
+am I" indicator and moves Today → Yesterday → This Week → This Month — but the
+dashboard keeps showing that **single day's** numbers. This is done by a render-only
+`displayChip = isDayPeriod ? dayOffsetToChip(effectiveDayOffset) : period`, used ONLY
+for the period-tab `active` styling. `period` stays `today`/`yesterday` during day
+swipes, so data fetch, cache keys, `goalTf` (daily goal), and the header `periodLabel`
+(which still shows the exact single-day date) are all UNCHANGED.
+**Why:** user wants the tab to reflect position in time without switching to the
+week/month aggregate. `dayOffsetToChip` maps by **EST calendar** (mirrors `estTodayUTC`
+/ Monday-start week): 0→today, exactly −1→yesterday, earlier-but-still-in-current-week
+→week, earlier-but-in-current-month→month, anything older clamps to month (furthest
+indicator chip; LastMonth deliberately not used as an indicator).
+**How to apply:** never route the swipe highlight back through `setPeriod('week'/'month')`
+— that would switch the DATA to the aggregate. Keep highlight (displayChip) and data
+(`period`) separate. Tapping a highlighted week/month chip still calls `setPeriod` →
+real aggregate, as before.
