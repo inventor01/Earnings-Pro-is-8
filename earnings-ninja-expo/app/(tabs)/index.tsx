@@ -363,6 +363,31 @@ function navRangeFor(
   return null;
 }
 
+// Map the single-day offset actually being viewed (0 = today, -1 = yesterday, …)
+// to the period tab that should be HIGHLIGHTED while swiping through days. This is
+// a purely visual "how far back am I" indicator — the dashboard keeps showing that
+// ONE day's numbers; only the highlighted tab moves. Mapping is by EST calendar
+// (matching the server's day/week/month boundaries): today → Today, exactly 1 day
+// back → Yesterday, any earlier day still inside the current week → This Week,
+// still inside the current month → This Month; anything older clamps to This Month
+// (the furthest indicator chip).
+function dayOffsetToChip(offset: number): Period {
+  if (offset >= 0) return 'today';
+  if (offset === -1) return 'yesterday';
+  const base = estTodayUTC();
+  const target = new Date(base);
+  target.setUTCDate(base.getUTCDate() + offset); // offset is negative → a past EST date
+  const dow = (base.getUTCDay() + 6) % 7; // 0 = Monday
+  const monday = new Date(base);
+  monday.setUTCDate(base.getUTCDate() - dow);
+  if (target.getTime() >= monday.getTime()) return 'week';
+  if (
+    target.getUTCFullYear() === base.getUTCFullYear() &&
+    target.getUTCMonth() === base.getUTCMonth()
+  ) return 'month';
+  return 'month';
+}
+
 const APPS: { key: AppType; label: string; color: string }[] = [
   { key: 'DOORDASH',  label: 'DoorDash',  color: '#FF3008' },
   { key: 'UBEREATS',  label: 'Uber Eats', color: '#06C167' },
@@ -3901,6 +3926,12 @@ export default function DashboardScreen() {
   // widget-sync "is this really today?" guard and the chart's hourly view).
   const effectiveDayOffset = isDayPeriod ? dayApiOffset : 0;
 
+  // Which period tab to HIGHLIGHT. Data is always driven by `period`; when swiping
+  // through individual days we keep showing that single day's numbers but move the
+  // highlighted tab to reflect how far back the viewed day is (calendar-based).
+  // For aggregate/custom periods the highlight is just the active period itself.
+  const displayChip: Period = isDayPeriod ? dayOffsetToChip(effectiveDayOffset) : period;
+
   // Canonical day offset (0 = today, -1 = yesterday, …) kept in a ref so the
   // swipe/chevron handler can step it synchronously. This makes rapid repeated
   // taps that cross the Today↔Yesterday boundary accumulate correctly instead
@@ -4281,11 +4312,13 @@ export default function DashboardScreen() {
     if (isDayPeriod) {
       // For day-periods, the canonical day shown (0 = today, -1 = yesterday, …)
       // is independent of which chip is active. Step it by `delta` (via a ref so
-      // rapid taps accumulate), then re-derive the chip so the Today / Yesterday
-      // tab always matches the day actually being viewed (offsets 0 and -1 land
-      // exactly on a named chip; further days keep the Yesterday chip as the
-      // "past" anchor). The resulting day_offset — and therefore the cache key +
-      // daily goal — is identical regardless of which chip we arrive through.
+      // rapid taps accumulate). The DATA period stays today/yesterday (offset >= 0
+      // → today/navOffset; < 0 → yesterday/navOffset+1) so the day_offset — and
+      // therefore the cache key + daily goal — is identical regardless of which
+      // chip we arrive through. The HIGHLIGHTED tab is derived separately from the
+      // single-day offset via `displayChip`/`dayOffsetToChip` (Today → Yesterday →
+      // This Week → This Month by EST calendar) so it tracks how far back you've
+      // swiped while the numbers stay on that one day.
       const nextDayOffset = dayOffsetRef.current + delta;
       dayOffsetRef.current = nextDayOffset;
       if (nextDayOffset >= 0) {
@@ -4490,7 +4523,7 @@ export default function DashboardScreen() {
         <View style={{ backgroundColor: SURFACE, borderBottomWidth: 1, borderBottomColor: BORDER }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, gap: 6, flexDirection: 'row' }}>
             {PERIODS.map(p => {
-              const active = period === p.key;
+              const active = displayChip === p.key;
               return (
                 <PressScale
                   key={p.key}
