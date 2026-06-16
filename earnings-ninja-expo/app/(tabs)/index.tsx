@@ -2950,8 +2950,15 @@ function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () =>
   } = useTheme();
   const { hidden } = useHiddenMode();
   const insets = useSafeAreaInsets();
-  const [aPeriod, setAPeriod] = useState<AnalyticsPeriod>('week');
+  const [aPeriod, setAPeriod] = useState<AnalyticsPeriod>('today');
   const [showAllDays, setShowAllDays] = useState(false);
+
+  // Always reopen on "Today": reset the selected period each time the modal
+  // becomes visible (the component stays mounted, so state would otherwise
+  // persist the last-used period across opens).
+  useEffect(() => {
+    if (visible) setAPeriod('today');
+  }, [visible]);
 
   // `todayStamp` (local YYYY-MM-DD) is part of every query key so the cached
   // range refetches automatically after a midnight rollover while the app
@@ -3541,8 +3548,15 @@ function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => 
   } = useTheme();
   const { hidden } = useHiddenMode();
   const insets = useSafeAreaInsets();
-  const [ePeriod, setEPeriod] = useState<AnalyticsPeriod>('month');
+  const [ePeriod, setEPeriod] = useState<AnalyticsPeriod>('today');
   const [catFilter, setCatFilter] = useState<ExpenseCatFilter>('ALL');
+
+  // Always reopen on "Today": reset the selected period each time the modal
+  // becomes visible (the component stays mounted, so state would otherwise
+  // persist the last-used period across opens).
+  useEffect(() => {
+    if (visible) setEPeriod('today');
+  }, [visible]);
 
   // Mirrors AnalyticsModal: todayStamp keys the query so it refetches after a
   // midnight rollover, and the range is resolved fresh inside the queryFn.
