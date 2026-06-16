@@ -210,9 +210,30 @@ async def import_entries(entries_data: List[EntryCreate], db: Session = Depends(
     from pytz import timezone as pytz_timezone
     
     imported_entries = []
-    
+    skipped_duplicates = 0
+
+    # Duplicate prevention: platform CSVs (Uber/DoorDash) carry a stable per-order
+    # id, so re-importing the same file must not create duplicate rows. We dedupe
+    # on a non-empty `order_id` scoped to this user — both against rows already in
+    # the DB and against earlier rows within this same batch. Rows without an
+    # order_id (e.g. manual entries) are NOT deduped, to avoid wrongly dropping two
+    # legitimately-identical manual entries.
+    existing_order_ids = {
+        oid for (oid,) in db.query(Entry.order_id).filter(
+            Entry.user_id == current_user.id,
+            Entry.order_id.isnot(None),
+            Entry.order_id != "",
+        ).all()
+    }
+    seen_order_ids: set[str] = set()
+
     for entry in entries_data:
         try:
+            order_id = (entry.order_id or "").strip()
+            if order_id and (order_id in existing_order_ids or order_id in seen_order_ids):
+                skipped_duplicates += 1
+                continue
+
             amount = entry.amount
             
             if entry.type in [EntryType.EXPENSE, EntryType.CANCELLATION]:
@@ -248,6 +269,8 @@ async def import_entries(entries_data: List[EntryCreate], db: Session = Depends(
             )
             db.add(db_entry)
             imported_entries.append(db_entry)
+            if order_id:
+                seen_order_ids.add(order_id)
         except Exception as e:
             continue
     
@@ -255,9 +278,13 @@ async def import_entries(entries_data: List[EntryCreate], db: Session = Depends(
         db.commit()
         for entry in imported_entries:
             db.refresh(entry)
+        msg = f"Successfully imported {len(imported_entries)} entries"
+        if skipped_duplicates:
+            msg += f" ({skipped_duplicates} duplicate{'s' if skipped_duplicates != 1 else ''} skipped)"
         return {
-            "message": f"Successfully imported {len(imported_entries)} entries",
+            "message": msg,
             "count": len(imported_entries),
+            "skipped_duplicates": skipped_duplicates,
             "entries": imported_entries
         }
     except Exception as e:

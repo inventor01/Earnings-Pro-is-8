@@ -1,15 +1,2 @@
-- [expo-notifications push entitlement](expo-notifications-push-entitlement.md) — SDK54 auto-applies the plugin; for local-only notifications add a local stripper plugin to drop aps-environment.
-- [Optimistic signed-amount follows entry TYPE](optimistic-signed-amount.md) — client rollup patches must sign abs(amount) by entry type like the backend, or type-flip edits patch the wrong direction.
-- [Running eas update (OTA)](eas-update-long-running.md) — bundling outlasts the 2-min bash cap & detached procs get reaped; run it as a one-shot workflow.
-- [Period swipe navigation](period-swipe-navigation.md) — frontend-only time-window nav (EST math, cache keys) + Today/Yesterday chip auto-syncs with swipe/chevron; aggregate periods intentionally not chip-synced.
-- [Ka-Ching sound effect](kaching-sound-effect.md) — expo-av lazy-required + best-effort so OTA to a pre-native build no-ops instead of crashing; native-build-gated; foreground-only notif sound by design.
-- [Lock Screen widget quick-add](lockscreen-widget.md) — quick-add buttons live on accessoryRectangular only; QuickAddIntent uses authenticationPolicy=.alwaysAllowed so it runs while locked (write-only, safe).
-- [Entry date in US/Eastern](entry-date-eastern.md) — entry create/update must serialize date/time in America/New_York (reuse easternDateTime), or non-EST first-order-of-day misfiles into Yesterday.
-- [Expenses KPI includes cancellations](expenses-kpi-includes-cancellations.md) — EXPENSES KPI = abs(amount) over ALL negative rows (incl CANCELLATION); expense drill-downs must filter amount<0, not type==='EXPENSE', to reconcile.
-- [create_entry drops fields](entry-create-drops-fields.md) — entries CREATE uses an explicit Entry(...) constructor (UPDATE uses setattr); new persisted fields must be added to the constructor or they silently drop on create.
-- [Demo/Signup 403 = prelaunch gate](demo-signup-prelaunch-gate.md) — /auth/demo & /auth/signup return 403 when PRELAUNCH_ACCESS_CODE is set (needs prelaunch_token); not a bug. Mobile demo needs prelaunch OFF.
-- [All-time cumulative rollup query](all-time-rollup-query.md) — lifetime totals via getRollupInRange must cap upper bound at `now` (not far-future) to exclude future-dated entries; bucket cache key to the hour.
-- [Theme system (Dark/Light)](theme-system.md) — 2 themes; PRIMARY=neon fill/glow, PRIMARY_TXT=readable accent text (gold on white); widget theme via App Group needs EAS build.
-- [EAS build lockfile firewall URL](eas-build-lockfile-firewall-url.md) — newly-installed npm deps bake package-firewall.replit.local into package-lock.json; EAS npm ci dies ENOTFOUND; rewrite resolved URL to registry.npmjs.org.
-- [EAS/Expo build & OTA gotchas](eas-expo-build.md) — native dep changes the fingerprint so OTA can't reach the old build (rebuild required); detached `eas build --no-wait` log is unreliable (verify via build:list); fetch build error/logs via GraphQL + brotli.
-- [Optimistic entry timestamps must be UTC](optimistic-entry-timestamp-utc.md) — synthetic Entry rows need `.toISOString()` (UTC), not EST wall-clock, else parseServerDate mis-sorts them and new entries don't show at top until restart.
+- [CSV import dedup](csv-import-dedup.md) — /entries/import dedupes only by non-empty order_id (platform CSVs); manual entries (no order_id) intentionally NOT deduped.
+- [Period swipe navigation](period-swipe-navigation.md) — dashboard day-swipe: data stays single-day (period=today/yesterday); highlighted tab is a separate render-only "how far back" indicator via displayChip/dayOffsetToChip.
