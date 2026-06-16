@@ -11,4 +11,5 @@
 - [All-time cumulative rollup query](all-time-rollup-query.md) — lifetime totals via getRollupInRange must cap upper bound at `now` (not far-future) to exclude future-dated entries; bucket cache key to the hour.
 - [Theme system (Dark/Light)](theme-system.md) — 2 themes; PRIMARY=neon fill/glow, PRIMARY_TXT=readable accent text (gold on white); widget theme via App Group needs EAS build.
 - [EAS build lockfile firewall URL](eas-build-lockfile-firewall-url.md) — newly-installed npm deps bake package-firewall.replit.local into package-lock.json; EAS npm ci dies ENOTFOUND; rewrite resolved URL to registry.npmjs.org.
+- [EAS/Expo build & OTA gotchas](eas-expo-build.md) — native dep changes the fingerprint so OTA can't reach the old build (rebuild required); detached `eas build --no-wait` log is unreliable (verify via build:list); fetch build error/logs via GraphQL + brotli.
 - [Optimistic entry timestamps must be UTC](optimistic-entry-timestamp-utc.md) — synthetic Entry rows need `.toISOString()` (UTC), not EST wall-clock, else parseServerDate mis-sorts them and new entries don't show at top until restart.
