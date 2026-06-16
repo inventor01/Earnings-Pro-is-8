@@ -1975,28 +1975,6 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
               </Text>
             </View>
           </Pressable>
-          {/* Live $/Mile estimate — black text on the yellow header, inline
-              with the Back button. Recomputes in real time as amount & miles
-              change. Hidden for EXPENSE entries and until both values exist. */}
-          {(() => {
-            const amtNum   = parseFloat(amount) || 0;
-            const milesNum = parseFloat(miles)  || 0;
-            if (entryType === 'EXPENSE' || milesNum <= 0 || amtNum <= 0) return null;
-            const perMile = amtNum / milesNum;
-            return (
-              <Text
-                style={{
-                  color: '#0f172a',
-                  fontSize: 16,
-                  fontWeight: '900',
-                  lineHeight: 22,
-                  includeFontPadding: false,
-                }}
-              >
-                💵 ${perMile.toFixed(2)}/mi
-              </Text>
-            );
-          })()}
         </View>
         <ScrollView
           style={{ flex: 1 }}
