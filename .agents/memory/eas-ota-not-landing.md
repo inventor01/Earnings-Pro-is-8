@@ -35,6 +35,13 @@ npx expo-updates fingerprint:generate --platform ios   # JSON; top-level .hash i
 ```
 Cross-check against the installed build's RTV (`eas update:list --branch <ch>` shows the RTV of updates that DID reach it, or `eas build:view <id>`). If they differ, find the fingerprint-source file you changed (commonly `eas.json`, `app.json`, a new native dep, an icon/splash) and revert it to its build-time content, then recompute until the hash matches. Only THEN publish. JS/TS source changes do NOT affect the fingerprint — that's exactly what OTA is for.
 
+## Verify what a build actually contains with `eas fingerprint:compare` — don't trust changelogs
+`eas fingerprint:compare --build-id <fullId>` (eas-cli) computes the current tree fingerprint and prints a human-readable DIFF vs the build's stored fingerprint (new/removed native dirs, autolinking config changes, app-config changes). This is the authoritative way to answer "does this installed build contain dependency/native change X?" — far more reliable than replit.md "Recent Changes" notes.
+
+**Why it bit us:** replit.md claimed preview build `a1eabfce` "baked in expo-audio". `fingerprint:compare` proved it actually ships **expo-av 16.0.8, not expo-audio** — the build (createdAt 23:00) was made ~50 min BEFORE the expo-av→expo-audio migration was committed (23:49). A build's `createdAt` predating a "baked-in" commit is the tell. So `a1eabfce` (RTV `a76a90d3`) does NOT match the current expo-audio tree (RTV `76a621ee`), and JS OTAs from the current tree can't reach it. The migration is a native dep change → needs a fresh `eas build`, exactly as the OTA rules say.
+
+**How to apply:** When an OTA "won't land," run `eas fingerprint:compare --build-id <id>` FIRST. If the diff shows native/dep/config changes, OTA can't bridge it — cut a new build. Only a clean (no-diff) fingerprint means a JS OTA will actually apply.
+
 ## Publishing eas update from the Replit env (the part that actually fights you)
 - **Detached background processes get reaped** (~1-2 min, silent, nondeterministic kill point) regardless of `setsid nohup … & disown`. They will never finish a ~3-5 min export+upload. This is NOT OOM — fewer metro workers did not help and the kill point varied (73/87/93/95%).
 - **Use a temporary workflow instead** (`configureWorkflow({name, command:"bash /tmp/wrapper.sh", outputType:"console"})`, no `waitForPort`). Workflows persist across tool calls. Wrapper pattern: run the publish, `touch /tmp/done` sentinel, then `sleep infinity` so the supervisor doesn't restart-loop the one-shot. Poll for the sentinel, verify with `eas update:list`, then `removeWorkflow`.
