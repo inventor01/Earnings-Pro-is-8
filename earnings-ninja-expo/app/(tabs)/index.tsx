@@ -1840,11 +1840,14 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
 
       // Recompute the row's timestamp if its date/time changed, then swap the
       // row in every cached entries list (re-sorting to keep timestamp-desc).
-      const p2 = (n: number) => String(n).padStart(2, '0');
+      // When the user changed the date/time, reuse the SAME instant convention
+      // as the create path — `entryDate.toISOString()` (UTC, 'Z'-suffixed) —
+      // which is exactly what the server stores (it localizes the EST date/time
+      // to UTC). The previous code built a tz-LESS Eastern string here, which
+      // parseServerDate then read as UTC (~4-5h off), so an edited row landed in
+      // the wrong position until an app restart refetched the real UTC row.
       const now = new Date();
-      const dateStr2 = patch.date || oldEntry.timestamp.slice(0, 10);
-      const timeStr2 = patch.time || oldEntry.timestamp.slice(11, 16) || `${p2(now.getHours())}:${p2(now.getMinutes())}`;
-      const newTs = (patch.date || patch.time) ? `${dateStr2}T${timeStr2}:00` : oldEntry.timestamp;
+      const newTs = (patch.date || patch.time) ? entryDate.toISOString() : oldEntry.timestamp;
       queryClient.setQueriesData<Entry[]>({ queryKey: ['entries'] }, (old) => {
         if (!Array.isArray(old)) return old;
         const next = old.map(e => e.id === id ? {
@@ -1861,7 +1864,11 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
           timestamp: newTs,
           updated_at: now.toISOString(),
         } : e);
-        next.sort((a, b) => (a.timestamp < b.timestamp ? 1 : a.timestamp > b.timestamp ? -1 : 0));
+        // Sort via parseServerDate (the SAME comparator the create flow and the
+        // History list use) so mixed timestamp formats — server tz-less UTC,
+        // synthetic/edit 'Z'-suffixed ISO — are compared as real instants, not
+        // raw strings. Newest first.
+        next.sort((a, b) => parseServerDate(b.timestamp).getTime() - parseServerDate(a.timestamp).getTime());
         return next;
       });
 
