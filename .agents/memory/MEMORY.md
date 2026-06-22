@@ -4,3 +4,4 @@
 - [Entry list ordering across mutations](entry-list-ordering-mutations.md) — create/edit/delete optimistic sorts must use parseServerDate + UTC-consistent timestamps, never raw string compare.
 - [New-entry date default & midnight](entry-date-default-midnight.md) — reseed Add-modal entryDate to live now on each open; stale default files first order of day under Yesterday.
 - [Lock Screen widget mini-dashboard](lockscreen-widget-revenue.md) — adding a widget metric = OTA the App-Group data + native build for the Swift line; mirror it in QuickAddIntent optimistic block (revenue tap moves net+revenue, expense only net).
+- [Entry date save fail (Hermes pad)](entry-date-padding-hermes.md) — Hermes Intl emits single-digit hour ("9:30") unlike Node ICU; date/time sent to API must be hand-padded; backend parses int components not fromisoformat. Verify Intl padding on-device.

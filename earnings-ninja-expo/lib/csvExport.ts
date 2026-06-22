@@ -25,21 +25,36 @@ function csvEscape(value: string): string {
 // device's local time) for an entry to round-trip back to the same instant
 // regardless of the exporting device's timezone.
 export function easternDateTime(d: Date): { date: string; time: string } {
-  // en-CA formats as YYYY-MM-DD / HH:MM in 24h, which matches the importer.
-  const date = d.toLocaleDateString('en-CA', {
+  // Extract the Eastern wall-clock components via formatToParts and zero-pad
+  // them OURSELVES rather than trusting the engine's locale padding.
+  //
+  // Why: React Native's Hermes Intl can emit a SINGLE-DIGIT hour (e.g. "9:30"
+  // or "0:05") for hours < 10 even with hour:'2-digit'/hour12:false (Node's
+  // full ICU pads; Hermes does not). The backend then builds
+  // `${date}T${time}:00` and calls datetime.fromisoformat(), which REJECTS a
+  // non-zero-padded hour with ValueError — so the chosen date was silently
+  // dropped on edit (caught + pass) or replaced with "now" on create (caught +
+  // utcnow fallback). That manifested as "changing the date fails to save" for
+  // any entry timed between midnight and 9:59am Eastern. Padding here fixes it
+  // for both new and edited entries, in every timezone.
+  const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  });
-  let time = d.toLocaleTimeString('en-CA', {
-    timeZone: 'America/New_York',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-  });
-  // Some engines render midnight as "24:00"; normalize to "00:00".
-  if (time.startsWith('24:')) time = `00:${time.slice(3)}`;
+  }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  const pad = (s: string) => s.padStart(2, '0');
+
+  let hour = get('hour');
+  // Some engines render midnight as "24" under hour12:false; normalize to "00".
+  if (hour === '24') hour = '00';
+
+  const date = `${get('year')}-${pad(get('month'))}-${pad(get('day'))}`;
+  const time = `${pad(hour)}:${pad(get('minute'))}`;
   return { date, time };
 }
 

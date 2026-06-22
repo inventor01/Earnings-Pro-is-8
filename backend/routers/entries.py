@@ -10,10 +10,32 @@ from decimal import Decimal
 
 router = APIRouter()
 
+
+def _est_components_to_utc_naive(date_str: str, time_str: str) -> datetime:
+    """Convert an EST wall-clock date + time into a naive UTC datetime.
+
+    Builds the datetime from integer components instead of
+    ``datetime.fromisoformat(f"{date}T{time}:00")`` so it tolerates inputs that
+    are NOT strictly zero-padded — e.g. a single-digit hour ("9:30") or month
+    ("2025-1-5"), which some mobile JS engines (React Native / Hermes) emit and
+    which ``fromisoformat`` rejects with ValueError. Also normalizes a "24:MM"
+    midnight to "00:MM". Raises on genuinely malformed input so callers can
+    fall back deliberately.
+    """
+    from pytz import timezone as pytz_timezone
+
+    year, month, day = (int(p) for p in date_str.split("-"))
+    hh_str, mm_str = time_str.split(":")[:2]
+    hour, minute = int(hh_str), int(mm_str)
+    if hour == 24:
+        hour = 0
+    est = pytz_timezone("US/Eastern")
+    naive_local = datetime(year, month, day, hour, minute)
+    return est.localize(naive_local).astimezone(timezone.utc).replace(tzinfo=None)
+
+
 @router.post("/entries", response_model=EntryResponse)
 async def create_entry(entry: EntryCreate, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
-    from pytz import timezone as pytz_timezone
-    
     amount = entry.amount
     
     if entry.type in [EntryType.EXPENSE, EntryType.CANCELLATION]:
@@ -23,15 +45,10 @@ async def create_entry(entry: EntryCreate, db: Session = Depends(get_db), curren
     
     # Calculate timestamp - prefer date/time components over timestamp (for proper timezone handling)
     if entry.date and entry.time:
-        # Parse date and time as EST, then convert to UTC
+        # Parse date and time as EST, then convert to UTC. Tolerant of
+        # non-zero-padded components (see _est_components_to_utc_naive).
         try:
-            est = pytz_timezone('US/Eastern')
-            datetime_str = f"{entry.date}T{entry.time}:00"
-            # Create a naive datetime and localize it to EST
-            naive_dt = datetime.fromisoformat(datetime_str)
-            est_dt = est.localize(naive_dt)
-            # Convert to UTC
-            timestamp = est_dt.astimezone(timezone.utc).replace(tzinfo=None)
+            timestamp = _est_components_to_utc_naive(entry.date, entry.time)
         except Exception:
             timestamp = entry.timestamp or datetime.utcnow()
     else:
@@ -127,23 +144,19 @@ async def get_entries(
 
 @router.put("/entries/{entry_id}", response_model=EntryResponse)
 async def update_entry(entry_id: int, entry_update: EntryUpdate, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
-    from pytz import timezone as pytz_timezone
-    
     db_entry = db.query(Entry).filter(Entry.id == entry_id, Entry.user_id == current_user.id).first()
     if not db_entry:
         raise HTTPException(status_code=404, detail="Entry not found")
     
     update_data = entry_update.model_dump(exclude_unset=True)
     
-    # Handle date/time components if provided (for proper timezone handling)
+    # Handle date/time components if provided (for proper timezone handling).
+    # Tolerant of non-zero-padded components (see _est_components_to_utc_naive).
     if "date" in update_data and "time" in update_data and update_data["date"] and update_data["time"]:
         try:
-            est = pytz_timezone('US/Eastern')
-            datetime_str = f"{update_data['date']}T{update_data['time']}:00"
-            naive_dt = datetime.fromisoformat(datetime_str)
-            est_dt = est.localize(naive_dt)
-            timestamp = est_dt.astimezone(timezone.utc).replace(tzinfo=None)
-            update_data["timestamp"] = timestamp
+            update_data["timestamp"] = _est_components_to_utc_naive(
+                update_data["date"], update_data["time"]
+            )
         except Exception:
             pass
     
@@ -207,8 +220,6 @@ async def delete_all_entries(db: Session = Depends(get_db), current_user: AuthUs
 
 @router.post("/entries/import")
 async def import_entries(entries_data: List[EntryCreate], db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
-    from pytz import timezone as pytz_timezone
-    
     imported_entries = []
     skipped_duplicates = 0
 
@@ -241,14 +252,11 @@ async def import_entries(entries_data: List[EntryCreate], db: Session = Depends(
             else:
                 amount = abs(amount)
             
-            # Calculate timestamp - prefer date/time components over timestamp (for proper timezone handling)
+            # Calculate timestamp - prefer date/time components over timestamp (for proper timezone handling).
+            # Tolerant of non-zero-padded components (see _est_components_to_utc_naive).
             if entry.date and entry.time:
                 try:
-                    est = pytz_timezone('US/Eastern')
-                    datetime_str = f"{entry.date}T{entry.time}:00"
-                    naive_dt = datetime.fromisoformat(datetime_str)
-                    est_dt = est.localize(naive_dt)
-                    timestamp = est_dt.astimezone(timezone.utc).replace(tzinfo=None)
+                    timestamp = _est_components_to_utc_naive(entry.date, entry.time)
                 except Exception:
                     timestamp = entry.timestamp or datetime.utcnow()
             else:
