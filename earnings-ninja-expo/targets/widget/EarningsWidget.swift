@@ -45,6 +45,14 @@ struct WidgetStore {
         return d
     }
 
+    /// Today's gross revenue (before expenses), pushed by the RN app alongside
+    /// `today_profit` via `lib/widgetSync.ts`. Returns 0 if absent.
+    static var todayRevenue: Double {
+        guard let s = defaults()?.string(forKey: "today_revenue"),
+              let d = Double(s) else { return 0 }
+        return d
+    }
+
     /// Last app the user logged an entry against (e.g. "DOORDASH"). The
     /// QuickAddIntent uses this so we don't need a per-button platform picker.
     static var lastApp: String {
@@ -71,17 +79,19 @@ struct WidgetStore {
 struct EarningsEntry: TimelineEntry {
     let date: Date
     let profit: Double
+    let revenue: Double
     let isReady: Bool
 }
 
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> EarningsEntry {
-        EarningsEntry(date: Date(), profit: 0, isReady: true)
+        EarningsEntry(date: Date(), profit: 0, revenue: 0, isReady: true)
     }
     func getSnapshot(in context: Context, completion: @escaping (EarningsEntry) -> Void) {
         completion(EarningsEntry(
             date: Date(),
             profit: WidgetStore.todayProfit,
+            revenue: WidgetStore.todayRevenue,
             isReady: WidgetStore.isReady
         ))
     }
@@ -90,6 +100,7 @@ struct Provider: TimelineProvider {
         let entry = EarningsEntry(
             date: now,
             profit: WidgetStore.todayProfit,
+            revenue: WidgetStore.todayRevenue,
             isReady: WidgetStore.isReady
         )
         // Refresh every 15 minutes; mutations also reload via WidgetCenter.
@@ -307,16 +318,27 @@ struct EarningsWidgetRectangularView: View {
     var body: some View {
         if entry.isReady {
             VStack(alignment: .leading, spacing: 3) {
-                // Profit header line.
+                // Net Profit header line.
                 HStack(spacing: 4) {
                     Text("🥷")
                         .font(.system(size: 11))
-                    Text("TODAY")
+                    Text("NET")
                         .font(.system(size: 9, weight: .bold))
                         .tracking(1)
                     Spacer(minLength: 2)
                     Text(formatProfit(entry.profit))
                         .font(.system(size: 13, weight: .heavy))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
+                // Today's gross Revenue line (mini-dashboard).
+                HStack(spacing: 4) {
+                    Text("REVENUE")
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(1)
+                    Spacer(minLength: 2)
+                    Text(formatProfit(entry.revenue))
+                        .font(.system(size: 11, weight: .semibold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                 }
