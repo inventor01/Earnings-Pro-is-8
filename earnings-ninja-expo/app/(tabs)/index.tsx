@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withSequence, withRepeat, withDelay,
-  Easing, runOnJS,
+  Easing, runOnJS, FadeInDown, FadeOutUp, LinearTransition,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -3837,6 +3837,9 @@ export default function DashboardScreen() {
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<Period>('today');
   const [refreshing, setRefreshing] = useState(false);
+  // Inline drill-down: tap the EXPENSES KPI to expand an itemized list of the
+  // current period's outflows right under the stats row (tap again to collapse).
+  const [expensesExpanded, setExpensesExpanded] = useState(false);
 
   // ── Scroll-to-Top floating button ─────────────────────────────────────
   // Ref to the main History/dashboard ScrollView so the FAB can animate it
@@ -4203,6 +4206,16 @@ export default function DashboardScreen() {
   const miles     = n(rollup?.miles);
   const perMile   = n(rollup?.dollars_per_mile);
   const avgOrder  = n(rollup?.average_order_value);
+
+  // Itemized outflows for the current period (EXPENSE + CANCELLATION, stored as
+  // negative amounts), most-recent first — powers the inline expandable list
+  // under the EXPENSES KPI. Reconciles with the EXPENSES KPI (rollup.expenses).
+  const periodExpenses = useMemo(
+    () => (entries ?? [])
+      .filter(e => Number(e.amount) < 0)
+      .sort((a, b) => parseServerDate(b.timestamp).getTime() - parseServerDate(a.timestamp).getTime()),
+    [entries],
+  );
 
   // Push today's net profit AND gross revenue to the iOS widget whenever we're
   // actually viewing today (period === 'today' && dayOffset === 0). Other
@@ -4783,7 +4796,7 @@ export default function DashboardScreen() {
                 {/* Three stats with count-up */}
                 <View style={{ flexDirection: 'row' }}>
                   {[
-                    { label: 'EXPENSES',  numeric: Math.abs(expenses), format: (n: number) => `$${Math.round(n)}`, hideable: true, onPress: () => { hTap(); setShowExpenses(true); } },
+                    { label: 'EXPENSES',  numeric: Math.abs(expenses), format: (n: number) => `$${Math.round(n)}`, hideable: true, expanded: expensesExpanded, onPress: () => { hTap(); setExpensesExpanded(v => !v); } },
                     { label: 'ORDERS',    numeric: orderCount,         format: (n: number) => `${Math.round(n)}`,  hideable: false },
                     { label: 'AVG ORDER', numeric: avgOrder,           format: (n: number) => `$${Math.round(n)}`, hideable: true },
                   ].map((stat, i) => {
@@ -4793,7 +4806,7 @@ export default function DashboardScreen() {
                           <Text style={{ color: stat.onPress ? PRIMARY : LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
                             {stat.label}
                           </Text>
-                          {stat.onPress && <Ionicons name="chevron-forward" size={9} color={PRIMARY_TXT} />}
+                          {stat.onPress && <Ionicons name={stat.expanded ? 'chevron-down' : 'chevron-forward'} size={9} color={PRIMARY_TXT} />}
                         </View>
                         <AnimatedNumber
                           value={stat.numeric}
@@ -4824,6 +4837,81 @@ export default function DashboardScreen() {
 
               </Animated.View>
               </GestureDetector>
+
+              {/* ── Inline expandable EXPENSES drill-down ───────────────────────
+                  Tap the EXPENSES KPI above to expand/collapse an itemized list
+                  of this period's outflows. Reanimated enter/exit + LinearTransition
+                  give a smooth open/close; all colors come from the theme tokens so
+                  it stays consistent across Dark/Light. Pure JS → OTA-safe. */}
+              {expensesExpanded && (
+                <Animated.View
+                  entering={FadeInDown.duration(220)}
+                  exiting={FadeOutUp.duration(160)}
+                  layout={LinearTransition.duration(220)}
+                  style={{
+                    backgroundColor: SURFACE,
+                    borderWidth: 1, borderColor: BORDER, borderRadius: 16,
+                    padding: 14, gap: 10,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: LABEL, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>
+                      💸 {PERIOD_LABELS[period]} Expenses
+                    </Text>
+                    <Text style={{ color: RED, fontSize: 13, fontWeight: '800' }}>
+                      {hidden ? MASK : `-$${Math.abs(expenses).toFixed(2)}`}
+                    </Text>
+                  </View>
+
+                  {periodExpenses.length === 0 ? (
+                    <Text style={{ color: MUTED, fontSize: 13, paddingVertical: 8, textAlign: 'center' }}>
+                      No expenses in this period 🎉
+                    </Text>
+                  ) : (
+                    periodExpenses.map((e, idx) => {
+                      const g = outflowGroup(e);
+                      const t = parseServerDate(e.timestamp);
+                      const when = t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' });
+                      return (
+                        <View
+                          key={e.id ?? idx}
+                          style={{
+                            flexDirection: 'row', alignItems: 'center', gap: 10,
+                            paddingTop: idx === 0 ? 0 : 8,
+                            borderTopWidth: idx === 0 ? 0 : 1, borderTopColor: DIVIDER,
+                          }}
+                        >
+                          <Text style={{ fontSize: 18 }}>{groupEmoji(g)}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>
+                              {e.note?.trim() || groupLabel(g)}
+                            </Text>
+                            <Text style={{ color: MUTED, fontSize: 11, marginTop: 1 }}>
+                              {groupLabel(g)} · {when}
+                            </Text>
+                          </View>
+                          <Text style={{ color: RED, fontSize: 14, fontWeight: '800' }}>
+                            {hidden ? MASK : `-$${Math.abs(Number(e.amount)).toFixed(2)}`}
+                          </Text>
+                        </View>
+                      );
+                    })
+                  )}
+
+                  <PressScale
+                    onPress={() => { hTap(); setShowExpenses(true); }}
+                    scale={0.97}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
+                      marginTop: 4, paddingVertical: 8, borderRadius: 10, backgroundColor: BG,
+                      borderWidth: 1, borderColor: BORDER,
+                    }}
+                  >
+                    <Text style={{ color: PRIMARY_TXT, fontSize: 12, fontWeight: '800' }}>Filter & view by period</Text>
+                    <Ionicons name="open-outline" size={13} color={PRIMARY_TXT} />
+                  </PressScale>
+                </Animated.View>
+              )}
 
               {/* ── Secondary Stat Cards: $/Mile, Miles (centered row) ──────── */}
               <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center' }}>
