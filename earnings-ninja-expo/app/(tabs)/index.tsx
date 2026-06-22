@@ -2870,6 +2870,24 @@ const ANALYTICS_PERIODS: { key: AnalyticsPeriod; label: string }[] = [
   { key: 'all',       label: 'All Time' },
 ];
 
+// Map the dashboard's currently-viewed period onto the closest Analytics period
+// so Analytics opens to whatever the user is looking at on the dashboard.
+// today/yesterday/week/month map 1:1; the dashboard-only periods fall back to
+// the nearest-magnitude Analytics window (last7→This Week, lastMonth→This Month,
+// custom→All Time since Analytics has no custom range).
+const dashboardToAnalyticsPeriod = (p: Period): AnalyticsPeriod => {
+  switch (p) {
+    case 'today':     return 'today';
+    case 'yesterday': return 'yesterday';
+    case 'week':      return 'week';
+    case 'last7':     return 'week';
+    case 'month':     return 'month';
+    case 'lastMonth': return 'month';
+    case 'custom':    return 'all';
+    default:          return 'today';
+  }
+};
+
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const hourTick = (h: number) => {
   const am = h < 12;
@@ -2961,22 +2979,23 @@ function VBarChart({
   );
 }
 
-function AnalyticsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible: boolean; onClose: () => void; initialPeriod?: AnalyticsPeriod }) {
   const {
     BG, SURFACE, BORDER, PRIMARY, PRIMARY_TXT, PRI_LITE, TEXT, TEXT_MID, MUTED, LABEL,
     GREEN, GREEN_LT, RED, RED_LT, DIVIDER, ON_PRIMARY,
   } = useTheme();
   const { hidden } = useHiddenMode();
   const insets = useSafeAreaInsets();
-  const [aPeriod, setAPeriod] = useState<AnalyticsPeriod>('today');
+  const [aPeriod, setAPeriod] = useState<AnalyticsPeriod>(initialPeriod);
   const [showAllDays, setShowAllDays] = useState(false);
 
-  // Always reopen on "Today": reset the selected period each time the modal
-  // becomes visible (the component stays mounted, so state would otherwise
-  // persist the last-used period across opens).
+  // Open to the timeframe the user is currently viewing on the dashboard: sync
+  // the selected period to `initialPeriod` each time the modal becomes visible
+  // (the component stays mounted, so state would otherwise persist the last-used
+  // period across opens). The user can still freely switch periods once open.
   useEffect(() => {
-    if (visible) setAPeriod('today');
-  }, [visible]);
+    if (visible) setAPeriod(initialPeriod);
+  }, [visible, initialPeriod]);
 
   // `todayStamp` (local YYYY-MM-DD) is part of every query key so the cached
   // range refetches automatically after a midnight rollover while the app
@@ -5266,7 +5285,7 @@ export default function DashboardScreen() {
         onClose={() => { setShowAdd(false); setAddPrefill(undefined); setEditingEntry(undefined); }}
       />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
-      <AnalyticsModal visible={showAnalytics} onClose={() => setShowAnalytics(false)} />
+      <AnalyticsModal visible={showAnalytics} onClose={() => setShowAnalytics(false)} initialPeriod={dashboardToAnalyticsPeriod(period)} />
       <ExpensesModal visible={showExpenses} onClose={() => setShowExpenses(false)} />
       {/* ── Sort Menu (Dark Neon bottom sheet) ────────────────────────────── */}
       <Modal visible={showSortMenu} transparent animationType="fade" onRequestClose={() => setShowSortMenu(false)}>
