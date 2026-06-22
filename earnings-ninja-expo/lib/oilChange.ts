@@ -9,9 +9,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // all-time mileage as the new baseline, so the next reminder is due after
 // another full interval — i.e. it fires every interval, cumulatively.
 //
-// NOTE: the prompt title said "3k" but the task body specifies "every 5,000
-// miles (cumulative)" — following the explicit body value.
-export const OIL_CHANGE_INTERVAL = 5000;
+// Reminder fires every 3,000 miles of cumulative driving (standard oil-change
+// cadence, confirmed by the user).
+export const OIL_CHANGE_INTERVAL = 3000;
 const BASELINE_KEY = 'oil_change_baseline_miles';
 
 export interface OilChangeState {
