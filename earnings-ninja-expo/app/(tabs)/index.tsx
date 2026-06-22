@@ -1454,6 +1454,17 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
     setAppAutoFilled(false);
   };
 
+  // Reseed the entry's date to the live "now" every time the modal opens for a
+  // NEW entry. `entryDate` is otherwise only set at mount and inside reset()
+  // (which runs at CLOSE time), so when the app stays mounted across the EST
+  // midnight rollover (e.g. backgrounded overnight) the first order of the new
+  // day would inherit yesterday's stale date and — via easternDateTime — get
+  // filed under Yesterday. Editing seeds entryDate from the row, so skip then.
+  useEffect(() => {
+    if (!visible || editing) return;
+    setEntryDate(new Date());
+  }, [visible, editing]);
+
   // Apply widget-driven prefill whenever the modal opens with a prefill set.
   // Skipped when we're in edit mode — `editing` takes precedence.
   useEffect(() => {
