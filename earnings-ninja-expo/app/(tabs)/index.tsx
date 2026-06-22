@@ -4190,14 +4190,15 @@ export default function DashboardScreen() {
   const perMile   = n(rollup?.dollars_per_mile);
   const avgOrder  = n(rollup?.average_order_value);
 
-  // Push today's net profit to the iOS widget whenever we're actually
-  // viewing today (period === 'today' && dayOffset === 0). Other periods
-  // would lie to the widget about "today".
+  // Push today's net profit AND gross revenue to the iOS widget whenever we're
+  // actually viewing today (period === 'today' && dayOffset === 0). Other
+  // periods would lie to the widget about "today".
   useEffect(() => {
     if (period === 'today' && effectiveDayOffset === 0 && rollup) {
       widgetSync.pushProfit(profit);
+      widgetSync.pushRevenue(revenue);
     }
-  }, [profit, period, effectiveDayOffset, rollup]);
+  }, [profit, revenue, period, effectiveDayOffset, rollup]);
   const rawGoal   = goal?.target_profit;
   const goalTarget = (rawGoal !== undefined && rawGoal !== null) ? Number(rawGoal) || null : null;
   // Filter entries by search query (matches app label, type, category, note, amount)

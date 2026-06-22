@@ -3,3 +3,4 @@
 - [EAS build when code-exec down](eas-build-when-codeexec-down.md) — eas build/update get reaped in bash (even detached); when notebook/configureWorkflow is down, run via a guarded one-shot trigger inside the always-alive Expo watchdog workflow, then revert.
 - [Entry list ordering across mutations](entry-list-ordering-mutations.md) — create/edit/delete optimistic sorts must use parseServerDate + UTC-consistent timestamps, never raw string compare.
 - [New-entry date default & midnight](entry-date-default-midnight.md) — reseed Add-modal entryDate to live now on each open; stale default files first order of day under Yesterday.
+- [Lock Screen widget mini-dashboard](lockscreen-widget-revenue.md) — adding a widget metric = OTA the App-Group data + native build for the Swift line; mirror it in QuickAddIntent optimistic block (revenue tap moves net+revenue, expense only net).

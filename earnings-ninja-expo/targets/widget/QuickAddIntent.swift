@@ -2,8 +2,8 @@ import AppIntents
 import WidgetKit
 import Foundation
 
-/// Serializes optimistic `today_profit` updates so concurrent quick-add
-/// taps don't lose increments via read-then-write races.
+/// Serializes optimistic `today_profit` / `today_revenue` updates so concurrent
+/// quick-add taps don't lose increments via read-then-write races.
 private let profitWriteQueue = DispatchQueue(label: "com.earningsninja.widget.profit")
 
 /// App Intent fired by quick-amount buttons in the widget.
@@ -15,8 +15,10 @@ private let profitWriteQueue = DispatchQueue(label: "com.earningsninja.widget.pr
 ///   3. Build an Entry payload — REVENUE goes in as a positive ORDER on the
 ///      user's last-used app; EXPENSE goes in as a negative OTHER expense.
 ///   4. POST to `/api/entries`.
-///   5. Atomically bump `today_profit` in App Group storage so the widget
-///      reflects the new value immediately, then reload all widget timelines.
+///   5. Atomically bump `today_profit` (and, for revenue actions, `today_revenue`)
+///      in App Group storage so the widget reflects the new value immediately,
+///      then reload all widget timelines. Expenses are revenue-neutral — they
+///      only move net profit, never the gross-revenue line.
 ///
 /// `openAppWhenRun = false` keeps the user on Home Screen — the entry is
 /// saved silently. When credentials are missing the widget surface itself
@@ -93,9 +95,14 @@ struct QuickAddIntent: AppIntent {
                 // Atomic optimistic update — serialized so concurrent taps
                 // don't read-then-overwrite each other.
                 profitWriteQueue.sync {
-                    let prev = Double(defaults.string(forKey: "today_profit") ?? "0") ?? 0
-                    let next = prev + signedAmount
-                    defaults.set(String(format: "%.2f", next), forKey: "today_profit")
+                    let prevProfit = Double(defaults.string(forKey: "today_profit") ?? "0") ?? 0
+                    defaults.set(String(format: "%.2f", prevProfit + signedAmount), forKey: "today_profit")
+                    // Revenue actions also move the gross-revenue line; expenses
+                    // are revenue-neutral (they only affect net profit).
+                    if !isExpense {
+                        let prevRevenue = Double(defaults.string(forKey: "today_revenue") ?? "0") ?? 0
+                        defaults.set(String(format: "%.2f", prevRevenue + abs(amount)), forKey: "today_revenue")
+                    }
                 }
             }
         } catch {

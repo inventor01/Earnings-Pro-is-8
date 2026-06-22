@@ -6,6 +6,7 @@
 //   - auth_token    (Bearer token; required for the Intent's API call)
 //   - api_base      (e.g. "https://...replit.dev")
 //   - today_profit  (string-encoded number; positive = green, negative = red)
+//   - today_revenue (string-encoded number; today's gross revenue)
 //   - last_app      (e.g. "DOORDASH"; used as the platform for revenue quick-adds)
 //
 // All operations are no-ops on Android / Expo Go — `WidgetBridge.isAvailable()`
@@ -43,6 +44,7 @@ export const widgetSync = {
     if (!WidgetBridge.isAvailable()) return;
     WidgetBridge.setItem('auth_token', null);
     WidgetBridge.setItem('today_profit', null);
+    WidgetBridge.setItem('today_revenue', null);
     WidgetBridge.setItem('last_app', null);
     WidgetBridge.reloadAllTimelines();
   },
@@ -51,6 +53,14 @@ export const widgetSync = {
   async pushProfit(profit: number) {
     if (!WidgetBridge.isAvailable()) return;
     WidgetBridge.setItem('today_profit', profit.toFixed(2));
+    WidgetBridge.reloadAllTimelines();
+  },
+
+  /** Call after the dashboard rollup refreshes. `revenue` is today's gross
+   *  revenue (before expenses) — shown on the Lock Screen mini-dashboard. */
+  async pushRevenue(revenue: number) {
+    if (!WidgetBridge.isAvailable()) return;
+    WidgetBridge.setItem('today_revenue', revenue.toFixed(2));
     WidgetBridge.reloadAllTimelines();
   },
 
