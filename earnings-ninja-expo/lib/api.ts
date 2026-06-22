@@ -114,7 +114,6 @@ export interface Rollup {
   miles: number;
   hours: number;
   dollars_per_mile: number;
-  dollars_per_hour: number;
   average_order_value: number;
   goal?: { target_profit: number; goal_name: string } | null;
   goal_progress?: number | null;

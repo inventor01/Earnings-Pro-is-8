@@ -1698,7 +1698,6 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
             miles,
             hours,
             dollars_per_mile: miles > 0 ? profit / miles : 0,
-            dollars_per_hour: hours > 0 ? profit / hours : 0,
             goal_progress: old.goal?.target_profit
               ? profit / old.goal.target_profit
               : old.goal_progress ?? null,
@@ -1842,7 +1841,6 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
           miles,
           hours,
           dollars_per_mile: miles > 0 ? profit / miles : 0,
-          dollars_per_hour: hours > 0 ? profit / hours : 0,
           goal_progress: old.goal?.target_profit
             ? profit / old.goal.target_profit
             : old.goal_progress ?? null,
@@ -3222,7 +3220,6 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
     { label: 'Net Profit',     value: money(profit), color: isProfit ? GREEN : RED, hide: true },
     { label: 'Revenue',        value: `$${(rollup?.revenue ?? 0).toFixed(0)}`, color: GREEN, hide: true },
     { label: 'Expenses',       value: `$${Math.abs(rollup?.expenses ?? 0).toFixed(0)}`, color: RED, hide: true },
-    { label: '$ / Hour',       value: `$${(rollup?.dollars_per_hour ?? 0).toFixed(2)}`, color: PRIMARY_TXT, hide: true },
     { label: '$ / Mile',       value: `$${(rollup?.dollars_per_mile ?? 0).toFixed(2)}`, color: PRIMARY_TXT, hide: true },
     { label: 'Avg Order',      value: `$${(rollup?.average_order_value ?? 0).toFixed(2)}`, hide: true },
     { label: 'Orders',         value: `${totalOrders}` },
@@ -4103,7 +4100,6 @@ export default function DashboardScreen() {
           miles,
           hours,
           dollars_per_mile: miles > 0 ? profit / miles : 0,
-          dollars_per_hour: hours > 0 ? profit / hours : 0,
           average_order_value: remainingOrderCount > 0 ? remainingOrderRevenue / remainingOrderCount : 0,
           goal_progress: old.goal?.target_profit
             ? profit / old.goal.target_profit
@@ -4205,7 +4201,6 @@ export default function DashboardScreen() {
   const revenue   = n(rollup?.revenue);
   const expenses  = n(rollup?.expenses);
   const miles     = n(rollup?.miles);
-  const perHour   = n(rollup?.dollars_per_hour);
   const perMile   = n(rollup?.dollars_per_mile);
   const avgOrder  = n(rollup?.average_order_value);
 
@@ -4861,7 +4856,7 @@ export default function DashboardScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: TEXT, fontSize: 16, fontWeight: '800' }}>View Analytics</Text>
-                  <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>Spend, $/hour, miles & top platforms</Text>
+                  <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>Spend, miles & top platforms</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={PRIMARY_TXT} />
               </PressScale>
