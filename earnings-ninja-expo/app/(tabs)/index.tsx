@@ -3972,15 +3972,19 @@ export default function DashboardScreen() {
   const effectiveDayOffset = isDayPeriod ? dayApiOffset : 0;
 
   // Default date for NEW entries added while viewing a PAST day (offset < 0 =>
-  // yesterday/back). Shift "now" back that many whole days so a new entry is
-  // filed under the day the user is looking at (the EST date is preserved by
-  // easternDateTime). Today (0) or aggregate periods => undefined (use live now).
-  const addEntryDefaultDate = useMemo(
-    () => (isDayPeriod && effectiveDayOffset < 0
-      ? new Date(Date.now() + effectiveDayOffset * 86_400_000)
-      : undefined),
-    [isDayPeriod, effectiveDayOffset],
-  );
+  // yesterday/back). File a new entry under the EST calendar day the user is
+  // looking at. We shift the EST calendar date (not the absolute instant) by the
+  // offset and anchor to 16:00 UTC — that lands at 11:00 EST / 12:00 EDT, firmly
+  // mid-day either way, so easternDateTime always reports the intended EST date.
+  // (Naive `now + offset*86_400_000` drifts a day near EST midnight on DST
+  // transition days, e.g. the 23h spring-forward day.) Today (0) or aggregate
+  // periods => undefined (use live now).
+  const addEntryDefaultDate = useMemo(() => {
+    if (!(isDayPeriod && effectiveDayOffset < 0)) return undefined;
+    const { date } = easternDateTime(new Date());
+    const [y, m, d] = date.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d + effectiveDayOffset, 16, 0, 0));
+  }, [isDayPeriod, effectiveDayOffset]);
 
   // Which period tab to HIGHLIGHT. Data is always driven by `period`; when swiping
   // through individual days we keep showing that single day's numbers but move the
