@@ -609,11 +609,16 @@ function EntryRow({
   const isBusiness = !!entry.is_business_expense;
   const BIZ = '#3b82f6';
   const appColor  = APP_COLORS[entry.app] || MUTED;
+  // Render in US/Eastern — the SAME zone the add/edit modal shows and the
+  // Today/Yesterday windows bucket by. Without an explicit timeZone these used
+  // the device's local zone, so a non-Eastern driver saw a list time shifted
+  // from the time they actually entered (and from the day the entry is counted
+  // under). Eastern keeps display, entry, and bucketing all consistent.
   const time      = parseServerDate(entry.timestamp).toLocaleTimeString('en-US', {
-    hour: 'numeric', minute: '2-digit', hour12: true,
+    timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true,
   });
   const date      = parseServerDate(entry.timestamp).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric',
+    timeZone: 'America/New_York', month: 'short', day: 'numeric',
   });
 
   const body = (
@@ -1651,7 +1656,15 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // real UTC row. `entryDate` is the actual instant the user picked (the
       // EST date/time sent to the API are just its projection), so its ISO
       // string ('Z'-suffixed UTC) sorts correctly and matches the server row.
-      const syntheticTs = entryDate.toISOString();
+      // Truncate to the MINUTE: the server only stores HH:MM (easternDateTime
+      // drops seconds), so building the synthetic from the exact instant left
+      // sub-minute seconds on the optimistic row. That made the row sort to a
+      // slightly different "spot" than the minute-quantized server row, so a
+      // freshly-added entry jumped position once the real row landed on reopen.
+      // Minute-truncating here makes the optimistic instant byte-identical to
+      // what the server returns (EST→UTC offsets are whole minutes), so the
+      // position is stable before and after the refetch.
+      const syntheticTs = new Date(Math.floor(entryDate.getTime() / 60000) * 60000).toISOString();
       const syntheticEntry: Entry = {
         id: -Date.now(), // unique negative id so it can't collide with real rows
         timestamp: syntheticTs,
@@ -1863,7 +1876,11 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // parseServerDate then read as UTC (~4-5h off), so an edited row landed in
       // the wrong position until an app restart refetched the real UTC row.
       const now = new Date();
-      const newTs = (patch.date || patch.time) ? entryDate.toISOString() : oldEntry.timestamp;
+      // Minute-truncate to match the server (which stores HH:MM, no seconds), so
+      // an edited row keeps the exact same instant/position the refetch returns.
+      const newTs = (patch.date || patch.time)
+        ? new Date(Math.floor(entryDate.getTime() / 60000) * 60000).toISOString()
+        : oldEntry.timestamp;
       queryClient.setQueriesData<Entry[]>({ queryKey: ['entries'] }, (old) => {
         if (!Array.isArray(old)) return old;
         const next = old.map(e => e.id === id ? {
@@ -3816,9 +3833,9 @@ function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => 
                             {biz ? <Text style={{ color: '#3b82f6', fontWeight: '700' }}>  💼 Business</Text> : null}
                           </Text>
                           <Text style={{ color: LABEL, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
-                            {when.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            {when.toLocaleDateString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric' })}
                             {' · '}
-                            {when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                            {when.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true })}
                           </Text>
                           {e.note ? (
                             <Text style={{ color: MUTED, fontSize: 11, marginTop: 2, fontStyle: 'italic' }} numberOfLines={1}>
