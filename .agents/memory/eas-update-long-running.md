@@ -1,20 +1,28 @@
 ---
-name: Running `eas update` in this environment
-description: eas update bundling outlasts the bash timeout and detached procs get reaped — run it as a one-shot workflow.
+name: eas update exceeds the agent tool timeout
+description: How to publish an EAS OTA update reliably given it runs longer than the 2-minute tool limit and detached processes get killed.
 ---
 
-# Running `eas update` (OTA) in this environment
+# Publishing `eas update` despite the 2-minute tool timeout
 
-`eas update` Metro bundling for the Expo app takes ~3-5 min — longer than the
-bash tool's 2-min cap. Backgrounding it (`nohup`/`setsid &`) does NOT survive:
-the sandbox reaps processes spawned in a bash call once that call returns, so
-the bundle silently dies with an empty log.
+`eas update --branch preview` (bundle + asset upload + fingerprint + publish)
+routinely runs **longer than the ~120s agent tool limit**.
 
-**Why:** bash tool calls are not a persistent session; only workflows are
-managed/persistent.
+Pitfalls observed:
+- **Backgrounding does not help.** `nohup`/`setsid &` processes get terminated
+  between tool calls and leave an **empty** log (no output captured).
+- **`pgrep -f "eas update"` gives false positives** — it matches the polling
+  shell command itself (whose argv contains the literal string "eas update"), so
+  it falsely reports "RUNNING" forever. Do not trust it.
 
-**How to apply:** Run it as a one-shot **workflow** instead:
-`configureWorkflow({ name:"EAS Update", command:"cd earnings-ninja-expo && eas update --branch preview --message \"...\" --non-interactive", outputType:"console", autoStart:true })`,
-wait ~2 min, then `getWorkflowStatus({name:"EAS Update"})` until `state` is
-`finished` and the output shows `✔ Published!`. Remove the workflow afterwards.
-EXPO_TOKEN is already in the env. Same approach works for `eas build`.
+Reliable approach:
+- Run `eas update` in the **foreground** piped to `tee /tmp/log`. Even when the
+  tool call is killed at ~118s, the underlying process often finishes and writes
+  `✔ Published!` to the log — so **check the log tail and `eas update:list
+  --branch preview --limit 1`** afterward to confirm. It usually DID publish.
+
+**Why:** avoids re-running an already-successful publish and avoids chasing a
+phantom "stuck" process.
+
+**How to apply:** publish in foreground, accept the tool timeout, then verify via
+`eas update:list`; only retry if the latest published update is not yours.
