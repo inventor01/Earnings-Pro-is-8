@@ -363,6 +363,64 @@ function navRangeFor(
   return null;
 }
 
+// True when the given ['entries'|'rollup', ...] cache key's window contains the
+// EST calendar date `estDate` (YYYY-MM-DD). Used to scope optimistic create
+// patches so a freshly-added (or offline-queued, not-yet-reconciled) entry only
+// lands in the windows that actually contain it — never spreading onto every
+// day. The leading segment ('entries'/'rollup') is ignored; positions 1+ mirror
+// the exact shape built for both `rollupKey` and `entriesKey`.
+function keyWindowContainsDate(key: readonly unknown[], estDate: string): boolean {
+  if (!Array.isArray(key) || key.length < 2) return true;
+  // ['*', 'custom', from, to]
+  if (key[1] === 'custom') {
+    const from = key[2] as string | undefined;
+    const to = key[3] as string | undefined;
+    if (!from || !to) return true;
+    return estDate >= from && estDate <= to;
+  }
+  // ['*', tf, 'nav', from, to]
+  if (key[2] === 'nav') {
+    const from = key[3] as string | undefined;
+    const to = key[4] as string | undefined;
+    if (!from || !to) return true;
+    return estDate >= from && estDate <= to;
+  }
+  // ['*', label, offset]
+  const label = key[1];
+  const offset = typeof key[2] === 'number' ? (key[2] as number) : 0;
+  const base = estTodayUTC();
+  const [ey, em, ed] = estDate.split('-').map(Number);
+  if (!ey || !em || !ed) return true;
+  const entryUTC = Date.UTC(ey, em - 1, ed);
+  const dayAt = (n: number) => {
+    const d = new Date(base);
+    d.setUTCDate(base.getUTCDate() + n);
+    return d;
+  };
+  switch (label) {
+    case 'TODAY':     return fmtUTCDate(dayAt(offset)) === estDate;
+    case 'YESTERDAY': return fmtUTCDate(dayAt(-1)) === estDate;
+    case 'THIS_WEEK': {
+      const dow = (base.getUTCDay() + 6) % 7; // 0 = Monday
+      const mon = dayAt(-dow);
+      return entryUTC >= mon.getTime() && entryUTC <= base.getTime();
+    }
+    case 'LAST_7_DAYS': {
+      const start = dayAt(-6);
+      return entryUTC >= start.getTime() && entryUTC <= base.getTime();
+    }
+    case 'THIS_MONTH':
+      return ey === base.getUTCFullYear() && em - 1 === base.getUTCMonth() && entryUTC <= base.getTime();
+    case 'LAST_MONTH': {
+      const first = Date.UTC(base.getUTCFullYear(), base.getUTCMonth() - 1, 1);
+      const last = Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 0);
+      return entryUTC >= first && entryUTC <= last;
+    }
+    default:
+      return true; // unknown window → keep (persisted entries get reconciled anyway)
+  }
+}
+
 // Map the single-day offset actually being viewed (0 = today, -1 = yesterday, …)
 // to the period tab that should be HIGHLIGHTED while swiping through days. This is
 // a purely visual "how far back am I" indicator — the dashboard keeps showing that
@@ -1680,16 +1738,22 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         created_at: now.toISOString(),
         updated_at: now.toISOString(),
       };
-      queryClient.setQueriesData<Entry[]>({ queryKey: ['entries'] }, (old) => {
-        if (!old) return old;
-        // Insert preserving timestamp-desc ordering used by the server. Sort via
-        // parseServerDate (the SAME comparator the History list uses) so the
-        // synthetic 'Z'-suffixed ISO ts and the server's tz-less UTC strings are
-        // compared as real instants rather than raw strings.
-        const next = [syntheticEntry, ...old];
+      // Scope the optimistic prepend to ONLY the cached windows whose date range
+      // actually contains the entry's EST date. The old behavior inserted into
+      // EVERY ['entries'] window and relied on the onSuccess invalidation to drop
+      // the row from non-matching windows — but that reconciliation is SKIPPED
+      // when the POST fails and the entry is merely queued offline (negative id),
+      // leaving the synthetic row stuck on every day. Scoping here fixes that at
+      // the source. Insert preserving timestamp-desc ordering via parseServerDate
+      // (the SAME comparator the History list uses) so the synthetic 'Z'-suffixed
+      // ISO ts and the server's tz-less UTC strings compare as real instants.
+      const estDateStr = vars.date || fmtUTCDate(estTodayUTC());
+      for (const [key, old] of prevEntries) {
+        if (!old || !keyWindowContainsDate(key as unknown[], estDateStr)) continue;
+        const next = [syntheticEntry, ...(old as Entry[])];
         next.sort((a, b) => parseServerDate(b.timestamp).getTime() - parseServerDate(a.timestamp).getTime());
-        return next;
-      });
+        queryClient.setQueryData(key, next);
+      }
 
       // ---- Rollup KPIs: only patch when the entry is for today, because the
       // window-specific math (TODAY vs THIS_WEEK vs custom range) is hard to
@@ -1703,14 +1767,17 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         const amt = Math.abs(vars.amount || 0);
         const addMiles = vars.distance_miles || 0;
         const addHours = (vars.duration_minutes || 0) / 60;
-        queryClient.setQueriesData<Rollup>({ queryKey: ['rollup'] }, (old) => {
-          if (!old) return old;
+        // Same window-scoping as the entries list above: only tick KPI numbers
+        // for windows that actually contain this entry's date, so a queued (not
+        // reconciled) add doesn't inflate yesterday / last-month / other windows.
+        for (const [key, old] of prevRollup) {
+          if (!old || !keyWindowContainsDate(key as unknown[], estDateStr)) continue;
           const revenue  = isExpense ? old.revenue  : old.revenue  + amt;
           const expenses = isExpense ? old.expenses + amt : old.expenses;
           const profit   = revenue - expenses;
           const miles    = old.miles + addMiles;
           const hours    = old.hours + addHours;
-          return {
+          queryClient.setQueryData(key, {
             ...old,
             revenue,
             expenses,
@@ -1721,8 +1788,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
             goal_progress: old.goal?.target_profit
               ? profit / old.goal.target_profit
               : old.goal_progress ?? null,
-          };
-        });
+          });
+        }
       }
       // Close the modal immediately so the user sees the already-patched
       // dashboard right away, instead of waiting for the network round-trip
