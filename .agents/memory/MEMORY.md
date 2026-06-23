@@ -1,3 +1,4 @@
+- [Editing optimistic/offline rows 404s](entry-edit-negative-id-404.md) — never PUT entries with id<=0 (synthetic/offline placeholders 404); new-entry date must default to the viewed day, not always today.
 - [CSV import dedup](csv-import-dedup.md) — /entries/import dedupes only by non-empty order_id (platform CSVs); manual entries (no order_id) intentionally NOT deduped.
 - [Period swipe navigation](period-swipe-navigation.md) — dashboard day-swipe: data stays single-day (period=today/yesterday); highlighted tab is a separate render-only "how far back" indicator via displayChip/dayOffsetToChip.
 - [EAS build when code-exec down](eas-build-when-codeexec-down.md) — eas build/update get reaped in bash (even detached); when notebook/configureWorkflow is down, run via a guarded one-shot trigger inside the always-alive Expo watchdog workflow, then revert.

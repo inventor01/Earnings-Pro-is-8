@@ -1399,11 +1399,16 @@ function DetailsForm({
 
 // ─── Add Entry Modal ───────────────────────────────────────────────────────────
 type AddEntryPrefill = { type?: 'REVENUE' | 'EXPENSE'; amount?: string };
-function AddEntryModal({ visible, onClose, prefill, editing }: {
+function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   visible: boolean;
   onClose: () => void;
   prefill?: AddEntryPrefill;
   editing?: Entry;
+  // For NEW entries: the date the dashboard is currently viewing (e.g. the user
+  // swiped to Yesterday). The modal seeds `entryDate` to this so a new entry is
+  // filed under the day the user is looking at, not always "today". Undefined =>
+  // use live now (today / aggregate periods).
+  defaultDate?: Date;
 }) {
   const { PRIMARY, ON_PRIMARY } = useTheme();
   const queryClient = useQueryClient();
@@ -1462,8 +1467,10 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
   // filed under Yesterday. Editing seeds entryDate from the row, so skip then.
   useEffect(() => {
     if (!visible || editing) return;
-    setEntryDate(new Date());
-  }, [visible, editing]);
+    // Seed a NEW entry to the day the dashboard is viewing (Yesterday/N-days-back)
+    // so it's filed under that day; falls back to live now for today/aggregates.
+    setEntryDate(defaultDate ?? new Date());
+  }, [visible, editing, defaultDate]);
 
   // Apply widget-driven prefill whenever the modal opens with a prefill set.
   // Skipped when we're in edit mode — `editing` takes precedence.
@@ -1930,6 +1937,15 @@ function AddEntryModal({ visible, onClose, prefill, editing }: {
       time: timeStr,
     };
     if (editing) {
+      // Guard: rows with a non-positive id are optimistic (not-yet-saved create)
+      // or offline-queued entries that don't exist on the server yet. PUTting
+      // them returns 404 "Entry not found". Tell the user to wait instead of
+      // surfacing a scary error. (The edit entry points also block opening, so
+      // this is a defensive backstop.)
+      if (editing.id <= 0) {
+        Alert.alert('Still saving', 'This entry hasn’t finished saving yet. Give it a moment, then try editing again.');
+        return;
+      }
       updateMutation.mutate({ id: editing.id, patch: payload });
     } else {
       mutation.mutate(payload as EntryCreate);
@@ -3955,6 +3971,17 @@ export default function DashboardScreen() {
   // widget-sync "is this really today?" guard and the chart's hourly view).
   const effectiveDayOffset = isDayPeriod ? dayApiOffset : 0;
 
+  // Default date for NEW entries added while viewing a PAST day (offset < 0 =>
+  // yesterday/back). Shift "now" back that many whole days so a new entry is
+  // filed under the day the user is looking at (the EST date is preserved by
+  // easternDateTime). Today (0) or aggregate periods => undefined (use live now).
+  const addEntryDefaultDate = useMemo(
+    () => (isDayPeriod && effectiveDayOffset < 0
+      ? new Date(Date.now() + effectiveDayOffset * 86_400_000)
+      : undefined),
+    [isDayPeriod, effectiveDayOffset],
+  );
+
   // Which period tab to HIGHLIGHT. Data is always driven by `period`; when swiping
   // through individual days we keep showing that single day's numbers but move the
   // highlighted tab to reflect how far back the viewed day is (calendar-based).
@@ -5245,7 +5272,14 @@ export default function DashboardScreen() {
                             { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(id) },
                           ]);
                         }}
-                        onEdit={(entry) => { hTap(); setEditingEntry(entry); setShowAdd(true); }}
+                        onEdit={(entry) => {
+                          hTap();
+                          if (entry.id <= 0) {
+                            Alert.alert('Still saving', 'This entry hasn’t finished saving yet. Give it a moment, then try editing again.');
+                            return;
+                          }
+                          setEditingEntry(entry); setShowAdd(true);
+                        }}
                         onLongPress={selectionMode ? undefined : (entry) => setDetailEntry(entry)}
                         selectionMode={selectionMode}
                         selected={selectedIds.has(e.id)}
@@ -5365,6 +5399,7 @@ export default function DashboardScreen() {
         visible={showAdd}
         prefill={addPrefill}
         editing={editingEntry}
+        defaultDate={addEntryDefaultDate}
         onClose={() => { setShowAdd(false); setAddPrefill(undefined); setEditingEntry(undefined); }}
       />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
@@ -5451,6 +5486,10 @@ export default function DashboardScreen() {
         onEdit={(entry) => {
           setDetailEntry(null);
           hTap();
+          if (entry.id <= 0) {
+            Alert.alert('Still saving', 'This entry hasn’t finished saving yet. Give it a moment, then try editing again.');
+            return;
+          }
           setEditingEntry(entry);
           setShowAdd(true);
         }}
