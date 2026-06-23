@@ -1924,9 +1924,29 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     onError: (e, _vars, ctx) => {
       if (ctx?.prevRollup)  for (const [key, data] of ctx.prevRollup)  queryClient.setQueryData(key, data);
       if (ctx?.prevEntries) for (const [key, data] of ctx.prevEntries) queryClient.setQueryData(key, data);
+      // A 404 "Entry not found" means the row in our local cache no longer
+      // exists on the server (e.g. it was deleted on another device or removed
+      // during a platform sync) — the id is real/positive but stale, so the
+      // id<=0 guard in handleSave can't catch it. Don't surface the raw 404
+      // JSON; instead force a full resync so the phantom row drops out of every
+      // cached window (including this YESTERDAY/period view), then tell the user
+      // plainly. parseServerDate/sort stay consistent because the refetch
+      // replaces the lists wholesale.
+      const msg = (e as Error)?.message || '';
+      const isStaleEntry = msg.includes('404') || /not\s*found/i.test(msg);
       queryClient.invalidateQueries({ queryKey: ['rollup'] });
       queryClient.invalidateQueries({ queryKey: ['entries'] });
-      Alert.alert('Error', (e as Error)?.message || 'Failed to update entry.');
+      queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
+      if (isStaleEntry) {
+        queryClient.refetchQueries({ queryKey: ['entries'] });
+        Alert.alert(
+          'Entry no longer exists',
+          'This entry was removed (it may have been deleted on another device or cleaned up during a sync). Your list has been refreshed.',
+        );
+      } else {
+        Alert.alert('Error', msg || 'Failed to update entry.');
+      }
     },
   });
 

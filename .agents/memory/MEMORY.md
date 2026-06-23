@@ -1,3 +1,4 @@
+- [Edit/delete 404 from stale positive ids](entry-edit-stale-positive-id-404.md) — entry edit/delete can 404 with a REAL positive id (row deleted elsewhere/synced away); handle as a cache resync, not a hard error. Distinct from the id<=0 optimistic case.
 - [Entry timestamps are EST-canonical](entry-time-display-est.md) — render entry times with timeZone America/New_York AND minute-truncate optimistic timestamps so list time + sort position match the EST-based server.
 - [Editing optimistic/offline rows 404s](entry-edit-negative-id-404.md) — never PUT entries with id<=0 (synthetic/offline placeholders 404); new-entry date must default to the viewed day, not always today.
 - [CSV import dedup](csv-import-dedup.md) — /entries/import dedupes only by non-empty order_id (platform CSVs); manual entries (no order_id) intentionally NOT deduped.
