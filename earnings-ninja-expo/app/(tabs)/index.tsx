@@ -3038,6 +3038,11 @@ function GoalProgressBar({
   );
 }
 
+// How many History rows to add to the rendered window per "page". The expanded
+// list grows by this amount as the user scrolls toward the bottom, so we never
+// mount the entire (potentially 1000+) set in a single frame.
+const ENTRY_PAGE = 50;
+
 // ─── Transaction sorting ─────────────────────────────────────────────────────
 type SortKey = 'newest' | 'oldest' | 'highest' | 'lowest' | 'platform';
 const SORT_OPTIONS: { key: SortKey; label: string; short: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -4049,10 +4054,23 @@ export default function DashboardScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const fabAnim = useSharedValue(0);
+  // Live values the scroll handler reads without being re-created (keeps the
+  // useCallback stable). Assigned during render once the real values exist.
+  const sortedLenRef = useRef(0);
+  const showAllRef = useRef(false);
   const onHistoryScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const y = e.nativeEvent.contentOffset.y;
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    const y = contentOffset.y;
     const next = y > 400;
     setShowScrollTop(prev => (prev === next ? prev : next));
+    // Grow the rendered window as we approach the bottom of the expanded list.
+    if (!showAllRef.current) return;
+    const distanceToBottom = contentSize.height - (y + layoutMeasurement.height);
+    if (distanceToBottom < 600) {
+      // Bail out (return prev) once everything is rendered so a parked-at-bottom
+      // scroll position can't spin setState every frame.
+      setRenderLimit(prev => (prev >= sortedLenRef.current ? prev : prev + ENTRY_PAGE));
+    }
   }, []);
   useEffect(() => {
     fabAnim.value = withTiming(showScrollTop ? 1 : 0, { duration: 200, easing: Easing.out(Easing.quad) });
@@ -4110,6 +4128,11 @@ export default function DashboardScreen() {
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
   const [showAllEntries, setShowAllEntries] = useState(false);
+  // Incremental render window for the expanded History list. Tapping "Show all"
+  // used to mount EVERY row in a single frame — at 1000+ entries that froze the
+  // UI. We now render in `ENTRY_PAGE`-sized chunks and grow the window as the
+  // user scrolls near the bottom, so the worst case is one screenful at a time.
+  const [renderLimit, setRenderLimit] = useState(ENTRY_PAGE);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   // Transaction sort order for the History list. Defaults to newest-first
@@ -4503,7 +4526,12 @@ export default function DashboardScreen() {
     }
     return arr;
   }, [filteredEntries, sortBy]);
-  const displayedEntries = showAllEntries ? sortedEntries : sortedEntries.slice(0, 8);
+  // Expanded: render only the current incremental window (grown on scroll).
+  // Collapsed: the usual 8-row preview.
+  const displayedEntries = showAllEntries ? sortedEntries.slice(0, renderLimit) : sortedEntries.slice(0, 8);
+  // Keep the scroll handler's refs current without re-creating the callback.
+  sortedLenRef.current = sortedEntries.length;
+  showAllRef.current = showAllEntries;
 
   // Safety: whenever the currently-visible entry set changes (period switch,
   // day swipe, search filter, custom-range pick), prune `selectedIds` to the
@@ -4523,6 +4551,12 @@ export default function DashboardScreen() {
     });
     if (changed) setSelectedIds(next);
   }, [filteredEntries, selectionMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset the incremental render window when the *view* changes (period switch,
+  // day swipe, search query). Keyed to those signals — NOT to entries content —
+  // so a routine refetch after add/edit doesn't yank the user's scrolled-open
+  // window back to the first page.
+  useEffect(() => { setRenderLimit(ENTRY_PAGE); }, [period, effectiveDayOffset, q, customRange?.from, customRange?.to]);
 
   const orderCount = entries.filter(e => Number(e.amount) > 0).length;
 
@@ -5451,7 +5485,12 @@ export default function DashboardScreen() {
                   )}
                   {filteredEntries.length > 8 && (
                     <Pressable
-                      onPress={() => setShowAllEntries(s => !s)}
+                      onPress={() => {
+                        // Reset the window on every toggle so expand starts at one
+                        // page and collapse doesn't leave a stale large limit.
+                        setRenderLimit(ENTRY_PAGE);
+                        setShowAllEntries(s => !s);
+                      }}
                       style={{ padding: 14, alignItems: 'center', borderTopWidth: 1, borderTopColor: DIVIDER }}
                     >
                       <Text style={{ color: PRIMARY_TXT, fontSize: 13, fontWeight: '700' }}>
