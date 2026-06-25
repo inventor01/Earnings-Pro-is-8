@@ -49,6 +49,7 @@ function RootNav() {
   const { BG, isDark } = useTheme();
   const queryClient = useQueryClient();
   const draining = useRef(false);
+  const prevToken = useRef<string | null>(token);
 
   useEffect(() => {
     if (!isLoading) {
@@ -59,6 +60,18 @@ function RootNav() {
       }
     }
   }, [token, isLoading]);
+
+  // On logout (token cleared), wipe the IN-MEMORY query cache too. authContext
+  // already clears the persisted on-disk copies; clearing the live cache here
+  // prevents the persist subscriber from immediately re-writing the previous
+  // user's data back to disk, and stops a different account signing in on the
+  // same device from briefly seeing stale dashboards.
+  useEffect(() => {
+    if (prevToken.current && !token) {
+      queryClient.clear();
+    }
+    prevToken.current = token;
+  }, [token, queryClient]);
 
   useEffect(() => {
     SplashScreen.hideAsync();
@@ -95,42 +108,95 @@ function RootNav() {
       draining.current = true;
       try {
         const [createDepth, opDepth] = await Promise.all([getQueueDepth(), getOpQueueDepth()]);
-        if (createDepth > 0 || opDepth > 0) {
+        let changed = false;
+
+        // 1. Push offline-created rows first (brand-new records, no conflict
+        //    possible) so a create that earns a real server id isn't later
+        //    targeted by a queued edit using its stale negative id.
+        if (createDepth > 0) {
           setSyncing(true);
-          try {
-            let changed = false;
-            if (createDepth > 0) {
-              const r = await drainQueue(api.createEntryRaw.bind(api));
-              if (r.flushed > 0 || r.dropped > 0) changed = true;
-            }
-            // Drain edits/deletes/goals AFTER creates so an offline create that got
-            // a real server id first isn't targeted by a queued edit using a stale id.
-            if (opDepth > 0) {
-              const r = await drainMutationQueue({
-                updateEntry: (id, patch) => api.updateEntryRaw(id, patch),
-                deleteEntry: (id) => api.deleteEntryRaw(id),
-                upsertGoal: (tf, target) => api.upsertGoalRaw(tf, target),
-              });
-              if (r.flushed > 0 || r.dropped > 0) changed = true;
-            }
-            if (changed) {
-              // Centralized "entry data changed" invalidation — covers the
-              // dashboard lists AND the Analytics modal's separate cache keys so a
-              // drained offline write is reflected wherever it's shown.
-              invalidateEntryData(queryClient);
-            }
-          } finally {
-            setSyncing(false);
-          }
+          const r = await drainQueue(api.createEntryRaw.bind(api));
+          if (r.flushed > 0 || r.dropped > 0) changed = true;
         }
-        // Authoritative pull into the LOCAL mirror (the offline source of truth)
-        // so cold-start offline reads cover EVERY period and reflect deletions
-        // made elsewhere. Runs after draining so the server already has our
-        // queued writes (server-wins LWW reconcile). Best-effort: throws & is
-        // skipped silently when offline. No invalidate — the mirror only backs
-        // offline fallbacks; live queries already refetch on focus/reconnect.
-        try { await api.getAllEntries(); } catch {}
+
+        // 2. Authoritative pull into the LOCAL mirror (the offline source of
+        //    truth) so cold-start offline reads cover EVERY period and reflect
+        //    deletions made elsewhere. This also gives us the server's CURRENT
+        //    `updated_at` per record, which the queue drain needs for per-record
+        //    last-write-wins. Throws & is skipped silently when offline — in
+        //    which case there's nothing we could push anyway.
+        let serverTsById: Map<number, string> | null = null;
+        try {
+          const serverEntries = await api.getAllEntries();
+          serverTsById = new Map<number, string>();
+          for (const e of serverEntries) {
+            if (typeof e.id === 'number' && e.id > 0) serverTsById.set(e.id, e.updated_at);
+          }
+        } catch {
+          // Offline — leave serverTsById null and bail on the push below.
+        }
+
+        // 3. Drain edits/deletes/goals with per-record last-write-wins: drop any
+        //    op whose record was changed more recently on the server (another
+        //    device) than the baseline it branched from. Only runs when the pull
+        //    succeeded (we have authoritative timestamps and a live connection).
+        if (opDepth > 0 && serverTsById) {
+          const tsMap = serverTsById;
+          setSyncing(true);
+          const r = await drainMutationQueue(
+            {
+              updateEntry: (id, patch) => api.updateEntryRaw(id, patch),
+              deleteEntry: (id) => api.deleteEntryRaw(id),
+              upsertGoal: (tf, target) => api.upsertGoalRaw(tf, target),
+            },
+            async (op) => {
+              // Strict per-record LWW by SERVER update timestamp. `baseUpdatedAt`
+              // is the server `updated_at` of the version this op branched from.
+              // With awaited write-through on every raw write, any record the
+              // user could edit is in the mirror with a current updated_at, so a
+              // queued update/delete/goal always carries an authoritative
+              // baseline in normal flows.
+              //
+              // Conflict resolution:
+              //  - server has no row  → nothing to clobber → replay (push).
+              //  - baseline present   → drop our op only if the server is
+              //                         strictly newer than the version we edited.
+              //  - baseline MISSING   → we cannot prove our edit is newer, so we
+              //                         yield to the server's existing row and
+              //                         drop the op rather than risk clobbering a
+              //                         newer server version. We never fall back
+              //                         to the device clock.
+              if (op.kind === 'updateEntry' || op.kind === 'deleteEntry') {
+                const serverTs = tsMap.get(op.id);
+                if (serverTs === undefined) return false; // not on server → handled as 404/remote-delete
+                if (!op.baseUpdatedAt) return true; // no authoritative baseline → server row wins
+                return new Date(serverTs).getTime() > new Date(op.baseUpdatedAt).getTime();
+              }
+              if (op.kind === 'upsertGoal') {
+                let cur;
+                try {
+                  cur = await api.getGoal(op.timeframe);
+                } catch {
+                  return false; // can't reach server → let the op replay later
+                }
+                if (!cur || !cur.updated_at) return false; // no server row → nothing to clobber
+                if (!op.baseUpdatedAt) return true; // no authoritative baseline → server row wins
+                return new Date(cur.updated_at).getTime() > new Date(op.baseUpdatedAt).getTime();
+              }
+              return false;
+            },
+          );
+          if (r.flushed > 0 || r.dropped > 0) changed = true;
+        }
+
+        // 4. If we pushed any local writes, re-pull so the mirror reflects them,
+        //    then invalidate the lists/Analytics caches so the synced data shows.
+        if (changed) {
+          try { await api.getAllEntries(); } catch {}
+          invalidateEntryData(queryClient);
+        }
       } finally {
+        setSyncing(false);
         draining.current = false;
         await refreshPendingCount();
       }

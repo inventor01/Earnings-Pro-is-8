@@ -10,25 +10,26 @@ import type { EntryCreate, Entry, Goal, TimeframeType } from './api';
 // read-modify-write against AsyncStorage, and a single-drain guard prevents two
 // concurrent drains from double-applying an op (no duplicates).
 //
-// Conflict policy is last-write-wins resolved at SYNC time: when the queue
-// drains, each op is replayed against the server, so the device that syncs last
-// produces the surviving server state. A 404 while replaying an edit/delete
-// means the row was removed elsewhere — the op is dropped (remote delete wins)
-// rather than retried forever. (True per-edit-timestamp resolution would need a
-// GET /entries/{id} the deployed backend doesn't expose; sync-time LWW is the
-// pragmatic equivalent for a single user across devices.)
+// Conflict policy is LAST-WRITE-WINS resolved per record by the SERVER's update
+// timestamp. Each queued edit/delete/goal records the `updated_at` of the version
+// it branched from (`baseUpdatedAt`). On drain, the caller compares that baseline
+// against the server's CURRENT `updated_at` for the same record (see `shouldSkip`
+// below): if the server was changed more recently (another device), the op is
+// dropped so the newer server write survives; otherwise the op is pushed and wins.
+// A 404 while replaying still drops the op (the row was deleted elsewhere → remote
+// delete wins). Replays are idempotent, so a duplicate drain can't corrupt data.
 
 const QUEUE_KEY = 'offline_mutation_queue_v1';
 
 export type QueuedMutation =
-  | { clientId: string; queuedAt: number; kind: 'updateEntry'; id: number; patch: Partial<EntryCreate> }
-  | { clientId: string; queuedAt: number; kind: 'deleteEntry'; id: number }
-  | { clientId: string; queuedAt: number; kind: 'upsertGoal'; timeframe: TimeframeType; target_profit: number };
+  | { clientId: string; queuedAt: number; kind: 'updateEntry'; id: number; patch: Partial<EntryCreate>; baseUpdatedAt?: string }
+  | { clientId: string; queuedAt: number; kind: 'deleteEntry'; id: number; baseUpdatedAt?: string }
+  | { clientId: string; queuedAt: number; kind: 'upsertGoal'; timeframe: TimeframeType; target_profit: number; baseUpdatedAt?: string };
 
 export type EnqueueInput =
-  | { kind: 'updateEntry'; id: number; patch: Partial<EntryCreate> }
-  | { kind: 'deleteEntry'; id: number }
-  | { kind: 'upsertGoal'; timeframe: TimeframeType; target_profit: number };
+  | { kind: 'updateEntry'; id: number; patch: Partial<EntryCreate>; baseUpdatedAt?: string }
+  | { kind: 'deleteEntry'; id: number; baseUpdatedAt?: string }
+  | { kind: 'upsertGoal'; timeframe: TimeframeType; target_profit: number; baseUpdatedAt?: string };
 
 export interface MutationHandlers {
   updateEntry: (id: number, patch: Partial<EntryCreate>) => Promise<Entry>;
@@ -84,10 +85,13 @@ export async function enqueueMutation(input: EnqueueInput): Promise<void> {
       if (existing && existing.kind === 'updateEntry') {
         existing.patch = { ...existing.patch, ...input.patch };
         existing.queuedAt = queuedAt;
+        // Keep the ORIGINAL baseline: coalesced edits all branch from the
+        // version first seen offline, so that's what LWW must compare against.
+        if (existing.baseUpdatedAt === undefined) existing.baseUpdatedAt = input.baseUpdatedAt;
         await writeQueue(items);
         return;
       }
-      items.push({ clientId: randomId(), queuedAt, kind: 'updateEntry', id: input.id, patch: input.patch });
+      items.push({ clientId: randomId(), queuedAt, kind: 'updateEntry', id: input.id, patch: input.patch, baseUpdatedAt: input.baseUpdatedAt });
       await writeQueue(items);
       return;
     }
@@ -98,14 +102,14 @@ export async function enqueueMutation(input: EnqueueInput): Promise<void> {
         await writeQueue(kept);
         return;
       }
-      kept.push({ clientId: randomId(), queuedAt, kind: 'deleteEntry', id: input.id });
+      kept.push({ clientId: randomId(), queuedAt, kind: 'deleteEntry', id: input.id, baseUpdatedAt: input.baseUpdatedAt });
       await writeQueue(kept);
       return;
     }
 
     // upsertGoal — one pending op per timeframe (latest target wins).
     const kept = items.filter(it => !(it.kind === 'upsertGoal' && it.timeframe === input.timeframe));
-    kept.push({ clientId: randomId(), queuedAt, kind: 'upsertGoal', timeframe: input.timeframe, target_profit: input.target_profit });
+    kept.push({ clientId: randomId(), queuedAt, kind: 'upsertGoal', timeframe: input.timeframe, target_profit: input.target_profit, baseUpdatedAt: input.baseUpdatedAt });
     await writeQueue(kept);
   });
 }
@@ -138,6 +142,7 @@ let draining = false;
 // the same server state, so a duplicate drain can't corrupt data.
 export async function drainMutationQueue(
   handlers: MutationHandlers,
+  shouldSkip?: (op: QueuedMutation) => Promise<boolean>,
 ): Promise<{ flushed: number; failed: number; dropped: number }> {
   if (draining) return { flushed: 0, failed: 0, dropped: 0 };
   draining = true;
@@ -151,6 +156,14 @@ export async function drainMutationQueue(
 
     for (const item of items) {
       try {
+        // Per-record last-write-wins: if the server's current version is newer
+        // than the baseline this op branched from, the remote write wins — drop
+        // the local op instead of clobbering the newer server state.
+        if (shouldSkip && (await shouldSkip(item))) {
+          dropped += 1;
+          resolved.add(item.clientId);
+          continue;
+        }
         if (item.kind === 'updateEntry') {
           await handlers.updateEntry(item.id, item.patch);
         } else if (item.kind === 'deleteEntry') {

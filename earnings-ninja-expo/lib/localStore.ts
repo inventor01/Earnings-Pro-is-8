@@ -71,6 +71,25 @@ export async function replaceServerEntries(all: Entry[]): Promise<void> {
   });
 }
 
+// The mirrored server row for one id (positive ids only). Used to capture the
+// `updated_at` baseline when an edit/delete is queued offline, so the drainer can
+// resolve last-write-wins against the server's current timestamp.
+export async function getLocalEntry(id: number): Promise<Entry | undefined> {
+  const all = await readEntries();
+  return all.find(e => e.id === id);
+}
+
+// Drop rows from the mirror (e.g. after a successful server delete) so offline
+// reads stop showing them before the next full pull.
+export async function removeLocalEntries(ids: number[]): Promise<void> {
+  if (!ids || ids.length === 0) return;
+  const drop = new Set(ids);
+  await withStoreLock(async () => {
+    const current = await readEntries();
+    await writeEntries(current.filter(e => !drop.has(e.id)));
+  });
+}
+
 export async function persistGoal(goal: Goal | null, timeframe: TimeframeType): Promise<void> {
   // Serialize via the shared store lock so concurrent goal writes for different
   // timeframes can't clobber each other's read-modify-write of the goal map.

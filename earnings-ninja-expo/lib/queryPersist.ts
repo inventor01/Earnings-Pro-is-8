@@ -20,7 +20,6 @@ const PERSIST_PREFIXES = new Set<string>([
   'entries-range',
   'analytics-rollup',
   'analytics-entries',
-  'settings',
 ]);
 
 function shouldPersistKey(queryKey: readonly unknown[]): boolean {
@@ -38,6 +37,16 @@ export async function hydrateQueryClient(qc: QueryClient): Promise<void> {
     hydrate(qc, state);
   } catch {
     // Corrupt / unreadable cache — start cold rather than crash.
+  }
+}
+
+// Wipe the persisted query cache. Called on logout so the next account can't
+// cold-start into the previous user's dashboard/history blob.
+export async function clearPersistedCache(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(CACHE_KEY);
+  } catch {
+    // best-effort
   }
 }
 

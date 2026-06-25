@@ -11,6 +11,8 @@ import {
   replaceServerEntries,
   persistGoal,
   getLocalGoal,
+  getLocalEntry,
+  removeLocalEntries,
 } from './localStore';
 
 // Priority: EXPO_PUBLIC env var → app.json extra → production fallback.
@@ -146,15 +148,14 @@ export interface Rollup {
   goal_progress?: number | null;
 }
 
-export interface Settings {
-  cost_per_mile: number;
-}
-
 export interface Goal {
   id: number;
   timeframe: TimeframeType;
   target_profit: number;
   goal_name: string;
+  // Server update timestamp (exposed by GoalResponse). Used as the LWW baseline
+  // for offline goal edits; absent on synthetic offline placeholders.
+  updated_at?: string;
 }
 
 export interface User {
@@ -242,22 +243,6 @@ export const api = {
     return res.json();
   },
 
-  async getSettings(): Promise<Settings> {
-    const headers = await getAuthHeaders();
-    const res = await trackedFetch(`${API_BASE}/api/settings`, { headers });
-    return res.json();
-  },
-
-  async updateSettings(settings: Settings): Promise<Settings> {
-    const headers = await getAuthHeaders();
-    const res = await trackedFetch(`${API_BASE}/api/settings`, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify(settings),
-    });
-    return res.json();
-  },
-
   async getRollup(timeframe: string = 'TODAY', dayOffset: number = 0): Promise<Rollup> {
     const headers = await getAuthHeaders();
     const url = dayOffset !== 0 && timeframe === 'TODAY'
@@ -298,7 +283,10 @@ export const api = {
     }
     if (!res.ok) throw new Error('Failed to fetch entries');
     const data: Entry[] = await res.json();
-    mergeServerEntries(data).catch(() => {});
+    // AWAIT the mirror write so any row the UI then renders is already in the
+    // local mirror; otherwise an edit fired before this lands would enqueue with
+    // no LWW baseline and the strict drain gate would drop it (lost write).
+    await mergeServerEntries(data).catch(() => {});
     return data;
   },
 
@@ -313,7 +301,9 @@ export const api = {
     }
     if (!res.ok) throw new Error('Failed to fetch entries');
     const data: Entry[] = await res.json();
-    mergeServerEntries(data).catch(() => {});
+    // AWAIT the mirror write (see getEntries) so a baseline is always available
+    // before the UI can fire an edit against any row from this range.
+    await mergeServerEntries(data).catch(() => {});
     return data;
   },
 
@@ -358,7 +348,13 @@ export const api = {
       e.status = res.status;
       throw e;
     }
-    return res.json();
+    const saved: Entry = await res.json();
+    // Write-through to the local mirror so the offline source of truth (and the
+    // LWW baseline for any later offline edit) reflects this server version
+    // immediately, not just after the next pull. AWAIT it: a follow-up offline
+    // edit must not race ahead and capture a stale baseline before this lands.
+    await mergeServerEntries([saved]).catch(() => {});
+    return saved;
   },
 
   // Public createEntry — same shape, but routes failed network calls to
@@ -423,6 +419,8 @@ export const api = {
       e.status = res.status;
       throw e;
     }
+    // Drop from the mirror (AWAITED) so offline reads agree before the next pull.
+    await removeLocalEntries([id]).catch(() => {});
   },
 
   async deleteEntry(id: number): Promise<void> {
@@ -457,9 +455,11 @@ export const api = {
       // Permanent 4xx (bad request) — surface to the caller.
       if (!isTransient && status >= 400 && status < 500) throw err;
       // Network failure / transient — queue the delete and report success so the
-      // optimistic removal sticks; the drainer replays it on reconnect.
+      // optimistic removal sticks; the drainer replays it on reconnect. Capture
+      // the mirrored row's `updated_at` as the LWW baseline for conflict checks.
+      const baseUpdatedAt = (await getLocalEntry(id))?.updated_at;
       const { enqueueMutation } = await import('./mutationQueue');
-      await enqueueMutation({ kind: 'deleteEntry', id });
+      await enqueueMutation({ kind: 'deleteEntry', id, baseUpdatedAt });
       await refreshPendingCount();
     }
   },
@@ -480,7 +480,12 @@ export const api = {
       e.status = res.status;
       throw e;
     }
-    return res.json();
+    const saved: Entry = await res.json();
+    // Write-through (AWAITED) so a subsequent offline edit branches from THIS
+    // version's updated_at; otherwise its LWW baseline would be stale and the
+    // drainer could wrongly drop it as "older than server".
+    await mergeServerEntries([saved]).catch(() => {});
+    return saved;
   },
 
   async updateEntry(id: number, patch: Partial<EntryCreate>): Promise<Entry> {
@@ -506,8 +511,9 @@ export const api = {
         status === 429 ||
         (status >= 500 && status < 600);
       if (!isTransient && status >= 400 && status < 500) throw err;
+      const baseUpdatedAt = (await getLocalEntry(id))?.updated_at;
       const { enqueueMutation } = await import('./mutationQueue');
-      await enqueueMutation({ kind: 'updateEntry', id, patch });
+      await enqueueMutation({ kind: 'updateEntry', id, patch, baseUpdatedAt });
       await refreshPendingCount();
       return synthEntryFromPatch(id, patch);
     }
@@ -537,7 +543,9 @@ export const api = {
       return null;
     }
     const goal: Goal = await res.json();
-    persistGoal(goal, timeframe).catch(() => {});
+    // AWAIT so the goal's updated_at baseline is in the mirror before the UI can
+    // fire an offline goal edit (otherwise the strict drain gate could drop it).
+    await persistGoal(goal, timeframe).catch(() => {});
     return goal;
   },
 
@@ -557,7 +565,11 @@ export const api = {
       e.status = res.status;
       throw e;
     }
-    return res.json();
+    const saved: Goal = await res.json();
+    // Write-through (AWAITED) so a later offline goal edit branches from this
+    // version's updated_at for correct per-record LWW.
+    await persistGoal(saved, timeframe).catch(() => {});
+    return saved;
   },
 
   async upsertGoal(timeframe: TimeframeType, target_profit: number): Promise<Goal> {
@@ -572,8 +584,9 @@ export const api = {
         status === 429 ||
         (status >= 500 && status < 600);
       if (!isTransient && status >= 400 && status < 500) throw err;
+      const baseUpdatedAt = (await getLocalGoal(timeframe))?.updated_at;
       const { enqueueMutation } = await import('./mutationQueue');
-      await enqueueMutation({ kind: 'upsertGoal', timeframe, target_profit });
+      await enqueueMutation({ kind: 'upsertGoal', timeframe, target_profit, baseUpdatedAt });
       await refreshPendingCount();
       // Synthetic goal so the optimistic UI flow doesn't break offline.
       return { id: -1, timeframe, target_profit, goal_name: 'Goal' };
