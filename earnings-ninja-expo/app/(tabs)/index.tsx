@@ -1495,6 +1495,17 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // to UTC. Editing flow seeds this from the entry's existing timestamp.
   const [entryDate, setEntryDate]   = useState<Date>(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  // `entryDate` is seeded when the modal OPENS, not when the user taps Save, so
+  // its time component is the open-time. If the modal was opened earlier (app
+  // launched, backgrounded then resumed, or the user lingered while filling in
+  // the form) a plain "now" entry would silently save that stale open-time
+  // (e.g. always "9:28am") instead of the real save instant. We only want the
+  // live save-time when the user did NOT deliberately pick a date/time and the
+  // entry isn't being backdated to a past day. `dateTouchedRef` flips true the
+  // moment the user changes the picker; `pendingInstantRef` carries the instant
+  // we actually saved so the optimistic row matches the payload.
+  const dateTouchedRef = useRef(false);
+  const pendingInstantRef = useRef<Date | null>(null);
   // True while the platform was auto-filled from the last-used order platform
   // and the user hasn't manually overridden it. Drives the "Last used: …" hint.
   const [appAutoFilled, setAppAutoFilled] = useState(false);
@@ -1512,6 +1523,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     setReceiptUri(null); setReceiptDataUri(null);
     setIsBusiness(false);
     setEntryDate(new Date()); setShowDatePicker(false);
+    dateTouchedRef.current = false; pendingInstantRef.current = null;
     setAppAutoFilled(false);
   };
 
@@ -1534,6 +1546,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     // Seed a NEW entry to the day the dashboard is viewing (Yesterday/N-days-back)
     // so it's filed under that day; falls back to live now for today/aggregates.
     setEntryDate(defaultDate ?? new Date());
+    // Fresh open → the user hasn't deliberately chosen a date/time yet, so a
+    // plain save should use the live save-instant (see handleSave).
+    dateTouchedRef.current = false;
+    pendingInstantRef.current = null;
   }, [visible, editing, defaultDate]);
 
   // Apply widget-driven prefill whenever the modal opens with a prefill set.
@@ -2146,7 +2162,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               entryDate={entryDate}
               showDatePicker={showDatePicker}
               onToggleDatePicker={() => setShowDatePicker(s => !s)}
-              onChangeDate={setEntryDate}
+              onChangeDate={(d) => { dateTouchedRef.current = true; setEntryDate(d); }}
             />
           )}
         </ScrollView>
