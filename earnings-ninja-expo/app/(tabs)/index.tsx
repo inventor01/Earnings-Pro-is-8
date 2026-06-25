@@ -1694,8 +1694,15 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     // the server-side invalidation handle them.
     onMutate: async (vars) => {
       const now = new Date();
-      const p2 = (n: number) => String(n).padStart(2, '0');
-      const todayStr = `${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}`;
+      // `vars.date` is an EST wall-clock date string (produced by easternDateTime),
+      // so "is this entry for today?" must be judged against EST today — NOT the
+      // DEVICE-LOCAL date. The old device-local todayStr mis-fired for users west
+      // of Eastern late in the evening (e.g. 9pm PT = 12am ET the next day): their
+      // genuinely-today-EST entry looked backdated, so the optimistic KPI tick was
+      // skipped and the dashboard cards only caught up after the server round-trip
+      // (or, if the save was queued offline, not until the next foreground drain —
+      // i.e. "the entry didn't show on the dashboard until I reopened the app").
+      const todayStr = fmtUTCDate(estTodayUTC());
       const isToday = !vars.date || vars.date === todayStr;
 
       // ---- Entries list: optimistic prepend into EVERY cached ['entries'] list.
