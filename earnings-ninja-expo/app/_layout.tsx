@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform, type AppStateStatus } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -10,17 +10,37 @@ import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from '@/lib/authContext';
 import { ThemeProvider, useTheme } from '@/lib/theme';
 import { HiddenModeProvider, useHiddenMode } from '@/lib/hiddenMode';
-import { api } from '@/lib/api';
+import { api, API_BASE } from '@/lib/api';
 import { drainQueue, getQueueDepth } from '@/lib/offlineQueue';
+import { drainMutationQueue, getOpQueueDepth } from '@/lib/mutationQueue';
 import { invalidateEntryData } from '@/lib/queryInvalidation';
 import { refreshMotivationSchedule, MOTIVATION_IDS } from '@/lib/notifications';
 import { playKaching } from '@/lib/sound';
+import { hydrateQueryClient, startPersisting } from '@/lib/queryPersist';
+import { initConnectivity } from '@/lib/connectivity';
+import { setSyncing, subscribeSync, getSyncState } from '@/lib/syncStatus';
+import { refreshPendingCount } from '@/lib/pendingCount';
+import { SyncIndicator } from '@/components/SyncIndicator';
 import * as Notifications from 'expo-notifications';
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+      // Keep cached data around long enough that a hydrated cold-start cache
+      // (offline reads) isn't garbage-collected before its query re-mounts.
+      gcTime: 1000 * 60 * 60 * 24 * 14, // 14 days
+      // Run queries even when we believe we're offline: the request will fail
+      // fast, React Query retains the (hydrated) data, and the failed fetch
+      // drives the connectivity tracker. Without this, offline queries sit in
+      // 'paused' and the UI shows nothing on a cold start.
+      networkMode: 'always',
+    },
+    mutations: { networkMode: 'always' },
+  },
 });
 
 function RootNav() {
@@ -72,19 +92,39 @@ function RootNav() {
     if (!token) return;
     const tryDrain = async () => {
       if (draining.current) return;
-      const depth = await getQueueDepth();
-      if (depth === 0) return;
+      const [createDepth, opDepth] = await Promise.all([getQueueDepth(), getOpQueueDepth()]);
+      if (createDepth === 0 && opDepth === 0) {
+        await refreshPendingCount();
+        return;
+      }
       draining.current = true;
+      setSyncing(true);
       try {
-        const result = await drainQueue(api.createEntryRaw.bind(api));
-        if (result.flushed > 0 || result.dropped > 0) {
+        let changed = false;
+        if (createDepth > 0) {
+          const r = await drainQueue(api.createEntryRaw.bind(api));
+          if (r.flushed > 0 || r.dropped > 0) changed = true;
+        }
+        // Drain edits/deletes/goals AFTER creates so an offline create that got
+        // a real server id first isn't targeted by a queued edit using a stale id.
+        if (opDepth > 0) {
+          const r = await drainMutationQueue({
+            updateEntry: (id, patch) => api.updateEntryRaw(id, patch),
+            deleteEntry: (id) => api.deleteEntryRaw(id),
+            upsertGoal: (tf, target) => api.upsertGoalRaw(tf, target),
+          });
+          if (r.flushed > 0 || r.dropped > 0) changed = true;
+        }
+        if (changed) {
           // Centralized "entry data changed" invalidation — covers the
           // dashboard lists AND the Analytics modal's separate cache keys so a
-          // drained offline entry is reflected wherever it's shown.
+          // drained offline write is reflected wherever it's shown.
           invalidateEntryData(queryClient);
         }
       } finally {
         draining.current = false;
+        setSyncing(false);
+        await refreshPendingCount();
       }
     };
     // Re-arm the daily motivation notifications with the latest numbers. No-ops
@@ -97,7 +137,15 @@ function RootNav() {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') { tryDrain(); refreshNotifs(); }
     });
-    return () => sub.remove();
+    // Also drain the instant connectivity flips from offline → online (the
+    // health probe recovered), without waiting for a foreground event.
+    let wasOnline = getSyncState().online;
+    const unsubscribeSync = subscribeSync(() => {
+      const nowOnline = getSyncState().online;
+      if (nowOnline && !wasOnline) tryDrain();
+      wasOnline = nowOnline;
+    });
+    return () => { sub.remove(); unsubscribeSync(); };
   }, [token, queryClient]);
 
   // Re-author the scheduled notifications the instant Hidden Mode changes, so a
@@ -158,11 +206,30 @@ function RootNav() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="index" />
       </Stack>
+      <SyncIndicator />
     </>
   );
 }
 
 export default function RootLayout() {
+  // Gate the first render on cache hydration so the persisted React Query cache
+  // is loaded BEFORE any query mounts (otherwise a freshly-mounted empty query
+  // wins and hydrate can't overwrite it). This is what makes a cold start with
+  // no network show real dashboard/history/goals data. The native splash stays
+  // up meanwhile (preventAutoHideAsync); RootNav hides it after mount.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    (async () => {
+      await hydrateQueryClient(queryClient);
+      startPersisting(queryClient);
+      initConnectivity(`${API_BASE}/api/health`);
+      await refreshPendingCount();
+      setHydrated(true);
+    })();
+  }, []);
+
+  if (!hydrated) return null;
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
       <SafeAreaProvider>

@@ -15,7 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup,
+  api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup, Goal,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
 } from '@/lib/api';
 import { useAuth } from '@/lib/authContext';
@@ -4365,6 +4365,37 @@ export default function DashboardScreen() {
 
   const upsertGoalMutation = useMutation({
     mutationFn: ({ target }: { target: number }) => api.upsertGoal(goalTf, target),
+    // Optimistically patch the goal query AND the active rollup's goal /
+    // goal_progress so a saved goal shows instantly — and STICKS when offline
+    // (the onSuccess refetch fails and is retained, so this patch is what the
+    // user keeps seeing until the queued upsert drains on reconnect).
+    onMutate: async ({ target }) => {
+      await queryClient.cancelQueries({ queryKey: ['goal', goalTf] });
+      await queryClient.cancelQueries({ queryKey: rollupKey });
+      const prevGoal = queryClient.getQueryData<Goal | null>(['goal', goalTf]);
+      const prevRollup = queryClient.getQueryData<Rollup>(rollupKey);
+      queryClient.setQueryData(['goal', goalTf], (old: any) => ({
+        id: old?.id ?? -1,
+        timeframe: goalTf,
+        goal_name: old?.goal_name ?? 'Goal',
+        target_profit: target,
+      }));
+      queryClient.setQueryData<Rollup>(rollupKey, (old) =>
+        old
+          ? {
+              ...old,
+              goal: { target_profit: target, goal_name: old.goal?.goal_name ?? 'Goal' },
+              goal_progress: target > 0 ? old.profit / target : null,
+            }
+          : old,
+      );
+      return { prevGoal, prevRollup };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (!ctx) return;
+      queryClient.setQueryData(['goal', goalTf], ctx.prevGoal);
+      queryClient.setQueryData(rollupKey, ctx.prevRollup);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goal'] });
       refetchGoal();

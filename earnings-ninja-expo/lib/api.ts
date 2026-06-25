@@ -1,5 +1,7 @@
 import Constants from 'expo-constants';
 import { getToken } from './tokenStorage';
+import { reportSuccess, reportFailure } from './connectivity';
+import { refreshPendingCount } from './pendingCount';
 
 // Priority: EXPO_PUBLIC env var → app.json extra → production fallback.
 // Production fallback points at the Railway-hosted backend so the shipped
@@ -25,6 +27,21 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
+}
+
+// Single fetch wrapper that feeds the connectivity tracker: ANY response (even
+// 4xx/5xx) means the server is reachable → online; a thrown fetch (network
+// error) → offline. This is how the app derives connection state without a
+// native NetInfo dependency. All api.* calls route through here.
+async function trackedFetch(input: string, init?: RequestInit): Promise<Response> {
+  try {
+    const res = await globalThis.fetch(input, init);
+    reportSuccess();
+    return res;
+  } catch (err) {
+    reportFailure();
+    throw err;
+  }
 }
 
 export type EntryType = 'ORDER' | 'BONUS' | 'EXPENSE' | 'CANCELLATION';
@@ -140,7 +157,7 @@ export interface User {
 
 export const api = {
   async login(credential: string, password: string): Promise<{ access_token: string }> {
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
+    const res = await trackedFetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ credential, password }),
@@ -153,7 +170,7 @@ export const api = {
   },
 
   async signup(email: string, password: string, username: string): Promise<{ access_token: string }> {
-    const res = await fetch(`${API_BASE}/api/auth/signup`, {
+    const res = await trackedFetch(`${API_BASE}/api/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, username }),
@@ -166,7 +183,7 @@ export const api = {
   },
 
   async requestPasswordReset(email: string): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+    const res = await trackedFetch(`${API_BASE}/api/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -179,7 +196,7 @@ export const api = {
   },
 
   async demo(): Promise<{ access_token: string }> {
-    const res = await fetch(`${API_BASE}/api/auth/demo`, {
+    const res = await trackedFetch(`${API_BASE}/api/auth/demo`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -189,7 +206,7 @@ export const api = {
 
   async getMe(): Promise<User> {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/auth/me`, { headers });
+    const res = await trackedFetch(`${API_BASE}/api/auth/me`, { headers });
     if (!res.ok) {
       // Include HTTP status in the message so authContext can distinguish
       // "server explicitly rejected my token" (401/403 → clear token) from
@@ -203,7 +220,7 @@ export const api = {
   // any row it can't parse and returns `{ count, message }`.
   async importEntries(entries: EntryCreate[]): Promise<{ count: number; message: string }> {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/entries/import`, {
+    const res = await trackedFetch(`${API_BASE}/api/entries/import`, {
       method: 'POST',
       headers,
       body: JSON.stringify(entries),
@@ -217,13 +234,13 @@ export const api = {
 
   async getSettings(): Promise<Settings> {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/settings`, { headers });
+    const res = await trackedFetch(`${API_BASE}/api/settings`, { headers });
     return res.json();
   },
 
   async updateSettings(settings: Settings): Promise<Settings> {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/settings`, {
+    const res = await trackedFetch(`${API_BASE}/api/settings`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(settings),
@@ -236,7 +253,7 @@ export const api = {
     const url = dayOffset !== 0 && timeframe === 'TODAY'
       ? `${API_BASE}/api/rollup?timeframe=${timeframe}&day_offset=${dayOffset}`
       : `${API_BASE}/api/rollup?timeframe=${timeframe}`;
-    const res = await fetch(url, { headers });
+    const res = await trackedFetch(url, { headers });
     if (!res.ok) throw new Error('Failed to fetch rollup');
     return res.json();
   },
@@ -244,7 +261,7 @@ export const api = {
   async getRollupInRange(fromIso: string, toIso: string): Promise<Rollup> {
     const headers = await getAuthHeaders();
     const url = `${API_BASE}/api/rollup?from_date=${encodeURIComponent(fromIso)}&to_date=${encodeURIComponent(toIso)}`;
-    const res = await fetch(url, { headers });
+    const res = await trackedFetch(url, { headers });
     if (!res.ok) throw new Error('Failed to fetch rollup');
     return res.json();
   },
@@ -252,7 +269,7 @@ export const api = {
   async getEntries(timeframe: string = 'TODAY', limit = 200, dayOffset: number = 0): Promise<Entry[]> {
     const headers = await getAuthHeaders();
     const offsetParam = dayOffset !== 0 && timeframe === 'TODAY' ? `&day_offset=${dayOffset}` : '';
-    const res = await fetch(`${API_BASE}/api/entries?timeframe=${timeframe}&limit=${limit}${offsetParam}`, { headers });
+    const res = await trackedFetch(`${API_BASE}/api/entries?timeframe=${timeframe}&limit=${limit}${offsetParam}`, { headers });
     if (!res.ok) throw new Error('Failed to fetch entries');
     return res.json();
   },
@@ -260,7 +277,7 @@ export const api = {
   async getEntriesInRange(fromIso: string, toIso: string, limit = 1000): Promise<Entry[]> {
     const headers = await getAuthHeaders();
     const url = `${API_BASE}/api/entries?from_date=${encodeURIComponent(fromIso)}&to_date=${encodeURIComponent(toIso)}&limit=${limit}`;
-    const res = await fetch(url, { headers });
+    const res = await trackedFetch(url, { headers });
     if (!res.ok) throw new Error('Failed to fetch entries');
     return res.json();
   },
@@ -281,7 +298,7 @@ export const api = {
       e.status = 413;
       throw e;
     }
-    const res = await fetch(`${API_BASE}/api/entries`, {
+    const res = await trackedFetch(`${API_BASE}/api/entries`, {
       method: 'POST',
       headers,
       body,
@@ -320,6 +337,9 @@ export const api = {
       if (!isTransient && status >= 400 && status < 500) throw err;
       const { enqueueEntry, synthesizeEntry } = await import('./offlineQueue');
       const item = await enqueueEntry(entry);
+      // Keep the sync indicator's pending count honest right after an offline add
+      // (the edit/delete/goal paths already do this).
+      await refreshPendingCount();
       return synthesizeEntry(item);
     }
   },
@@ -329,7 +349,7 @@ export const api = {
   // First-name / last-name are only set by Apple on the very first sign-in
   // for an account; the caller should pass them along when they're available.
   async appleSignIn(identity_token: string, first_name?: string, last_name?: string): Promise<AuthResponse> {
-    const res = await fetch(`${API_BASE}/api/auth/apple`, {
+    const res = await trackedFetch(`${API_BASE}/api/auth/apple`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identity_token, first_name, last_name }),
@@ -340,6 +360,20 @@ export const api = {
       throw new Error(msg);
     }
     return res.json();
+  },
+
+  // Raw DELETE — no offline queue. Used by the mutation-queue drainer so it
+  // can't recurse. ALWAYS throws on failure (network or non-2xx); the thrown
+  // Error carries `.status` (including 404) so the drainer can classify a
+  // remote-deleted row (404 → drop) without regex.
+  async deleteEntryRaw(id: number): Promise<void> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/entries/${id}`, { method: 'DELETE', headers });
+    if (!res.ok) {
+      const e: any = new Error(`deleteEntry failed: ${res.status}`);
+      e.status = res.status;
+      throw e;
+    }
   },
 
   async deleteEntry(id: number): Promise<void> {
@@ -355,37 +389,84 @@ export const api = {
         const { removeQueuedBySyntheticId } = await import('./offlineQueue');
         await removeQueuedBySyntheticId(id);
       } catch {}
+      await refreshPendingCount();
       return;
     }
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/entries/${id}`, { method: 'DELETE', headers });
-    // Treat an already-gone row (404) as success — the goal state (row absent)
-    // is achieved, and surfacing an error here would wrongly roll the optimistic
-    // removal back and re-show a row the server no longer has.
-    if (!res.ok && res.status !== 404) throw new Error('Failed to delete entry');
+    try {
+      await this.deleteEntryRaw(id);
+    } catch (err: any) {
+      const status: number | undefined = err?.status;
+      // Already-gone row (404) — the desired state (row absent) is achieved;
+      // treat as success so the optimistic removal isn't rolled back.
+      if (status === 404) return;
+      const isTransient =
+        status === undefined ||
+        status === 401 ||
+        status === 408 ||
+        status === 429 ||
+        (status >= 500 && status < 600);
+      // Permanent 4xx (bad request) — surface to the caller.
+      if (!isTransient && status >= 400 && status < 500) throw err;
+      // Network failure / transient — queue the delete and report success so the
+      // optimistic removal sticks; the drainer replays it on reconnect.
+      const { enqueueMutation } = await import('./mutationQueue');
+      await enqueueMutation({ kind: 'deleteEntry', id });
+      await refreshPendingCount();
+    }
   },
 
-  // Partial-update an entry. Backend (`PUT /api/entries/{id}`) accepts the
-  // same EntryUpdate schema as create — including `date` + `time` strings
-  // which are converted to a UTC timestamp using America/New_York for proper
-  // calendar-day boundaries. Pass only the fields the user actually changed.
-  async updateEntry(id: number, patch: Partial<EntryCreate>): Promise<Entry> {
+  // Raw partial-update — no offline queue. Used by the drainer. Backend
+  // (`PUT /api/entries/{id}`) accepts the same schema as create (incl. `date`
+  // + `time` strings). Throws with `.status` on failure.
+  async updateEntryRaw(id: number, patch: Partial<EntryCreate>): Promise<Entry> {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/entries/${id}`, {
+    const res = await trackedFetch(`${API_BASE}/api/entries/${id}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(patch),
     });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      throw new Error(`Failed to update entry: ${res.status} ${text.slice(0, 200)}`);
+      const e: any = new Error(`Failed to update entry: ${res.status} ${text.slice(0, 200)}`);
+      e.status = res.status;
+      throw e;
     }
     return res.json();
   },
 
+  async updateEntry(id: number, patch: Partial<EntryCreate>): Promise<Entry> {
+    // Editing an offline-created row (negative synthetic id) that isn't on the
+    // server yet: patch the QUEUED create payload so it syncs with the new
+    // values, instead of firing a doomed PUT for an id the server doesn't have.
+    if (id < 0) {
+      try {
+        const { updateQueuedBySyntheticId } = await import('./offlineQueue');
+        await updateQueuedBySyntheticId(id, patch);
+      } catch {}
+      await refreshPendingCount();
+      return synthEntryFromPatch(id, patch);
+    }
+    try {
+      return await this.updateEntryRaw(id, patch);
+    } catch (err: any) {
+      const status: number | undefined = err?.status;
+      const isTransient =
+        status === undefined ||
+        status === 401 ||
+        status === 408 ||
+        status === 429 ||
+        (status >= 500 && status < 600);
+      if (!isTransient && status >= 400 && status < 500) throw err;
+      const { enqueueMutation } = await import('./mutationQueue');
+      await enqueueMutation({ kind: 'updateEntry', id, patch });
+      await refreshPendingCount();
+      return synthEntryFromPatch(id, patch);
+    }
+  },
+
   async deleteAccount(): Promise<void> {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/auth/account`, { method: 'DELETE', headers });
+    const res = await trackedFetch(`${API_BASE}/api/auth/account`, { method: 'DELETE', headers });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new Error(text || 'Failed to delete account');
@@ -395,13 +476,15 @@ export const api = {
   async getGoal(timeframe: TimeframeType): Promise<Goal | null> {
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch(`${API_BASE}/api/goals/${timeframe}`, { headers });
+      const res = await trackedFetch(`${API_BASE}/api/goals/${timeframe}`, { headers });
       if (!res.ok) return null;
       return res.json();
     } catch { return null; }
   },
 
-  async upsertGoal(timeframe: TimeframeType, target_profit: number): Promise<Goal> {
+  // Raw goal upsert — no offline queue. Used by the drainer. Throws with
+  // `.status` on failure so the caller can classify network vs permanent.
+  async upsertGoalRaw(timeframe: TimeframeType, target_profit: number): Promise<Goal> {
     const headers = await getAuthHeaders();
     const existing = await api.getGoal(timeframe);
     const method = existing ? 'PUT' : 'POST';
@@ -409,9 +492,56 @@ export const api = {
     const body = existing
       ? JSON.stringify({ target_profit })
       : JSON.stringify({ timeframe, target_profit, goal_name: 'Goal' });
-    const res = await fetch(url, { method, headers, body });
-    if (!res.ok) throw new Error('Failed to save goal');
+    const res = await trackedFetch(url, { method, headers, body });
+    if (!res.ok) {
+      const e: any = new Error('Failed to save goal');
+      e.status = res.status;
+      throw e;
+    }
     return res.json();
   },
 
+  async upsertGoal(timeframe: TimeframeType, target_profit: number): Promise<Goal> {
+    try {
+      return await this.upsertGoalRaw(timeframe, target_profit);
+    } catch (err: any) {
+      const status: number | undefined = err?.status;
+      const isTransient =
+        status === undefined ||
+        status === 401 ||
+        status === 408 ||
+        status === 429 ||
+        (status >= 500 && status < 600);
+      if (!isTransient && status >= 400 && status < 500) throw err;
+      const { enqueueMutation } = await import('./mutationQueue');
+      await enqueueMutation({ kind: 'upsertGoal', timeframe, target_profit });
+      await refreshPendingCount();
+      // Synthetic goal so the optimistic UI flow doesn't break offline.
+      return { id: -1, timeframe, target_profit, goal_name: 'Goal' };
+    }
+  },
+
 };
+
+// Best-effort synthetic Entry returned by the offline `updateEntry` path. The
+// caller's mutation onSuccess only invalidates (which fails & is retained
+// offline), so the optimistic onMutate patch is what the user actually sees —
+// this return value is not rendered directly, it just satisfies the Promise<Entry>.
+function synthEntryFromPatch(id: number, patch: Partial<EntryCreate>): Entry {
+  const now = new Date().toISOString();
+  return {
+    id,
+    timestamp: now,
+    type: patch.type ?? 'ORDER',
+    app: patch.app ?? 'DOORDASH',
+    amount: patch.amount ?? 0,
+    distance_miles: patch.distance_miles ?? 0,
+    duration_minutes: patch.duration_minutes ?? 0,
+    category: patch.category,
+    note: patch.note,
+    receipt_url: patch.receipt_url,
+    is_business_expense: patch.is_business_expense,
+    created_at: now,
+    updated_at: now,
+  };
+}
