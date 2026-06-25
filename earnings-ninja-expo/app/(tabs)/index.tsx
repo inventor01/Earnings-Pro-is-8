@@ -34,6 +34,7 @@ import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
 import { useOilChange, OIL_CHANGE_INTERVAL } from '@/lib/oilChange';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
+import { invalidateEntryData } from '@/lib/queryInvalidation';
 import { useLocalSearchParams, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -1832,15 +1833,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
             Array.isArray(old) ? old.map(e => (e.id === ctx.syntheticId ? _data : e)) : old,
           );
         }
-        queryClient.invalidateQueries({ queryKey: ['entries'] });
-        queryClient.invalidateQueries({ queryKey: ['rollup'] });
-        queryClient.invalidateQueries({ queryKey: ['goal'] });
-        // The Analytics modal reads its own cache keys (['analytics-rollup'] /
-        // ['analytics-entries']); the prefixes above don't match them, so with
-        // the global 30s staleTime reopening Analytics shortly after an add
-        // would show stale data missing the new entry. Invalidate them too.
-        queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
-        queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
+        // Centralized "entry data changed" invalidation — converges the
+        // dashboard lists AND the Analytics modal's separate cache keys so a
+        // newly-added entry shows everywhere instantly (no 30s staleTime gap).
+        invalidateEntryData(queryClient);
       }
       hNotifyOk();
       // Satisfying cash-register "ka-ching" on a successful save. This is the
@@ -1870,8 +1866,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
           queryClient.setQueryData(key, data);
         }
       }
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      invalidateEntryData(queryClient);
       Alert.alert('Error', 'Failed to save entry.');
     },
   });
@@ -1988,11 +1983,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       return { prevRollup, prevEntries };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
-      queryClient.invalidateQueries({ queryKey: ['goal'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
+      invalidateEntryData(queryClient);
       hNotifyOk();
     },
     onError: (e, _vars, ctx) => {
@@ -2008,10 +1999,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // replaces the lists wholesale.
       const msg = (e as Error)?.message || '';
       const isStaleEntry = msg.includes('404') || /not\s*found/i.test(msg);
-      queryClient.invalidateQueries({ queryKey: ['rollup'] });
-      queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
+      invalidateEntryData(queryClient);
       if (isStaleEntry) {
         queryClient.refetchQueries({ queryKey: ['entries'] });
         Alert.alert(
@@ -2839,12 +2827,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           📂  Import / Export Data
         </Text>
         <ImportCsvRow
-          onDone={() => {
-            queryClient.invalidateQueries({ queryKey: ['entries'] });
-            queryClient.invalidateQueries({ queryKey: ['rollup'] });
-            queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
-            queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
-          }}
+          onDone={() => invalidateEntryData(queryClient)}
         />
         <View style={{ height: 12 }} />
         <ExportCsvRow />
@@ -4269,16 +4252,11 @@ export default function DashboardScreen() {
     for (const [key, data] of ctx.prevEntries) queryClient.setQueryData(key, data);
   }, [queryClient]);
 
-  // Reconcile every dashboard-feeding cache with the server after a delete.
+  // Reconcile every dashboard-feeding cache with the server after a delete
+  // (single / bulk / calendar erase). Uses the shared "entry data changed"
+  // helper so the Analytics modal's separate cache keys stay in sync too.
   const reconcileAfterDelete = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['entries'] });
-    queryClient.invalidateQueries({ queryKey: ['rollup'] });
-    queryClient.invalidateQueries({ queryKey: ['goal'] });
-    queryClient.invalidateQueries({ queryKey: ['entries-range'] });
-    // Analytics modal uses its own cache keys — invalidate them so a delete
-    // (single / bulk / calendar erase) is reflected when Analytics reopens.
-    queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
-    queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
+    invalidateEntryData(queryClient);
   }, [queryClient]);
 
   const deleteMutation = useMutation({

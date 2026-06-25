@@ -12,6 +12,7 @@ import { ThemeProvider, useTheme } from '@/lib/theme';
 import { HiddenModeProvider, useHiddenMode } from '@/lib/hiddenMode';
 import { api } from '@/lib/api';
 import { drainQueue, getQueueDepth } from '@/lib/offlineQueue';
+import { invalidateEntryData } from '@/lib/queryInvalidation';
 import { refreshMotivationSchedule, MOTIVATION_IDS } from '@/lib/notifications';
 import { playKaching } from '@/lib/sound';
 import * as Notifications from 'expo-notifications';
@@ -77,13 +78,10 @@ function RootNav() {
       try {
         const result = await drainQueue(api.createEntryRaw.bind(api));
         if (result.flushed > 0 || result.dropped > 0) {
-          queryClient.invalidateQueries({ queryKey: ['entries'] });
-          queryClient.invalidateQueries({ queryKey: ['rollup'] });
-          queryClient.invalidateQueries({ queryKey: ['goal'] });
-          // Analytics modal reads its own cache keys — invalidate so a
-          // drained offline entry is reflected when Analytics next opens.
-          queryClient.invalidateQueries({ queryKey: ['analytics-rollup'] });
-          queryClient.invalidateQueries({ queryKey: ['analytics-entries'] });
+          // Centralized "entry data changed" invalidation — covers the
+          // dashboard lists AND the Analytics modal's separate cache keys so a
+          // drained offline entry is reflected wherever it's shown.
+          invalidateEntryData(queryClient);
         }
       } finally {
         draining.current = false;
