@@ -3,6 +3,26 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, User } from './api';
 import { getToken, setToken as persistToken, clearToken } from './tokenStorage';
 import { widgetSync } from './widgetSync';
+import { clearLocalStore } from './localStore';
+import { clearMutationQueue } from './mutationQueue';
+import { clearQueue as clearCreateQueue } from './offlineQueue';
+import { clearPersistedCache } from './queryPersist';
+import { refreshPendingCount } from './pendingCount';
+
+// Wipe every device-local copy of the signed-in user's data: the entries/goals
+// mirror, both offline queues, and the persisted React Query cache. Without this,
+// logging out then signing in as a DIFFERENT account on the same device would
+// leak the previous user's financial data (cold-start reads) and replay their
+// queued writes under the new account. Best-effort and order-independent.
+async function clearAllLocalData(): Promise<void> {
+  await Promise.allSettled([
+    clearLocalStore(),
+    clearMutationQueue(),
+    clearCreateQueue(),
+    clearPersistedCache(),
+  ]);
+  await refreshPendingCount();
+}
 
 // Cache the user profile (non-sensitive: id/email/username/name) so the app can
 // show it on a cold start with no network. The auth TOKEN stays in SecureStore
@@ -75,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (isAuthFailure) {
             await clearToken();
             await writeCachedUser(null);
+            await clearAllLocalData();
             setToken(null);
             setUser(null);
             widgetSync.onLogout();
@@ -99,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await clearToken();
     await writeCachedUser(null);
+    await clearAllLocalData();
     setToken(null);
     setUser(null);
     widgetSync.onLogout();

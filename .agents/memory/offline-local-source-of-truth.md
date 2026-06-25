@@ -1,42 +1,49 @@
 ---
 name: Offline local source-of-truth (mobile)
-description: How the Expo app serves cold-start offline reads for ANY period, not just previously-viewed windows.
+description: Why the Expo app needs a real local data layer (not just RQ cache) for offline reads, and the LWW rules that keep offline writes safe.
 ---
 
-# Offline reads = local computation, not just React Query cache
+# Offline reads need a local source-of-truth, not just the RQ cache
 
-React-Query cache-persistence alone only covers windows the user already viewed,
-so cold-start offline reads of an un-viewed period return nothing. The fix is a
-**local source-of-truth** the read APIs fall back to.
+React-Query cache-persistence only covers windows the user already viewed, so a
+cold-start offline read of an un-viewed period returns nothing. The durable fix is
+a **local mirror of server data** that the read APIs fall back to and recompute
+rollups/lists from.
 
-**Pattern (mirrors the createEntry→enqueue write pattern):** each read API
-(`getRollup`/`getRollupInRange`/`getEntries`/`getEntriesInRange`/`getGoal`)
-wraps only the `trackedFetch` in try/catch. On a **thrown network error** it
-returns a locally-computed result; a **non-2xx still throws** (don't mask auth/
-server errors with local data). On success it mirrors the server rows into the
-local store.
+**Rules:**
+- Read APIs fall back to local computation **only on a thrown network error**; a
+  non-2xx still throws (never mask auth/server errors with stale local data).
+- Offline reads overlay the pending offline queues on the mirror (queued creates
+  added, edits applied, deletes removed) so the UI reflects un-synced work.
+- All read-modify-write on the local store (entries **and** goals) must be
+  serialized behind a single store lock, or concurrent writes clobber each other.
+- Keep EST day-bucketing identical to the backend; the client must not use the
+  device clock for "is this today?" (see est-vs-device-local-date.md).
 
-**Layers:**
-- `lib/estRange.ts` — pure EST date math mirroring backend `period.py`
-  (`rangeForTimeframe`/`rangeForDates` → absolute UTC ms bounds). Holds `parseUTC`
-  so `localStore` needs only TYPE imports from `api` (avoids an api↔localStore
-  runtime cycle — api runtime-imports localStore, localStore imports api types only).
-- `lib/localStore.ts` — AsyncStorage mirror of server entries + per-timeframe goal
-  cache. Offline reads aggregate the mirror **with the pending queues overlaid**:
-  queued creates added (negative ids), queued edits applied, queued deletes removed.
-  `aggregate()` mirrors backend `rollup_service.py`.
-- Mirror maintenance: window fetches `merge` (upsert by positive id, never delete);
-  a periodic authoritative full pull (`api.getAllEntries`, wide date range) `replace`s
-  the mirror so server-side deletions propagate.
+# Offline writes use strict per-record LWW by SERVER timestamp
 
-**Reconcile = server-wins LWW:** `_layout` `tryDrain` drains both queues FIRST,
-then runs `getAllEntries()` (best-effort, skipped offline, no live-query invalidate
-since RQ already refetches on focus). Draining before pulling means the server
-already has our queued writes before we overwrite the mirror.
+Each queued edit/delete/goal records the server `updated_at` of the version it
+branched from (the "baseline"). On drain, drop the queued op only if the server's
+current `updated_at` is strictly newer than that baseline; otherwise push it.
 
-**Why:** the prior phase (cache-persistence only) was code-review-rejected for not
-covering cold-start offline reads of arbitrary periods.
+**Why:** simple single-user-across-devices semantics — most-recent change wins —
+without CRDT/field-merge. The reviewer rejected anything weaker.
 
-**How to apply:** any new read endpoint that must work offline needs a matching
-`local*` computation in `localStore` + the same network-only fallback wrapper; keep
-all RMW on the store (entries AND goals) behind `withStoreLock`.
+**Non-negotiables (each one was a separate review rejection):**
+- **Never** use the device wall-clock as a baseline; the only valid baseline is a
+  server `updated_at`. Clock skew makes wall-clock comparisons unsafe.
+- **Missing baseline ⇒ yield to the server** (drop the op if a server row exists),
+  never blind-push — a blind push can clobber a newer server version.
+- The baseline must be **authoritative at enqueue time**. That requires two things
+  working together:
+  1. Every successful raw write (create/update/delete entry, upsert goal) must
+     **await** its write-through into the mirror before returning, so a follow-up
+     offline edit branches from the current server version.
+  2. Every read that feeds the UI must **await** its mirror write before returning,
+     so a record the UI renders is already in the mirror — otherwise an edit fired
+     in that window enqueues with no baseline and the strict gate drops it (lost
+     write). Fire-and-forget mirror writes are NOT acceptable on these paths.
+
+**How to apply:** any new offline-capable read needs a matching local computation +
+the network-only fallback; any new offline-capable write needs awaited write-through
+and an awaited-baseline read path, plus a server-timestamp LWW gate in the drainer.
