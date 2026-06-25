@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform, type AppStateStatus } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient, focusManager } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from '@/lib/authContext';
@@ -41,6 +41,25 @@ function RootNav() {
 
   useEffect(() => {
     SplashScreen.hideAsync();
+  }, []);
+
+  // Wire React Query's focusManager to React Native AppState. On native there is
+  // no browser "window focus" event, so without this React Query NEVER refetches
+  // when the app returns to the foreground — meaning data that changed while the
+  // app was backgrounded (hourly OAuth order sync, edits from the web app/another
+  // device, or anything not refreshed by a local mutation) only appears after a
+  // FULL exit + reopen (which recreates the QueryClient from scratch). Forwarding
+  // active/inactive into focusManager makes stale queries (past the 30s staleTime)
+  // refetch on foreground; the staleTime still suppresses refetches on quick
+  // background/foreground toggles.
+  useEffect(() => {
+    const onChange = (status: AppStateStatus) => {
+      if (Platform.OS !== 'web') {
+        focusManager.setFocused(status === 'active');
+      }
+    };
+    const sub = AppState.addEventListener('change', onChange);
+    return () => sub.remove();
   }, []);
 
   // Drain the offline entry queue whenever the app comes to the foreground
