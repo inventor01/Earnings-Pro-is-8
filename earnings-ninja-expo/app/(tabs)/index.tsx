@@ -3256,12 +3256,14 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   }, [entries]);
 
   // Miles per active day — divide total miles by the number of distinct
-  // calendar days that actually have entries, so idle days (esp. in All Time)
-  // don't deflate the average.
+  // calendar days that actually have a revenue (positive-amount) entry, so
+  // expense/cancellation-only and idle days don't deflate the average. This
+  // keeps the "active day" definition consistent with the per-day averages.
   const milesPerDay = useMemo(() => {
     const totalMiles = rollup?.miles ?? 0;
     const dayKeys = new Set<string>();
     for (const e of entries) {
+      if ((Number(e.amount) || 0) <= 0) continue;
       const d = parseServerDate(e.timestamp);
       dayKeys.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
     }
@@ -3305,7 +3307,10 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
     return Array.from(map.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [entries]);
 
-  const activeDays = Math.max(1, dayAgg.length);
+  // Active days = calendar days with at least one revenue (positive-amount)
+  // entry. Expense/cancellation-only days are NOT working days and would
+  // otherwise deflate the per-day averages. Floored at 1 to avoid divide-by-zero.
+  const activeDays = Math.max(1, dayAgg.filter(d => d.revenue > 0).length);
   const totalOrders = useMemo(() => entries.filter(e => e.type === 'ORDER').length, [entries]);
 
   // Per-active-day averages (idle days excluded so they don't deflate the mean).
