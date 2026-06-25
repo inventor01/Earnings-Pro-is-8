@@ -29,6 +29,7 @@
     "testflight": {
       "distribution": "store",
       "channel": "preview",
+      "credentialsSource": "local",
       "autoIncrement": false,
       "ios": {
         "simulator": false,
