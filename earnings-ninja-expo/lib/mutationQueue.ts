@@ -115,6 +115,12 @@ export async function getOpQueueDepth(): Promise<number> {
   return items.length;
 }
 
+// Read-only snapshot of queued edit/delete/goal ops. Used by the local data
+// store so cold-start offline rollups/lists reflect pending edits and deletes.
+export async function getQueuedOps(): Promise<QueuedMutation[]> {
+  return readQueue();
+}
+
 function isPermanent4xx(status: number | undefined): boolean {
   return (
     typeof status === 'number' &&

@@ -92,38 +92,46 @@ function RootNav() {
     if (!token) return;
     const tryDrain = async () => {
       if (draining.current) return;
-      const [createDepth, opDepth] = await Promise.all([getQueueDepth(), getOpQueueDepth()]);
-      if (createDepth === 0 && opDepth === 0) {
-        await refreshPendingCount();
-        return;
-      }
       draining.current = true;
-      setSyncing(true);
       try {
-        let changed = false;
-        if (createDepth > 0) {
-          const r = await drainQueue(api.createEntryRaw.bind(api));
-          if (r.flushed > 0 || r.dropped > 0) changed = true;
+        const [createDepth, opDepth] = await Promise.all([getQueueDepth(), getOpQueueDepth()]);
+        if (createDepth > 0 || opDepth > 0) {
+          setSyncing(true);
+          try {
+            let changed = false;
+            if (createDepth > 0) {
+              const r = await drainQueue(api.createEntryRaw.bind(api));
+              if (r.flushed > 0 || r.dropped > 0) changed = true;
+            }
+            // Drain edits/deletes/goals AFTER creates so an offline create that got
+            // a real server id first isn't targeted by a queued edit using a stale id.
+            if (opDepth > 0) {
+              const r = await drainMutationQueue({
+                updateEntry: (id, patch) => api.updateEntryRaw(id, patch),
+                deleteEntry: (id) => api.deleteEntryRaw(id),
+                upsertGoal: (tf, target) => api.upsertGoalRaw(tf, target),
+              });
+              if (r.flushed > 0 || r.dropped > 0) changed = true;
+            }
+            if (changed) {
+              // Centralized "entry data changed" invalidation — covers the
+              // dashboard lists AND the Analytics modal's separate cache keys so a
+              // drained offline write is reflected wherever it's shown.
+              invalidateEntryData(queryClient);
+            }
+          } finally {
+            setSyncing(false);
+          }
         }
-        // Drain edits/deletes/goals AFTER creates so an offline create that got
-        // a real server id first isn't targeted by a queued edit using a stale id.
-        if (opDepth > 0) {
-          const r = await drainMutationQueue({
-            updateEntry: (id, patch) => api.updateEntryRaw(id, patch),
-            deleteEntry: (id) => api.deleteEntryRaw(id),
-            upsertGoal: (tf, target) => api.upsertGoalRaw(tf, target),
-          });
-          if (r.flushed > 0 || r.dropped > 0) changed = true;
-        }
-        if (changed) {
-          // Centralized "entry data changed" invalidation — covers the
-          // dashboard lists AND the Analytics modal's separate cache keys so a
-          // drained offline write is reflected wherever it's shown.
-          invalidateEntryData(queryClient);
-        }
+        // Authoritative pull into the LOCAL mirror (the offline source of truth)
+        // so cold-start offline reads cover EVERY period and reflect deletions
+        // made elsewhere. Runs after draining so the server already has our
+        // queued writes (server-wins LWW reconcile). Best-effort: throws & is
+        // skipped silently when offline. No invalidate — the mirror only backs
+        // offline fallbacks; live queries already refetch on focus/reconnect.
+        try { await api.getAllEntries(); } catch {}
       } finally {
         draining.current = false;
-        setSyncing(false);
         await refreshPendingCount();
       }
     };

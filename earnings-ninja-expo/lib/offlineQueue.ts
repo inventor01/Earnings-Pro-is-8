@@ -88,6 +88,12 @@ export async function getQueueDepth(): Promise<number> {
   return items.length;
 }
 
+// Read-only snapshot of the queued (offline, never-synced) creates. Used by the
+// local data store so cold-start offline rollups/lists include pending adds.
+export async function getQueuedCreates(): Promise<QueuedEntry[]> {
+  return readQueue();
+}
+
 // Returns a synthetic Entry that mirrors what the server would return, so
 // the optimistic UI has something to render. id is negative + derived from
 // queue position so React keys don't collide with real entries (server ids

@@ -7,3 +7,4 @@
 - [React Query focus refetch in RN](react-query-focus-refetch-rn.md) — wire focusManager to AppState or data only refreshes on cold restart.
 - [EST vs device-local date](est-vs-device-local-date.md) — all day-bucketing is US/Eastern; client "is this today?" checks must use estTodayUTC(), never the device clock.
 - [Optimistic rollup window scoping](optimistic-rollup-window-scoping.md) — entry add/edit optimistic ['rollup'] patches must scope per-window via keyWindowContainsDate; a net delta is 0 for a date move, leaving KPIs stale until cold restart.
+- [Offline local source-of-truth](offline-local-source-of-truth.md) — cold-start offline reads need local computation (localStore mirror + queue overlay) as a network-only fallback, not just React-Query cache; full-pull reconcile is server-wins LWW after draining.
