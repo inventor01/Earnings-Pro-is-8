@@ -2,6 +2,16 @@ import Constants from 'expo-constants';
 import { getToken } from './tokenStorage';
 import { reportSuccess, reportFailure } from './connectivity';
 import { refreshPendingCount } from './pendingCount';
+import {
+  localRollupForTimeframe,
+  localRollupForRange,
+  localEntriesForTimeframe,
+  localEntriesForRange,
+  mergeServerEntries,
+  replaceServerEntries,
+  persistGoal,
+  getLocalGoal,
+} from './localStore';
 
 // Priority: EXPO_PUBLIC env var → app.json extra → production fallback.
 // Production fallback points at the Railway-hosted backend so the shipped
@@ -253,7 +263,13 @@ export const api = {
     const url = dayOffset !== 0 && timeframe === 'TODAY'
       ? `${API_BASE}/api/rollup?timeframe=${timeframe}&day_offset=${dayOffset}`
       : `${API_BASE}/api/rollup?timeframe=${timeframe}`;
-    const res = await trackedFetch(url, { headers });
+    let res: Response;
+    try {
+      res = await trackedFetch(url, { headers });
+    } catch {
+      // Offline → compute the rollup locally so any period works at cold start.
+      return localRollupForTimeframe(timeframe, dayOffset);
+    }
     if (!res.ok) throw new Error('Failed to fetch rollup');
     return res.json();
   },
@@ -261,7 +277,12 @@ export const api = {
   async getRollupInRange(fromIso: string, toIso: string): Promise<Rollup> {
     const headers = await getAuthHeaders();
     const url = `${API_BASE}/api/rollup?from_date=${encodeURIComponent(fromIso)}&to_date=${encodeURIComponent(toIso)}`;
-    const res = await trackedFetch(url, { headers });
+    let res: Response;
+    try {
+      res = await trackedFetch(url, { headers });
+    } catch {
+      return localRollupForRange(fromIso, toIso);
+    }
     if (!res.ok) throw new Error('Failed to fetch rollup');
     return res.json();
   },
@@ -269,17 +290,45 @@ export const api = {
   async getEntries(timeframe: string = 'TODAY', limit = 200, dayOffset: number = 0): Promise<Entry[]> {
     const headers = await getAuthHeaders();
     const offsetParam = dayOffset !== 0 && timeframe === 'TODAY' ? `&day_offset=${dayOffset}` : '';
-    const res = await trackedFetch(`${API_BASE}/api/entries?timeframe=${timeframe}&limit=${limit}${offsetParam}`, { headers });
+    let res: Response;
+    try {
+      res = await trackedFetch(`${API_BASE}/api/entries?timeframe=${timeframe}&limit=${limit}${offsetParam}`, { headers });
+    } catch {
+      return localEntriesForTimeframe(timeframe, limit, dayOffset);
+    }
     if (!res.ok) throw new Error('Failed to fetch entries');
-    return res.json();
+    const data: Entry[] = await res.json();
+    mergeServerEntries(data).catch(() => {});
+    return data;
   },
 
   async getEntriesInRange(fromIso: string, toIso: string, limit = 1000): Promise<Entry[]> {
     const headers = await getAuthHeaders();
     const url = `${API_BASE}/api/entries?from_date=${encodeURIComponent(fromIso)}&to_date=${encodeURIComponent(toIso)}&limit=${limit}`;
+    let res: Response;
+    try {
+      res = await trackedFetch(url, { headers });
+    } catch {
+      return localEntriesForRange(fromIso, toIso, limit);
+    }
+    if (!res.ok) throw new Error('Failed to fetch entries');
+    const data: Entry[] = await res.json();
+    mergeServerEntries(data).catch(() => {});
+    return data;
+  },
+
+  // Full pull of the user's entries into the local mirror (authoritative). Run
+  // on login / reconnect after the queues drain, so cold-start offline reads
+  // cover EVERY period and server-side deletions are reflected. Throws on
+  // network failure so the caller can simply skip the sync when offline.
+  async getAllEntries(): Promise<Entry[]> {
+    const headers = await getAuthHeaders();
+    const url = `${API_BASE}/api/entries?from_date=2000-01-01&to_date=2100-01-01&limit=100000`;
     const res = await trackedFetch(url, { headers });
     if (!res.ok) throw new Error('Failed to fetch entries');
-    return res.json();
+    const data: Entry[] = await res.json();
+    await replaceServerEntries(data);
+    return data;
   },
 
   // Raw uploader — no offline queue. Used by the queue drainer itself so
@@ -474,12 +523,22 @@ export const api = {
   },
 
   async getGoal(timeframe: TimeframeType): Promise<Goal | null> {
+    let res: Response;
     try {
       const headers = await getAuthHeaders();
-      const res = await trackedFetch(`${API_BASE}/api/goals/${timeframe}`, { headers });
-      if (!res.ok) return null;
-      return res.json();
-    } catch { return null; }
+      res = await trackedFetch(`${API_BASE}/api/goals/${timeframe}`, { headers });
+    } catch {
+      // Offline → serve the last-known goal from the local mirror.
+      return getLocalGoal(timeframe);
+    }
+    if (!res.ok) {
+      // 404 = no goal set; clear any stale local copy so offline reads agree.
+      if (res.status === 404) persistGoal(null, timeframe).catch(() => {});
+      return null;
+    }
+    const goal: Goal = await res.json();
+    persistGoal(goal, timeframe).catch(() => {});
+    return goal;
   },
 
   // Raw goal upsert — no offline queue. Used by the drainer. Throws with
