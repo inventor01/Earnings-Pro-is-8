@@ -1,7 +1,31 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, User } from './api';
 import { getToken, setToken as persistToken, clearToken } from './tokenStorage';
 import { widgetSync } from './widgetSync';
+
+// Cache the user profile (non-sensitive: id/email/username/name) so the app can
+// show it on a cold start with no network. The auth TOKEN stays in SecureStore
+// (tokenStorage); this is only the display profile.
+const USER_CACHE_KEY = 'cached_user_v1';
+
+async function readCachedUser(): Promise<User | null> {
+  try {
+    const raw = await AsyncStorage.getItem(USER_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeCachedUser(user: User | null): Promise<void> {
+  try {
+    if (user) await AsyncStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+    else await AsyncStorage.removeItem(USER_CACHE_KEY);
+  } catch {
+    // Best-effort cache; ignore storage failures.
+  }
+}
 
 interface AuthContextType {
   token: string | null;
@@ -33,9 +57,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // app kill its quick-add tiles fall back to "Sign in" even though
         // SecureStore still has a valid token.
         widgetSync.onLogin(t);
+        // Show the cached profile immediately so a cold start offline doesn't
+        // render a blank/anonymous header while getMe() is failing.
+        const cached = await readCachedUser();
+        if (cached) setUser(cached);
         try {
           const u = await api.getMe();
           setUser(u);
+          await writeCachedUser(u);
         } catch (err: any) {
           // Only force-logout if the server *explicitly* rejected the token
           // (401/403). On a transient network error, keep the token so the
@@ -45,7 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const isAuthFailure = /401|403|unauthor/i.test(msg);
           if (isAuthFailure) {
             await clearToken();
+            await writeCachedUser(null);
             setToken(null);
+            setUser(null);
             widgetSync.onLogout();
           }
         }
@@ -61,11 +92,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const u = await api.getMe();
       setUser(u);
+      await writeCachedUser(u);
     } catch {}
   };
 
   const logout = async () => {
     await clearToken();
+    await writeCachedUser(null);
     setToken(null);
     setUser(null);
     widgetSync.onLogout();

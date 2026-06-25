@@ -218,6 +218,30 @@ export async function removeQueuedBySyntheticId(syntheticId: number): Promise<bo
   });
 }
 
+// Edit a still-queued (offline, never-persisted) entry in place, keyed by the
+// negative synthetic id `synthesizeEntry` derived from its `queuedAt`. Used by
+// `updateEntry` so editing an offline-created row updates the QUEUED payload
+// (which carries the new values when it finally syncs) rather than firing a
+// doomed PUT for a server id that doesn't exist yet. `patch` uses the same
+// EntryCreate shape as the create payload, so merging is field-compatible.
+// Returns true when a queued item was found and updated.
+export async function updateQueuedBySyntheticId(
+  syntheticId: number,
+  patch: Partial<EntryCreate>,
+): Promise<boolean> {
+  return withQueueLock(async () => {
+    const items = await readQueue();
+    let found = false;
+    const next = items.map(it => {
+      if (-it.queuedAt !== syntheticId) return it;
+      found = true;
+      return { ...it, payload: { ...it.payload, ...patch } };
+    });
+    if (found) await writeQueue(next);
+    return found;
+  });
+}
+
 export async function clearQueue(): Promise<void> {
   await withQueueLock(async () => {
     await AsyncStorage.removeItem(QUEUE_KEY);

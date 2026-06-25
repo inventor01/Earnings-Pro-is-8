@@ -87,3 +87,21 @@ version is unchanged and the installed build still receives the OTA.
 
 **How to apply:** for a JS-only OTA, build `dist` then run the command above; verify
 with `eas update:list --branch preview` (also needs the same two env vars).
+
+## `eas update` DEDUPLICATES identical bundles — publish output can be misleading
+
+If the bundle+assets are byte-identical to a previous publish, eas reuses the
+existing update group and the `✔ Published!` block prints that **old group's ID,
+message, and timestamp** (e.g. you pass `--message "X"` but it shows the prior
+commit message and "26 minutes ago"). This looks like your `--message`/code was
+ignored.
+
+**Why:** content-addressed dedup; the displayed group is the pre-existing one, not a
+new publish.
+
+**How to apply:** don't trust the publish-output message. Confirm via `eas
+update:list --branch preview` and check the **timestamp** ("1 minute ago") + a
+**unique marker** in your `--message`. If it deduped to an old group, your content is
+already live — only worry if no group carries your latest change. To force an
+unambiguous new group, make any real bundle change (even a one-line edit) so the
+hash differs.
