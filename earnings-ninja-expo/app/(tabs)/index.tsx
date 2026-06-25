@@ -31,7 +31,6 @@ import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import { syncNotifState, enableMotivation, disableMotivation } from '@/lib/notifications';
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
-import { useOilChange, OIL_CHANGE_INTERVAL } from '@/lib/oilChange';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
 import { invalidateEntryData } from '@/lib/queryInvalidation';
@@ -4195,23 +4194,6 @@ export default function DashboardScreen() {
     enabled: period !== 'custom',
   });
 
-  // ── Oil Change Alert ──────────────────────────────────────────────────────
-  // All-time cumulative miles drive the reminder. The upper bound is "now" so
-  // FUTURE-dated entries (the date picker allows up to +24h) don't count miles
-  // that haven't been driven yet. The cache key is bucketed to the hour so it
-  // stays stable (no per-render refetch) while still advancing over time; the
-  // queryFn reads the live `now` on each (re)fetch. The key starts with
-  // 'rollup', so every entry add/edit/delete (which invalidates ['rollup'])
-  // refetches it too. Miles (not $) so the banner stays visible under Hidden Mode.
-  const nowHourKey = new Date().toISOString().slice(0, 13); // YYYY-MM-DDTHH (UTC)
-  const { data: allTimeRollup } = useQuery({
-    queryKey: ['rollup', 'alltime', nowHourKey],
-    queryFn: () => api.getRollupInRange('2000-01-01T00:00:00Z', new Date().toISOString()),
-    staleTime: 60_000,
-  });
-  const totalMiles = allTimeRollup?.miles ?? 0;
-  const oilChange = useOilChange(totalMiles);
-
   // ── Optimistic delete plumbing (shared by single / multi-select / calendar) ──
   // Deleting an entry must IMMEDIATELY reset the dashboard KPIs and the goal
   // progress bar to reflect the remaining entries — without waiting for the
@@ -4689,42 +4671,6 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* ── Oil Change Alert ──────────────────────────────────────────────── */}
-        {/* Prominent amber banner once cumulative miles cross the interval.
-            Self-contained colors so it reads on every theme. "Reset" re-baselines
-            to the current mileage (logged the change), dismissing it until the
-            next interval accrues. */}
-        {oilChange.due && (
-          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-            <View style={[
-              {
-                flexDirection: 'row', alignItems: 'center', gap: 12,
-                backgroundColor: '#f59e0b', borderRadius: 16, padding: 14,
-              },
-              neonGlow('#f59e0b', 12, 0.45),
-            ]}>
-              <Text style={{ fontSize: 28 }}>🛢️</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: '#1c1917', fontSize: 15, fontWeight: '900', letterSpacing: 0.2 }}>
-                  Time for Oil Change
-                </Text>
-                <Text style={{ color: '#451a03', fontSize: 12, fontWeight: '700', marginTop: 2 }}>
-                  {Math.round(oilChange.milesSince).toLocaleString()} mi since your last change
-                </Text>
-              </View>
-              <PressScale
-                onPress={() => { hNotifyOk(); oilChange.reset(); }}
-                scale={0.92}
-                style={{
-                  backgroundColor: '#1c1917', borderRadius: 10,
-                  paddingHorizontal: 16, paddingVertical: 10,
-                }}
-              >
-                <Text style={{ color: '#fbbf24', fontWeight: '800', fontSize: 13 }}>Reset</Text>
-              </PressScale>
-            </View>
-          </View>
-        )}
 
         {/* ── Period Tabs ───────────────────────────────────────────────────── */}
         <View style={{ backgroundColor: SURFACE, borderBottomWidth: 1, borderBottomColor: BORDER }}>
