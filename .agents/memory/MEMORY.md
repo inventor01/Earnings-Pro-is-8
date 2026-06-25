@@ -6,3 +6,4 @@
 - [Offline queue synthetic-id identity](offline-queue-synthetic-id-identity.md) — queued entries need stable client identity, serialized AsyncStorage RMW, single-drain guard, per-item delete re-check.
 - [React Query focus refetch in RN](react-query-focus-refetch-rn.md) — wire focusManager to AppState or data only refreshes on cold restart.
 - [EST vs device-local date](est-vs-device-local-date.md) — all day-bucketing is US/Eastern; client "is this today?" checks must use estTodayUTC(), never the device clock.
+- [Optimistic rollup window scoping](optimistic-rollup-window-scoping.md) — entry add/edit optimistic ['rollup'] patches must scope per-window via keyWindowContainsDate; a net delta is 0 for a date move, leaving KPIs stale until cold restart.

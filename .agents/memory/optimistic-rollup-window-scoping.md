@@ -1,0 +1,34 @@
+---
+name: Optimistic rollup patches must be window-scoped
+description: Why entry add/edit optimistic ['rollup'] patches must use keyWindowContainsDate per cache key instead of a single net delta applied to all windows.
+---
+
+# Optimistic ['rollup'] patches must be scoped per window
+
+Both the CREATE and EDIT entry flows optimistically patch every cached
+`['rollup', ...]` window so the dashboard KPI/profit number updates before the
+server round-trip. The correct way to do this is to iterate each cached key and
+test membership with `keyWindowContainsDate(key, estDate)` — NOT to apply one
+net delta to every window.
+
+**Rule:** for an EDIT that may change the entry's date/time, compute the row's
+OLD est day (`easternDateTime(parseServerDate(oldEntry.timestamp)).date`) and NEW
+est day (`patch.date`). Per cached rollup key:
+- window contains BOTH old & new day → apply the net delta (new − old)
+- window contains OLD only (row left it) → subtract the row's FULL old contribution
+- window contains NEW only (row entered it) → add the row's FULL new contribution
+- window contains NEITHER → no-op
+
+**Why:** a pure date move leaves the amount unchanged, so a single net delta is 0
+for EVERY window. Applying that 0 to the currently-viewed window left its number
+unchanged optimistically, and the displayed number then only corrected after a
+cold app restart (the onSuccess invalidate→refetch reconcile did not visibly
+update the active window's NUMBER for this case). Create/delete flows masked the
+problem because their optimistic delta already equals the eventual server value,
+so a weak reconcile was invisible there — a date-move edit is the only case where
+the number must come entirely from the optimistic patch being correct.
+
+**How to apply:** keep `invalidateEntryData(queryClient)` in onSuccess as the
+final server-truth reconcile, but never rely on it to produce the *visible*
+number change — make the optimistic patch itself correct via per-window scoping.
+The entries-list patch reconciles fine via refetch and was left as-is.
