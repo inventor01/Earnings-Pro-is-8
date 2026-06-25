@@ -22,7 +22,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.earningsninja.app",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "deploymentTarget": "17.0",
       "appleTeamId": "77827G7735",
       "infoPlist": {
