@@ -26,6 +26,18 @@
         "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app"
       }
     },
+    "testflight": {
+      "distribution": "store",
+      "channel": "preview",
+      "autoIncrement": false,
+      "ios": {
+        "simulator": false,
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app"
+      }
+    },
     "production": {
       "autoIncrement": true,
       "channel": "production",
@@ -38,6 +50,11 @@
     }
   },
   "submit": {
+    "testflight": {
+      "ios": {
+        "appleTeamId": "77827G7735"
+      }
+    },
     "production": {
       "ios": {
         "appleId": "REPLACE_WITH_YOUR_APPLE_ID_EMAIL",
