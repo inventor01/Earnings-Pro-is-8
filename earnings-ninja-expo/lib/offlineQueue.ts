@@ -24,6 +24,25 @@ function randomId(): string {
   return `q_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+// Every queue mutation is an unsynchronized read-modify-write against
+// AsyncStorage (readQueue → mutate → writeQueue). Without serialization, two
+// operations that interleave (e.g. a save while the foreground drain is
+// running, or two rapid saves on flaky network) can both read the same
+// snapshot and the second write clobbers the first — silently dropping a
+// queued entry or resurrecting a just-deleted one. This process-local promise
+// chain forces every mutation to run one-at-a-time. It does NOT protect across
+// app processes, but the offline queue is only ever touched from this single
+// JS runtime, so that is sufficient.
+let queueOp: Promise<unknown> = Promise.resolve();
+function withQueueLock<T>(fn: () => Promise<T>): Promise<T> {
+  // Run `fn` after whatever is currently queued, regardless of its outcome.
+  const result = queueOp.then(fn, fn);
+  // Keep the chain alive even if `fn` rejects, so one failure can't wedge all
+  // future queue operations. The caller still receives `result` (and its error).
+  queueOp = result.then(() => undefined, () => undefined);
+  return result;
+}
+
 async function readQueue(): Promise<QueuedEntry[]> {
   try {
     const raw = await AsyncStorage.getItem(QUEUE_KEY);
@@ -44,15 +63,24 @@ async function writeQueue(items: QueuedEntry[]): Promise<void> {
 }
 
 export async function enqueueEntry(payload: EntryCreate): Promise<QueuedEntry> {
-  const item: QueuedEntry = {
-    clientId: randomId(),
-    payload,
-    queuedAt: Date.now(),
-  };
-  const items = await readQueue();
-  items.push(item);
-  await writeQueue(items);
-  return item;
+  return withQueueLock(async () => {
+    const items = await readQueue();
+    // The synthetic Entry id is derived directly from `queuedAt` (see
+    // synthesizeEntry), so two entries that share a queuedAt would collide on
+    // id — causing React duplicate-key warnings AND, worse, deleting one offline
+    // row would remove every queued row sharing that id. Guarantee a strictly
+    // unique, monotonically increasing queuedAt so the derived id is always
+    // unique, even when several entries are added in the same millisecond.
+    const lastQueuedAt = items.reduce((max, it) => Math.max(max, it.queuedAt), 0);
+    const item: QueuedEntry = {
+      clientId: randomId(),
+      payload,
+      queuedAt: Math.max(Date.now(), lastQueuedAt + 1),
+    };
+    items.push(item);
+    await writeQueue(items);
+    return item;
+  });
 }
 
 export async function getQueueDepth(): Promise<number> {
@@ -68,7 +96,10 @@ export function synthesizeEntry(item: QueuedEntry): Entry {
   const p = item.payload;
   const ts = new Date(item.queuedAt).toISOString();
   return {
-    id: -Math.floor(item.queuedAt / 1000),
+    // Full-millisecond precision (not seconds): enqueueEntry guarantees
+    // queuedAt is unique, so this negative id never collides with another
+    // queued row's id.
+    id: -item.queuedAt,
     timestamp: ts,
     type: p.type,
     app: p.app,
@@ -89,47 +120,86 @@ export function synthesizeEntry(item: QueuedEntry): Entry {
 // re-queue and stop; on a 4xx the payload is permanently bad (e.g. receipt
 // too big) so we drop it and log — keeping it forever would block all
 // future drains. Caller should refetch React Query state after this.
+let draining = false;
 export async function drainQueue(
   uploader: (payload: EntryCreate) => Promise<Entry>,
 ): Promise<{ flushed: number; failed: number; dropped: number }> {
-  const items = await readQueue();
-  if (items.length === 0) return { flushed: 0, failed: 0, dropped: 0 };
+  // Only ONE drain may run at a time. The drainer is triggered from multiple
+  // places (app foreground + after any successful network request); two
+  // concurrent drains would each snapshot the same queue and upload the same
+  // items, creating duplicate rows on the server. Bail out if one is in flight.
+  if (draining) return { flushed: 0, failed: 0, dropped: 0 };
+  draining = true;
+  try {
+    // Snapshot the queue under the lock. The network uploads below run OUTSIDE
+    // the lock (they can be slow and we must not block a user's save for the
+    // whole drain); we reconcile by `clientId` at the end so any entry enqueued
+    // mid-drain is preserved rather than clobbered.
+    const items = await withQueueLock(async () => readQueue());
+    if (items.length === 0) return { flushed: 0, failed: 0, dropped: 0 };
 
-  let flushed = 0;
-  let dropped = 0;
-  const remaining: QueuedEntry[] = [];
+    let flushed = 0;
+    let dropped = 0;
+    // Items the user deleted mid-drain (no longer in the queue) — neither
+    // uploaded nor a failure, just gone. Tracked so the `failed` count stays honest.
+    let skipped = 0;
+    // clientIds that are now resolved (uploaded OK or permanently dropped) and
+    // should be removed from the persisted queue. Anything NOT in here — failed
+    // items and everything after a transient failure — stays queued.
+    const resolved = new Set<string>();
 
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    try {
-      await uploader(item.payload);
-      flushed += 1;
-    } catch (err: any) {
-      // Classify by HTTP status, not message regex (the old regex missed
-      // 422 entirely, so oversized-receipt entries retried forever and
-      // jammed the queue head, blocking every later entry).
-      // - No status        → network failure, keep queued.
-      // - 401/408/429      → transient (stale auth / timeout / rate limit), keep.
-      // - 5xx              → server hiccup, keep.
-      // - Any other 4xx    → payload is permanently bad, drop and continue.
-      const status: number | undefined = err?.status;
-      const is4xxPermanent =
-        typeof status === 'number' &&
-        status >= 400 && status < 500 &&
-        status !== 401 && status !== 408 && status !== 429;
-      if (is4xxPermanent) {
-        dropped += 1;
-        continue;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      // The user may have deleted this still-queued row while the drain was
+      // uploading earlier items. Re-check (by clientId, under the lock) that it
+      // still exists right before uploading, so we never resurrect an entry the
+      // user explicitly deleted.
+      const stillQueued = await withQueueLock(async () => {
+        const cur = await readQueue();
+        return cur.some(it => it.clientId === item.clientId);
+      });
+      if (!stillQueued) { skipped += 1; continue; }
+
+      try {
+        await uploader(item.payload);
+        flushed += 1;
+        resolved.add(item.clientId);
+      } catch (err: any) {
+        // Classify by HTTP status, not message regex (the old regex missed
+        // 422 entirely, so oversized-receipt entries retried forever and
+        // jammed the queue head, blocking every later entry).
+        // - No status        → network failure, keep queued.
+        // - 401/408/429      → transient (stale auth / timeout / rate limit), keep.
+        // - 5xx              → server hiccup, keep.
+        // - Any other 4xx    → payload is permanently bad, drop and continue.
+        const status: number | undefined = err?.status;
+        const is4xxPermanent =
+          typeof status === 'number' &&
+          status >= 400 && status < 500 &&
+          status !== 401 && status !== 408 && status !== 429;
+        if (is4xxPermanent) {
+          dropped += 1;
+          resolved.add(item.clientId);
+          continue;
+        }
+        // Network failure or 5xx — stop here and keep this item plus everything
+        // after it queued (don't add them to `resolved`).
+        break;
       }
-      // Network failure or 5xx — keep this and everything after it queued.
-      remaining.push(...items.slice(i));
-      await writeQueue(remaining);
-      return { flushed, failed: items.length - flushed - dropped, dropped };
     }
-  }
 
-  await writeQueue(remaining);
-  return { flushed, failed: 0, dropped };
+    // Remove only the resolved items, re-reading under the lock so entries the
+    // user enqueued WHILE this drain was uploading are not lost.
+    await withQueueLock(async () => {
+      const current = await readQueue();
+      const next = current.filter(it => !resolved.has(it.clientId));
+      await writeQueue(next);
+    });
+
+    return { flushed, failed: items.length - flushed - dropped - skipped, dropped };
+  } finally {
+    draining = false;
+  }
 }
 
 // Remove a still-queued (offline, never-persisted) entry by the negative
@@ -139,13 +209,17 @@ export async function drainQueue(
 // background drainer won't later re-create the row the user just deleted.
 // Returns true when a queued item was actually found and removed.
 export async function removeQueuedBySyntheticId(syntheticId: number): Promise<boolean> {
-  const items = await readQueue();
-  const next = items.filter(it => -Math.floor(it.queuedAt / 1000) !== syntheticId);
-  if (next.length === items.length) return false;
-  await writeQueue(next);
-  return true;
+  return withQueueLock(async () => {
+    const items = await readQueue();
+    const next = items.filter(it => -it.queuedAt !== syntheticId);
+    if (next.length === items.length) return false;
+    await writeQueue(next);
+    return true;
+  });
 }
 
 export async function clearQueue(): Promise<void> {
-  await AsyncStorage.removeItem(QUEUE_KEY);
+  await withQueueLock(async () => {
+    await AsyncStorage.removeItem(QUEUE_KEY);
+  });
 }
