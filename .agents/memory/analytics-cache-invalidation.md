@@ -19,10 +19,14 @@ or `['entries']` does NOT match the `analytics-*` keys. The global QueryClient
 invalidation, reopening Analytics within 30s of a change serves stale cache and
 silently omits the just-added/deleted entry — a "doesn't update instantly" bug.
 
-**How to apply:** the entry-write paths live in `app/(tabs)/index.tsx`
-(createEntry onSuccess — gate behind the `id > 0` / persisted check so
-offline-queued synthetic entries don't snap back; updateMutation onSuccess;
-ImportCsvRow onDone; the shared `reconcileAfterDelete` callback) and the
-offline-queue drain in `app/_layout.tsx`. If you add a NEW entry-mutation path,
-add the two analytics invalidations there too. Consider centralizing all
-"entry data changed" invalidations into one helper to prevent future key drift.
+**How to apply:** this is now CENTRALIZED — call `invalidateEntryData(queryClient)`
+from `lib/queryInvalidation.ts` (the single source of truth for the full key
+spread incl. the analytics namespace) from any add/edit/delete/import/drain path.
+Do NOT hand-roll the per-key `invalidateQueries` list again; just call the helper.
+Existing callers: createEntry on{Success,Error}, updateMutation on{Success,Error},
+ImportCsvRow onDone, `reconcileAfterDelete` (delete/bulk/calendar) in
+`app/(tabs)/index.tsx`, and the offline-queue drain in `app/_layout.tsx`.
+The `['analytics-rollup']`/`['analytics-entries']` literals should now ONLY
+appear in the helper and in the Analytics modal's query definitions (the reads),
+never in a fresh invalidation block. Goal-only mutations and manual pull-to-
+refresh deliberately stay separate (they don't mutate entry data).
