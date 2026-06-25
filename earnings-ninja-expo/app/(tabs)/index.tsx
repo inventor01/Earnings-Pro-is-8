@@ -1159,6 +1159,10 @@ function DetailsForm({
   onToggleDatePicker: () => void;
   onChangeDate: (d: Date) => void;
 }) {
+  // Collapse the optional/secondary fields (Business Expense, Receipt,
+  // Date & Time, Notes) behind a "See more" toggle so the form stays short on
+  // open — the common case is just amount + type/platform (+ miles).
+  const [showMore, setShowMore] = useState(false);
   return (
     <View style={{ gap: 14 }}>
       {/* Amount summary — tap to edit, mirrors blue→purple from CalcPad */}
@@ -1279,100 +1283,6 @@ function DetailsForm({
             </View>
           )}
 
-          {/* Business expense toggle (only for EXPENSE) — flags the expense as
-              tax-deductible. Stored as is_business_expense; surfaced with a
-              distinct briefcase/blue indicator in lists + an Analytics summary. */}
-          {entryType === 'EXPENSE' && (
-            <View>
-              <FieldLabel>💼 Business Expense</FieldLabel>
-              <Pressable
-                onPress={() => { hTap(); setIsBusiness(!isBusiness); }}
-                style={{
-                  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                  borderWidth: 1.5,
-                  borderColor: isBusiness ? '#2563eb' : '#e5e7eb',
-                  backgroundColor: isBusiness ? '#eff6ff' : '#f9fafb',
-                  borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, gap: 12,
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                  <Text style={{ fontSize: 20 }}>{isBusiness ? '💼' : '🧾'}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
-                      Is this a business expense?
-                    </Text>
-                    <Text style={{ color: '#6b7280', fontSize: 11, marginTop: 1 }}>
-                      Tax-deductible · tracked separately in Analytics
-                    </Text>
-                  </View>
-                </View>
-                <View style={{
-                  width: 46, height: 28, borderRadius: 14, padding: 3,
-                  backgroundColor: isBusiness ? '#2563eb' : '#cbd5e1',
-                  alignItems: isBusiness ? 'flex-end' : 'flex-start', justifyContent: 'center',
-                }}>
-                  <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#ffffff' }} />
-                </View>
-              </Pressable>
-            </View>
-          )}
-
-          {/* Receipt photo (only for EXPENSE) — uses CALC palette since this
-              modal stays on the white "Add Entry" sheet regardless of theme. */}
-          {entryType === 'EXPENSE' && (
-            <View>
-              <FieldLabel>🧾 Receipt (optional)</FieldLabel>
-              {receiptUri ? (
-                <View style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 12,
-                  borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
-                  padding: 10, backgroundColor: '#f9fafb',
-                }}>
-                  <Image
-                    source={{ uri: receiptUri }}
-                    style={{ width: 64, height: 64, borderRadius: 8, backgroundColor: '#e5e7eb' }}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
-                      Receipt attached
-                    </Text>
-                    <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>
-                      Tap remove to clear
-                    </Text>
-                  </View>
-                  <Pressable
-                    onPress={onRemoveReceipt}
-                    style={({ pressed }) => ({
-                      backgroundColor: '#fee2e2',
-                      borderWidth: 1, borderColor: '#fca5a5',
-                      borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
-                      opacity: pressed ? 0.85 : 1,
-                    })}
-                  >
-                    <Text style={{ color: '#b91c1c', fontWeight: '700', fontSize: 12 }}>Remove</Text>
-                  </Pressable>
-                </View>
-              ) : (
-                <Pressable
-                  onPress={onPickReceipt}
-                  style={({ pressed }) => ({
-                    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-                    gap: 8,
-                    borderWidth: 1.5, borderColor: '#cbd5e1', borderStyle: 'dashed',
-                    borderRadius: 12, paddingVertical: 14, backgroundColor: '#f9fafb',
-                    opacity: pressed ? 0.85 : 1,
-                    transform: [{ scale: pressed ? 0.98 : 1 }],
-                  })}
-                >
-                  <Ionicons name="camera" size={18} color="#475569" />
-                  <Text style={{ color: '#475569', fontSize: 14, fontWeight: '700' }}>
-                    Attach Receipt Photo
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-          )}
-
           {/* Miles & Minutes — hidden for EXPENSE entries */}
           {entryType !== 'EXPENSE' && (
             <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -1397,64 +1307,180 @@ function DetailsForm({
             </View>
           )}
 
-          {/* Date & Time — defaults to "now" on a fresh entry. Tap to pick a
-              custom date/time. The picker renders inline on iOS (spinner) and
-              as a system modal on Android. */}
-          <View>
-            <FieldLabel>📅 Date & Time</FieldLabel>
-            <Pressable
-              onPress={() => { hTap(); onToggleDatePicker(); }}
-              style={({ pressed }) => ({
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                borderWidth: 1, borderColor: showDatePicker ? '#facc15' : '#e5e7eb',
-                borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-                backgroundColor: '#f9fafb',
-                opacity: pressed ? 0.85 : 1,
-              })}
-            >
-              <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
-                {/* Show the US/Eastern wall-clock the entry will actually file
-                    under (Today/Yesterday are EST), so the label matches the
-                    saved day even for non-EST users. */}
-                {entryDate.toLocaleDateString('en-US', { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-                {'  ·  '}
-                {entryDate.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true })}
-              </Text>
-              <Ionicons name={showDatePicker ? 'chevron-up' : 'chevron-down'} size={16} color="#6b7280" />
-            </Pressable>
-            {showDatePicker && (
-              <View style={{ marginTop: 8, backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden' }}>
-                <DateTimePicker
-                  value={entryDate}
-                  mode="datetime"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  // Force the iOS spinner to render with black wheel text on
-                  // the white modal background. Without these the wheel text
-                  // can come out white-on-white when the device is in dark
-                  // mode (the modal itself is hard-coded light).
-                  themeVariant="light"
-                  textColor="#000000"
-                  accentColor="#000000"
-                  onChange={(_, selected) => {
-                    if (Platform.OS === 'android') onToggleDatePicker();
-                    if (selected) onChangeDate(selected);
-                  }}
-                  maximumDate={new Date(Date.now() + 24 * 60 * 60 * 1000)}
+          {/* "See more" toggle — collapses the optional/secondary fields so the
+              form stays short. Tapping reveals Business Expense (EXPENSE only),
+              Receipt (EXPENSE only), Date & Time, and Notes. */}
+          <Pressable
+            onPress={() => { hTap(); setShowMore(v => !v); }}
+            style={({ pressed }) => ({
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+              borderWidth: 1, borderColor: '#e5e7eb', borderStyle: 'dashed',
+              borderRadius: 12, paddingVertical: 12, backgroundColor: '#f9fafb',
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Text style={{ color: '#475569', fontSize: 14, fontWeight: '700' }}>
+              {showMore ? 'See less' : 'See more'}
+            </Text>
+            <Ionicons name={showMore ? 'chevron-up' : 'chevron-down'} size={16} color="#475569" />
+          </Pressable>
+
+          {showMore && (
+            <>
+              {/* Business expense toggle (only for EXPENSE) — flags the expense as
+                  tax-deductible. Stored as is_business_expense; surfaced with a
+                  distinct briefcase/blue indicator in lists + an Analytics summary. */}
+              {entryType === 'EXPENSE' && (
+                <View>
+                  <FieldLabel>💼 Business Expense</FieldLabel>
+                  <Pressable
+                    onPress={() => { hTap(); setIsBusiness(!isBusiness); }}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                      borderWidth: 1.5,
+                      borderColor: isBusiness ? '#2563eb' : '#e5e7eb',
+                      backgroundColor: isBusiness ? '#eff6ff' : '#f9fafb',
+                      borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, gap: 12,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                      <Text style={{ fontSize: 20 }}>{isBusiness ? '💼' : '🧾'}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
+                          Is this a business expense?
+                        </Text>
+                        <Text style={{ color: '#6b7280', fontSize: 11, marginTop: 1 }}>
+                          Tax-deductible · tracked separately in Analytics
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={{
+                      width: 46, height: 28, borderRadius: 14, padding: 3,
+                      backgroundColor: isBusiness ? '#2563eb' : '#cbd5e1',
+                      alignItems: isBusiness ? 'flex-end' : 'flex-start', justifyContent: 'center',
+                    }}>
+                      <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#ffffff' }} />
+                    </View>
+                  </Pressable>
+                </View>
+              )}
+
+              {/* Receipt photo (only for EXPENSE) — uses CALC palette since this
+                  modal stays on the white "Add Entry" sheet regardless of theme. */}
+              {entryType === 'EXPENSE' && (
+                <View>
+                  <FieldLabel>🧾 Receipt (optional)</FieldLabel>
+                  {receiptUri ? (
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center', gap: 12,
+                      borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
+                      padding: 10, backgroundColor: '#f9fafb',
+                    }}>
+                      <Image
+                        source={{ uri: receiptUri }}
+                        style={{ width: 64, height: 64, borderRadius: 8, backgroundColor: '#e5e7eb' }}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
+                          Receipt attached
+                        </Text>
+                        <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>
+                          Tap remove to clear
+                        </Text>
+                      </View>
+                      <Pressable
+                        onPress={onRemoveReceipt}
+                        style={({ pressed }) => ({
+                          backgroundColor: '#fee2e2',
+                          borderWidth: 1, borderColor: '#fca5a5',
+                          borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+                          opacity: pressed ? 0.85 : 1,
+                        })}
+                      >
+                        <Text style={{ color: '#b91c1c', fontWeight: '700', fontSize: 12 }}>Remove</Text>
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <Pressable
+                      onPress={onPickReceipt}
+                      style={({ pressed }) => ({
+                        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                        gap: 8,
+                        borderWidth: 1.5, borderColor: '#cbd5e1', borderStyle: 'dashed',
+                        borderRadius: 12, paddingVertical: 14, backgroundColor: '#f9fafb',
+                        opacity: pressed ? 0.85 : 1,
+                        transform: [{ scale: pressed ? 0.98 : 1 }],
+                      })}
+                    >
+                      <Ionicons name="camera" size={18} color="#475569" />
+                      <Text style={{ color: '#475569', fontSize: 14, fontWeight: '700' }}>
+                        Attach Receipt Photo
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              )}
+
+              {/* Date & Time — defaults to "now" on a fresh entry. Tap to pick a
+                  custom date/time. The picker renders inline on iOS (spinner) and
+                  as a system modal on Android. */}
+              <View>
+                <FieldLabel>📅 Date & Time</FieldLabel>
+                <Pressable
+                  onPress={() => { hTap(); onToggleDatePicker(); }}
+                  style={({ pressed }) => ({
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                    borderWidth: 1, borderColor: showDatePicker ? '#facc15' : '#e5e7eb',
+                    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
+                    backgroundColor: '#f9fafb',
+                    opacity: pressed ? 0.85 : 1,
+                  })}
+                >
+                  <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
+                    {/* Show the US/Eastern wall-clock the entry will actually file
+                        under (Today/Yesterday are EST), so the label matches the
+                        saved day even for non-EST users. */}
+                    {entryDate.toLocaleDateString('en-US', { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                    {'  ·  '}
+                    {entryDate.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true })}
+                  </Text>
+                  <Ionicons name={showDatePicker ? 'chevron-up' : 'chevron-down'} size={16} color="#6b7280" />
+                </Pressable>
+                {showDatePicker && (
+                  <View style={{ marginTop: 8, backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden' }}>
+                    <DateTimePicker
+                      value={entryDate}
+                      mode="datetime"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      // Force the iOS spinner to render with black wheel text on
+                      // the white modal background. Without these the wheel text
+                      // can come out white-on-white when the device is in dark
+                      // mode (the modal itself is hard-coded light).
+                      themeVariant="light"
+                      textColor="#000000"
+                      accentColor="#000000"
+                      onChange={(_, selected) => {
+                        if (Platform.OS === 'android') onToggleDatePicker();
+                        if (selected) onChangeDate(selected);
+                      }}
+                      maximumDate={new Date(Date.now() + 24 * 60 * 60 * 1000)}
+                    />
+                  </View>
+                )}
+              </View>
+
+              {/* Notes */}
+              <View>
+                <FieldLabel>📝 Notes (optional)</FieldLabel>
+                <FormInput
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="Add any notes..."
+                  multiline
                 />
               </View>
-            )}
-          </View>
-
-          {/* Notes */}
-          <View>
-            <FieldLabel>📝 Notes (optional)</FieldLabel>
-            <FormInput
-              value={note}
-              onChangeText={setNote}
-              placeholder="Add any notes..."
-              multiline
-            />
-          </View>
+            </>
+          )}
         </LinearGradient>
       </View>
     </View>
