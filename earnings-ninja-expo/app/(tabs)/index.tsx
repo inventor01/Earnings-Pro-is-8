@@ -18,6 +18,7 @@ import {
   api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup, Goal,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
 } from '@/lib/api';
+import { applyOptimisticGoal, rollbackOptimisticGoal } from '@/lib/goalOptimistic';
 import { useAuth } from '@/lib/authContext';
 import * as Haptics from 'expo-haptics';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
@@ -2592,21 +2593,9 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
     // instantly — and STICKS when offline (the change queues and the onSuccess
     // refetch fails/retains, so this patch is what the user keeps seeing until
     // the queued upsert drains on reconnect). Mirrors the dashboard goal editor.
-    onMutate: async ({ tf, target }) => {
-      await queryClient.cancelQueries({ queryKey: ['goal', tf] });
-      const prevGoal = queryClient.getQueryData<Goal | null>(['goal', tf]);
-      queryClient.setQueryData(['goal', tf], (old: any) => ({
-        id: old?.id ?? -1,
-        timeframe: tf,
-        goal_name: old?.goal_name ?? 'Goal',
-        target_profit: target,
-      }));
-      return { tf, prevGoal };
-    },
-    onError: (_err, _vars, ctx) => {
-      if (!ctx) return;
-      queryClient.setQueryData(['goal', ctx.tf], ctx.prevGoal);
-    },
+    // Logic lives in lib/goalOptimistic so it can be unit-tested in isolation.
+    onMutate: ({ tf, target }) => applyOptimisticGoal(queryClient, tf, target),
+    onError: (_err, _vars, ctx) => rollbackOptimisticGoal(queryClient, ctx),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goal'] });
       setEditingGoal(null);
