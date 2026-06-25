@@ -2588,6 +2588,25 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
 
   const upsertGoal = useMutation({
     mutationFn: ({ tf, target }: { tf: TimeframeType; target: number }) => api.upsertGoal(tf, target),
+    // Optimistically patch this timeframe's goal query so the typed value shows
+    // instantly — and STICKS when offline (the change queues and the onSuccess
+    // refetch fails/retains, so this patch is what the user keeps seeing until
+    // the queued upsert drains on reconnect). Mirrors the dashboard goal editor.
+    onMutate: async ({ tf, target }) => {
+      await queryClient.cancelQueries({ queryKey: ['goal', tf] });
+      const prevGoal = queryClient.getQueryData<Goal | null>(['goal', tf]);
+      queryClient.setQueryData(['goal', tf], (old: any) => ({
+        id: old?.id ?? -1,
+        timeframe: tf,
+        goal_name: old?.goal_name ?? 'Goal',
+        target_profit: target,
+      }));
+      return { tf, prevGoal };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (!ctx) return;
+      queryClient.setQueryData(['goal', ctx.tf], ctx.prevGoal);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goal'] });
       setEditingGoal(null);
