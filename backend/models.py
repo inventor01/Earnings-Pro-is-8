@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Numeric, DateTime, Text, Enum as SQLEnum, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Numeric, DateTime, Text, Enum as SQLEnum, Boolean, ForeignKey, Index, text
 from datetime import datetime
 from decimal import Decimal
 import enum
@@ -60,8 +60,24 @@ class Entry(Base):
     receipt_url = Column(String, nullable=True)
     is_business_expense = Column(Boolean, default=False, nullable=True)
     during_business_hours = Column(Boolean, default=False, nullable=True)
+    # Client-generated key for idempotent creates. NULL for legacy rows and any
+    # create that omits it. The partial unique index below makes a replayed
+    # offline add (same key) collide instead of inserting a duplicate, while
+    # still allowing unlimited NULL-key rows.
+    idempotency_key = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index(
+            "uq_entries_user_idempotency",
+            "user_id",
+            "idempotency_key",
+            unique=True,
+            sqlite_where=text("idempotency_key IS NOT NULL"),
+            postgresql_where=text("idempotency_key IS NOT NULL"),
+        ),
+    )
 
 class Settings(Base):
     __tablename__ = "settings"
