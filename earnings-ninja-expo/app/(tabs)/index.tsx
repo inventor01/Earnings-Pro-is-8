@@ -4450,22 +4450,28 @@ export default function DashboardScreen() {
   // Filter entries by search query (matches app label, type, category, note, amount)
   const q = searchQuery.trim().toLowerCase();
   const isSearching = q !== '';
-  const filteredEntries = !isSearching
-    ? entries
-    : entries.filter(e => {
-        const amt = Number(e.amount);
-        const fields = [
-          e.app,
-          APP_LABELS[e.app] ?? '',
-          e.type,
-          e.category ?? '',
-          e.note ?? '',
-          String(e.amount),
-          amt.toFixed(2),
-          `$${amt.toFixed(2)}`,
-        ].join(' ').toLowerCase();
-        return fields.includes(q);
-      });
+  // Memoized so the per-entry search scan only re-runs when the entry set or
+  // query actually change — not on every render. This also gives `sortedEntries`
+  // (below) a stable input identity so ITS memo can bail out too. Matters at
+  // scale (1000+ entries) where re-filtering every render would be wasteful.
+  const filteredEntries = useMemo(() => (
+    !isSearching
+      ? entries
+      : entries.filter(e => {
+          const amt = Number(e.amount);
+          const fields = [
+            e.app,
+            APP_LABELS[e.app] ?? '',
+            e.type,
+            e.category ?? '',
+            e.note ?? '',
+            String(e.amount),
+            amt.toFixed(2),
+            `$${amt.toFixed(2)}`,
+          ].join(' ').toLowerCase();
+          return fields.includes(q);
+        })
+  ), [entries, q, isSearching]);
   // Sort the (already search-filtered) entries. Sorting is applied after
   // filtering so search + sort compose, and counts/totals stay correct
   // (sorting never changes the set, only the order).
