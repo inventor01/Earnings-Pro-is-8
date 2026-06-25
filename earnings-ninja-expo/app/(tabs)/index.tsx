@@ -2564,11 +2564,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         <Pressable
           onPress={async () => {
             hTap();
-            await Promise.all([
-              queryClient.invalidateQueries({ queryKey: ['rollup'] }),
-              queryClient.invalidateQueries({ queryKey: ['entries'] }),
-              queryClient.invalidateQueries({ queryKey: ['goal'] }),
-            ]);
+            await invalidateEntryData(queryClient);
             hNotifyOk();
           }}
           style={{
@@ -4311,11 +4307,7 @@ export default function DashboardScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['rollup'] }),
-      queryClient.invalidateQueries({ queryKey: ['entries'] }),
-      queryClient.invalidateQueries({ queryKey: ['goal'] }),
-    ]);
+    await invalidateEntryData(queryClient);
     setRefreshing(false);
   }, [queryClient]);
 
