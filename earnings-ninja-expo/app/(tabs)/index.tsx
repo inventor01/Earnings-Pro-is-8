@@ -1956,19 +1956,43 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       const oldMin    = Number(oldEntry.duration_minutes) || 0;
       const newMin    = patch.duration_minutes != null ? Number(patch.duration_minutes) : oldMin;
 
-      const dRevenue  = pos(newSigned) - pos(oldSigned);
-      const dExpenses = pos(-newSigned) - pos(-oldSigned);
-      const dMiles    = newMiles - oldMiles;
-      const dHours    = (newMin - oldMin) / 60;
-
-      queryClient.setQueriesData<Rollup>({ queryKey: ['rollup'] }, (old) => {
-        if (!old) return old;
-        const revenue  = old.revenue  + dRevenue;
-        const expenses = old.expenses + dExpenses;
+      // A date/time edit can MOVE the row out of (or into) a cached window, so a
+      // single net delta applied to EVERY window is wrong: the net delta for a
+      // pure date move is 0, which left the CURRENTLY-VIEWED window's KPI/profit
+      // number unchanged optimistically — it then only corrected after a cold
+      // app restart refetched the truth ("dashboard number stays the same until
+      // you exit the app"). Scope each window exactly like the create flow
+      // (keyWindowContainsDate): a window keeps the row → apply the net delta; a
+      // window the row LEFT → subtract its full old contribution; a window the
+      // row ENTERED → add its full new contribution; untouched → no change.
+      // `oldEstDate` is the row's pre-edit EST calendar day (how the server
+      // buckets it); `newEstDate` is the edited day (handleSave always sends
+      // `patch.date`, falling back defensively to the old day).
+      const oldEstDate = easternDateTime(parseServerDate(oldEntry.timestamp)).date;
+      const newEstDate = patch.date ?? oldEstDate;
+      const oldRev = pos(oldSigned),  oldExp = pos(-oldSigned);
+      const newRev = pos(newSigned),  newExp = pos(-newSigned);
+      const oldHours = oldMin / 60,   newHours = newMin / 60;
+      for (const [key, old] of prevRollup) {
+        if (!old) continue;
+        const oldIn = keyWindowContainsDate(key as unknown[], oldEstDate);
+        const newIn = keyWindowContainsDate(key as unknown[], newEstDate);
+        if (!oldIn && !newIn) continue;
+        let dRev: number, dExp: number, dMi: number, dHr: number;
+        if (oldIn && newIn) {
+          dRev = newRev - oldRev; dExp = newExp - oldExp;
+          dMi = newMiles - oldMiles; dHr = newHours - oldHours;
+        } else if (oldIn) {
+          dRev = -oldRev; dExp = -oldExp; dMi = -oldMiles; dHr = -oldHours;
+        } else {
+          dRev = newRev; dExp = newExp; dMi = newMiles; dHr = newHours;
+        }
+        const revenue  = old.revenue  + dRev;
+        const expenses = old.expenses + dExp;
         const profit   = revenue - expenses;
-        const miles    = old.miles + dMiles;
-        const hours    = old.hours + dHours;
-        return {
+        const miles    = old.miles + dMi;
+        const hours    = old.hours + dHr;
+        queryClient.setQueryData(key, {
           ...old,
           revenue,
           expenses,
@@ -1979,8 +2003,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
           goal_progress: old.goal?.target_profit
             ? profit / old.goal.target_profit
             : old.goal_progress ?? null,
-        };
-      });
+        });
+      }
 
       // Recompute the row's timestamp if its date/time changed, then swap the
       // row in every cached entries list (re-sorting to keep timestamp-desc).
