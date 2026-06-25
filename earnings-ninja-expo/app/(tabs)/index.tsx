@@ -1746,7 +1746,12 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // Minute-truncating here makes the optimistic instant byte-identical to
       // what the server returns (EST→UTC offsets are whole minutes), so the
       // position is stable before and after the refetch.
-      const syntheticTs = new Date(Math.floor(entryDate.getTime() / 60000) * 60000).toISOString();
+      // `pendingInstantRef` is the exact instant handleSave decided to file under
+      // (live save-time for a plain new entry; otherwise the picked/backdated
+      // entryDate). Use it so the optimistic row's timestamp matches the payload
+      // and the server row — falling back to entryDate defensively.
+      const saveInstant = pendingInstantRef.current ?? entryDate;
+      const syntheticTs = new Date(Math.floor(saveInstant.getTime() / 60000) * 60000).toISOString();
       const syntheticEntry: Entry = {
         id: -Date.now(), // unique negative id so it can't collide with real rows
         timestamp: syntheticTs,
@@ -2028,16 +2033,26 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     },
   });
 
-  // Format the entry instant → ('YYYY-MM-DD', 'HH:MM') in US/Eastern wall-clock.
-  // The backend interprets these strings as EST and the Today/Yesterday views are
-  // EST-based, so we MUST emit Eastern (NOT device-local) components — otherwise a
-  // non-EST user's first order after the EST midnight rollover (e.g. 9pm Pacific)
-  // gets mislabeled and lands in Yesterday. Reuses the CSV exporter's helper.
-  const { date: dateStr, time: timeStr } = easternDateTime(entryDate);
-
   const handleSave = () => {
     const num = parseFloat(amount);
     if (!num || num <= 0) { Alert.alert('Invalid amount', 'Enter an amount > 0'); return; }
+    // Resolve the instant to file the entry under. `entryDate` is seeded when the
+    // modal OPENS, so for a plain new entry its time component is the open-time,
+    // not the save-time — if the modal/app was opened earlier (launched, resumed,
+    // or the user lingered) the entry would silently save that stale open-time
+    // (e.g. always "9:28am"). Use the LIVE save instant unless the user is editing,
+    // deliberately picked a date/time (`dateTouchedRef`), or the entry is being
+    // backdated to a viewed past day (`defaultDate`). Stash it in
+    // `pendingInstantRef` so the optimistic row's timestamp matches the payload.
+    const useLiveNow = !editing && !dateTouchedRef.current && !defaultDate;
+    const saveInstant = useLiveNow ? new Date() : entryDate;
+    pendingInstantRef.current = saveInstant;
+    // Format the instant → ('YYYY-MM-DD', 'HH:MM') in US/Eastern wall-clock.
+    // The backend interprets these strings as EST and the Today/Yesterday views are
+    // EST-based, so we MUST emit Eastern (NOT device-local) components — otherwise a
+    // non-EST user's first order after the EST midnight rollover (e.g. 9pm Pacific)
+    // gets mislabeled and lands in Yesterday. Reuses the CSV exporter's helper.
+    const { date: dateStr, time: timeStr } = easternDateTime(saveInstant);
     const payload: Partial<EntryCreate> = {
       type: entryType,
       app,
