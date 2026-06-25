@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from backend.db import get_db
 from backend.models import Entry, EntryType, AuthUser, Goal
 from backend.schemas import EntryCreate, EntryUpdate, EntryResponse
@@ -36,6 +37,18 @@ def _est_components_to_utc_naive(date_str: str, time_str: str) -> datetime:
 
 @router.post("/entries", response_model=EntryResponse)
 async def create_entry(entry: EntryCreate, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
+    # Idempotent create: if the client's offline add already reached the server
+    # (e.g. the original POST saved but the phone saw a timeout and the offline
+    # queue replayed it), the same idempotency_key is sent again — return the
+    # original row instead of inserting a duplicate.
+    if entry.idempotency_key:
+        existing = db.query(Entry).filter(
+            Entry.user_id == current_user.id,
+            Entry.idempotency_key == entry.idempotency_key,
+        ).first()
+        if existing:
+            return existing
+
     amount = entry.amount
     
     if entry.type in [EntryType.EXPENSE, EntryType.CANCELLATION]:
@@ -67,10 +80,25 @@ async def create_entry(entry: EntryCreate, db: Session = Depends(get_db), curren
         note=entry.note,
         receipt_url=entry.receipt_url,
         is_business_expense=entry.is_business_expense or False,
-        during_business_hours=entry.during_business_hours or False
+        during_business_hours=entry.during_business_hours or False,
+        idempotency_key=entry.idempotency_key,
     )
     db.add(db_entry)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Lost a race with a concurrent replay carrying the same key — the other
+        # transaction inserted first and tripped the partial unique index. Return
+        # that canonical row instead of erroring.
+        db.rollback()
+        if entry.idempotency_key:
+            existing = db.query(Entry).filter(
+                Entry.user_id == current_user.id,
+                Entry.idempotency_key == entry.idempotency_key,
+            ).first()
+            if existing:
+                return existing
+        raise
     db.refresh(db_entry)
     return db_entry
 

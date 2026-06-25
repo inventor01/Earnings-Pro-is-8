@@ -144,8 +144,34 @@ def _migrate_synced_orders_for_multi_user() -> None:
     logger.warning("Migrated synced_orders to per-user schema. Legacy rows have user_id=NULL.")
 
 
+def _migrate_entries_add_idempotency_key() -> None:
+    """Add nullable `idempotency_key` to `entries` so `create_entry` can
+    de-duplicate replayed offline adds — a create carrying a key already saved
+    returns the original row instead of inserting a duplicate. Plain ADD COLUMN
+    works on both Postgres and SQLite; the partial UNIQUE index guards against
+    replay races while still permitting unlimited NULL-key rows (legacy rows and
+    online creates that omit the key). Safe to re-run; no-ops once migrated."""
+    insp = inspect(engine)
+    if not insp.has_table("entries"):
+        return
+    cols = {c["name"] for c in insp.get_columns("entries")}
+    if "idempotency_key" in cols:
+        return
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE entries ADD COLUMN idempotency_key VARCHAR"))
+        # Partial unique index (supported by both Postgres and SQLite >= 3.8):
+        # uniqueness only applies to non-NULL keys, so many NULL-key rows coexist.
+        conn.execute(text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_entries_user_idempotency "
+            "ON entries (user_id, idempotency_key) "
+            "WHERE idempotency_key IS NOT NULL"
+        ))
+    logger.warning("Added entries.idempotency_key for create de-duplication.")
+
+
 _migrate_api_credentials_for_multi_user()
 _migrate_synced_orders_for_multi_user()
+_migrate_entries_add_idempotency_key()
 
 Base.metadata.create_all(bind=engine)
 

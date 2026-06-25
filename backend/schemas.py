@@ -38,6 +38,7 @@ class EntryCreate(BaseModel):
     receipt_url: Optional[str] = None
     is_business_expense: Optional[bool] = False
     during_business_hours: Optional[bool] = False
+    idempotency_key: Optional[str] = None
 
     _validate_receipt = field_validator("receipt_url")(_validate_receipt)
 

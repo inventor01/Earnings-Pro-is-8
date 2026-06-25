@@ -122,6 +122,15 @@ export interface Entry {
   updated_at: string;
 }
 
+// Generates a stable, highly-unique client key for idempotent creates. Only
+// needs uniqueness within one user's data (not crypto strength); the timestamp
+// plus two random base36 chunks makes a collision between two distinct creates
+// effectively impossible, which matters because a collision would wrongly
+// dedupe a real second entry.
+function newIdempotencyKey(): string {
+  return `ik_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}_${Math.random().toString(36).slice(2, 12)}`;
+}
+
 export interface EntryCreate {
   type: EntryType;
   app: AppType;
@@ -134,6 +143,11 @@ export interface EntryCreate {
   time?: string;
   receipt_url?: string;
   is_business_expense?: boolean;
+  // Stable client-generated key for idempotent creates. The SAME key rides the
+  // first POST and any offline-queue replay, so if the original request reached
+  // the server but the phone saw a timeout, the backend returns the original row
+  // instead of inserting a duplicate (see backend create_entry).
+  idempotency_key?: string;
 }
 
 export interface Rollup {
@@ -362,8 +376,16 @@ export const api = {
   // ("you added an entry, here it is on the list") doesn't break. The
   // queue drains on app foreground (see `_layout.tsx`).
   async createEntry(entry: EntryCreate): Promise<Entry> {
+    // Stamp a stable idempotency key BEFORE the first attempt so the exact same
+    // key is reused if this create falls back to the offline queue and is later
+    // replayed — the backend de-duplicates on it, so a timed-out-but-saved POST
+    // never becomes a duplicate row. A fresh key per call keeps distinct entries
+    // from ever colliding (which would wrongly dedupe a real second entry).
+    const withKey: EntryCreate = entry.idempotency_key
+      ? entry
+      : { ...entry, idempotency_key: newIdempotencyKey() };
     try {
-      return await this.createEntryRaw(entry);
+      return await this.createEntryRaw(withKey);
     } catch (err: any) {
       // Classify by actual HTTP status, not by string-matching the message
       // (the old regex missed 422 entirely, which jammed the offline queue
@@ -381,7 +403,7 @@ export const api = {
         (status >= 500 && status < 600);
       if (!isTransient && status >= 400 && status < 500) throw err;
       const { enqueueEntry, synthesizeEntry } = await import('./offlineQueue');
-      const item = await enqueueEntry(entry);
+      const item = await enqueueEntry(withKey);
       // Keep the sync indicator's pending count honest right after an offline add
       // (the edit/delete/goal paths already do this).
       await refreshPendingCount();
