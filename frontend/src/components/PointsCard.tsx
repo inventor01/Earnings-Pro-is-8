@@ -10,7 +10,11 @@ export function PointsCard() {
   const { data: pointsData } = useQuery({
     queryKey: ['userPoints'],
     queryFn: async () => {
-      const res = await fetch('/api/points/user');
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch('/api/points/user', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
+      if (!res.ok) return null;
       return res.json();
     },
     refetchInterval: 60000,
@@ -18,7 +22,11 @@ export function PointsCard() {
 
   const checkInMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/points/daily-check-in', { method: 'POST' });
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch('/api/points/daily-check-in', {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
       return res.json();
     },
     onSuccess: (data) => {
