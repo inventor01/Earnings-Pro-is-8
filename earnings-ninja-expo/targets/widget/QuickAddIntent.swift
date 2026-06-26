@@ -35,7 +35,7 @@ struct QuickAddIntent: AppIntent {
     // locked iPhone from silently writing entries to the account. On the Home
     // Screen the device is already unlocked so the prompt is not shown; it only
     // engages when the button is tapped from the Lock Screen.
-    static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalAuthentication
+    static var authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
 
     @Parameter(title: "Kind")
     var kind: String   // "revenue" | "expense"
