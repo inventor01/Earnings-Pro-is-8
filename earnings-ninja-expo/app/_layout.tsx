@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider, useQueryClient, focusManager } from '
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from '@/lib/authContext';
+import { SubscriptionProvider } from '@/lib/revenuecat';
 import { ThemeProvider, useTheme } from '@/lib/theme';
 import { HiddenModeProvider, useHiddenMode } from '@/lib/hiddenMode';
 import { api, API_BASE } from '@/lib/api';
@@ -310,7 +311,9 @@ export default function RootLayout() {
           <ThemeProvider>
             <HiddenModeProvider>
               <AuthProvider>
-                <RootNav />
+                <SubscriptionProvider>
+                  <RootNav />
+                </SubscriptionProvider>
               </AuthProvider>
             </HiddenModeProvider>
           </ThemeProvider>
