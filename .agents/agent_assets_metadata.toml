@@ -42,3 +42,27 @@ id = "PnDAHyurbwROKj8t-wk1L"
 uri = "file://.local/exports/expo-qr.png"
 type = "image"
 title = "Earnings Ninja — Expo Go QR"
+
+[[outputs]]
+id = "kfAJRj5as1oXX4NXI7IUL"
+uri = "file://appstore_screenshots/01_dashboard.png"
+type = "image"
+title = "1. Dashboard — Net Profit & Goal"
+
+[[outputs]]
+id = "FGGGzd0x3r9E7NxBeRaR_"
+uri = "file://appstore_screenshots/02_analytics.png"
+type = "image"
+title = "2. Analytics — Earnings by Platform"
+
+[[outputs]]
+id = "5jrUe7LYZ7AmADiX4tdGF"
+uri = "file://appstore_screenshots/03_addentry.png"
+type = "image"
+title = "3. Add Entry — Calculator Input"
+
+[[outputs]]
+id = "J-2-2RRyiSLq6K-rJu2RX"
+uri = "file://appstore_screenshots/04_goals.png"
+type = "image"
+title = "4. Goals — Daily Progress Ring"
