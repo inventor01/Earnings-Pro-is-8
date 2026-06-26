@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import UniqueConstraint
 from datetime import datetime, date
 from backend.db import get_db
 from backend.models import User, DailyUsage
@@ -22,10 +23,10 @@ REWARDS = [
     {"points": 30, "name": "Monthly Master", "emoji": "👑", "description": "30 consecutive days"},
 ]
 
-def get_or_create_user(db: Session) -> User:
-    user = db.query(User).filter(User.id == 1).first()
+def get_or_create_user(db: Session, auth_user_id: str) -> User:
+    user = db.query(User).filter(User.auth_user_id == auth_user_id).first()
     if not user:
-        user = User(id=1, total_points=SIGNUP_POINTS)
+        user = User(auth_user_id=auth_user_id, total_points=SIGNUP_POINTS)
         db.add(user)
         db.commit()
         db.refresh(user)
@@ -36,7 +37,7 @@ async def get_user_points(
     db: Session = Depends(get_db),
     current_user: AuthUser = Depends(get_current_user),
 ):
-    user = get_or_create_user(db)
+    user = get_or_create_user(db, current_user.id)
     
     unlocked_rewards = []
     for reward in REWARDS:
@@ -60,15 +61,16 @@ async def daily_check_in(
     db: Session = Depends(get_db),
     current_user: AuthUser = Depends(get_current_user),
 ):
-    user = get_or_create_user(db)
+    user = get_or_create_user(db, current_user.id)
     today = date.today().isoformat()
     
-    # Check if already checked in today
-    existing_usage = db.query(DailyUsage).filter(DailyUsage.usage_date == today).first()
+    existing_usage = db.query(DailyUsage).filter(
+        DailyUsage.auth_user_id == current_user.id,
+        DailyUsage.usage_date == today,
+    ).first()
     if existing_usage:
         return {"message": "Already checked in today", "points_earned": 0}
     
-    # Calculate streak and points
     yesterday = (date.today().replace(day=date.today().day - 1) if date.today().day > 1 
                  else date.today().replace(month=date.today().month - 1, day=28)).isoformat()
     
@@ -79,18 +81,15 @@ async def daily_check_in(
     else:
         user.daily_streak = 1
     
-    # Award points with streak bonus
     points_earned = int(DAILY_POINTS * (1 + (user.daily_streak - 1) * 0.1))
     user.total_points += points_earned
     user.last_used_date = today
     
-    # Record daily usage
-    daily_usage = DailyUsage(usage_date=today, points_earned=points_earned)
+    daily_usage = DailyUsage(auth_user_id=current_user.id, usage_date=today, points_earned=points_earned)
     db.add(daily_usage)
     db.commit()
     db.refresh(user)
     
-    # Get newly unlocked rewards
     new_rewards = [r for r in REWARDS if r["points"] == user.total_points]
     
     return {
