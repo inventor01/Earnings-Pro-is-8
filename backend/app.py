@@ -169,9 +169,83 @@ def _migrate_entries_add_idempotency_key() -> None:
     logger.warning("Added entries.idempotency_key for create de-duplication.")
 
 
+def _migrate_points_for_multi_user() -> None:
+    """Scope the gamification tables to authenticated users.
+
+    `users` (points singleton): add nullable `auth_user_id` column + unique
+    index so each AuthUser gets their own points row instead of sharing id=1.
+
+    `daily_usage` (check-in log): add nullable `auth_user_id` column and
+    replace the global UNIQUE(usage_date) constraint with a per-user composite
+    UNIQUE(auth_user_id, usage_date) so two users can check in on the same day.
+
+    Safe to re-run on every boot — short-circuits once both columns exist.
+    Supports Postgres (production) and SQLite (dev).
+    """
+    insp = inspect(engine)
+    is_postgres = engine.url.get_backend_name().startswith("postgres")
+
+    # --- users table ---
+    if insp.has_table("users"):
+        users_cols = {c["name"] for c in insp.get_columns("users")}
+        if "auth_user_id" not in users_cols:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN auth_user_id VARCHAR"))
+                conn.execute(text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_auth_user_id "
+                    "ON users (auth_user_id) WHERE auth_user_id IS NOT NULL"
+                ))
+            logger.warning("Migrated users table: added auth_user_id for per-user points.")
+
+    # --- daily_usage table ---
+    if insp.has_table("daily_usage"):
+        du_cols = {c["name"] for c in insp.get_columns("daily_usage")}
+        if "auth_user_id" not in du_cols:
+            if is_postgres:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE daily_usage ADD COLUMN auth_user_id VARCHAR"))
+                    conn.execute(text(
+                        "CREATE INDEX IF NOT EXISTS ix_daily_usage_auth_user_id "
+                        "ON daily_usage (auth_user_id)"
+                    ))
+                    # Drop the old global UNIQUE constraint on usage_date alone.
+                    res = conn.execute(text(
+                        "SELECT conname FROM pg_constraint c "
+                        "JOIN pg_class t ON c.conrelid = t.oid "
+                        "WHERE t.relname = 'daily_usage' AND c.contype IN ('u')"
+                    ))
+                    for (conname,) in res.fetchall():
+                        try:
+                            conn.execute(text(
+                                f'ALTER TABLE daily_usage DROP CONSTRAINT "{conname}"'
+                            ))
+                        except Exception as exc:
+                            logger.warning(f"Could not drop daily_usage constraint {conname}: {exc}")
+                    conn.execute(text(
+                        "CREATE UNIQUE INDEX IF NOT EXISTS uq_daily_usage_user_date "
+                        "ON daily_usage (auth_user_id, usage_date) "
+                        "WHERE auth_user_id IS NOT NULL"
+                    ))
+            else:
+                # SQLite: table rebuild to drop the old UNIQUE index on usage_date.
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE daily_usage RENAME TO daily_usage_old"))
+                Base.metadata.tables["daily_usage"].create(bind=engine)
+                with engine.begin() as conn:
+                    conn.execute(text(
+                        "INSERT INTO daily_usage "
+                        "(id, auth_user_id, usage_date, points_earned, created_at) "
+                        "SELECT id, NULL, usage_date, points_earned, created_at "
+                        "FROM daily_usage_old"
+                    ))
+                    conn.execute(text("DROP TABLE daily_usage_old"))
+            logger.warning("Migrated daily_usage table: added auth_user_id for per-user check-ins.")
+
+
 _migrate_api_credentials_for_multi_user()
 _migrate_synced_orders_for_multi_user()
 _migrate_entries_add_idempotency_key()
+_migrate_points_for_multi_user()
 
 Base.metadata.create_all(bind=engine)
 

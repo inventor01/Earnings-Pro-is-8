@@ -166,7 +166,8 @@ class SyncedOrder(Base):
 class User(Base):
     __tablename__ = "users"
     
-    id = Column(Integer, primary_key=True, index=True, default=1)
+    id = Column(Integer, primary_key=True, index=True)
+    auth_user_id = Column(String, ForeignKey("auth_users.id"), nullable=True, index=True, unique=True)
     total_points = Column(Integer, default=0, nullable=False)
     daily_streak = Column(Integer, default=0, nullable=False)
     last_used_date = Column(String, nullable=True)
@@ -176,9 +177,13 @@ class User(Base):
 
 class DailyUsage(Base):
     __tablename__ = "daily_usage"
+    __table_args__ = (
+        Index("uq_daily_usage_user_date", "auth_user_id", "usage_date", unique=True),
+    )
     
     id = Column(Integer, primary_key=True, index=True)
-    usage_date = Column(String, unique=True, nullable=False, index=True)
+    auth_user_id = Column(String, ForeignKey("auth_users.id"), nullable=True, index=True)
+    usage_date = Column(String, nullable=False, index=True)
     points_earned = Column(Integer, default=10, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
