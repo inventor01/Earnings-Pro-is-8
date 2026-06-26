@@ -36,3 +36,6 @@ on the build server and a failure aborts the build. Two gotchas that bit this ap
 - **`expo-audio` requires the `expo-asset` peer dep** to be installed directly, or the
   app "may crash outside Expo Go." Adding a native dep that pulls a peer dep means you
   must `npx expo install` that peer too. (Then re-fix lockfile firewall URLs.)
+
+## Store submission uses the `testflight` profile, not `production`
+For App Store Connect builds, build+submit with `--profile testflight` (+ `--auto-submit`). `submit.testflight` holds the real `ascAppId`/`appleTeamId`, while `submit.production` is placeholder-only, so auto-submit on `production` fails. The production iOS RevenueCat key (`EXPO_PUBLIC_REVENUECAT_IOS_API_KEY`, publishable `appl_…`) lives in the `testflight`+`production` `env` blocks; the embedded default is only RevenueCat's Test Store key. Bump `ios.buildNumber` before each store build (testflight `autoIncrement:false`).
