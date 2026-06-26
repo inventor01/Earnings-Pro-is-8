@@ -29,6 +29,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
+import { useSubscription } from '@/lib/revenuecat';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import { syncNotifState, enableMotivation, disableMotivation } from '@/lib/notifications';
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
@@ -2461,13 +2462,15 @@ function ImportCsvRow({ onDone }: { onDone: () => void }) {
 
 function ExportCsvRow() {
   const { SURFACE, BORDER, PRI_LITE, PRIMARY, PRIMARY_TXT, TEXT, MUTED } = useTheme();
+  const { requirePro } = useSubscription();
   const [busy, setBusy] = useState(false);
 
   const onExport = async () => {
     if (busy) return;
+    hTap();
+    if (!(await requirePro())) return;
     try {
       setBusy(true);
-      hTap();
       // Pull the entire history with a deliberately wide date window so the
       // export is not limited to the currently-selected dashboard period.
       const from = new Date('2000-01-01T00:00:00Z').toISOString();
@@ -2519,10 +2522,11 @@ function ExportCsvRow() {
 }
 
 function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const { BG, SURFACE, BORDER, PRIMARY, PRIMARY_TXT, PRI_LITE, TEXT, MUTED, LABEL, RED, RED_LT, ON_PRIMARY } = useTheme();
+  const { BG, SURFACE, BORDER, PRIMARY, PRIMARY_TXT, PRI_LITE, TEXT, MUTED, LABEL, GREEN, RED, RED_LT, ON_PRIMARY } = useTheme();
   const { themeName, setThemeName } = useThemeControls();
   const { hidden, toggle: toggleHidden } = useHiddenMode();
   const { logout, user } = useAuth();
+  const { available: proAvailable, isPro, presentPaywall, presentCustomerCenter, restore } = useSubscription();
   const queryClient = useQueryClient();
   const [editingGoal, setEditingGoal] = useState<TimeframeType | null>(null);
   const [goalInput, setGoalInput] = useState('');
@@ -2899,6 +2903,63 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             </Pressable>
           );
         })}
+
+        {/* ── Subscription (Earnings Ninja Pro) ─────────────────────────── */}
+        {proAvailable && (
+          <>
+            <View style={{ height: 28 }} />
+            <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+              ⭐  Earnings Ninja Pro
+            </Text>
+            {!isPro && (
+              <Pressable
+                onPress={async () => { hTap(); await presentPaywall(); }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1.5, borderColor: PRIMARY, padding: 14, marginBottom: 12 }}
+              >
+                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="rocket" size={18} color={PRIMARY_TXT} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Upgrade to Pro</Text>
+                  <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>CSV export + advanced analytics</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={PRIMARY_TXT} />
+              </Pressable>
+            )}
+            <Pressable
+              onPress={async () => { hTap(); await presentCustomerCenter(); }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 12 }}
+            >
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name={isPro ? 'card' : 'star'} size={18} color={PRIMARY_TXT} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Manage Subscription</Text>
+                {isPro && <Text style={{ color: GREEN, fontSize: 12, marginTop: 1, fontWeight: '700' }}>Pro active</Text>}
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={MUTED} />
+            </Pressable>
+            <Pressable
+              onPress={async () => {
+                hTap();
+                const ok = await restore();
+                Alert.alert(
+                  ok ? 'Purchases restored' : 'Nothing to restore',
+                  ok ? 'Your Pro access is active.' : 'No previous purchases were found for this account.',
+                );
+              }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14 }}
+            >
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="refresh" size={18} color={PRIMARY_TXT} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Restore Purchases</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={MUTED} />
+            </Pressable>
+          </>
+        )}
 
         {/* Import / Export — CSV bulk import via expo-document-picker.
             Parses inline (no external dep). Expected headers (case-insensitive):
@@ -4031,6 +4092,7 @@ export default function DashboardScreen() {
     BG, SURFACE, CARD_BG, CARD, BORDER, PRIMARY, PRIMARY_TXT, ACCENT, PRI_LITE, PRI_DARK,
     TEXT, TEXT_MID, MUTED, LABEL, DIM, GREEN, GREEN_LT, RED, RED_LT, DIVIDER, ON_PRIMARY,
   } = useTheme();
+  const { requirePro } = useSubscription();
   const { hidden, toggle: toggleHidden } = useHiddenMode();
   const { themeName, setThemeName } = useThemeControls();
   const insets = useSafeAreaInsets();
@@ -5144,7 +5206,7 @@ export default function DashboardScreen() {
 
               {/* ── Analytics entry point (full-screen modal) ──────────────── */}
               <PressScale
-                onPress={() => { hTap(); setShowAnalytics(true); }}
+                onPress={async () => { hTap(); if (await requirePro()) setShowAnalytics(true); }}
                 scale={0.97}
                 style={[
                   {
@@ -5319,6 +5381,7 @@ export default function DashboardScreen() {
                         <Pressable
                           disabled={exportingSel}
                           onPress={async () => {
+                            if (!(await requirePro())) return;
                             // Export the selected entries; if nothing is
                             // explicitly selected, fall back to the entire
                             // currently-filtered/visible set.

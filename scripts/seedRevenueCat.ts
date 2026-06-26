@@ -37,8 +37,8 @@ const APP_STORE_BUNDLE_ID = "com.earningsninja.app";
 const PLAY_STORE_APP_NAME = "Earnings Ninja (Android)";
 const PLAY_STORE_PACKAGE_NAME = "com.earningsninja.app";
 
-const ENTITLEMENT_IDENTIFIER = "premium"; // unlocks CSV export + advanced analytics
-const ENTITLEMENT_DISPLAY_NAME = "Premium Access";
+const ENTITLEMENT_IDENTIFIER = "pro"; // unlocks CSV export + advanced analytics
+const ENTITLEMENT_DISPLAY_NAME = "Earnings Ninja Pro";
 
 const OFFERING_IDENTIFIER = "default";
 const OFFERING_DISPLAY_NAME = "Default Offering";
@@ -48,7 +48,8 @@ type PlanConfig = {
   playStoreIdentifier: string;   // Play Store {subscriptionId}:{basePlanId}
   displayName: string;
   userFacingTitle: string;
-  duration: "P1W" | "P1M" | "P2M" | "P3M" | "P6M" | "P1Y";
+  productType: "subscription" | "one_time";
+  duration?: "P1W" | "P1M" | "P2M" | "P3M" | "P6M" | "P1Y";
   packageIdentifier: string;     // RevenueCat package lookup key
   packageDisplayName: string;
   prices: { amount_micros: number; currency: string }[];
@@ -56,24 +57,36 @@ type PlanConfig = {
 
 const PLANS: PlanConfig[] = [
   {
-    storeIdentifier: "premium_monthly",
-    playStoreIdentifier: "premium_monthly:monthly",
-    displayName: "Premium Monthly",
-    userFacingTitle: "Earnings Ninja Premium (Monthly)",
-    duration: "P1M",
-    packageIdentifier: "$rc_monthly",
-    packageDisplayName: "Monthly",
-    prices: [{ amount_micros: 2_990_000, currency: "USD" }], // $2.99
+    storeIdentifier: "pro_lifetime",
+    playStoreIdentifier: "pro_lifetime",
+    displayName: "Pro Lifetime",
+    userFacingTitle: "Earnings Ninja Pro (Lifetime)",
+    productType: "one_time",
+    packageIdentifier: "$rc_lifetime",
+    packageDisplayName: "Lifetime",
+    prices: [{ amount_micros: 79_990_000, currency: "USD" }], // $79.99
   },
   {
-    storeIdentifier: "premium_yearly",
-    playStoreIdentifier: "premium_yearly:yearly",
-    displayName: "Premium Yearly",
-    userFacingTitle: "Earnings Ninja Premium (Yearly)",
+    storeIdentifier: "pro_yearly",
+    playStoreIdentifier: "pro_yearly:yearly",
+    displayName: "Pro Yearly",
+    userFacingTitle: "Earnings Ninja Pro (Yearly)",
+    productType: "subscription",
     duration: "P1Y",
     packageIdentifier: "$rc_annual",
     packageDisplayName: "Annual",
     prices: [{ amount_micros: 29_990_000, currency: "USD" }], // $29.99
+  },
+  {
+    storeIdentifier: "pro_monthly",
+    playStoreIdentifier: "pro_monthly:monthly",
+    displayName: "Pro Monthly",
+    userFacingTitle: "Earnings Ninja Pro (Monthly)",
+    productType: "subscription",
+    duration: "P1M",
+    packageIdentifier: "$rc_monthly",
+    packageDisplayName: "Monthly",
+    prices: [{ amount_micros: 4_990_000, currency: "USD" }], // $4.99
   },
 ];
 
@@ -184,12 +197,14 @@ async function seedRevenueCat() {
     const body: CreateProductData["body"] = {
       store_identifier: productIdentifier,
       app_id: targetApp.id,
-      type: "subscription",
+      type: plan.productType,
       display_name: plan.displayName,
     };
     if (isTestStore) {
-      body.subscription = { duration: plan.duration };
       body.title = plan.userFacingTitle;
+      if (plan.productType === "subscription" && plan.duration) {
+        body.subscription = { duration: plan.duration };
+      }
     }
 
     const { data: created, error } = await createProduct({
