@@ -36,7 +36,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app"
+        "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app",
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_UIpaSRzFjpWmXpMrnzxauDDnbQH"
       }
     },
     "production": {
@@ -46,7 +47,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app"
+        "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app",
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_UIpaSRzFjpWmXpMrnzxauDDnbQH"
       }
     }
   },
