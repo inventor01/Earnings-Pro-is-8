@@ -48,7 +48,7 @@ type PlanConfig = {
   playStoreIdentifier: string;   // Play Store {subscriptionId}:{basePlanId}
   displayName: string;
   userFacingTitle: string;
-  productType: "subscription" | "one_time";
+  productType: "subscription" | "non_consumable";
   duration?: "P1W" | "P1M" | "P2M" | "P3M" | "P6M" | "P1Y";
   packageIdentifier: string;     // RevenueCat package lookup key
   packageDisplayName: string;
@@ -61,7 +61,7 @@ const PLANS: PlanConfig[] = [
     playStoreIdentifier: "pro_lifetime",
     displayName: "Pro Lifetime",
     userFacingTitle: "Earnings Ninja Pro (Lifetime)",
-    productType: "one_time",
+    productType: "non_consumable",
     packageIdentifier: "$rc_lifetime",
     packageDisplayName: "Lifetime",
     prices: [{ amount_micros: 79_990_000, currency: "USD" }], // $79.99
