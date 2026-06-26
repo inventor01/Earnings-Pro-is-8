@@ -7,7 +7,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import inspect, text
-from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard, waitlist_routes
+from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard, waitlist_routes, referrals
 from backend.db import engine, Base
 from backend.services.background_jobs import start_background_jobs, stop_background_jobs
 import os
@@ -242,10 +242,31 @@ def _migrate_points_for_multi_user() -> None:
             logger.warning("Migrated daily_usage table: added auth_user_id for per-user check-ins.")
 
 
+def _migrate_auth_users_add_referral_code() -> None:
+    """Add nullable `referral_code` to `auth_users` for the referral program.
+    Plain ADD COLUMN works on both Postgres and SQLite; the unique index is
+    created separately and tolerates NULLs (many legacy rows have no code yet).
+    Safe to re-run; no-ops once the column exists."""
+    insp = inspect(engine)
+    if not insp.has_table("auth_users"):
+        return
+    cols = {c["name"] for c in insp.get_columns("auth_users")}
+    if "referral_code" in cols:
+        return
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE auth_users ADD COLUMN referral_code VARCHAR"))
+        conn.execute(text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_auth_users_referral_code "
+            "ON auth_users (referral_code) WHERE referral_code IS NOT NULL"
+        ))
+    logger.warning("Added auth_users.referral_code for the referral program.")
+
+
 _migrate_api_credentials_for_multi_user()
 _migrate_synced_orders_for_multi_user()
 _migrate_entries_add_idempotency_key()
 _migrate_points_for_multi_user()
+_migrate_auth_users_add_referral_code()
 
 Base.metadata.create_all(bind=engine)
 
@@ -341,6 +362,7 @@ app.include_router(suggestions.router, prefix="/api", tags=["suggestions"])
 app.include_router(oauth.router, prefix="/api", tags=["oauth"])
 app.include_router(points.router, prefix="/api", tags=["points"])
 app.include_router(leaderboard_routes.router, prefix="/api", tags=["leaderboard"])
+app.include_router(referrals.router, prefix="/api", tags=["referrals"])
 app.include_router(waitlist_routes.router, tags=["waitlist"])
 
 # Serve frontend static files (must be after all API routes)

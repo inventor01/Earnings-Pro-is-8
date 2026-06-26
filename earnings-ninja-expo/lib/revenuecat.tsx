@@ -24,6 +24,7 @@ import Purchases, {
 } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useTheme } from './theme';
+import { useAuth } from './authContext';
 
 // The RevenueCat entitlement that unlocks premium features (CSV export +
 // advanced analytics). Display name in the RevenueCat dashboard is
@@ -88,6 +89,7 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
 });
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [available, setAvailable] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
@@ -169,6 +171,37 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       }
     };
   }, []);
+
+  // Identify the RevenueCat customer with our backend user id. This is what
+  // lets server-side promotional grants (referral free months) land on the
+  // RIGHT customer — without it the SDK uses an anonymous app_user_id the
+  // backend has no way to address. logIn/logOut are best-effort and no-op
+  // when RevenueCat isn't available on this build. `rcIdentityRef` dedupes
+  // so we don't re-issue logIn for the same id (or logOut while anonymous).
+  const rcIdentityRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!available) return;
+    const uid = user?.id ?? null;
+    (async () => {
+      try {
+        if (uid) {
+          if (rcIdentityRef.current === uid) return;
+          const { customerInfo: info } = await Purchases.logIn(uid);
+          rcIdentityRef.current = uid;
+          setCustomerInfo(info);
+        } else if (rcIdentityRef.current !== null) {
+          // Only log out if we previously identified a user (avoids the SDK
+          // "already anonymous" warning on first launch / logged-out state).
+          // logOut resolves to the (now anonymous) CustomerInfo directly.
+          const info = await Purchases.logOut();
+          rcIdentityRef.current = null;
+          setCustomerInfo(info);
+        }
+      } catch {
+        // best-effort: identity sync never blocks the UI
+      }
+    })();
+  }, [available, user?.id]);
 
   const openFallback = useCallback((): Promise<boolean> => {
     return new Promise<boolean>((resolve) => {
@@ -320,6 +353,38 @@ function packageLabel(pkg: PurchasesPackage): string {
   }
 }
 
+function introUnitWord(unit?: string): string {
+  switch ((unit ?? '').toUpperCase()) {
+    case 'DAY':
+      return 'day';
+    case 'WEEK':
+      return 'week';
+    case 'MONTH':
+      return 'month';
+    case 'YEAR':
+      return 'year';
+    default:
+      return 'period';
+  }
+}
+
+// Build a human launch-discount phrase straight from the product's introductory
+// offer (configured in App Store Connect) — never hardcoded. e.g.
+// "$1.99/mo for the first 3 months, then $4.99" or
+// "$19.99 for the first year, then $29.99". Returns null when the product has no
+// intro offer so the row falls back to the plain price.
+function introPhrase(pkg: PurchasesPackage): string | null {
+  const intro = pkg.product.introPrice;
+  if (!intro || !intro.priceString) return null;
+  const cycles = intro.cycles || 1;
+  const perCycle = intro.periodNumberOfUnits || 1;
+  const totalUnits = cycles * perCycle;
+  const word = introUnitWord(intro.periodUnit);
+  const duration =
+    totalUnits <= 1 ? `the first ${word}` : `the first ${totalUnits} ${word}s`;
+  return `${intro.priceString} for ${duration}, then ${pkg.product.priceString}`;
+}
+
 function FallbackPaywall({
   visible,
   offering,
@@ -407,14 +472,41 @@ function FallbackPaywall({
                   opacity: busyId && busyId !== pkg.identifier ? 0.5 : 1,
                 }}
               >
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: t.TEXT, fontSize: 16, fontWeight: '800' }}>
-                    {packageLabel(pkg)}
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ color: t.TEXT, fontSize: 16, fontWeight: '800' }}>
+                      {packageLabel(pkg)}
+                    </Text>
+                    {introPhrase(pkg) ? (
+                      <View
+                        style={{
+                          backgroundColor: t.GREEN,
+                          borderRadius: 6,
+                          paddingHorizontal: 6,
+                          paddingVertical: 2,
+                        }}
+                      >
+                        <Text style={{ color: '#04210f', fontSize: 10, fontWeight: '900', letterSpacing: 0.3 }}>
+                          LAUNCH DEAL
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={{ color: t.MUTED, fontSize: 13, marginTop: 2 }}>
+                    {introPhrase(pkg) ?? pkg.product.title}
                   </Text>
-                  <Text style={{ color: t.MUTED, fontSize: 13, marginTop: 2 }}>{pkg.product.title}</Text>
                 </View>
                 {busyId === pkg.identifier ? (
                   <ActivityIndicator color={t.PRIMARY_TXT} />
+                ) : introPhrase(pkg) ? (
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={{ color: t.PRIMARY_TXT, fontSize: 17, fontWeight: '800' }}>
+                      {pkg.product.introPrice?.priceString}
+                    </Text>
+                    <Text style={{ color: t.MUTED, fontSize: 12, textDecorationLine: 'line-through' }}>
+                      {pkg.product.priceString}
+                    </Text>
+                  </View>
                 ) : (
                   <Text style={{ color: t.PRIMARY_TXT, fontSize: 17, fontWeight: '800' }}>
                     {pkg.product.priceString}

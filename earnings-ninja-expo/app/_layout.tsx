@@ -8,7 +8,8 @@ import { QueryClient, QueryClientProvider, useQueryClient, focusManager } from '
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from '@/lib/authContext';
-import { SubscriptionProvider } from '@/lib/revenuecat';
+import { SubscriptionProvider, useSubscription } from '@/lib/revenuecat';
+import { setPendingReferral, clearPendingReferral } from '@/lib/pendingReferral';
 import { ThemeProvider, useTheme } from '@/lib/theme';
 import { HiddenModeProvider, useHiddenMode } from '@/lib/hiddenMode';
 import { api, API_BASE } from '@/lib/api';
@@ -48,6 +49,7 @@ function RootNav() {
   const { token, isLoading } = useAuth();
   const { hidden } = useHiddenMode();
   const { BG, isDark } = useTheme();
+  const { refresh: refreshSubscription } = useSubscription();
   const queryClient = useQueryClient();
   const draining = useRef(false);
   const prevToken = useRef<string | null>(token);
@@ -271,6 +273,36 @@ function RootNav() {
     const sub = Linking.addEventListener('url', (e) => handle(e.url));
     return () => sub.remove();
   }, [isLoading, token]);
+
+  // Referral deep links: `earningsninja://referral/CODE`. When the user is
+  // already signed in we redeem the code immediately (and refresh entitlements
+  // so any granted free month shows up); when they're logged out we stash it so
+  // the signup screen can prefill it. Runs regardless of auth state (unlike the
+  // entry handler above) so the code is never lost for a logged-out invitee.
+  useEffect(() => {
+    if (isLoading) return;
+    const handle = async (url: string | null) => {
+      if (!url) return;
+      const parsed = Linking.parse(url);
+      if (parsed.hostname !== 'referral') return;
+      const code = (parsed.path ?? '').replace(/^\/+|\/+$/g, '').trim().toUpperCase();
+      if (!code) return;
+      if (token) {
+        try {
+          await api.redeemReferral(code);
+          await clearPendingReferral();
+          await refreshSubscription();
+        } catch {
+          // Invalid / already-redeemed — surfaced in Settings, not here.
+        }
+      } else {
+        await setPendingReferral(code);
+      }
+    };
+    Linking.getInitialURL().then(handle);
+    const sub = Linking.addEventListener('url', (e) => handle(e.url));
+    return () => sub.remove();
+  }, [isLoading, token, refreshSubscription]);
 
   return (
     <>

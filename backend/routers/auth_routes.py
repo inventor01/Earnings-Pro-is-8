@@ -66,6 +66,9 @@ class SignupRequest(BaseModel):
     # Signed token issued by /api/waitlist/verify-access. Required when the
     # server has PRELAUNCH_ACCESS_CODE configured; ignored otherwise.
     prelaunch_token: Optional[str] = None
+    # Optional referral code the new driver was invited with. Both the new
+    # driver and the referrer earn a free month of Pro (referrer reward capped).
+    referral_code: Optional[str] = None
 
 class AuthResponse(BaseModel):
     access_token: str
@@ -172,7 +175,16 @@ async def _signup(request: SignupRequest, db: Session = Depends(get_db)):
     
     db.commit()
     db.refresh(user)
-    
+
+    # Apply a referral code if one was supplied. Best-effort: a bad code or a
+    # RevenueCat hiccup must never block account creation.
+    if request.referral_code:
+        try:
+            from backend.routers.referrals import apply_referral
+            await apply_referral(db, user, request.referral_code)
+        except Exception:
+            db.rollback()
+
     token = create_access_token(user.id, user.email)
     return {
         "access_token": token,

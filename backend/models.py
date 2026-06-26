@@ -40,6 +40,10 @@ class AuthUser(Base):
     last_name = Column(String, nullable=True)
     profile_image_url = Column(String, nullable=True)
     is_demo = Column(Boolean, default=False, nullable=False)
+    # Short, shareable code other drivers enter to credit this user with a
+    # referral. Generated lazily on first GET /referrals/me. Nullable for
+    # legacy rows; unique so a code maps to exactly one referrer.
+    referral_code = Column(String, nullable=True, unique=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -215,6 +219,22 @@ class Congratulation(Base):
     from_user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
     to_user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
     message = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+class Referral(Base):
+    __tablename__ = "referrals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # The user who shared their code (gets a reward, capped).
+    referrer_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    # The new user who redeemed a code. UNIQUE so a user can only ever be
+    # referred once (prevents a user farming multiple rewards through one signup).
+    referee_id = Column(String, ForeignKey("auth_users.id"), nullable=False, unique=True, index=True)
+    # Whether the free-month promo entitlement was successfully granted in
+    # RevenueCat for each side. Lets a future retry re-grant without
+    # double-counting the cap.
+    referrer_reward_granted = Column(Boolean, default=False, nullable=False)
+    referee_reward_granted = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 class PasswordResetToken(Base):

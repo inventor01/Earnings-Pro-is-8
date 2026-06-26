@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/authContext';
 import { api } from '@/lib/api';
 import { useTheme } from '@/lib/theme';
+import { getPendingReferral, clearPendingReferral } from '@/lib/pendingReferral';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
 export default function LoginScreen() {
@@ -29,6 +30,7 @@ export default function LoginScreen() {
   const [credential, setCredential] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,6 +40,17 @@ export default function LoginScreen() {
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
     AppleAuthentication.isAvailableAsync().then(setAppleAvailable).catch(() => setAppleAvailable(false));
+  }, []);
+
+  // Prefill the referral code from a pending deep-link invite and switch the
+  // form to Sign Up so the invitee lands ready to create their account.
+  useEffect(() => {
+    getPendingReferral().then((code) => {
+      if (code) {
+        setReferralCode(code);
+        setMode('signup');
+      }
+    });
   }, []);
 
   const handleAppleSignIn = async () => {
@@ -81,7 +94,8 @@ export default function LoginScreen() {
     try {
       const res = mode === 'login'
         ? await api.login(credential, password)
-        : await api.signup(credential, password, username);
+        : await api.signup(credential, password, username, referralCode);
+      if (mode === 'signup') await clearPendingReferral();
       login(res.access_token);
     } catch (e: any) {
       setError(e.message || 'Something went wrong');
@@ -238,6 +252,39 @@ export default function LoginScreen() {
                   fontSize: 16,
                 }}
               />
+            </View>
+          )}
+
+          {mode === 'signup' && (
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ color: MUTED, fontSize: 12, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>
+                Referral Code <Text style={{ textTransform: 'none', fontWeight: '500' }}>(optional)</Text>
+              </Text>
+              <TextInput
+                value={referralCode}
+                onChangeText={(v) => setReferralCode(v.toUpperCase())}
+                placeholder="Get a free month"
+                placeholderTextColor={MUTED}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={12}
+                style={{
+                  backgroundColor: INPUT_BG,
+                  borderWidth: 1,
+                  borderColor: referralCode ? GREEN : BORDER,
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  color: TEXT,
+                  fontSize: 16,
+                  letterSpacing: 2,
+                }}
+              />
+              {referralCode ? (
+                <Text style={{ color: GREEN, fontSize: 12, marginTop: 6 }}>
+                  🎁 You'll both get 1 free month of Pro
+                </Text>
+              ) : null}
             </View>
           )}
 
