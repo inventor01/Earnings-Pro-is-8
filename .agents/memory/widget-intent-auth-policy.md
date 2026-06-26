@@ -1,23 +1,24 @@
 ---
-name: Widget App Intent authenticationPolicy enum member
-description: Valid IntentAuthenticationPolicy members for the iOS widget quick-add intent, and why native Swift errors only surface at EAS build time.
+name: Native Swift errors in widget targets only fail at EAS build
+description: Swift compile errors in earnings-ninja-expo/targets/ slip past tsc/expo-export and first surface at the EAS Xcode step; how to triage fast.
 ---
 
-`IntentAuthenticationPolicy` (App Intents framework) has exactly two members:
-`.alwaysAllowed` and `.requiresAuthentication`. There is NO `.requiresLocalAuthentication`
-— using it makes the Xcode compile fail with `type 'IntentAuthenticationPolicy' has no
-member 'requiresLocalAuthentication'`, which errors the EAS build ~3 min in at the
-"Run fastlane" / Xcode step (errorCode `XCODE_BUILD_ERROR`).
+Swift/native errors in the iOS widget target (and any `earnings-ninja-expo/targets/`
+Swift) are NOT caught by the standard mobile pre-ship checks (`npx tsc --noEmit`,
+`npx expo export --platform ios`) — those only validate JS/TS. The first place a Swift
+typo shows up is the EAS Xcode compile, which errors ~3 min into the build at the
+"Run fastlane" step with errorCode `XCODE_BUILD_ERROR`.
 
-For the quick-add widget intent (`targets/widget/QuickAddIntent.swift`): use
-`.requiresAuthentication` to force Face ID / Touch ID / passcode before a Lock-Screen
-write executes; use `.alwaysAllowed` to let it run while locked with no prompt.
+**Why it matters:** there is no local-ish guard for `targets/` Swift other than careful
+review; a bad symbol costs a full ~min build cycle to discover.
 
-**Why it bit us:** a security change set it to the non-existent `.requiresLocalAuthentication`.
+**How to apply:** review widget Swift carefully before triggering a build. To triage a
+failed build fast, query GraphQL `builds.byId(...).error{errorCode message}` (see
+eas-expo-build.md) — the message usually names the exact Swift symbol/line.
 
-**How to apply:** Swift/native errors in the widget target (and any `targets/` Swift) are
-NOT caught by the standard mobile pre-ship checks (`npx tsc --noEmit`,
-`npx expo export --platform ios`) — those only validate JS/TS. The only local-ish guard
-is careful review; otherwise the EAS Xcode compile is the first place a Swift typo shows
-up. To triage a failed build fast, query GraphQL `builds.byId(...).error{errorCode message}`
-(see eas-expo-build.md) — the message usually names the exact Swift symbol.
+**Historical note:** the widget once had a Lock-Screen quick-add App Intent
+(`QuickAddIntent.swift`) whose `IntentAuthenticationPolicy` only accepts `.alwaysAllowed`
+or `.requiresAuthentication` (NOT `.requiresLocalAuthentication`). That whole intent was
+later removed when the widget was simplified to display-only (shows today's profit/revenue,
+tap opens the app via `earningsninja://entry/new`). Kept only as an example of the
+class of error above.

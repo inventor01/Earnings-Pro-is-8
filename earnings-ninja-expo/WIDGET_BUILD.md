@@ -83,12 +83,11 @@ the backend on its own.
 
 | Piece | Location | Job |
 | --- | --- | --- |
-| `EarningsWidget.swift` | `targets/widget/` | SwiftUI widget views (Small + Medium), timeline provider |
-| `QuickAddIntent.swift` | `targets/widget/` | App Intent — POSTs `/api/entries` directly from the widget tap, no app open |
+| `EarningsWidget.swift` | `targets/widget/` | SwiftUI widget views (display-only: today's profit + revenue), timeline provider |
 | `expo-target.config.json` | `targets/widget/` | Tells `@bacons/apple-targets` how to build the widget extension |
 | `WidgetBridgeModule.swift` | `modules/widget-bridge/ios/` | Tiny native module — JS reads/writes App Group UserDefaults + reloads widget timelines |
-| `lib/widgetSync.ts` | `lib/` | JS helper — pushes `auth_token`, `api_base`, `today_profit`, `last_app` to the App Group on login + on every entry mutation |
-| Deep link `earningsninja://entry/new?type=…&amount=…` | handled in `app/_layout.tsx` | Opens AddEntry modal with prefill if the user taps the widget background instead of a quick-amount button |
+| `lib/widgetSync.ts` | `lib/` | JS helper — pushes `auth_token`, `api_base`, `today_profit`, `today_revenue`, `theme` to the App Group on login + on every entry mutation |
+| Deep link `earningsninja://entry/new` | handled in `app/_layout.tsx` | Opens the AddEntry modal when the user taps the widget |
 
 ---
 
