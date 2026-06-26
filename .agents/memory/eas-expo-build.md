@@ -26,3 +26,13 @@ A build embeds a `channel` (set per-profile in eas.json). `eas update` publishes
 `eas build:view` is interactive-ish; to script failure triage, query GraphQL `https://api.expo.dev/graphql` (Bearer `$EXPO_TOKEN`):
 - Error reason: `builds{ byId(buildId:$id){ status error{ errorCode message } artifacts{ applicationArchiveUrl } completedAt } } }`.
 - Raw phase logs: same query asking for `logFiles` (array of URLs). Each log file is **brotli-compressed newline-JSON** — `curl <url> | brotli -d` then parse per-line JSON to read the actual `npm ci` / Fastlane output. This is how you confirm e.g. an `ENOTFOUND package-firewall.replit.local` in INSTALL_DEPENDENCIES vs a credentials/native failure.
+
+## EAS Build runs `expo-doctor` and a non-zero exit fails the build
+Before any `eas build`, run `npx expo-doctor` locally and get **18/18** — EAS runs it
+on the build server and a failure aborts the build. Two gotchas that bit this app:
+- **`ios.deploymentTarget` is NOT a valid Expo config field.** Putting it under `ios`
+  in app.json fails schema validation. Set it via the `expo-build-properties` plugin
+  (`["expo-build-properties", { "ios": { "deploymentTarget": "17.0" } }]`).
+- **`expo-audio` requires the `expo-asset` peer dep** to be installed directly, or the
+  app "may crash outside Expo Go." Adding a native dep that pulls a peer dep means you
+  must `npx expo install` that peer too. (Then re-fix lockfile firewall URLs.)

@@ -23,7 +23,6 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.earningsninja.app",
       "buildNumber": "9",
-      "deploymentTarget": "17.0",
       "appleTeamId": "77827G7735",
       "infoPlist": {
         "NSCameraUsageDescription": "Earnings Ninja needs camera access to photograph receipts for expense tracking.",
@@ -94,6 +93,14 @@
       "expo-router",
       "expo-font",
       [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "17.0"
+          }
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Earnings Ninja needs photo library access to attach receipt images to your expenses.",
@@ -105,7 +112,8 @@
       "@bacons/apple-targets",
       "@react-native-community/datetimepicker",
       "./plugins/withLocalNotificationsOnly",
-      "expo-audio"
+      "expo-audio",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true
