@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import {
   ActivityIndicator,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -47,6 +48,23 @@ function resolveApiKey(): string {
 
 function isEntitled(info: CustomerInfo | null): boolean {
   return !!info && info.entitlements.active[PRO_ENTITLEMENT_ID] !== undefined;
+}
+
+/**
+ * Open the OS-native subscription management screen. Used as a fallback when
+ * the RevenueCat Customer Center can't open (not configured in the dashboard,
+ * or the native module is absent) so "Manage Subscription" is never a dead end.
+ */
+async function openNativeSubscriptions(): Promise<void> {
+  const url =
+    Platform.OS === 'ios'
+      ? 'https://apps.apple.com/account/subscriptions'
+      : 'https://play.google.com/store/account/subscriptions';
+  try {
+    await Linking.openURL(url);
+  } catch {
+    // no-op
+  }
 }
 
 interface SubscriptionContextValue {
@@ -260,12 +278,20 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, [presentPaywall]);
 
   const presentCustomerCenter = useCallback(async () => {
-    if (!availableRef.current) return;
+    if (!availableRef.current) {
+      // RevenueCat native module absent — still let the user reach the OS
+      // subscription manager so the button is never a dead end.
+      await openNativeSubscriptions();
+      return;
+    }
     try {
       await RevenueCatUI.presentCustomerCenter();
       await refresh();
     } catch {
-      // no-op
+      // The RevenueCat Customer Center isn't configured/published in the
+      // dashboard (or failed to open) → fall back to the OS-native
+      // subscription management screen so the button always does something.
+      await openNativeSubscriptions();
     }
   }, [refresh]);
 
