@@ -34,3 +34,11 @@ There is no embeddable-key provisioning path — the public test key cannot crea
 ## Shipping
 
 New native deps require a fresh EAS build and **do not reach installed builds over OTA**. The native module is excluded from the JS bundle, so `expo export` still succeeds without it.
+
+## Diagnosing "no paywall / no Pro section"
+
+The whole Settings Pro section is gated by `available`; when `available===false` the section is hidden AND features are ungated (fail-open), so "no paywall, features just work" usually means RevenueCat init failed, NOT a paywall bug.
+
+- **Verify the config is fine from the shell before touching code:** the publishable `appl_` key authenticates with `GET https://api.revenuecat.com/v1/subscribers/{any_id}` (200/201), and `…/{id}/offerings` (header `X-Platform: ios`) returns the configured packages → product-id mapping. If both pass, the app/key/offering are correct and the problem is device- or Apple-side.
+- **#1 real-world cause once config is correct: the Apple Paid Applications agreement is not Active** (App Store Connect → Business). Status "new" = unsigned → StoreKit returns ZERO products → empty offering → paywall (and fallback) silently never render. Must be "Active" (+ tax + banking) before any IAP loads anywhere.
+- **#2 cause: the tester is running an OLD install, not the new TestFlight build.** The app has no built-in build label, so this is invisible. A standalone App Store version and a TestFlight build share one icon — tapping the home-screen icon can open the wrong one. Fix path: delete the app, install the new build from TestFlight, open it. **Settings now shows `Earnings Ninja vX (build N)` (always visible, ungated, via expo-application)** specifically to disambiguate old-install vs runtime-init failure — ask testers to read it.
