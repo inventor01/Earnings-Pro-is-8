@@ -3427,9 +3427,8 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
     { label: 'Orders',         value: `${totalOrders}` },
     { label: 'Avg / Day',      value: money(dailyAverages.profit), color: isProfit ? GREEN : RED, hide: true, },
     { label: 'Active Days',    value: `${dayAgg.length}` },
-    { label: 'Total Miles',    value: `${(rollup?.miles ?? 0).toFixed(1)}` },
-    { label: 'Total Hours',    value: `${(rollup?.hours ?? 0).toFixed(1)}` },
     { label: 'Miles / Day',    value: `${milesPerDay.toFixed(1)}` },
+    { label: 'Total Hours',    value: `${(rollup?.hours ?? 0).toFixed(1)}` },
   ];
 
   const sectionTitle = (text: string) => (
