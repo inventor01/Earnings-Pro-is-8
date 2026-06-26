@@ -24,6 +24,13 @@ Pro subscriptions use the **official React Native SDK** (not the SwiftUI/native 
 
 There is no embeddable-key provisioning path — the public test key cannot create products. The supported route is the Replit RevenueCat connector (seed script) or hand-building entities in the dashboard. When the connector OAuth is broken (`invalid_grant`), do not loop on `proposeIntegration`; reconnect the integration or use the dashboard. The Paywall *visual* is dashboard-only regardless; the app only falls back to its own sheet.
 
+- **A lifetime/buy-once product must be `non_consumable`, NOT `one_time`, in the seed script.** The RevenueCat **Test Store** only accepts `subscription`, `consumable`, `non_consumable` and rejects `one_time` with a `parameter_error` ("Allowed product types for Test Store…"). `non_consumable` is the semantically correct type for a permanent lifetime unlock and is valid across test/app/play stores, so use it everywhere.
+  **Why:** the seed creates the same product across all three stores; `one_time` passes typing but fails at the test-store create call, aborting the whole run.
+
+- **The seed script masks API errors** (it throws generic `Failed to create X` strings). When it fails, replay the failing call directly via the connector client in code-execution and print `res.error` to get the real `parameter_error`/message. Some failures (e.g. createApp) are also just transient — retry once before changing code.
+
+- **Provisioning emits publishable keys** (`appl_…` iOS, `goog_…` Android, `test_…` Test Store) — not secrets. For real App Store IAP set `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` to the `appl_…` key **before** an EAS build (EXPO_PUBLIC vars bake at build time; a build started before the swap keeps the embedded test key and only talks to the Test Store).
+
 ## Shipping
 
 New native deps require a fresh EAS build and **do not reach installed builds over OTA**. The native module is excluded from the JS bundle, so `expo export` still succeeds without it.
