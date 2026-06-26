@@ -38,6 +38,7 @@ import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
 import { invalidateEntryData } from '@/lib/queryInvalidation';
 import { useLocalSearchParams, router } from 'expo-router';
+import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Persists the platform the user most recently logged an ORDER against, so the
@@ -2724,6 +2725,13 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             <Text style={{ color: RED, fontWeight: '700', fontSize: 13 }}>Sign Out</Text>
           </Pressable>
         </View>
+
+        {/* Build / version — always visible (NOT gated by RevenueCat) so the
+            running build is identifiable during testing. If this doesn't read
+            "build 11"+, the device is on an older install. */}
+        <Text style={{ color: MUTED, fontSize: 11, textAlign: 'center', marginBottom: 24 }}>
+          Earnings Ninja v{Application.nativeApplicationVersion ?? '—'} (build {Application.nativeBuildVersion ?? '—'})
+        </Text>
 
         {/* Refresh data — moved out of the header to make room for the
             settings icon. Invalidates the same queries pull-to-refresh does. */}
