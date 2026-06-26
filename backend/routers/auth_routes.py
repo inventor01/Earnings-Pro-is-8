@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
@@ -343,51 +343,72 @@ async def validate_token(current_user: AuthUser = Depends(get_current_user)) -> 
         "email": current_user.email
     }
 
+async def _issue_reset_token_and_email(user_id: str, user_email: str, user_name: str) -> None:
+    """Background task: persist a reset token and send the email.
+
+    Runs *after* the HTTP response has already been returned to the client so
+    the caller cannot distinguish the "account exists" path from the
+    "account not found" path via response latency.
+    """
+    from backend.db import SessionLocal
+    db = SessionLocal()
+    try:
+        db.query(PasswordResetToken).filter(
+            PasswordResetToken.user_id == user_id,
+            PasswordResetToken.used == False
+        ).update({"used": True})
+
+        reset_token = secrets.token_urlsafe(32)
+        token_record = PasswordResetToken(
+            user_id=user_id,
+            token=reset_token,
+            expires_at=datetime.utcnow() + timedelta(hours=1)
+        )
+        db.add(token_record)
+        db.commit()
+
+        await send_password_reset_email(
+            to_email=user_email,
+            reset_token=reset_token,
+            user_name=user_name
+        )
+    except Exception:
+        pass
+    finally:
+        db.close()
+
+
 @router.post("/auth/forgot-password")
 @auth_limiter.limit("5/hour")
-async def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session = Depends(get_db)):
-    return await _forgot_password(body, db)
+async def forgot_password(
+    request: Request,
+    body: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """Request a password reset link.
 
+    Always returns the same response body regardless of whether the address
+    belongs to a real account.  The token-creation and email steps are
+    deferred to a background task that runs *after* the response is sent,
+    eliminating the server-side timing difference that would otherwise allow
+    an attacker to enumerate valid email addresses by measuring latency.
+    """
+    email = body.email.strip()
 
-async def _forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
-    """Request a password reset link"""
-    email = request.email.strip()
-    
-    # Find user by email case-insensitively (excluding demo users)
     user = db.query(AuthUser).filter(
         func.lower(AuthUser.email) == email.lower(),
         AuthUser.is_demo == False
     ).first()
-    
-    # Always return success to prevent email enumeration attacks
-    if not user:
-        return {"message": "If an account with that email exists, a password reset link has been sent."}
-    
-    # Invalidate any existing reset tokens for this user
-    db.query(PasswordResetToken).filter(
-        PasswordResetToken.user_id == user.id,
-        PasswordResetToken.used == False
-    ).update({"used": True})
-    
-    # Generate a secure reset token
-    reset_token = secrets.token_urlsafe(32)
-    
-    # Create reset token (expires in 1 hour)
-    token_record = PasswordResetToken(
-        user_id=user.id,
-        token=reset_token,
-        expires_at=datetime.utcnow() + timedelta(hours=1)
-    )
-    db.add(token_record)
-    db.commit()
-    
-    # Send password reset email
-    await send_password_reset_email(
-        to_email=user.email,
-        reset_token=reset_token,
-        user_name=user.first_name
-    )
-    
+
+    if user:
+        background_tasks.add_task(
+            _issue_reset_token_and_email,
+            user.id,
+            user.email,
+            user.first_name,
+        )
+
     return {"message": "If an account with that email exists, a password reset link has been sent."}
 
 @router.post("/auth/reset-password")
@@ -572,7 +593,8 @@ class DemoRequest(BaseModel):
 
 
 @router.post("/auth/demo", response_model=AuthResponse)
-async def create_demo_session(body: DemoRequest = DemoRequest(), db: Session = Depends(get_db)):
+@auth_limiter.limit("3/hour")
+async def create_demo_session(request: Request, body: DemoRequest = DemoRequest(), db: Session = Depends(get_db)):
     """Create a unique demo session with isolated data and preloaded transactions.
 
     Each demo session gets its own temporary user ID with realistic demo data
