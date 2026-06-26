@@ -53,12 +53,6 @@ struct WidgetStore {
         return d
     }
 
-    /// Last app the user logged an entry against (e.g. "DOORDASH"). The
-    /// QuickAddIntent uses this so we don't need a per-button platform picker.
-    static var lastApp: String {
-        defaults()?.string(forKey: "last_app") ?? "DOORDASH"
-    }
-
     /// App theme pushed by `lib/widgetSync.ts` ("dark" | "light"). Defaults to
     /// dark so the widget matches the app's default appearance.
     static var isLight: Bool {
@@ -109,62 +103,6 @@ struct Provider: TimelineProvider {
     }
 }
 
-// ─── Quick-amount button (Home Screen widgets) ───────────────────────────────
-@available(iOS 17.0, *)
-struct QuickAmountButton: View {
-    let amount: Int
-    let kind: String   // "revenue" | "expense"
-    let isExpense: Bool
-
-    var body: some View {
-        Button(intent: QuickAddIntent(kind: kind, amount: Double(amount))) {
-            Text("$\(amount)")
-                .font(.system(size: 16, weight: .heavy))
-                .foregroundColor(isExpense ? .neonRed : .neonGreen)
-                .frame(maxWidth: .infinity, minHeight: 32)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.wCard(WidgetStore.isLight))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(isExpense ? Color.neonRed.opacity(0.4) : Color.neonGreen.opacity(0.4), lineWidth: 1)
-                        )
-                )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// ─── Compact quick-amount button (Lock Screen accessoryRectangular) ──────────
-// iOS 17 allows interactive App Intent buttons inside Lock Screen widgets. The
-// Lock Screen renders accessory widgets in `.vibrant` mode, so the system tints
-// everything monochrome — we use a clear fill + thin stroke so the outline reads
-// cleanly under that tint instead of fighting it with neon fills. Sized small to
-// fit the short (~72pt) rectangular accessory next to the profit line.
-@available(iOS 17.0, *)
-struct LockQuickAmountButton: View {
-    let amount: Int
-    let kind: String   // "revenue" | "expense"
-    let isExpense: Bool
-
-    var body: some View {
-        Button(intent: QuickAddIntent(kind: kind, amount: Double(amount))) {
-            Text("\(isExpense ? "−" : "+")$\(amount)")
-                .font(.system(size: 12, weight: .heavy))
-                .frame(maxWidth: .infinity, minHeight: 20)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.clear)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(lineWidth: 1)
-                        )
-                )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // ─── Sign-in placeholder ─────────────────────────────────────────────────────
 // Shown when no auth_token exists in the App Group OR api_base is not HTTPS.
 // Tapping opens the app via the widgetURL on the parent view.
@@ -186,8 +124,30 @@ struct SignInPlaceholder: View {
     }
 }
 
+// ─── Today's revenue line (shared by Home Screen views) ──────────────────────
+@available(iOS 16.0, *)
+struct RevenueLine: View {
+    let revenue: Double
+    var body: some View {
+        HStack(spacing: 6) {
+            Text("REVENUE")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundColor(.wMuted(WidgetStore.isLight))
+                .tracking(1)
+            Spacer(minLength: 2)
+            Text(formatProfit(revenue))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.wText(WidgetStore.isLight))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
+    }
+}
+
 // ─── Small widget view (Home Screen) ─────────────────────────────────────────
-@available(iOS 17.0, *)
+// Display-only: today's net profit + gross revenue. Tapping anywhere opens the
+// app at the entry-logger route (see `widgetURL` on the parent view).
+@available(iOS 16.0, *)
 struct EarningsWidgetSmallView: View {
     let entry: EarningsEntry
 
@@ -201,29 +161,25 @@ struct EarningsWidgetSmallView: View {
                     .foregroundColor(.wMuted(WidgetStore.isLight))
                     .tracking(1.2)
                 Text(formatProfit(entry.profit))
-                    .font(.system(size: 22, weight: .heavy))
+                    .font(.system(size: 26, weight: .heavy))
                     .foregroundColor(entry.profit >= 0 ? .neonGreen : .neonRed)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .shadow(color: (entry.profit >= 0 ? Color.neonGreen : Color.neonRed).opacity(0.5), radius: 6)
                 Spacer(minLength: 4)
-                // Two revenue + two expense to honor the spec's
-                // "+Revenue / +Expense buttons" requirement on the smallest tile.
-                HStack(spacing: 6) {
-                    QuickAmountButton(amount: 10, kind: "revenue", isExpense: false)
-                    QuickAmountButton(amount: 25, kind: "revenue", isExpense: false)
-                }
-                HStack(spacing: 6) {
-                    QuickAmountButton(amount: 10, kind: "expense", isExpense: true)
-                    QuickAmountButton(amount: 25, kind: "expense", isExpense: true)
-                }
+                RevenueLine(revenue: entry.revenue)
+                Text("Tap to add an entry")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.wAccentText(WidgetStore.isLight))
+                    .tracking(0.5)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
 
 // ─── Medium widget view (Home Screen) ────────────────────────────────────────
-@available(iOS 17.0, *)
+@available(iOS 16.0, *)
 struct EarningsWidgetMediumView: View {
     let entry: EarningsEntry
 
@@ -231,7 +187,7 @@ struct EarningsWidgetMediumView: View {
         if !entry.isReady {
             SignInPlaceholder()
         } else {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 // Header
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -240,7 +196,7 @@ struct EarningsWidgetMediumView: View {
                             .foregroundColor(.wMuted(WidgetStore.isLight))
                             .tracking(1.5)
                         Text(formatProfit(entry.profit))
-                            .font(.system(size: 28, weight: .heavy))
+                            .font(.system(size: 34, weight: .heavy))
                             .foregroundColor(entry.profit >= 0 ? .neonGreen : .neonRed)
                             .lineLimit(1)
                             .minimumScaleFactor(0.6)
@@ -248,48 +204,24 @@ struct EarningsWidgetMediumView: View {
                     }
                     Spacer()
                     Text("🥷")
-                        .font(.system(size: 28))
+                        .font(.system(size: 30))
                         .shadow(color: Color.neonYellow.opacity(0.6), radius: 6)
                 }
-                Spacer(minLength: 4)
-                // Revenue row
-                HStack(spacing: 6) {
-                    Text("+ Revenue")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(.neonGreen)
-                        .tracking(1)
-                    Spacer()
-                }
-                HStack(spacing: 6) {
-                    ForEach([10, 25, 50, 100], id: \.self) { amt in
-                        QuickAmountButton(amount: amt, kind: "revenue", isExpense: false)
-                    }
-                }
-                // Expense row
-                HStack(spacing: 6) {
-                    Text("− Expense")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(.neonRed)
-                        .tracking(1)
-                    Spacer()
-                }
-                HStack(spacing: 6) {
-                    ForEach([5, 10, 25, 50], id: \.self) { amt in
-                        QuickAmountButton(amount: amt, kind: "expense", isExpense: true)
-                    }
-                }
+                Spacer(minLength: 2)
+                RevenueLine(revenue: entry.revenue)
+                Text("Tap to open Earnings Ninja")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.wAccentText(WidgetStore.isLight))
+                    .tracking(0.5)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
 
 // ─── Lock Screen widget views ────────────────────────────────────────────────
-// iOS 16+ accessory families. `inline` and `circular` are too cramped for
-// controls, so they stay glance-only (single tap opens the app). The
-// `rectangular` family is roomy enough to show today's profit AND, on iOS 17+,
-// host interactive + Revenue / − Expense quick-add buttons right on the Lock
-// Screen — same App Intent the Home Screen widget uses, so it works fully via
-// the shared App Group without opening the app.
+// iOS 16+ accessory families — all glance-only. A single tap on any accessory
+// opens the app at the entry-logger route via the parent's `widgetURL`.
 @available(iOS 16.0, *)
 struct EarningsWidgetInlineView: View {
     let entry: EarningsEntry
@@ -342,17 +274,8 @@ struct EarningsWidgetRectangularView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                 }
-                // Interactive quick-add row (iOS 17+). On iOS 16 the buttons
-                // aren't available, so fall back to the tap-to-open hint.
-                if #available(iOS 17.0, *) {
-                    HStack(spacing: 5) {
-                        LockQuickAmountButton(amount: 10, kind: "revenue", isExpense: false)
-                        LockQuickAmountButton(amount: 10, kind: "expense", isExpense: true)
-                    }
-                } else {
-                    Text("Tap to add entry")
-                        .font(.system(size: 9))
-                }
+                Text("Tap to add entry")
+                    .font(.system(size: 9))
             }
         } else {
             VStack(alignment: .leading, spacing: 1) {
@@ -372,10 +295,8 @@ struct EarningsWidgetEntryView: View {
     @Environment(\.widgetFamily) var family
 
     var body: some View {
-        // Whole widget background tap → opens the app at the entry-logger
-        // route via deep link. Quick-amount buttons sit on top and intercept
-        // their own taps, so this only fires when the user taps empty space
-        // (and on Lock Screen, where the entire surface is one tap target).
+        // The whole widget is a single tap target → opens the app at the
+        // entry-logger route via deep link (`earningsninja://entry/new`).
         Group {
             switch family {
             case .accessoryInline:
@@ -385,9 +306,9 @@ struct EarningsWidgetEntryView: View {
             case .accessoryRectangular:
                 if #available(iOS 16.0, *) { EarningsWidgetRectangularView(entry: entry) }
             case .systemMedium:
-                if #available(iOS 17.0, *) { EarningsWidgetMediumView(entry: entry) }
+                if #available(iOS 16.0, *) { EarningsWidgetMediumView(entry: entry) }
             default:
-                if #available(iOS 17.0, *) { EarningsWidgetSmallView(entry: entry) }
+                if #available(iOS 16.0, *) { EarningsWidgetSmallView(entry: entry) }
             }
         }
         .widgetURL(URL(string: "earningsninja://entry/new"))
@@ -404,7 +325,7 @@ struct EarningsWidget: Widget {
                 .containerBackground(for: .widget) { Color.wBg(WidgetStore.isLight) }
         }
         .configurationDisplayName("Earnings Ninja")
-        .description("Quick add revenue or expense entries.")
+        .description("See today's profit at a glance. Tap to open the app.")
         .supportedFamilies([
             .systemSmall,
             .systemMedium,

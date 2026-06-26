@@ -1892,11 +1892,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // No-ops when the Settings sound toggle is off or in an OTA-only build
       // that predates the expo-av native module.
       playKaching();
-      // Remember the last app the user logged revenue against — the iOS
-      // widget's quick-add buttons use this as the platform, and the Add Entry
+      // Remember the last app the user logged revenue against — the Add Entry
       // modal defaults new orders to it (read back via LAST_ORDER_APP_KEY).
       if (vars.type === 'ORDER' && vars.app) {
-        widgetSync.pushLastApp(vars.app);
         AsyncStorage.setItem(LAST_ORDER_APP_KEY, vars.app).catch(() => {});
       }
     },

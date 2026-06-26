@@ -246,8 +246,7 @@ function RootNav() {
   }, []);
 
   // Deep links from the iOS widget land here. The widget tile fires
-  // `earningsninja://entry/new` (and the QuickAddIntent uses the same scheme
-  // when it falls back to opening the app). We forward into the dashboard
+  // `earningsninja://entry/new` when tapped. We forward into the dashboard
   // with `?openEntry=…` so the AddEntryModal opens automatically.
   useEffect(() => {
     if (isLoading || !token) return;

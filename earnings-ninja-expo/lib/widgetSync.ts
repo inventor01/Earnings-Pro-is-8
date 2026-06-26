@@ -1,13 +1,15 @@
-// Pushes the data the iOS widget + QuickAddIntent need into the App Group's
-// shared UserDefaults, then asks WidgetKit to repaint.
+// Pushes the data the iOS widget needs into the App Group's shared
+// UserDefaults, then asks WidgetKit to repaint.
 //
-// Keys mirror the ones read by `targets/widget/EarningsWidget.swift` and
-// `targets/widget/QuickAddIntent.swift`:
-//   - auth_token    (Bearer token; required for the Intent's API call)
+// Keys mirror the ones read by `targets/widget/EarningsWidget.swift`:
+//   - auth_token    (Bearer token; gates the "Sign in" placeholder)
 //   - api_base      (e.g. "https://...replit.dev")
 //   - today_profit  (string-encoded number; positive = green, negative = red)
 //   - today_revenue (string-encoded number; today's gross revenue)
-//   - last_app      (e.g. "DOORDASH"; used as the platform for revenue quick-adds)
+//   - theme         ("dark" | "light")
+//
+// The widget is display-only — a tap opens the app at the entry-logger route;
+// it never writes data itself.
 //
 // All operations are no-ops on Android / Expo Go — `WidgetBridge.isAvailable()`
 // returns false there.
@@ -38,14 +40,13 @@ export const widgetSync = {
     WidgetBridge.reloadAllTimelines();
   },
 
-  /** Call after logout. Clears credentials from the widget so its quick-add
-   *  buttons fall back to opening the app. */
+  /** Call after logout. Clears credentials so the widget falls back to its
+   *  "Sign in to Earnings Ninja" placeholder. */
   async onLogout() {
     if (!WidgetBridge.isAvailable()) return;
     WidgetBridge.setItem('auth_token', null);
     WidgetBridge.setItem('today_profit', null);
     WidgetBridge.setItem('today_revenue', null);
-    WidgetBridge.setItem('last_app', null);
     WidgetBridge.reloadAllTimelines();
   },
 
@@ -62,13 +63,6 @@ export const widgetSync = {
     if (!WidgetBridge.isAvailable()) return;
     WidgetBridge.setItem('today_revenue', revenue.toFixed(2));
     WidgetBridge.reloadAllTimelines();
-  },
-
-  /** Call after each manual entry save so the widget remembers the user's
-   *  preferred platform for future widget-driven revenue entries. */
-  async pushLastApp(app: string) {
-    if (!WidgetBridge.isAvailable()) return;
-    WidgetBridge.setItem('last_app', app);
   },
 
   /** Call after login and whenever the user switches Dark/Light so the Home
