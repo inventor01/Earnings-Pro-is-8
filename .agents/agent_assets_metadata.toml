@@ -66,3 +66,39 @@ id = "J-2-2RRyiSLq6K-rJu2RX"
 uri = "file://appstore_screenshots/04_goals.png"
 type = "image"
 title = "4. Goals — Daily Progress Ring"
+
+[[outputs]]
+id = "yahRDUZHN7sXdMzjLMP21"
+uri = "file://appstore_screenshots/01.png"
+type = "image"
+title = "1. Your real profit, not just gross pay"
+
+[[outputs]]
+id = "tbDFTwsePPnUXiH5jZOXG"
+uri = "file://appstore_screenshots/02.png"
+type = "image"
+title = "2. Spot your peak earning hours"
+
+[[outputs]]
+id = "p-47I-s8TVk16TZLe4hrx"
+uri = "file://appstore_screenshots/03.png"
+type = "image"
+title = "3. See which apps pay you the most"
+
+[[outputs]]
+id = "_ituIPEmrTESJAcaxo6zL"
+uri = "file://appstore_screenshots/04.png"
+type = "image"
+title = "4. Every day's profit at a glance"
+
+[[outputs]]
+id = "l5CsEifSQRm508FFRxBrE"
+uri = "file://appstore_screenshots/05.png"
+type = "image"
+title = "5. Your data, your way — export to CSV"
+
+[[outputs]]
+id = "-6Njv2r72MumTFf0hQDmd"
+uri = "file://appstore_screenshots/06.png"
+type = "image"
+title = "6. Track earnings day by day"
