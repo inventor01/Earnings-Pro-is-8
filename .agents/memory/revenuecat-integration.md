@@ -20,6 +20,8 @@ Pro subscriptions use the **official React Native SDK** (not the SwiftUI/native 
 
 - **Fallback paywall prices are always read live from the offering, never hardcoded** (test-store prices are immutable; prod prices come from the stores).
 
+- **The RevenueCat Customer Center is dashboard-configured, just like the Paywall visual.** If it isn't published in the dashboard, `RevenueCatUI.presentCustomerCenter()` throws — and a silent `catch` makes the "Manage Subscription" button a dead end. Always fall back to the OS-native subscription manager (`https://apps.apple.com/account/subscriptions` on iOS, the Play equivalent on Android) so the button always does something.
+
 ## Provisioning is connector/dashboard-only
 
 There is no embeddable-key provisioning path — the public test key cannot create products. The supported route is the Replit RevenueCat connector (seed script) or hand-building entities in the dashboard. When the connector OAuth is broken (`invalid_grant`), do not loop on `proposeIntegration`; reconnect the integration or use the dashboard. The Paywall *visual* is dashboard-only regardless; the app only falls back to its own sheet.
