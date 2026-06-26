@@ -8,6 +8,7 @@ Earnings Ninja is a public, production-deployed delivery-driver earnings app wit
 
 - **User accounts and sessions** — password hashes, password-reset tokens, JWT bearer tokens, Sign in with Apple identities. Compromise allows account takeover and access to financial history.
 - **Driver financial data** — earnings, expenses, mileage, notes, goals, dashboard rollups, and receipt images. This is personal financial data and should remain scoped to the owning user.
+- **Mobile widget credentials and quick actions** — the Expo app projects auth state and quick-add controls into an iOS App Group / widget surface. Misuse here can allow authenticated writes outside the normal in-app unlock flow.
 - **Third-party platform credentials** — Uber and Shipt OAuth access/refresh tokens plus synced order metadata. Compromise allows continued access to upstream delivery-platform data.
 - **Social graph and profile data** — usernames, email addresses, friendship state, congratulations, and leaderboard-derived statistics. Exposure can enable targeted harassment, spam, and user enumeration.
 - **Operational secrets and email flows** — `JWT_SECRET_KEY`, Resend API key, OAuth client secrets, access codes, and password-reset links. Leakage enables impersonation or unauthorized access.
@@ -17,16 +18,21 @@ Earnings Ninja is a public, production-deployed delivery-driver earnings app wit
 - **Browser / mobile app → FastAPI API** — all request bodies, query params, and headers are attacker-controlled until validated server-side.
 - **FastAPI API → database** — user data, reset tokens, social data, and OAuth credentials are persisted here; authorization and deletion guarantees must be enforced before writes/reads.
 - **FastAPI API → external services** — Resend, OpenAI, Apple JWKS, Uber, and Shipt receive server-side requests and sometimes user-derived data.
+- **Locked device / widget surface → FastAPI API** — iOS widgets and App Intents can initiate authenticated entry writes using App Group state; lock-screen affordances must not bypass the intended user-presence boundary for sensitive mutations.
 - **Public / authenticated boundary** — health, legal pages, waitlist flows, OAuth callbacks, signup/login/demo, and static assets are public; entries, settings, goals, rollups, dashboard, suggestions, leaderboard, and OAuth management are intended to be authenticated.
 - **Authenticated user / other authenticated user boundary** — one user must never be able to view, link, mutate, or infer another user's private financial or identity data beyond explicitly intended social disclosures.
 - **Production / dev-only boundary** — `backend/scripts/`, `backend/tests/`, `frontend/dev-dist/`, zip archives, and historical `deployment/` copies are usually non-production unless there is clear runtime reachability.
 
 ## Scan Anchors
 
-- **Production entry points:** `backend/app.py`, routers in `backend/routers/`, deployment/runtime config in `.replit`, web auth state in `frontend/src/lib/authContext.tsx`, mobile auth/API in `earnings-ninja-expo/lib/`.
-- **Highest-risk code areas:** auth/password reset (`backend/auth.py`, `backend/routers/auth_routes.py`), OAuth sync (`backend/routers/oauth.py`, `backend/services/sync_service.py`), user-data APIs (`entries`, `rollup`, `dashboard`, `goals`, `leaderboard`), and public marketing/prelaunch flows (`waitlist_routes`, `frontend/src/pages/PrelaunchPage.tsx`).
-- **Public surfaces:** `/api/health`, `/api/auth/*` public endpoints, `/api/waitlist/*`, OAuth callbacks, `/privacy`, `/support`, static SPA routes.
+- **Production entry points:** `backend/app.py`, routers in `backend/routers/`, deployment/runtime config in `.replit`, web auth state in `frontend/src/lib/authContext.tsx`, mobile auth/API in `earnings-ninja-expo/lib/`, and widget bridge / intent code in `earnings-ninja-expo/lib/widgetSync.ts` plus `earnings-ninja-expo/targets/widget/`.
+- **Highest-risk code areas:** auth/password reset (`backend/auth.py`, `backend/routers/auth_routes.py`), OAuth sync (`backend/routers/oauth.py`, `backend/services/sync_service.py`), user-data APIs (`entries`, `rollup`, `dashboard`, `goals`, `leaderboard`), widget quick-add flows, and public marketing/prelaunch flows (`waitlist_routes`, `frontend/src/pages/PrelaunchPage.tsx`).
+- **Public surfaces:** `/api/health`, `/api/auth/*` public endpoints, `/api/waitlist/*`, `/api/points/*`, OAuth callbacks, `/privacy`, `/support`, static SPA routes.
 - **Usually ignore unless proven reachable:** `backend/scripts/`, `backend/tests/`, `frontend/dev-dist/`, `deployment/`, archived zip files.
+
+## Scan Calibration Notes
+
+- Do not re-report the standalone fact that `/api/waitlist/signup` accepts self-asserted email addresses unless it combines with a concrete oracle, immediate outbound-email abuse path, or another production-reachable exploit beyond ordinary mailing-list spam risk.
 
 ## Threat Categories
 
