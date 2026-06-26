@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, ScrollView, Pressable, Modal,
   RefreshControl, ActivityIndicator, Image, Alert,
-  TextInput, KeyboardAvoidingView, Platform,
+  TextInput, KeyboardAvoidingView, Platform, Share,
   ViewStyle, TextStyle, StyleSheet,
   NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup, Goal,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
+  ReferralInfo,
 } from '@/lib/api';
 import { applyOptimisticGoal, rollbackOptimisticGoal } from '@/lib/goalOptimistic';
 import { useAuth } from '@/lib/authContext';
@@ -2521,6 +2522,81 @@ function ExportCsvRow() {
   );
 }
 
+// Referral program UI for the Settings sheet. Lazily loads the user's code +
+// progress from the backend, lets them share an invite deep link, and shows how
+// many of the (capped) free months they've earned. Self-contained so it owns its
+// own fetch/share state instead of bloating SettingsModal.
+function InviteDriverRow() {
+  const { SURFACE, BORDER, PRI_LITE, PRIMARY, PRIMARY_TXT, TEXT, MUTED, GREEN } = useTheme();
+  const [info, setInfo] = useState<ReferralInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    api.getReferralInfo()
+      .then((r) => { if (alive) setInfo(r); })
+      .catch(() => {})
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
+  const onShare = async () => {
+    if (!info) return;
+    hTap();
+    const link = `earningsninja://referral/${info.code}`;
+    try {
+      await Share.share({
+        message:
+          `Track your delivery earnings with Earnings Ninja 🥷\n` +
+          `Use my code ${info.code} when you sign up and we BOTH get 1 free month of Pro!\n${link}`,
+      });
+    } catch {
+      // user dismissed the share sheet
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={onShare}
+      disabled={loading || !info}
+      style={{
+        backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1.5, borderColor: PRIMARY,
+        padding: 16, opacity: loading ? 0.6 : 1,
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="gift" size={18} color={PRIMARY_TXT} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Invite a Driver</Text>
+          <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>
+            You both get 1 free month of Pro
+          </Text>
+        </View>
+        {loading ? <ActivityIndicator color={PRIMARY_TXT} /> : <Ionicons name="share-outline" size={20} color={PRIMARY_TXT} />}
+      </View>
+
+      {info && (
+        <>
+          <View style={{ marginTop: 14, borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingVertical: 12, alignItems: 'center', backgroundColor: PRI_LITE }}>
+            <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>
+              Your code
+            </Text>
+            <Text style={{ color: PRIMARY_TXT, fontSize: 24, fontWeight: '900', letterSpacing: 4, marginTop: 2 }}>
+              {info.code}
+            </Text>
+          </View>
+          <Text style={{ color: info.rewards_earned > 0 ? GREEN : MUTED, fontSize: 12, fontWeight: '700', marginTop: 10, textAlign: 'center' }}>
+            🎁 {info.rewards_earned} of {info.rewards_cap} free months earned
+            {info.referred_count > 0 ? `  ·  ${info.referred_count} signed up` : ''}
+          </Text>
+        </>
+      )}
+    </Pressable>
+  );
+}
+
 function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { BG, SURFACE, BORDER, PRIMARY, PRIMARY_TXT, PRI_LITE, TEXT, MUTED, LABEL, GREEN, RED, RED_LT, ON_PRIMARY } = useTheme();
   const { themeName, setThemeName } = useThemeControls();
@@ -2960,6 +3036,13 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             </Pressable>
           </>
         )}
+
+        {/* ── Refer a Driver ────────────────────────────────────────────── */}
+        <View style={{ height: 28 }} />
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+          🎁  Refer a Driver
+        </Text>
+        <InviteDriverRow />
 
         {/* Import / Export — CSV bulk import via expo-document-picker.
             Parses inline (no external dep). Expected headers (case-insensitive):

@@ -180,6 +180,20 @@ export interface User {
   last_name?: string;
 }
 
+export interface ReferralInfo {
+  code: string;
+  referred_count: number;
+  rewards_earned: number;
+  rewards_cap: number;
+  rewards_remaining: number;
+}
+
+export interface RedeemResponse {
+  success: boolean;
+  message: string;
+  referee_reward_granted: boolean;
+}
+
 export const api = {
   async login(credential: string, password: string): Promise<{ access_token: string }> {
     const res = await trackedFetch(`${API_BASE}/api/auth/login`, {
@@ -194,11 +208,19 @@ export const api = {
     return res.json();
   },
 
-  async signup(email: string, password: string, username: string): Promise<{ access_token: string }> {
+  async signup(
+    email: string,
+    password: string,
+    username: string,
+    referralCode?: string,
+  ): Promise<{ access_token: string }> {
+    const body: Record<string, string> = { email, password, username };
+    const code = (referralCode || '').trim();
+    if (code) body.referral_code = code;
     const res = await trackedFetch(`${API_BASE}/api/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, username }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -237,6 +259,31 @@ export const api = {
       // "server explicitly rejected my token" (401/403 → clear token) from
       // "the network is flaky" (500/0 → keep token, retry later).
       throw new Error(`getMe failed: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  // Referral program. GET /referrals/me lazily mints the caller's code on first
+  // read and returns their progress toward the (capped) free-month rewards.
+  async getReferralInfo(): Promise<ReferralInfo> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/referrals/me`, { headers });
+    if (!res.ok) throw new Error(`getReferralInfo failed: ${res.status}`);
+    return res.json();
+  },
+
+  // Redeem someone else's referral code (for users who didn't enter one at
+  // signup). Backend enforces once-per-user, no self-referral, and the cap.
+  async redeemReferral(code: string): Promise<RedeemResponse> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/referrals/redeem`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ code: code.trim() }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'That referral code is invalid.');
     }
     return res.json();
   },
