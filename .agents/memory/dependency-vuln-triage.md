@@ -32,3 +32,22 @@ on the **Starlette 1.x** line, so `starlette==1.3.1` is correct, not a 0.x typo.
 Source of truth = the running Backend API workflow + installed versions, not a
 reviewer's prior-era assumption. `deployment/` mirrors root but is archived/non-served
 (the `.replit [deployment]` run launches `backend.app:app` directly).
+
+# `npm audit fix` has two EAS-build side effects — handle before building
+
+Running `npm audit fix` in `earnings-ninja-expo` (even non-force) does two things
+beyond the intended vuln fix, both of which bite EAS builds/OTA:
+
+1. **Re-injects firewall URLs into the lockfile.** It re-resolves through the Replit
+   package proxy, rewriting `"resolved"` entries to
+   `http://package-firewall.replit.local/npm/...`. These break EAS `INSTALL_DEPENDENCIES`.
+   **Fix before any `eas build`:**
+   `sed -i 's#http://package-firewall\.replit\.local/npm/#https://registry.npmjs.org/#g' package-lock.json`
+   then confirm `grep -c replit.local package-lock.json` == 0.
+
+2. **Bumps Expo native-module patch versions** (e.g. expo 54.0.34→54.0.35,
+   @bacons/apple-targets, expo-font) within their semver ranges. This **changes the
+   native fingerprint**, so the tree no longer matches previously-built binaries and
+   OTAs won't land on them — verify with `eas fingerprint:compare --build-id <id>`.
+   If it differs, you must cut a NEW build (bump `app.json` ios.buildNumber first,
+   since the testflight profile has autoIncrement:false) for OTAs to land going forward.
