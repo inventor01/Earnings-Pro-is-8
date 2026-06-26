@@ -30,14 +30,12 @@ struct QuickAddIntent: AppIntent {
     static var description = IntentDescription("Quickly log revenue or an expense.")
     static var openAppWhenRun: Bool = false
 
-    // Allow the quick-add to run straight from the LOCK SCREEN widget without a
-    // Face ID / passcode prompt. The default policy would require authentication,
-    // which defeats the point of a glanceable lock-screen quick-add. This is a
-    // deliberate, bounded tradeoff: the intent can only WRITE a single entry — it
-    // never reads back or displays any financial data — so someone with physical
-    // access to a locked phone could at most add a stray entry, not view earnings.
-    // On the Home Screen the device is already unlocked, so this has no effect there.
-    static var authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
+    // Require the user to prove presence (Face ID, Touch ID, or passcode) before
+    // the intent executes. This prevents someone with brief physical access to a
+    // locked iPhone from silently writing entries to the account. On the Home
+    // Screen the device is already unlocked so the prompt is not shown; it only
+    // engages when the button is tapped from the Lock Screen.
+    static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalAuthentication
 
     @Parameter(title: "Kind")
     var kind: String   // "revenue" | "expense"
