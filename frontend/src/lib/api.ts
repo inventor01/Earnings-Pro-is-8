@@ -293,20 +293,24 @@ export const api = {
   },
 
   async getUserPoints() {
-    const res = await fetch(`${API_BASE}/api/points/user`);
+    const res = await fetch(`${API_BASE}/api/points/user`, {
+      headers: getAuthHeaders(),
+    });
     return res.json();
   },
 
   async dailyCheckIn() {
     const res = await fetch(`${API_BASE}/api/points/daily-check-in`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
     });
     return res.json();
   },
 
   async getRewards() {
-    const res = await fetch(`${API_BASE}/api/points/rewards`);
+    const res = await fetch(`${API_BASE}/api/points/rewards`, {
+      headers: getAuthHeaders(),
+    });
     return res.json();
   },
 

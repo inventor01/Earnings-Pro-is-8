@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from datetime import datetime, date
 from backend.db import get_db
 from backend.models import User, DailyUsage
+from backend.auth import get_current_user
+from backend.models import AuthUser
 
 router = APIRouter()
 
@@ -30,7 +32,10 @@ def get_or_create_user(db: Session) -> User:
     return user
 
 @router.get("/points/user")
-async def get_user_points(db: Session = Depends(get_db)):
+async def get_user_points(
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
     user = get_or_create_user(db)
     
     unlocked_rewards = []
@@ -51,7 +56,10 @@ async def get_user_points(db: Session = Depends(get_db)):
     }
 
 @router.post("/points/daily-check-in")
-async def daily_check_in(db: Session = Depends(get_db)):
+async def daily_check_in(
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
     user = get_or_create_user(db)
     today = date.today().isoformat()
     
@@ -94,5 +102,7 @@ async def daily_check_in(db: Session = Depends(get_db)):
     }
 
 @router.get("/points/rewards")
-async def get_rewards():
+async def get_rewards(
+    current_user: AuthUser = Depends(get_current_user),
+):
     return {"rewards": REWARDS}
