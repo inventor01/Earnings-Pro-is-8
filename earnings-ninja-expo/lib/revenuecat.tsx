@@ -56,12 +56,25 @@ function isEntitled(info: CustomerInfo | null): boolean {
  * or the native module is absent) so "Manage Subscription" is never a dead end.
  */
 async function openNativeSubscriptions(): Promise<void> {
-  const url =
-    Platform.OS === 'ios'
-      ? 'https://apps.apple.com/account/subscriptions'
-      : 'https://play.google.com/store/account/subscriptions';
+  if (Platform.OS === 'ios') {
+    // The `itms-apps://` scheme opens the App Store app's native "Manage
+    // Subscriptions" screen directly. The `https://` form can instead open
+    // Safari to a page that fails to load, which is why the button "opened a
+    // page that failed". Try the native scheme first, then fall back to https.
+    try {
+      await Linking.openURL('itms-apps://apps.apple.com/account/subscriptions');
+      return;
+    } catch {
+      try {
+        await Linking.openURL('https://apps.apple.com/account/subscriptions');
+      } catch {
+        // no-op
+      }
+    }
+    return;
+  }
   try {
-    await Linking.openURL(url);
+    await Linking.openURL('https://play.google.com/store/account/subscriptions');
   } catch {
     // no-op
   }
