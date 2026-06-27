@@ -11,10 +11,8 @@ import {
   useDocumentMeta,
 } from '../components/ui'
 import {
-  PhoneMockup,
-  DashboardPreview,
-  CalculatorPreview,
-  HistoryPreview,
+  PhoneShot,
+  SCREENSHOTS,
 } from '../components/mockups'
 import { LANDING_FEATURES, TESTIMONIALS, FAQS } from '../lib/content'
 
@@ -30,6 +28,7 @@ export default function LandingPage() {
       <TrustBar />
       <Problem />
       <HowItWorks />
+      <Screenshots />
       <SocialProof />
       <Features />
       <HonestMath />
@@ -82,9 +81,11 @@ function Hero() {
           </div>
           <div className="relative flex justify-center md:justify-end">
             <div className="absolute -inset-10 bg-primary/10 blur-3xl rounded-full pointer-events-none" />
-            <PhoneMockup>
-              <DashboardPreview />
-            </PhoneMockup>
+            <PhoneShot
+              src={SCREENSHOTS.dashboardWeek}
+              alt="Earnings Ninja dashboard showing $982.06 net profit over the last 7 days"
+              priority
+            />
           </div>
         </div>
       </div>
@@ -161,24 +162,27 @@ function HowItWorks() {
     {
       n: '1',
       title: 'Log it in 3 seconds',
-      body: 'Tap the calculator pad after each order or expense. Or let automatic imports pull them in for you.',
-      mockup: <CalculatorPreview />,
+      body: 'Tap + Add Entry after each order or expense. Or let automatic imports pull them in for you.',
+      shot: SCREENSHOTS.dashboardDay,
+      alt: 'Daily dashboard with the + Add Entry button',
     },
     {
       n: '2',
       title: 'Watch your real numbers',
       body: 'Net profit, $/hour, and $/mile update live — so you know if a shift is worth it while you\u2019re still out.',
-      mockup: <DashboardPreview />,
+      shot: SCREENSHOTS.topDays,
+      alt: 'Top earning days and daily profit breakdown',
     },
     {
       n: '3',
       title: 'Keep more of it',
       body: 'Export tax-ready records, follow AI suggestions, and stop taking the orders that quietly cost you money.',
-      mockup: <HistoryPreview />,
+      shot: SCREENSHOTS.settings,
+      alt: 'Settings screen with CSV export and theme options',
     },
   ]
   return (
-    <section id="showcase" className="scroll-smooth-anchor py-20 md:py-28 border-t border-border bg-surface/40">
+    <section className="py-20 md:py-28 border-t border-border bg-surface/40">
       <div className="max-w-6xl mx-auto px-5">
         <div className="text-center max-w-2xl mx-auto">
           <SectionLabel>How it works</SectionLabel>
@@ -189,7 +193,7 @@ function HowItWorks() {
         <div className="mt-14 grid md:grid-cols-3 gap-10 md:gap-6 justify-items-center">
           {steps.map((s) => (
             <div key={s.n} className="flex flex-col items-center text-center">
-              <PhoneMockup>{s.mockup}</PhoneMockup>
+              <PhoneShot src={s.shot} alt={s.alt} />
               <div className="mt-6 max-w-xs">
                 <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-black font-black mb-2">
                   {s.n}
@@ -197,6 +201,41 @@ function HowItWorks() {
                 <div className="font-bold text-lg">{s.title}</div>
                 <p className="text-sm text-muted mt-1.5 leading-relaxed">{s.body}</p>
               </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+function Screenshots() {
+  const shots = [
+    { src: SCREENSHOTS.dashboardWeek, label: 'Weekly net profit' },
+    { src: SCREENSHOTS.dashboardDay, label: 'Day-by-day earnings' },
+    { src: SCREENSHOTS.topDays, label: 'Top earning days' },
+    { src: SCREENSHOTS.analytics, label: 'Peak earning hours' },
+    { src: SCREENSHOTS.platforms, label: 'Best-paying platforms' },
+    { src: SCREENSHOTS.settings, label: 'CSV export & themes' },
+  ]
+  return (
+    <section id="showcase" className="scroll-smooth-anchor py-20 md:py-28 border-t border-border">
+      <div className="max-w-6xl mx-auto px-5">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <SectionLabel>Real screenshots</SectionLabel>
+          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
+            This is the actual app.
+          </h2>
+          <p className="mt-4 text-muted text-lg">
+            No mockups — real numbers from real driving, in the neon car-dashboard you&rsquo;ll see every shift.
+          </p>
+        </div>
+        <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4 -mx-5 px-5 md:grid md:grid-cols-3 md:gap-x-6 md:gap-y-12 md:overflow-visible md:mx-0 md:px-0">
+          {shots.map((s) => (
+            <div key={s.label} className="snap-center shrink-0 flex flex-col items-center">
+              <PhoneShot src={s.src} alt={s.label} className="w-[220px] sm:w-[250px]" />
+              <div className="mt-4 text-sm font-semibold text-muted">{s.label}</div>
             </div>
           ))}
         </div>

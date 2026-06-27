@@ -9,7 +9,7 @@ import {
   CrossIcon,
   useDocumentMeta,
 } from '../components/ui'
-import { PhoneMockup, AnalyticsPreview } from '../components/mockups'
+import { PhoneShot, SCREENSHOTS } from '../components/mockups'
 import { PLANS, COMPARISON, TESTIMONIALS, APP_DEEP_LINK } from '../lib/content'
 
 export default function UpgradePage() {
@@ -64,9 +64,11 @@ function Hero() {
           </div>
           <div className="relative flex justify-center md:justify-end">
             <div className="absolute -inset-10 bg-primary/10 blur-3xl rounded-full pointer-events-none" />
-            <PhoneMockup>
-              <AnalyticsPreview />
-            </PhoneMockup>
+            <PhoneShot
+              src={SCREENSHOTS.analytics}
+              alt="Earnings Ninja Pro analytics — peak hours, best day, and profit trend"
+              priority
+            />
           </div>
         </div>
       </div>
