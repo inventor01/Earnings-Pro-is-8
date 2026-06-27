@@ -14,6 +14,7 @@ import {
   PhoneShot,
   SCREENSHOTS,
 } from '../components/mockups'
+import logoFull from '../assets/logo-full.webp'
 import { LANDING_FEATURES, TESTIMONIALS, FAQS } from '../lib/content'
 
 export default function LandingPage() {
@@ -36,7 +37,7 @@ export default function LandingPage() {
       <Faq />
       <FinalCta />
       <Footer />
-      <StickyCta label="See Pro pricing" to="/upgrade" />
+      <StickyCta label="Try free for 7 days" to="/upgrade" />
       <ExitIntent />
     </div>
   )
@@ -67,9 +68,9 @@ function Hero() {
               <AppStoreBadge />
               <Link
                 to="/upgrade"
-                className="inline-flex items-center gap-2 bg-primary text-black font-bold px-6 py-3.5 rounded-2xl text-base hover:shadow-neon-yellow hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="inline-flex items-center gap-2 bg-primary text-black font-bold px-6 py-3.5 rounded-2xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                See Pro — $2.99/mo
+                Try free for 7 days
                 <span aria-hidden>→</span>
               </Link>
             </div>
@@ -325,13 +326,13 @@ function HonestMath() {
               <li>• No real hourly rate</li>
             </ul>
           </div>
-          <div className="bg-card border border-primary/40 rounded-2xl p-7 shadow-neon-yellow">
+          <div className="bg-card border border-primary/40 rounded-2xl p-7 shadow-neon-primary">
             <div className="text-xs uppercase tracking-wider text-primary mb-3">
               What Earnings Ninja shows you
             </div>
             <div
               className="text-4xl font-black text-primary"
-              style={{ textShadow: '0 0 16px rgba(250,204,21,0.6)' }}
+              style={{ textShadow: '0 0 16px rgba(163,230,53,0.6)' }}
             >
               $186.40
             </div>
@@ -375,7 +376,7 @@ function PricingTeaser() {
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/upgrade"
-            className="inline-flex items-center gap-2 bg-primary text-black font-bold px-8 py-4 rounded-2xl text-base hover:shadow-neon-yellow hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="inline-flex items-center gap-2 bg-primary text-black font-bold px-8 py-4 rounded-2xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             Compare Free vs Pro
             <span aria-hidden>→</span>
@@ -447,7 +448,7 @@ function FinalCta() {
       <div className="absolute inset-0 grid-bg opacity-40 pointer-events-none" />
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-64 bg-primary/10 blur-3xl pointer-events-none" />
       <div className="max-w-3xl mx-auto px-5 text-center relative">
-        <div className="text-6xl mb-6">🥷</div>
+        <img src={logoFull} alt="Earnings Ninja" className="h-28 w-auto mx-auto mb-6" />
         <h2 className="text-4xl md:text-6xl font-black tracking-tight text-balance">
           Stop guessing. Start <span className="text-primary animate-glow">knowing</span>.
         </h2>
@@ -458,9 +459,9 @@ function FinalCta() {
           <AppStoreBadge />
           <Link
             to="/upgrade"
-            className="inline-flex items-center gap-2 bg-primary text-black font-bold px-8 py-4 rounded-2xl text-base hover:shadow-neon-yellow hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="inline-flex items-center gap-2 bg-primary text-black font-bold px-8 py-4 rounded-2xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            See Pro pricing
+            Try free for 7 days
             <span aria-hidden>→</span>
           </Link>
         </div>

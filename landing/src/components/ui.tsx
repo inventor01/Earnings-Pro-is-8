@@ -7,6 +7,8 @@ import {
   SUPPORT_URL,
   SUPPORT_EMAIL,
 } from '../lib/content'
+import logoBadge from '../assets/logo-badge.webp'
+import logoFull from '../assets/logo-full.webp'
 
 /* ------------------------------------------------------------------ */
 /* SEO: per-page <title> + meta description                            */
@@ -97,7 +99,7 @@ export function AppStoreBadge() {
 /* Reusable CTA buttons                                                */
 /* ------------------------------------------------------------------ */
 export function UpgradeButton({
-  label = 'Upgrade to Pro',
+  label = 'Try free for 7 days',
   className = '',
 }: {
   label?: string
@@ -106,7 +108,7 @@ export function UpgradeButton({
   return (
     <a
       href={APP_DEEP_LINK}
-      className={`inline-flex items-center justify-center gap-2 bg-primary text-black font-bold px-7 py-3.5 rounded-xl text-base hover:shadow-neon-yellow hover:scale-[1.02] active:scale-[0.98] transition-all ${className}`}
+      className={`inline-flex items-center justify-center gap-2 bg-primary text-black font-bold px-7 py-3.5 rounded-xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all ${className}`}
     >
       {label}
       <span aria-hidden>→</span>
@@ -134,7 +136,7 @@ export function Nav({ ctaTo = '/upgrade' }: { ctaTo?: string }) {
     <header className="sticky top-0 z-50 backdrop-blur-md bg-bg/70 border-b border-border">
       <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <span className="text-2xl">🥷</span>
+          <img src={logoBadge} alt="Earnings Ninja logo" className="h-9 w-9 object-contain" />
           <span className="font-extrabold tracking-tight text-lg group-hover:text-primary transition-colors">
             Earnings Ninja
           </span>
@@ -156,9 +158,9 @@ export function Nav({ ctaTo = '/upgrade' }: { ctaTo?: string }) {
         <div className="flex items-center gap-3">
           <Link
             to={ctaTo}
-            className="hidden sm:inline-flex items-center gap-2 bg-primary text-black font-semibold px-4 py-2 rounded-xl text-sm hover:shadow-neon-yellow hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="hidden sm:inline-flex items-center gap-2 bg-primary text-black font-semibold px-4 py-2 rounded-xl text-sm hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            {ctaTo === '/upgrade' ? 'Get Pro' : APP_STORE_URL ? 'Download' : 'Coming soon'}
+            {ctaTo === '/upgrade' ? 'Try free' : APP_STORE_URL ? 'Download' : 'Coming soon'}
           </Link>
           <button
             aria-label="Toggle menu"
@@ -206,7 +208,7 @@ export function Footer() {
     <footer className="border-t border-border py-10">
       <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-5">
         <div className="flex items-center gap-2.5 text-sm text-muted">
-          <span className="text-xl">🥷</span>
+          <img src={logoBadge} alt="" className="h-7 w-7 object-contain" />
           <span>© {new Date().getFullYear()} Earnings Ninja. Made for drivers.</span>
         </div>
         <div className="flex items-center gap-6 text-sm">
@@ -257,7 +259,7 @@ export function StickyCta({
       {external ? (
         <a
           href={to}
-          className="flex items-center justify-center gap-2 bg-primary text-black font-bold py-4 rounded-2xl text-base shadow-neon-yellow active:scale-[0.98] transition-transform"
+          className="flex items-center justify-center gap-2 bg-primary text-black font-bold py-4 rounded-2xl text-base shadow-neon-primary active:scale-[0.98] transition-transform"
         >
           {label}
           <span aria-hidden>→</span>
@@ -265,7 +267,7 @@ export function StickyCta({
       ) : (
         <Link
           to={to}
-          className="flex items-center justify-center gap-2 bg-primary text-black font-bold py-4 rounded-2xl text-base shadow-neon-yellow active:scale-[0.98] transition-transform"
+          className="flex items-center justify-center gap-2 bg-primary text-black font-bold py-4 rounded-2xl text-base shadow-neon-primary active:scale-[0.98] transition-transform"
         >
           {label}
           <span aria-hidden>→</span>
@@ -306,7 +308,7 @@ export function ExitIntent() {
       onClick={() => setOpen(false)}
     >
       <div
-        className="relative max-w-md w-full bg-card border border-primary/40 rounded-3xl p-8 text-center shadow-neon-yellow"
+        className="relative max-w-md w-full bg-card border border-primary/40 rounded-3xl p-8 text-center shadow-neon-primary"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -316,7 +318,7 @@ export function ExitIntent() {
         >
           ✕
         </button>
-        <div className="text-5xl mb-4">🥷</div>
+        <img src={logoFull} alt="Earnings Ninja" className="h-24 w-auto mx-auto mb-4" />
         <h3 className="text-2xl font-black tracking-tight">Before you go…</h3>
         <p className="mt-3 text-muted">
           You&rsquo;re probably leaving{' '}
@@ -327,9 +329,9 @@ export function ExitIntent() {
           <Link
             to="/upgrade"
             onClick={() => setOpen(false)}
-            className="bg-primary text-black font-bold py-3.5 rounded-xl hover:shadow-neon-yellow transition-all"
+            className="bg-primary text-black font-bold py-3.5 rounded-xl hover:shadow-neon-primary transition-all"
           >
-            See Pro pricing →
+            Try free for 7 days →
           </Link>
           <button onClick={() => setOpen(false)} className="text-sm text-muted hover:text-white">
             No thanks, I like guessing

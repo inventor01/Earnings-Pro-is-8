@@ -10,6 +10,7 @@ import {
   useDocumentMeta,
 } from '../components/ui'
 import { PhoneShot, SCREENSHOTS } from '../components/mockups'
+import logoFull from '../assets/logo-full.webp'
 import { PLANS, COMPARISON, TESTIMONIALS, APP_DEEP_LINK } from '../lib/content'
 
 export default function UpgradePage() {
@@ -28,7 +29,7 @@ export default function UpgradePage() {
       <Guarantee />
       <FinalCta />
       <Footer />
-      <StickyCta label="Upgrade to Pro — $2.99/mo" to={APP_DEEP_LINK} external />
+      <StickyCta label="Try free for 7 days" to={APP_DEEP_LINK} external />
     </div>
   )
 }
@@ -53,7 +54,7 @@ function Hero() {
               <span className="text-white font-semibold">one cup of coffee a month</span>.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <UpgradeButton label="Upgrade to Pro — $2.99/mo" />
+              <UpgradeButton label="Try free for 7 days" />
               <Link to="#pricing" className="text-sm text-muted hover:text-white inline-flex items-center gap-1.5">
                 See all plans <span aria-hidden>↓</span>
               </Link>
@@ -141,7 +142,7 @@ function Pricing() {
               key={plan.id}
               className={`relative flex flex-col rounded-3xl p-7 border ${
                 plan.highlight
-                  ? 'bg-card border-primary/50 shadow-neon-yellow md:scale-[1.03]'
+                  ? 'bg-card border-primary/50 shadow-neon-primary md:scale-[1.03]'
                   : 'bg-card border-border'
               }`}
             >
@@ -158,7 +159,7 @@ function Pricing() {
               <div className="mt-2 flex items-end gap-1">
                 <span
                   className="text-4xl font-black text-white"
-                  style={plan.highlight ? { textShadow: '0 0 16px rgba(250,204,21,0.4)' } : undefined}
+                  style={plan.highlight ? { textShadow: '0 0 16px rgba(163,230,53,0.4)' } : undefined}
                 >
                   {plan.price}
                 </span>
@@ -171,7 +172,7 @@ function Pricing() {
                 href={APP_DEEP_LINK}
                 className={`mt-6 inline-flex items-center justify-center gap-2 font-bold px-6 py-3.5 rounded-xl text-base transition-all ${
                   plan.highlight
-                    ? 'bg-primary text-black hover:shadow-neon-yellow hover:scale-[1.02] active:scale-[0.98]'
+                    ? 'bg-primary text-black hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98]'
                     : 'border border-border text-white hover:border-primary/40'
                 }`}
               >
@@ -218,7 +219,7 @@ function Comparison() {
           ))}
         </div>
         <div className="mt-8 text-center">
-          <UpgradeButton label="Unlock Pro — $2.99/mo" />
+          <UpgradeButton label="Try free for 7 days" />
         </div>
       </div>
     </section>
@@ -288,7 +289,7 @@ function FinalCta() {
       <div className="absolute inset-0 grid-bg opacity-40 pointer-events-none" />
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-64 bg-primary/10 blur-3xl pointer-events-none" />
       <div className="max-w-3xl mx-auto px-5 text-center relative">
-        <div className="text-6xl mb-6">🥷</div>
+        <img src={logoFull} alt="Earnings Ninja" className="h-28 w-auto mx-auto mb-6" />
         <h2 className="text-4xl md:text-6xl font-black tracking-tight text-balance">
           Your numbers are waiting. <span className="text-primary animate-glow">Go get them.</span>
         </h2>
@@ -296,7 +297,7 @@ function FinalCta() {
           $2.99/mo or $29.99/yr. Cancel anytime. The first money-losing order you skip pays for the year.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
-          <UpgradeButton label="Upgrade to Pro" />
+          <UpgradeButton label="Try free for 7 days" />
           <Link
             to="/#faq"
             className="inline-flex items-center gap-2 border border-border bg-card text-white font-semibold px-8 py-4 rounded-2xl text-base hover:border-primary/40 transition-all"
