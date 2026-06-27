@@ -42,6 +42,16 @@ Cross-check against the installed build's RTV (`eas update:list --branch <ch>` s
 
 **How to apply:** When an OTA "won't land," run `eas fingerprint:compare --build-id <id>` FIRST. If the diff shows native/dep/config changes, OTA can't bridge it — cut a new build. Only a clean (no-diff) fingerprint means a JS OTA will actually apply.
 
+## An OTA that crashes the app on launch — recovery + prevention
+
+A `tsc`-clean, `expo export`-clean OTA can still crash an installed build on launch once the device applies it (observed: build badge + a tiny Customer-Center fallback that doesn't even run at launch still crash-looped build 11). A clean export does NOT prove the on-device apply is safe.
+
+- **`update:roll-back-to-embedded` does NOT reliably reach a crash-looping device.** The device has to launch far enough to fetch+stage the rollback; if it crashes early every launch, it may never pick it up. Publishing the rollback looks successful server-side but the phone stays broken.
+- **Reliable recovery is delete + reinstall from TestFlight** — a fresh install runs the *embedded* (built-in) bundle first, which bypasses the cached crashing OTA entirely. (Embedded build N is the submitted, known-good JS from before any OTA.)
+- **`update:roll-back-to-embedded` flags:** `--branch <ch> --platform ios --runtime-version <RTV> --message "…" --non-interactive` (the flag is `--runtime-version`, hyphenated, and is REQUIRED in non-interactive mode).
+- **Prevention:** when an OTA misbehaves and the fix actually matters, bake it into the **next native build** (bump `ios.buildNumber`, `eas build … --profile testflight --auto-submit-with-profile testflight --no-wait`) instead of re-shipping via OTA — a native build embeds the JS and skips the OTA-apply window that bit us. If you must use OTA after an incident, ship changes **one at a time** so the next crash is unambiguous.
+- **`eas update` defaults to `--platform=all`, which fails** with "trying to use web support but don't have the required platforms array" on this app — always pass `--platform ios`.
+
 ## Publishing eas update from the Replit env (the part that actually fights you)
 - **Detached background processes get reaped** (~1-2 min, silent, nondeterministic kill point) regardless of `setsid nohup … & disown`. They will never finish a ~3-5 min export+upload. This is NOT OOM — fewer metro workers did not help and the kill point varied (73/87/93/95%).
 - **Use a temporary workflow instead** (`configureWorkflow({name, command:"bash /tmp/wrapper.sh", outputType:"console"})`, no `waitForPort`). Workflows persist across tool calls. Wrapper pattern: run the publish, `touch /tmp/done` sentinel, then `sleep infinity` so the supervisor doesn't restart-loop the one-shot. Poll for the sentinel, verify with `eas update:list`, then `removeWorkflow`.
