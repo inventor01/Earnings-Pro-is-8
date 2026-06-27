@@ -1733,23 +1733,13 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const mutation = useMutation({
     mutationFn: api.createEntry,
     // Optimistic update: patch every cached `['rollup', ...]` query the
-    // instant the user taps Save so the dashboard KPI numbers tick up
-    // before the network round-trip resolves. Only patch when the entry's
-    // date is today (or unspecified — defaults to today) — backdated
-    // entries land in windows we can't cheaply check from here, so we let
-    // the server-side invalidation handle them.
+    // instant the user taps Save so the dashboard KPI numbers tick up before
+    // the network round-trip resolves. Both the entries list AND the rollup
+    // KPIs are scoped per-window via keyWindowContainsDate, so this is correct
+    // for ANY entry date (today, backdated, or while viewing a navigated
+    // day/week/month) — not just today.
     onMutate: async (vars) => {
       const now = new Date();
-      // `vars.date` is an EST wall-clock date string (produced by easternDateTime),
-      // so "is this entry for today?" must be judged against EST today — NOT the
-      // DEVICE-LOCAL date. The old device-local todayStr mis-fired for users west
-      // of Eastern late in the evening (e.g. 9pm PT = 12am ET the next day): their
-      // genuinely-today-EST entry looked backdated, so the optimistic KPI tick was
-      // skipped and the dashboard cards only caught up after the server round-trip
-      // (or, if the save was queued offline, not until the next foreground drain —
-      // i.e. "the entry didn't show on the dashboard until I reopened the app").
-      const todayStr = fmtUTCDate(estTodayUTC());
-      const isToday = !vars.date || vars.date === todayStr;
 
       // ---- Entries list: optimistic prepend into EVERY cached ['entries'] list.
       // Works for any date — the server invalidation will refetch each window
@@ -1813,21 +1803,27 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         queryClient.setQueryData(key, next);
       }
 
-      // ---- Rollup KPIs: only patch when the entry is for today, because the
-      // window-specific math (TODAY vs THIS_WEEK vs custom range) is hard to
-      // recompute correctly here for backdated entries. The server invalidation
-      // in onSuccess reconciles ~200ms later for those cases.
-      let prevRollup: Array<[readonly unknown[], Rollup | undefined]> = [];
-      if (isToday) {
-        await queryClient.cancelQueries({ queryKey: ['rollup'] });
-        prevRollup = queryClient.getQueriesData<Rollup>({ queryKey: ['rollup'] });
+      // ---- Rollup KPIs: patch EVERY cached window whose date range actually
+      // contains this entry's EST date (the SAME keyWindowContainsDate scoping as
+      // the entries list above and the edit flow below). This was previously gated
+      // to today-only, which left a BACKDATED new entry — or one added while
+      // viewing a navigated day / week / month — updating the History list but NOT
+      // the KPI cards / Profit Hero / Goal bar. Those numbers then only corrected
+      // after a cold restart refetched the truth (and for a queued/offline add the
+      // onSuccess invalidation is skipped entirely, so it never corrected until the
+      // next foreground drain) — i.e. the "new entry doesn't show until I reopen
+      // the app" report for any non-today save. Adding the entry's magnitude to a
+      // CONTAINING window's totals is correct no matter which day inside that
+      // window the entry falls on, and the window scoping prevents it from
+      // inflating windows that don't contain the date. The onSuccess invalidation
+      // still reconciles the exact numbers ~200ms later when the save persists.
+      await queryClient.cancelQueries({ queryKey: ['rollup'] });
+      const prevRollup = queryClient.getQueriesData<Rollup>({ queryKey: ['rollup'] });
+      {
         const isExpense = vars.type === 'EXPENSE';
         const amt = Math.abs(vars.amount || 0);
         const addMiles = vars.distance_miles || 0;
         const addHours = (vars.duration_minutes || 0) / 60;
-        // Same window-scoping as the entries list above: only tick KPI numbers
-        // for windows that actually contain this entry's date, so a queued (not
-        // reconciled) add doesn't inflate yesterday / last-month / other windows.
         for (const [key, old] of prevRollup) {
           if (!old || !keyWindowContainsDate(key as unknown[], estDateStr)) continue;
           const revenue  = isExpense ? old.revenue  : old.revenue  + amt;
