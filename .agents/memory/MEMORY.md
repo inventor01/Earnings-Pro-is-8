@@ -14,3 +14,4 @@
 - [Referral grant atomicity](referral-grant-concurrency.md) — referral grants are best-effort (never break signup); once/cap guards are atomic (unique-constraint+IntegrityError for referee-once, row-lock reserve-then-grant for the cap-of-3).
 - [RevenueCat integration](revenuecat-integration.md) — Pro subscriptions via RN SDK; entitlement id `pro` (client+seed must match), gating fails OPEN, fallback paywall, connector-only provisioning, native build (not OTA).
 - [Dependency vuln triage](dependency-vuln-triage.md) — all dep-audit vulns are in earnings-ninja-expo's transitive build tooling (0 in frontend/landing/root); safe fix = `npm audit fix` non-force; remaining need majors (uuid→11, js-yaml→4), build-time only.
+- [Public web domain serves landing](public-web-domain-serves-landing.md) — the domain deploys landing/, NOT the frontend/ webapp (dead by design); backend SPA-serves landing/dist, /api excluded from fallback, legal pages kept.
