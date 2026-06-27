@@ -3005,7 +3005,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Upgrade to Pro</Text>
-                  <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>CSV export + advanced analytics</Text>
+                  <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>Analytics, AI, tax exports & more</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={PRIMARY_TXT} />
               </Pressable>

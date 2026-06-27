@@ -9,13 +9,23 @@ import React, {
 } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Linking,
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   View,
 } from 'react-native';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Purchases, {
   LOG_LEVEL,
@@ -416,6 +426,59 @@ function introPhrase(pkg: PurchasesPackage): string | null {
   return `${intro.priceString} for ${duration}, then ${pkg.product.priceString}`;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// The Pro value props (kept deliberately short — minimal copy, max impact).
+const PRO_BENEFITS: { icon: string; title: string; sub: string }[] = [
+  { icon: 'trending-up', title: 'Advanced Analytics', sub: 'Your best days, hours & trends' },
+  { icon: 'sparkles', title: 'AI Suggestions', sub: 'Earn more, drive less' },
+  { icon: 'sync', title: 'Auto Imports', sub: 'Uber Eats & Shipt, synced for you' },
+  { icon: 'document-text', title: 'Tax-Ready Exports', sub: 'Your whole year, one tap' },
+  { icon: 'phone-portrait', title: 'Widgets & No Ads', sub: 'Profit on your Lock Screen' },
+];
+
+// Compact Free-vs-Pro comparison.
+const COMPARE: { label: string; free: boolean }[] = [
+  { label: 'Unlimited logging & live profit', free: true },
+  { label: 'Goals, widgets & themes', free: true },
+  { label: 'Advanced analytics', free: false },
+  { label: 'AI earning suggestions', free: false },
+  { label: 'Auto imports + tax exports', free: false },
+];
+
+// Short, illustrative driver quotes.
+const QUOTES: { q: string; who: string }[] = [
+  { q: 'Finally saw my real $/hour. Stopped taking junk orders the same day.', who: 'Marcus · DoorDash' },
+  { q: 'Tax season took 20 minutes. The export paid for itself.', who: 'Priya · Uber Eats' },
+];
+
+// Per-month equivalent of an annual package, formatted in its own currency.
+function perMonthString(annual: PurchasesPackage): string | null {
+  const p = annual.product;
+  if (!p?.price) return null;
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: p.currencyCode || 'USD',
+      maximumFractionDigits: 2,
+    }).format(p.price / 12);
+  } catch {
+    return null;
+  }
+}
+
+// % saved on annual vs paying monthly for a year. Null when not computable.
+function annualSavingsPct(
+  monthly: PurchasesPackage | undefined,
+  annual: PurchasesPackage | undefined,
+): number | null {
+  const m = monthly?.product.price;
+  const a = annual?.product.price;
+  if (!m || !a) return null;
+  const pct = Math.round((1 - a / (m * 12)) * 100);
+  return pct > 0 ? pct : null;
+}
+
 function FallbackPaywall({
   visible,
   offering,
@@ -428,131 +491,382 @@ function FallbackPaywall({
   onPurchase: (pkg: PurchasesPackage) => Promise<void>;
 }) {
   const t = useTheme();
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
+  const { restore } = useSubscription();
   const packages = offering?.availablePackages ?? [];
+  const monthly = packages.find((p) => p.packageType === 'MONTHLY');
+  const annual = packages.find((p) => p.packageType === 'ANNUAL');
 
-  const handle = async (pkg: PurchasesPackage) => {
-    if (busyId) return;
-    setBusyId(pkg.identifier);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // (Re)default the selection to annual (best value) each time the sheet opens
+  // or the offering loads in.
+  useEffect(() => {
+    if (visible) setSelectedId((annual ?? packages[0])?.identifier ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, offering]);
+
+  const selected = packages.find((p) => p.identifier === selectedId) ?? null;
+  const savings = annualSavingsPct(monthly, annual);
+  const perMo = annual ? perMonthString(annual) : null;
+
+  const scale = useSharedValue(1);
+  const ctaStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  const buy = async (pkg: PurchasesPackage | null) => {
+    if (!pkg || busy) return;
+    setBusy(true);
     try {
       await onPurchase(pkg);
     } finally {
-      setBusyId(null);
+      setBusy(false);
     }
   };
 
+  const onRestore = async () => {
+    if (busy) return;
+    const ok = await restore();
+    Alert.alert(
+      ok ? 'Purchases restored' : 'Nothing to restore',
+      ok ? 'Your Pro access is active.' : 'No previous purchases were found for this account.',
+    );
+    if (ok) onClose();
+  };
+
+  const ctaPrice = selected
+    ? introPhrase(selected)
+      ? selected.product.introPrice?.priceString
+      : selected.product.priceString
+    : '';
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-        <View
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
+    >
+      <View style={{ flex: 1, backgroundColor: t.BG }}>
+        {/* Close */}
+        <Pressable
+          onPress={onClose}
+          hitSlop={12}
           style={{
-            backgroundColor: t.BG,
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            paddingHorizontal: 20,
-            paddingTop: 24,
-            paddingBottom: 36,
+            position: 'absolute',
+            top: insets.top + 8,
+            right: 16,
+            zIndex: 10,
+            width: 34,
+            height: 34,
+            borderRadius: 17,
+            backgroundColor: t.SURFACE,
             borderWidth: 1,
             borderColor: t.BORDER,
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          <View style={{ alignItems: 'center', marginBottom: 4 }}>
-            <View
+          <Ionicons name="close" size={20} color={t.MUTED} />
+        </Pressable>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingTop: insets.top + 28,
+            paddingHorizontal: 22,
+            paddingBottom: 180,
+          }}
+        >
+          {/* ── Hero ─────────────────────────────────────────────────────── */}
+          <Animated.View
+            entering={FadeInDown.springify().damping(18)}
+            style={{ alignItems: 'center', marginBottom: 6 }}
+          >
+            <LinearGradient
+              colors={[t.PRIMARY, t.PRI_DARK]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={{
-                width: 56,
-                height: 56,
-                borderRadius: 28,
-                backgroundColor: t.PRI_LITE,
+                width: 72,
+                height: 72,
+                borderRadius: 22,
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: 12,
+                marginBottom: 18,
+                shadowColor: t.PRIMARY,
+                shadowOpacity: 0.6,
+                shadowRadius: 18,
+                shadowOffset: { width: 0, height: 0 },
               }}
             >
-              <Ionicons name="rocket" size={28} color={t.PRIMARY_TXT} />
-            </View>
-            <Text style={{ color: t.TEXT, fontSize: 22, fontWeight: '800' }}>Earnings Ninja Pro</Text>
-            <Text style={{ color: t.MUTED, fontSize: 14, textAlign: 'center', marginTop: 6 }}>
-              Unlock CSV export and advanced analytics.
+              <Ionicons name="rocket" size={34} color="#000" />
+            </LinearGradient>
+            <Text
+              style={{
+                color: t.TEXT,
+                fontSize: 30,
+                fontWeight: '900',
+                textAlign: 'center',
+                letterSpacing: -0.5,
+                lineHeight: 35,
+              }}
+            >
+              Keep more of{'\n'}what you earn.
             </Text>
+            <Text
+              style={{
+                color: t.MUTED,
+                fontSize: 15,
+                textAlign: 'center',
+                marginTop: 10,
+                lineHeight: 21,
+              }}
+            >
+              Pro turns every mile into money you can actually see.
+            </Text>
+          </Animated.View>
+
+          {/* ── Benefits ─────────────────────────────────────────────────── */}
+          <View style={{ marginTop: 26, gap: 12 }}>
+            {PRO_BENEFITS.map((b, i) => (
+              <Animated.View
+                key={b.title}
+                entering={FadeInDown.delay(80 + i * 60).springify().damping(18)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 14,
+                  backgroundColor: t.SURFACE,
+                  borderWidth: 1,
+                  borderColor: t.BORDER,
+                  borderRadius: 16,
+                  padding: 14,
+                }}
+              >
+                <View
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 12,
+                    backgroundColor: t.PRI_LITE,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name={b.icon as any} size={21} color={t.PRIMARY_TXT} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: t.TEXT, fontSize: 15.5, fontWeight: '800' }}>{b.title}</Text>
+                  <Text style={{ color: t.MUTED, fontSize: 13, marginTop: 1 }}>{b.sub}</Text>
+                </View>
+              </Animated.View>
+            ))}
           </View>
 
-          <View style={{ marginVertical: 18, gap: 10 }}>
-            {['Export all your data to CSV', 'Advanced analytics & insights'].map((f) => (
-              <View key={f} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Ionicons name="checkmark-circle" size={20} color={t.GREEN} />
-                <Text style={{ color: t.TEXT_MID, fontSize: 15 }}>{f}</Text>
+          {/* ── Plans ────────────────────────────────────────────────────── */}
+          {packages.length > 0 && (
+            <View style={{ marginTop: 30, gap: 12 }}>
+              {packages.map((pkg) => {
+                const isSel = pkg.identifier === selectedId;
+                const isAnnual = pkg.packageType === 'ANNUAL';
+                const intro = introPhrase(pkg);
+                return (
+                  <Pressable
+                    key={pkg.identifier}
+                    onPress={() => setSelectedId(pkg.identifier)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 12,
+                      borderWidth: 2,
+                      borderColor: isSel ? t.PRIMARY : t.BORDER,
+                      backgroundColor: isSel ? t.PRI_LITE : t.SURFACE,
+                      borderRadius: 16,
+                      padding: 16,
+                      ...(isSel
+                        ? {
+                            shadowColor: t.PRIMARY,
+                            shadowOpacity: 0.35,
+                            shadowRadius: 12,
+                            shadowOffset: { width: 0, height: 0 },
+                          }
+                        : null),
+                    }}
+                  >
+                    <Ionicons
+                      name={isSel ? 'radio-button-on' : 'radio-button-off'}
+                      size={22}
+                      color={isSel ? t.PRIMARY_TXT : t.MUTED}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <Text style={{ color: t.TEXT, fontSize: 16, fontWeight: '800' }}>
+                          {packageLabel(pkg)}
+                        </Text>
+                        {isAnnual && savings != null && (
+                          <View style={{ backgroundColor: t.GREEN, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                            <Text style={{ color: '#04210f', fontSize: 10, fontWeight: '900', letterSpacing: 0.3 }}>
+                              SAVE {savings}%
+                            </Text>
+                          </View>
+                        )}
+                        {intro && (
+                          <View style={{ backgroundColor: t.PRIMARY, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                            <Text style={{ color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 0.3 }}>
+                              LAUNCH DEAL
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={{ color: t.MUTED, fontSize: 12.5, marginTop: 2 }}>
+                        {intro ?? (isAnnual && perMo ? `Just ${perMo}/mo, billed yearly` : pkg.product.title)}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      {intro ? (
+                        <>
+                          <Text style={{ color: t.PRIMARY_TXT, fontSize: 17, fontWeight: '900' }}>
+                            {pkg.product.introPrice?.priceString}
+                          </Text>
+                          <Text style={{ color: t.MUTED, fontSize: 12, textDecorationLine: 'line-through' }}>
+                            {pkg.product.priceString}
+                          </Text>
+                        </>
+                      ) : (
+                        <Text style={{ color: t.PRIMARY_TXT, fontSize: 17, fontWeight: '900' }}>
+                          {pkg.product.priceString}
+                        </Text>
+                      )}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+
+          {/* ── Free vs Pro ──────────────────────────────────────────────── */}
+          <View
+            style={{
+              marginTop: 30,
+              backgroundColor: t.SURFACE,
+              borderWidth: 1,
+              borderColor: t.BORDER,
+              borderRadius: 16,
+              paddingHorizontal: 16,
+              paddingVertical: 6,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}>
+              <Text style={{ flex: 1, color: t.LABEL, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>
+                What you get
+              </Text>
+              <Text style={{ width: 50, textAlign: 'center', color: t.MUTED, fontSize: 11, fontWeight: '800' }}>Free</Text>
+              <Text style={{ width: 50, textAlign: 'center', color: t.PRIMARY_TXT, fontSize: 11, fontWeight: '900' }}>Pro</Text>
+            </View>
+            {COMPARE.map((row) => (
+              <View
+                key={row.label}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: t.DIVIDER }}
+              >
+                <Text style={{ flex: 1, color: t.TEXT_MID, fontSize: 13.5 }}>{row.label}</Text>
+                <View style={{ width: 50, alignItems: 'center' }}>
+                  {row.free ? (
+                    <Ionicons name="checkmark" size={18} color={t.GREEN} />
+                  ) : (
+                    <Ionicons name="remove" size={18} color={t.LABEL} />
+                  )}
+                </View>
+                <View style={{ width: 50, alignItems: 'center' }}>
+                  <Ionicons name="checkmark-circle" size={18} color={t.GREEN} />
+                </View>
               </View>
             ))}
           </View>
 
-          <View style={{ gap: 12 }}>
-            {packages.map((pkg) => (
-              <Pressable
-                key={pkg.identifier}
-                onPress={() => handle(pkg)}
-                disabled={!!busyId}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  backgroundColor: t.SURFACE,
-                  borderColor: t.PRIMARY,
-                  borderWidth: 1.5,
-                  borderRadius: 14,
-                  padding: 16,
-                  opacity: busyId && busyId !== pkg.identifier ? 0.5 : 1,
-                }}
+          {/* ── Social proof ─────────────────────────────────────────────── */}
+          <View style={{ marginTop: 28, gap: 12 }}>
+            {QUOTES.map((qq) => (
+              <View
+                key={qq.who}
+                style={{ backgroundColor: t.SURFACE, borderWidth: 1, borderColor: t.BORDER, borderRadius: 16, padding: 16 }}
               >
-                <View style={{ flex: 1, paddingRight: 10 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={{ color: t.TEXT, fontSize: 16, fontWeight: '800' }}>
-                      {packageLabel(pkg)}
-                    </Text>
-                    {introPhrase(pkg) ? (
-                      <View
-                        style={{
-                          backgroundColor: t.GREEN,
-                          borderRadius: 6,
-                          paddingHorizontal: 6,
-                          paddingVertical: 2,
-                        }}
-                      >
-                        <Text style={{ color: '#04210f', fontSize: 10, fontWeight: '900', letterSpacing: 0.3 }}>
-                          LAUNCH DEAL
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text style={{ color: t.MUTED, fontSize: 13, marginTop: 2 }}>
-                    {introPhrase(pkg) ?? pkg.product.title}
-                  </Text>
+                <View style={{ flexDirection: 'row', gap: 2, marginBottom: 8 }}>
+                  {[0, 1, 2, 3, 4].map((s) => (
+                    <Ionicons key={s} name="star" size={13} color={t.PRIMARY} />
+                  ))}
                 </View>
-                {busyId === pkg.identifier ? (
-                  <ActivityIndicator color={t.PRIMARY_TXT} />
-                ) : introPhrase(pkg) ? (
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={{ color: t.PRIMARY_TXT, fontSize: 17, fontWeight: '800' }}>
-                      {pkg.product.introPrice?.priceString}
-                    </Text>
-                    <Text style={{ color: t.MUTED, fontSize: 12, textDecorationLine: 'line-through' }}>
-                      {pkg.product.priceString}
-                    </Text>
-                  </View>
-                ) : (
-                  <Text style={{ color: t.PRIMARY_TXT, fontSize: 17, fontWeight: '800' }}>
-                    {pkg.product.priceString}
-                  </Text>
-                )}
-              </Pressable>
+                <Text style={{ color: t.TEXT, fontSize: 14.5, lineHeight: 20, fontWeight: '600' }}>
+                  &ldquo;{qq.q}&rdquo;
+                </Text>
+                <Text style={{ color: t.MUTED, fontSize: 12.5, marginTop: 8, fontWeight: '700' }}>{qq.who}</Text>
+              </View>
             ))}
           </View>
 
-          <Pressable
-            onPress={onClose}
-            disabled={!!busyId}
-            style={{ paddingVertical: 14, alignItems: 'center', marginTop: 8 }}
+          {/* Restore + legal */}
+          <Pressable onPress={onRestore} disabled={busy} hitSlop={8} style={{ paddingVertical: 16, alignItems: 'center' }}>
+            <Text style={{ color: t.MUTED, fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' }}>
+              Restore purchases
+            </Text>
+          </Pressable>
+          <Text style={{ color: t.LABEL, fontSize: 11.5, textAlign: 'center', lineHeight: 17 }}>
+            Cancel anytime, managed through your Apple ID. Payment is charged to your Apple account at confirmation.
+          </Text>
+        </ScrollView>
+
+        {/* ── Sticky CTA ─────────────────────────────────────────────────── */}
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: t.BG,
+            borderTopWidth: 1,
+            borderTopColor: t.BORDER,
+            paddingTop: 12,
+            paddingHorizontal: 22,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <AnimatedPressable
+            onPressIn={() => {
+              scale.value = withSpring(0.97);
+            }}
+            onPressOut={() => {
+              scale.value = withSpring(1);
+            }}
+            onPress={() => buy(selected)}
+            disabled={busy || !selected}
+            style={[
+              ctaStyle,
+              {
+                backgroundColor: t.PRIMARY,
+                borderRadius: 16,
+                paddingVertical: 17,
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'row',
+                gap: 8,
+                opacity: !selected ? 0.5 : 1,
+                shadowColor: t.PRIMARY,
+                shadowOpacity: 0.5,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 0 },
+              },
+            ]}
           >
-            <Text style={{ color: t.MUTED, fontSize: 15, fontWeight: '600' }}>Maybe later</Text>
+            {busy ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <Text style={{ color: '#000', fontSize: 17, fontWeight: '900', letterSpacing: 0.2 }}>
+                {selected ? `Upgrade${ctaPrice ? ` — ${ctaPrice}` : ''}` : 'Upgrade to Pro'}
+              </Text>
+            )}
+          </AnimatedPressable>
+          <Pressable onPress={onClose} disabled={busy} hitSlop={8} style={{ paddingVertical: 10, alignItems: 'center' }}>
+            <Text style={{ color: t.MUTED, fontSize: 13.5, fontWeight: '600' }}>Maybe later</Text>
           </Pressable>
         </View>
       </View>
