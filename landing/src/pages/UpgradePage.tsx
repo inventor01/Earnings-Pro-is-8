@@ -15,13 +15,14 @@ import { PLANS, COMPARISON, TESTIMONIALS, APP_DEEP_LINK } from '../lib/content'
 
 export default function UpgradePage() {
   useDocumentMeta(
-    'Upgrade to Earnings Ninja Pro — $2.99/mo or $29.99/yr',
-    'Unlock Advanced Analytics, tax-ready exports, AI earning suggestions, and automatic platform imports. Upgrade to Earnings Ninja Pro for $2.99/month or $29.99/year. Cancel anytime.',
+    'Try Earnings Ninja Pro free for 7 days — then $2.99/mo',
+    'Try every Pro feature free for 7 days: Advanced Analytics, tax-ready exports, AI earning suggestions, and automatic platform imports. Then just $2.99/month or $29.99/year. Cancel anytime.',
   )
   return (
     <div className="min-h-screen text-white">
       <Nav ctaTo="/upgrade" />
       <Hero />
+      <Problem />
       <ProValue />
       <Pricing />
       <Comparison />
@@ -43,15 +44,15 @@ function Hero() {
         <div className="grid md:grid-cols-2 gap-12 md:gap-10 items-center">
           <div>
             <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/40 rounded-full px-3 py-1 text-xs text-primary font-semibold mb-6">
-              ⚡ Launch pricing — lock it in now
+              ⚡ 7 days free — then $2.99/mo
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.04] text-balance">
-              You&rsquo;re already tracking. <span className="text-primary animate-glow">Now keep more.</span>
+              You drive hard. <span className="text-primary animate-glow">Now take home more.</span>
             </h1>
             <p className="mt-6 text-lg text-muted max-w-xl text-balance">
-              Pro turns your numbers into money: spot your best days, write off every mile at tax time, and let
-              AI tell you which orders to skip. Less than{' '}
-              <span className="text-white font-semibold">one cup of coffee a month</span>.
+              Free shows you the truth. Pro turns it into a raise — the orders to skip, every mile written off at
+              tax time, and AI that points you straight at the money. Try every Pro feature{' '}
+              <span className="text-white font-semibold">free for 7 days</span> — you won&rsquo;t pay a cent until day 8.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <UpgradeButton label="Try free for 7 days" />
@@ -60,7 +61,7 @@ function Hero() {
               </Link>
             </div>
             <p className="mt-4 text-xs text-muted">
-              Billed through your Apple ID. Cancel anytime in two taps. No contract.
+              7 days free, then $2.99/mo or $29.99/yr. Cancel anytime in two taps — no contract.
             </p>
           </div>
           <div className="relative flex justify-center md:justify-end">
@@ -78,36 +79,78 @@ function Hero() {
 }
 
 /* ------------------------------------------------------------------ */
+function Problem() {
+  const pains = [
+    {
+      icon: '💸',
+      body: 'The apps brag about your “earnings.” Not one of them subtracts your gas.',
+    },
+    {
+      icon: '🛻',
+      body: 'You take orders that lose money 8 miles out — and never even know it.',
+    },
+    {
+      icon: '🧾',
+      body: 'Tax season hits and your write-offs are a shoebox full of guesses.',
+    },
+  ]
+  return (
+    <section className="py-16 md:py-24 border-t border-border bg-surface/40">
+      <div className="max-w-5xl mx-auto px-5">
+        <div className="text-center max-w-2xl mx-auto mb-10">
+          <SectionLabel>Sound familiar?</SectionLabel>
+          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
+            Busy all day — so where did the money go?
+          </h2>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {pains.map((p) => (
+            <div key={p.body} className="bg-card border border-border rounded-2xl p-6">
+              <div className="text-3xl mb-3">{p.icon}</div>
+              <p className="text-white/90 text-sm leading-relaxed">{p.body}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-10 text-center text-lg text-muted text-balance max-w-xl mx-auto">
+          You&rsquo;re not lazy. You&rsquo;re flying blind.{' '}
+          <span className="text-white font-semibold">Pro fixes that.</span>
+        </p>
+      </div>
+    </section>
+  )
+}
+
+/* ------------------------------------------------------------------ */
 function ProValue() {
   const items = [
     {
       icon: '📈',
       title: 'Advanced Analytics',
-      body: 'See your best days, hours, and zones. Spot the trends that turn a good week into a great one.',
+      body: 'Your best days, hours, and zones at a glance. Do more of what pays — less of what doesn\u2019t.',
     },
     {
       icon: '🧾',
       title: 'Tax-ready exports',
-      body: 'One-tap CSV of every entry and mile. Hand it to your accountant and stop overpaying the IRS.',
+      body: 'One tap turns every mile and entry into a clean CSV. Hand it over and stop tipping the IRS.',
     },
     {
       icon: '🤖',
       title: 'AI earning suggestions',
-      body: 'Personalized tips that point you at the money — and away from the orders quietly costing you.',
+      body: 'Personal tips that point you at the money — and flag the orders quietly draining your tank.',
     },
     {
       icon: '🔄',
       title: 'Automatic imports',
-      body: 'Connect Uber Eats and Shipt to pull orders in automatically. Less typing, more driving.',
+      body: 'Link Uber Eats and Shipt and your orders log themselves. Less typing, more driving.',
     },
   ]
   return (
-    <section className="py-16 md:py-24 border-t border-border bg-surface/40">
+    <section className="py-16 md:py-24 border-t border-border">
       <div className="max-w-6xl mx-auto px-5">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <SectionLabel>What you unlock</SectionLabel>
+          <SectionLabel>Here&rsquo;s the fix</SectionLabel>
           <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
-            Four upgrades that pay for themselves.
+            Everything Pro unlocks pays for itself.
           </h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -130,11 +173,14 @@ function Pricing() {
     <section id="pricing" className="scroll-smooth-anchor py-20 md:py-28">
       <div className="max-w-5xl mx-auto px-5">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <SectionLabel>Pick your plan</SectionLabel>
+          <SectionLabel>Start free</SectionLabel>
           <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
-            One price. Every Pro feature.
+            Try it free. Decide in a week.
           </h2>
-          <p className="mt-4 text-muted text-lg">No tiers, no upsells. Every plan unlocks everything.</p>
+          <p className="mt-4 text-muted text-lg">
+            Subscriptions start with 7 days free — keep it for less than a coffee, or cancel and pay nothing. Prefer
+            to own it outright? Grab Lifetime. No tiers, no upsells — every plan unlocks everything.
+          </p>
         </div>
         <div className="grid md:grid-cols-3 gap-4 items-stretch">
           {PLANS.map((plan) => (
@@ -182,8 +228,9 @@ function Pricing() {
           ))}
         </div>
         <p className="text-center text-xs text-muted mt-6">
-          Tap a plan to open Earnings Ninja, then confirm in Settings → Upgrade to Pro. Billed securely through
-          your Apple ID.
+          Tap a plan to open Earnings Ninja and start your free trial, then confirm in Settings → Upgrade to Pro.
+          Subscriptions begin with 7 days free — you won&rsquo;t be charged until day 8. Billed securely through your
+          Apple ID.
         </p>
       </div>
     </section>
@@ -198,7 +245,7 @@ function Comparison() {
         <div className="text-center max-w-2xl mx-auto mb-12">
           <SectionLabel>Free vs Pro</SectionLabel>
           <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
-            See exactly what you get.
+            Exactly what your free trial unlocks.
           </h2>
         </div>
         <div className="bg-card border border-border rounded-3xl overflow-hidden">
@@ -260,20 +307,20 @@ function Guarantee() {
       <div className="max-w-3xl mx-auto px-5">
         <div className="bg-card border border-primary/30 rounded-3xl p-8 text-center">
           <div className="text-5xl mb-4">🛡️</div>
-          <h3 className="text-2xl md:text-3xl font-black tracking-tight">Zero risk. Cancel in two taps.</h3>
+          <h3 className="text-2xl md:text-3xl font-black tracking-tight">7 days free. Then cancel in two taps.</h3>
           <p className="mt-4 text-muted">
-            No contract, no lock-in. Manage or cancel anytime from Settings — you keep Pro until the end of the
-            period you paid for. Annual and Lifetime are backed by Apple&rsquo;s standard refund policy.
+            Use every Pro feature free for a week. Love it? Do nothing — it&rsquo;s just $2.99/mo or $29.99/yr. Not
+            for you? Cancel before day 7 from Settings and pay exactly $0. No contract, no lock-in, no hard feelings.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/90">
+            <span className="flex items-center gap-2">
+              <CheckIcon /> Pay nothing for 7 days
+            </span>
             <span className="flex items-center gap-2">
               <CheckIcon /> Cancel anytime
             </span>
             <span className="flex items-center gap-2">
               <CheckIcon /> No ads, ever
-            </span>
-            <span className="flex items-center gap-2">
-              <CheckIcon /> Your data stays private
             </span>
           </div>
         </div>
@@ -291,10 +338,10 @@ function FinalCta() {
       <div className="max-w-3xl mx-auto px-5 text-center relative">
         <img src={logoFull} alt="Earnings Ninja" className="h-28 w-auto mx-auto mb-6" />
         <h2 className="text-4xl md:text-6xl font-black tracking-tight text-balance">
-          Your numbers are waiting. <span className="text-primary animate-glow">Go get them.</span>
+          Your money&rsquo;s out there. <span className="text-primary animate-glow">Go take it.</span>
         </h2>
         <p className="mt-5 text-lg text-muted max-w-xl mx-auto">
-          $2.99/mo or $29.99/yr. Cancel anytime. The first money-losing order you skip pays for the year.
+          7 days free, then $2.99/mo or $29.99/yr. The first money-losing order you skip pays for the whole year.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
           <UpgradeButton label="Try free for 7 days" />
