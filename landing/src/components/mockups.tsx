@@ -5,6 +5,7 @@ import shot03 from '../assets/shot-03.webp'
 import shot04 from '../assets/shot-04.webp'
 import shot05 from '../assets/shot-05.webp'
 import shot06 from '../assets/shot-06.webp'
+import shotLogger from '../assets/shot-logger.webp'
 
 export const SCREENSHOTS = {
   dashboardWeek: shot01,
@@ -13,6 +14,7 @@ export const SCREENSHOTS = {
   topDays: shot04,
   settings: shot05,
   dashboardDay: shot06,
+  logger: shotLogger,
 }
 
 export function PhoneMockup({

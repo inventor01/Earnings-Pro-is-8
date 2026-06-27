@@ -164,8 +164,8 @@ function HowItWorks() {
       n: '1',
       title: 'Log it in 3 seconds',
       body: 'Tap + Add Entry after each order or expense. Or let automatic imports pull them in for you.',
-      shot: SCREENSHOTS.dashboardDay,
-      alt: 'Daily dashboard with the + Add Entry button',
+      shot: SCREENSHOTS.logger,
+      alt: 'Calculator-style entry pad showing a $8.35 order being logged',
     },
     {
       n: '2',
