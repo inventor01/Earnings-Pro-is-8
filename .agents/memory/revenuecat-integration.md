@@ -44,3 +44,17 @@ The whole Settings Pro section is gated by `available`; when `available===false`
 - **Verify the config is fine from the shell before touching code:** the publishable `appl_` key authenticates with `GET https://api.revenuecat.com/v1/subscribers/{any_id}` (200/201), and `…/{id}/offerings` (header `X-Platform: ios`) returns the configured packages → product-id mapping. If both pass, the app/key/offering are correct and the problem is device- or Apple-side.
 - **#1 real-world cause once config is correct: the Apple Paid Applications agreement is not Active** (App Store Connect → Business). Status "new" = unsigned → StoreKit returns ZERO products → empty offering → paywall (and fallback) silently never render. Must be "Active" (+ tax + banking) before any IAP loads anywhere.
 - **#2 cause: the tester is running an OLD install, not the new TestFlight build.** The app has no built-in build label, so this is invisible. A standalone App Store version and a TestFlight build share one icon — tapping the home-screen icon can open the wrong one. Fix path: delete the app, install the new build from TestFlight, open it. **Settings now shows `Earnings Ninja vX (build N)` (always visible, ungated, via expo-application)** specifically to disambiguate old-install vs runtime-init failure — ask testers to read it.
+
+## Manage Subscription / Customer Center (unconfigured) — must route to native
+RevenueCat's Customer Center (`RevenueCatUI.presentCustomerCenter()`) requires
+dashboard configuration. When it is NOT configured, the call **resolves silently
+without throwing and without presenting any UI** — so a `try { presentCustomerCenter() } catch { fallback() }`
+is dead code: the catch never fires and the button does *absolutely nothing*
+on-device. **Do not gate the native fallback behind a catch.** Make "Manage
+Subscription" call the OS-native subscription manager directly:
+`itms-apps://apps.apple.com/account/subscriptions` (App Store native screen),
+falling back to `https://apps.apple.com/account/subscriptions`. Prefer
+`itms-apps://` — the `https://` form can open Safari to a page that fails to load.
+**Why:** same reason the app uses `FallbackPaywall` (no dashboard paywall) — this
+project has no Customer Center config either, so the rich in-app flow is never
+available; go straight to the OS screen.

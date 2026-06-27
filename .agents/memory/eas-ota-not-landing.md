@@ -58,3 +58,14 @@ A `tsc`-clean, `expo export`-clean OTA can still crash an installed build on lau
 - **Keep the metro cache warm** (do NOT `rm -rf /tmp/metro-cache` between attempts) — a warm cache bundles in ~30-40s vs ~90s cold, so the publish finishes well within a workflow's life.
 - `CI=1` gives line-by-line metro progress (no spinner buffering). iOS-only (`--platform ios`) halves the work.
 - Backend/Frontend/Landing workflows **auto-restart** when killed, so you can't free RAM that way; killing them with `pkill` also kills your own shell (exit 143). Don't bother.
+
+## ios.buildNumber is a fingerprint input → keep it pinned to OTA an existing build
+To deliver a JS-only OTA to an already-installed build, the published update's
+runtime (fingerprint policy) must equal that build's. **`ios.buildNumber` in
+`app.json` is part of the fingerprint** — bumping it (e.g. 12→13 in prep for a
+future native build) changes the runtime, so an `eas update` from that tree
+targets a NEW runtime and never reaches the installed build. Verified with
+`eas fingerprint:compare --build-id <id>`: the *only* diff was buildNumber, yet
+the fingerprints differed. **Rule:** before OTA-ing build N, set
+`ios.buildNumber` back to N so `fingerprint:compare` reports "matches", then
+publish. Re-bump only when you actually cut the next native build.
