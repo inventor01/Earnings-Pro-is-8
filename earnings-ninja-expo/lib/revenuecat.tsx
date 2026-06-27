@@ -278,22 +278,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, [presentPaywall]);
 
   const presentCustomerCenter = useCallback(async () => {
-    if (!availableRef.current) {
-      // RevenueCat native module absent — still let the user reach the OS
-      // subscription manager so the button is never a dead end.
-      await openNativeSubscriptions();
-      return;
-    }
-    try {
-      await RevenueCatUI.presentCustomerCenter();
-      await refresh();
-    } catch {
-      // The RevenueCat Customer Center isn't configured/published in the
-      // dashboard (or failed to open) → fall back to the OS-native
-      // subscription management screen so the button always does something.
-      await openNativeSubscriptions();
-    }
-  }, [refresh]);
+    // The RevenueCat Customer Center requires dashboard configuration this
+    // project doesn't have. When unconfigured, presentCustomerCenter() can
+    // throw OR silently resolve without showing anything — so a try/catch
+    // fallback can't reliably catch the no-op case. Route straight to the
+    // OS-native subscription manager (the canonical place to view/cancel an
+    // Apple subscription) so "Manage Subscription" always opens something.
+    await openNativeSubscriptions();
+  }, []);
 
   const restore = useCallback(async (): Promise<boolean> => {
     if (!availableRef.current) return false;
