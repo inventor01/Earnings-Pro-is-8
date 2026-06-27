@@ -37,6 +37,7 @@ import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
 import { invalidateEntryData } from '@/lib/queryInvalidation';
+import { keyWindowContainsDate, applyOptimisticCreateRollup } from '@/lib/rollupWindow';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -368,62 +369,10 @@ function navRangeFor(
 }
 
 // True when the given ['entries'|'rollup', ...] cache key's window contains the
-// EST calendar date `estDate` (YYYY-MM-DD). Used to scope optimistic create
-// patches so a freshly-added (or offline-queued, not-yet-reconciled) entry only
-// lands in the windows that actually contain it — never spreading onto every
-// day. The leading segment ('entries'/'rollup') is ignored; positions 1+ mirror
-// the exact shape built for both `rollupKey` and `entriesKey`.
-function keyWindowContainsDate(key: readonly unknown[], estDate: string): boolean {
-  if (!Array.isArray(key) || key.length < 2) return true;
-  // ['*', 'custom', from, to]
-  if (key[1] === 'custom') {
-    const from = key[2] as string | undefined;
-    const to = key[3] as string | undefined;
-    if (!from || !to) return true;
-    return estDate >= from && estDate <= to;
-  }
-  // ['*', tf, 'nav', from, to]
-  if (key[2] === 'nav') {
-    const from = key[3] as string | undefined;
-    const to = key[4] as string | undefined;
-    if (!from || !to) return true;
-    return estDate >= from && estDate <= to;
-  }
-  // ['*', label, offset]
-  const label = key[1];
-  const offset = typeof key[2] === 'number' ? (key[2] as number) : 0;
-  const base = estTodayUTC();
-  const [ey, em, ed] = estDate.split('-').map(Number);
-  if (!ey || !em || !ed) return true;
-  const entryUTC = Date.UTC(ey, em - 1, ed);
-  const dayAt = (n: number) => {
-    const d = new Date(base);
-    d.setUTCDate(base.getUTCDate() + n);
-    return d;
-  };
-  switch (label) {
-    case 'TODAY':     return fmtUTCDate(dayAt(offset)) === estDate;
-    case 'YESTERDAY': return fmtUTCDate(dayAt(-1)) === estDate;
-    case 'THIS_WEEK': {
-      const dow = (base.getUTCDay() + 6) % 7; // 0 = Monday
-      const mon = dayAt(-dow);
-      return entryUTC >= mon.getTime() && entryUTC <= base.getTime();
-    }
-    case 'LAST_7_DAYS': {
-      const start = dayAt(-6);
-      return entryUTC >= start.getTime() && entryUTC <= base.getTime();
-    }
-    case 'THIS_MONTH':
-      return ey === base.getUTCFullYear() && em - 1 === base.getUTCMonth() && entryUTC <= base.getTime();
-    case 'LAST_MONTH': {
-      const first = Date.UTC(base.getUTCFullYear(), base.getUTCMonth() - 1, 1);
-      const last = Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 0);
-      return entryUTC >= first && entryUTC <= last;
-    }
-    default:
-      return true; // unknown window → keep (persisted entries get reconciled anyway)
-  }
-}
+// EST calendar date `estDate` (YYYY-MM-DD). keyWindowContainsDate /
+// applyOptimisticCreateRollup now live in lib/rollupWindow.ts so the
+// window-scoping math is unit-tested against a real QueryClient
+// (see __tests__/rollupWindow.test.ts). Imported at the top of this file.
 
 // Map the single-day offset actually being viewed (0 = today, -1 = yesterday, …)
 // to the period tab that should be HIGHLIGHTED while swiping through days. This is
@@ -1818,33 +1767,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // inflating windows that don't contain the date. The onSuccess invalidation
       // still reconciles the exact numbers ~200ms later when the save persists.
       await queryClient.cancelQueries({ queryKey: ['rollup'] });
-      const prevRollup = queryClient.getQueriesData<Rollup>({ queryKey: ['rollup'] });
-      {
-        const isExpense = vars.type === 'EXPENSE';
-        const amt = Math.abs(vars.amount || 0);
-        const addMiles = vars.distance_miles || 0;
-        const addHours = (vars.duration_minutes || 0) / 60;
-        for (const [key, old] of prevRollup) {
-          if (!old || !keyWindowContainsDate(key as unknown[], estDateStr)) continue;
-          const revenue  = isExpense ? old.revenue  : old.revenue  + amt;
-          const expenses = isExpense ? old.expenses + amt : old.expenses;
-          const profit   = revenue - expenses;
-          const miles    = old.miles + addMiles;
-          const hours    = old.hours + addHours;
-          queryClient.setQueryData(key, {
-            ...old,
-            revenue,
-            expenses,
-            profit,
-            miles,
-            hours,
-            dollars_per_mile: miles > 0 ? profit / miles : 0,
-            goal_progress: old.goal?.target_profit
-              ? profit / old.goal.target_profit
-              : old.goal_progress ?? null,
-          });
-        }
-      }
+      const prevRollup = applyOptimisticCreateRollup(queryClient, vars, estDateStr);
       // Close the modal immediately so the user sees the already-patched
       // dashboard right away, instead of waiting for the network round-trip
       // to the backend (which can be slow / cold-start). Use a neutral tap
