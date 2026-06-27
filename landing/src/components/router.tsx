@@ -54,11 +54,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       }
       // Pure anchor on the current page — scroll, don't change route.
       if (to.startsWith('#')) {
-        const id = to.slice(1)
-        window.setTimeout(
-          () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-          0,
-        )
+        scrollToId(to.slice(1))
         return
       }
       const [rawPath, hash] = to.split('#')
@@ -71,12 +67,11 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       }
 
       if (hash) {
-        const scroll = () =>
-          document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        // Wait a tick when the page itself changed so the target exists.
-        window.setTimeout(scroll, samePage ? 0 : 70)
+        // scrollToId retries across frames, so it works even when the route
+        // just changed and the target section hasn't mounted yet.
+        scrollToId(hash)
       } else {
-        window.scrollTo({ top: 0, behavior: samePage ? 'auto' : 'auto' })
+        window.scrollTo({ top: 0, behavior: 'auto' })
       }
     },
     [],
