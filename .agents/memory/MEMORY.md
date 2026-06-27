@@ -2,6 +2,7 @@
 - [Edit/delete 404 (stale id)](entry-edit-stale-positive-id-404.md) — a positive-id PUT/DELETE 404 means the cached row diverged from server; treat as resync (rollback+refetch+friendly msg), not a hard error.
 - [Optimistic create window-scoping](optimistic-create-window-scoping.md) — Add-Entry optimistic insert must target only windows whose date range contains the entry.
 - [Railway prod backend](railway-prod-backend.md) — live backend is on Railway, not Replit; Replit Postgres is a stale backup. Verify via the live Railway URL + demo account.
+- [Web domain routing](web-domain-routing.md) — earningsninja.app 301-redirects to Railway (not Replit); mobile hardcodes the Railway URL so the domain can be repointed safely; landing needs a vm deploy (legal pages come from backend, not landing/dist).
 - [eas update long-running](eas-update-long-running.md) — `eas update` exceeds the tool limit; run foreground, confirm with `eas update:list`. Main agent publishes via `GIT_CEILING_DIRECTORIES=… EAS_NO_VCS=1`.
 - [Offline queue synthetic-id identity](offline-queue-synthetic-id-identity.md) — queued entries need stable client identity, serialized AsyncStorage RMW, single-drain guard, per-item delete re-check.
 - [React Query focus refetch in RN](react-query-focus-refetch-rn.md) — wire focusManager to AppState or data only refreshes on cold restart.
