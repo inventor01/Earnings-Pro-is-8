@@ -368,6 +368,10 @@ app.include_router(waitlist_routes.router, tags=["waitlist"])
 # Serve frontend static files (must be after all API routes)
 # Check multiple possible dist locations
 _possible_dist = [
+    # Marketing/landing site is what the public domain serves now (the old
+    # React webapp under frontend/ is no longer deployed to this domain).
+    os.path.join(os.path.dirname(__file__), "..", "landing", "dist"),
+    "/app/landing/dist",
     os.path.join(os.path.dirname(__file__), "..", "frontend", "dist"),
     os.path.join(os.path.dirname(__file__), "..", "dist"),
     "/app/dist",
@@ -424,8 +428,27 @@ if dist_path:
             media_type="application/javascript",
         )
 
-    app.mount("/", StaticFiles(directory=dist_path, html=True), name="static")
-    logger.info(f"Serving frontend from: {dist_path}")
+    # SPA fallback: the landing site uses history-API routing (e.g. /upgrade),
+    # so any unknown path must return index.html instead of a 404 so deep links
+    # and hard refreshes resolve to the client-side router.
+    class _SPAStaticFiles(StaticFiles):
+        async def get_response(self, path, scope):
+            from starlette.exceptions import HTTPException as _HTTPException
+            # Never mask API routes with the SPA fallback — unknown /api paths
+            # must keep returning real 404s (the mobile backend relies on this).
+            is_api = path == "api" or path.startswith("api/")
+            try:
+                response = await super().get_response(path, scope)
+            except _HTTPException as exc:
+                if exc.status_code == 404 and not is_api:
+                    return await super().get_response("index.html", scope)
+                raise
+            if response.status_code == 404 and not is_api:
+                return await super().get_response("index.html", scope)
+            return response
+
+    app.mount("/", _SPAStaticFiles(directory=dist_path, html=True), name="static")
+    logger.info(f"Serving site from: {dist_path}")
 else:
     @app.get("/")
     async def root():
