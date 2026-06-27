@@ -440,6 +440,7 @@ function introUnitWord(unit?: string): string {
 function introPhrase(pkg: PurchasesPackage): string | null {
   const intro = pkg.product.introPrice;
   if (!intro || !intro.priceString) return null;
+  if (intro.price === 0) return null; // free trial — handled by trialPhrase()
   const cycles = intro.cycles || 1;
   const perCycle = intro.periodNumberOfUnits || 1;
   const totalUnits = cycles * perCycle;
@@ -447,6 +448,26 @@ function introPhrase(pkg: PurchasesPackage): string | null {
   const duration =
     totalUnits <= 1 ? `the first ${word}` : `the first ${totalUnits} ${word}s`;
   return `${intro.priceString} for ${duration}, then ${pkg.product.priceString}`;
+}
+
+// Free-trial duration label, read straight from the product's intro offer
+// (configured in App Store Connect), e.g. "7 days". Null when the offer is not a
+// free trial — so all "free trial" copy disappears automatically if ASC has no
+// trial set up, keeping every claim truthful.
+function trialDurationLabel(pkg: PurchasesPackage): string | null {
+  const intro = pkg.product.introPrice;
+  if (!intro || intro.price !== 0) return null;
+  const totalUnits = (intro.cycles || 1) * (intro.periodNumberOfUnits || 1);
+  const word = introUnitWord(intro.periodUnit);
+  return totalUnits <= 1 ? `1 ${word}` : `${totalUnits} ${word}s`;
+}
+
+// Human free-trial phrase, e.g. "Free for 7 days, then $2.99". Null when there
+// is no free-trial intro offer on this package.
+function trialPhrase(pkg: PurchasesPackage): string | null {
+  const label = trialDurationLabel(pkg);
+  if (!label) return null;
+  return `Free for ${label}, then ${pkg.product.priceString}`;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -473,6 +494,13 @@ const COMPARE: { label: string; free: boolean }[] = [
 const QUOTES: { q: string; who: string }[] = [
   { q: 'Finally saw my real $/hour. Stopped taking junk orders the same day.', who: 'Marcus · DoorDash' },
   { q: 'Tax season took 20 minutes. The export paid for itself.', who: 'Priya · Uber Eats' },
+];
+
+// Short, punchy agitation in driver language (kept to 3 lines, max impact).
+const PROBLEMS: { icon: string; text: string }[] = [
+  { icon: 'eye-off', text: 'The apps only show gross — never your real take-home.' },
+  { icon: 'trending-down', text: 'Gas, miles & fees quietly eat your profit every shift.' },
+  { icon: 'alert-circle', text: "You're grinding hard — but guessing your numbers." },
 ];
 
 // Per-month equivalent of an annual package, formatted in its own currency.
@@ -533,6 +561,11 @@ function FallbackPaywall({
   const selected = packages.find((p) => p.identifier === selectedId) ?? null;
   const savings = annualSavingsPct(monthly, annual);
   const perMo = annual ? perMonthString(annual) : null;
+  // Free-trial framing — only surfaces when an intro free trial is actually
+  // configured in App Store Connect, so the copy never over-promises.
+  const trialLabel = packages.map(trialDurationLabel).find((x): x is string => !!x) ?? null;
+  const selTrial = selected ? trialPhrase(selected) : null;
+  const selTrialLabel = selected ? trialDurationLabel(selected) : null;
 
   const scale = useSharedValue(1);
   const ctaStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -625,6 +658,27 @@ function FallbackPaywall({
             >
               <Ionicons name="rocket" size={34} color="#000" />
             </LinearGradient>
+            {trialLabel && (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  backgroundColor: t.PRI_LITE,
+                  borderWidth: 1,
+                  borderColor: t.PRIMARY,
+                  borderRadius: 999,
+                  paddingHorizontal: 12,
+                  paddingVertical: 5,
+                  marginBottom: 12,
+                }}
+              >
+                <Ionicons name="gift" size={13} color={t.PRIMARY_TXT} />
+                <Text style={{ color: t.PRIMARY_TXT, fontSize: 11.5, fontWeight: '900', letterSpacing: 0.5 }}>
+                  {trialLabel.toUpperCase()} FREE TRIAL
+                </Text>
+              </View>
+            )}
             <Text
               style={{
                 color: t.TEXT,
@@ -635,7 +689,7 @@ function FallbackPaywall({
                 lineHeight: 35,
               }}
             >
-              Keep more of{'\n'}what you earn.
+              See your real{'\n'}take-home pay.
             </Text>
             <Text
               style={{
@@ -646,8 +700,42 @@ function FallbackPaywall({
                 lineHeight: 21,
               }}
             >
-              Pro turns every mile into money you can actually see.
+              Most apps show gross. Pro reveals what is really left after gas and miles — so you never drive for free.
             </Text>
+          </Animated.View>
+
+          {/* ── Problem agitation ────────────────────────────────────────── */}
+          <Animated.View
+            entering={FadeInDown.delay(60).springify().damping(18)}
+            style={{
+              marginTop: 24,
+              backgroundColor: t.SURFACE,
+              borderWidth: 1,
+              borderColor: t.BORDER,
+              borderRadius: 16,
+              padding: 16,
+              gap: 12,
+            }}
+          >
+            <Text
+              style={{
+                color: t.PRIMARY_TXT,
+                fontSize: 11,
+                fontWeight: '900',
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+              }}
+            >
+              Stop driving blind
+            </Text>
+            {PROBLEMS.map((p) => (
+              <View key={p.text} style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+                <Ionicons name={p.icon as any} size={18} color={t.MUTED} />
+                <Text style={{ flex: 1, color: t.TEXT_MID, fontSize: 14, lineHeight: 19, fontWeight: '600' }}>
+                  {p.text}
+                </Text>
+              </View>
+            ))}
           </Animated.View>
 
           {/* ── Benefits ─────────────────────────────────────────────────── */}
@@ -693,7 +781,9 @@ function FallbackPaywall({
               {packages.map((pkg) => {
                 const isSel = pkg.identifier === selectedId;
                 const isAnnual = pkg.packageType === 'ANNUAL';
-                const intro = introPhrase(pkg);
+                const trial = trialPhrase(pkg);
+                const trialLbl = trialDurationLabel(pkg);
+                const intro = trial ? null : introPhrase(pkg);
                 return (
                   <Pressable
                     key={pkg.identifier}
@@ -727,6 +817,13 @@ function FallbackPaywall({
                         <Text style={{ color: t.TEXT, fontSize: 16, fontWeight: '800' }}>
                           {packageLabel(pkg)}
                         </Text>
+                        {trialLbl && (
+                          <View style={{ backgroundColor: t.GREEN, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                            <Text style={{ color: '#04210f', fontSize: 10, fontWeight: '900', letterSpacing: 0.3 }}>
+                              {trialLbl.toUpperCase()} FREE
+                            </Text>
+                          </View>
+                        )}
                         {isAnnual && savings != null && (
                           <View style={{ backgroundColor: t.GREEN, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
                             <Text style={{ color: '#04210f', fontSize: 10, fontWeight: '900', letterSpacing: 0.3 }}>
@@ -743,7 +840,7 @@ function FallbackPaywall({
                         )}
                       </View>
                       <Text style={{ color: t.MUTED, fontSize: 12.5, marginTop: 2 }}>
-                        {intro ?? (isAnnual && perMo ? `Just ${perMo}/mo, billed yearly` : pkg.product.title)}
+                        {trial ?? intro ?? (isAnnual && perMo ? `Just ${perMo}/mo, billed yearly` : pkg.product.title)}
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
@@ -757,9 +854,14 @@ function FallbackPaywall({
                           </Text>
                         </>
                       ) : (
-                        <Text style={{ color: t.PRIMARY_TXT, fontSize: 17, fontWeight: '900' }}>
-                          {pkg.product.priceString}
-                        </Text>
+                        <>
+                          <Text style={{ color: t.PRIMARY_TXT, fontSize: 17, fontWeight: '900' }}>
+                            {pkg.product.priceString}
+                          </Text>
+                          {trial && (
+                            <Text style={{ color: t.MUTED, fontSize: 11, marginTop: 1 }}>after trial</Text>
+                          )}
+                        </>
                       )}
                     </View>
                   </Pressable>
@@ -834,7 +936,9 @@ function FallbackPaywall({
             </Text>
           </Pressable>
           <Text style={{ color: t.LABEL, fontSize: 11.5, textAlign: 'center', lineHeight: 17 }}>
-            Cancel anytime, managed through your Apple ID. Payment is charged to your Apple account at confirmation.
+            {selTrial
+              ? `${selTrial}. Cancel anytime in Settings before your trial ends and you won't be charged. Managed through your Apple ID.`
+              : 'Cancel anytime, managed through your Apple ID. Payment is charged to your Apple account at confirmation.'}
           </Text>
         </ScrollView>
 
@@ -884,7 +988,11 @@ function FallbackPaywall({
               <ActivityIndicator color="#000" />
             ) : (
               <Text style={{ color: '#000', fontSize: 17, fontWeight: '900', letterSpacing: 0.2 }}>
-                {selected ? `Upgrade${ctaPrice ? ` — ${ctaPrice}` : ''}` : 'Upgrade to Pro'}
+                {selTrialLabel
+                  ? `Try Pro Free for ${selTrialLabel}`
+                  : selected
+                    ? `Upgrade${ctaPrice ? ` — ${ctaPrice}` : ''}`
+                    : 'Upgrade to Pro'}
               </Text>
             )}
           </AnimatedPressable>
