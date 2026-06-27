@@ -32,3 +32,18 @@ the number must come entirely from the optimistic patch being correct.
 final server-truth reconcile, but never rely on it to produce the *visible*
 number change — make the optimistic patch itself correct via per-window scoping.
 The entries-list patch reconciles fine via refetch and was left as-is.
+
+**CREATE flow must also be window-scoped for ALL dates, not today-only.** The
+create onMutate previously gated its rollup/KPI patch behind `if (isToday)`,
+patching KPIs only for today's entries while its entries-list patch was already
+window-scoped for any date. Result: a BACKDATED new entry (or one added while
+viewing a navigated day/week/month) updated History but NOT the KPI cards /
+Profit Hero / Goal bar. **Why it surfaced as "doesn't show until I reopen":** a
+queued/offline create deliberately SKIPS the onSuccess invalidate (so it doesn't
+wipe the optimistic patch with stale server data), so the only thing that fixes
+the KPI number for a non-today create is a cold restart refetch. Fix = drop the
+`isToday` gate and patch every cached `['rollup']` key filtered by
+`keyWindowContainsDate(key, estDateStr)` — adding the entry's magnitude to a
+CONTAINING window's totals is correct regardless of which day inside the window
+it falls on, and the scoping prevents inflating non-containing windows. This
+makes create consistent with the edit flow.
