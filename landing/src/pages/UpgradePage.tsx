@@ -66,8 +66,8 @@ function Hero() {
           <div className="relative flex justify-center md:justify-end">
             <div className="absolute -inset-10 bg-primary/10 blur-3xl rounded-full pointer-events-none" />
             <PhoneShot
-              src={SCREENSHOTS.analytics}
-              alt="Earnings Ninja Pro analytics — peak hours, best day, and profit trend"
+              src={SCREENSHOTS.dashboardWeek}
+              alt="Earnings Ninja dashboard — weekly net profit at a glance"
               priority
             />
           </div>
