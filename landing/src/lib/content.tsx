@@ -8,6 +8,10 @@ export const APP_STORE_URL: string | null = null
 // Opens the installed app (existing free users land on Settings → Upgrade).
 export const APP_DEEP_LINK = 'earningsninja://'
 
+// Where "Try free / get the app" CTAs send users: the App Store once
+// APP_STORE_URL is live, otherwise the homepage where the download badge lives.
+export const APP_DOWNLOAD_URL: string = APP_STORE_URL ?? '/'
+
 export const PRIVACY_URL = '/privacy'
 export const SUPPORT_URL = '/support'
 export const SUPPORT_EMAIL = 'support@earningsninja.app'
