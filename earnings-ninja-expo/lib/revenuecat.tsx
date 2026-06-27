@@ -937,9 +937,41 @@ function FallbackPaywall({
           </Pressable>
           <Text style={{ color: t.LABEL, fontSize: 11.5, textAlign: 'center', lineHeight: 17 }}>
             {selTrial
-              ? `${selTrial}. Cancel anytime in Settings before your trial ends and you won't be charged. Managed through your Apple ID.`
-              : 'Cancel anytime, managed through your Apple ID. Payment is charged to your Apple account at confirmation.'}
+              ? `${selTrial}. Cancel anytime in Settings before your trial ends and you won't be charged. `
+              : ''}
+            Subscriptions auto-renew unless cancelled at least 24 hours before the end of the
+            current period. Your Apple account is charged for renewal within 24 hours before the
+            period ends. Manage or cancel anytime in your App Store account settings. Lifetime is a
+            one-time purchase and does not renew.
           </Text>
+          <View
+            style={{ flexDirection: 'row', justifyContent: 'center', gap: 18, marginTop: 12 }}
+          >
+            <Pressable
+              onPress={() => Linking.openURL('https://earningsninja.app/privacy')}
+              hitSlop={8}
+            >
+              <Text
+                style={{ color: t.MUTED, fontSize: 11.5, fontWeight: '700', textDecorationLine: 'underline' }}
+              >
+                Privacy Policy
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() =>
+                Linking.openURL(
+                  'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+                )
+              }
+              hitSlop={8}
+            >
+              <Text
+                style={{ color: t.MUTED, fontSize: 11.5, fontWeight: '700', textDecorationLine: 'underline' }}
+              >
+                Terms of Use
+              </Text>
+            </Pressable>
+          </View>
         </ScrollView>
 
         {/* ── Sticky CTA ─────────────────────────────────────────────────── */}
