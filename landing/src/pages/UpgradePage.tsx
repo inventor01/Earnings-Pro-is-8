@@ -11,7 +11,7 @@ import {
 } from '../components/ui'
 import { PhoneShot, SCREENSHOTS } from '../components/mockups'
 import logoFull from '../assets/logo-full.webp'
-import { PLANS, COMPARISON, TESTIMONIALS, APP_DEEP_LINK } from '../lib/content'
+import { PLANS, COMPARISON, TESTIMONIALS, APP_DEEP_LINK, APP_DOWNLOAD_URL, APP_STORE_URL } from '../lib/content'
 
 export default function UpgradePage() {
   useDocumentMeta(
@@ -30,7 +30,7 @@ export default function UpgradePage() {
       <Guarantee />
       <FinalCta />
       <Footer />
-      <StickyCta label="Try free for 7 days" to={APP_DEEP_LINK} external />
+      <StickyCta label="Try free for 7 days" to={APP_DOWNLOAD_URL} external={!!APP_STORE_URL} />
     </div>
   )
 }

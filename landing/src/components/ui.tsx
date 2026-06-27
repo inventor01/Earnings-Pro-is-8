@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from './router'
 import {
   APP_STORE_URL,
-  APP_DEEP_LINK,
+  APP_DOWNLOAD_URL,
   PRIVACY_URL,
   SUPPORT_URL,
   SUPPORT_EMAIL,
@@ -106,13 +106,13 @@ export function UpgradeButton({
   className?: string
 }) {
   return (
-    <a
-      href={APP_DEEP_LINK}
+    <Link
+      to={APP_DOWNLOAD_URL}
       className={`inline-flex items-center justify-center gap-2 bg-primary text-black font-bold px-7 py-3.5 rounded-xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all ${className}`}
     >
       {label}
       <span aria-hidden>→</span>
-    </a>
+    </Link>
   )
 }
 
