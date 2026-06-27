@@ -245,14 +245,48 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   const openFallback = useCallback((): Promise<boolean> => {
     return new Promise<boolean>((resolve) => {
-      const offering = offeringRef.current;
-      if (!offering || offering.availablePackages.length === 0) {
-        // Nothing to sell (offering not provisioned yet) — can't gate.
-        resolve(false);
+      const present = (off: PurchasesOffering | null) => {
+        if (!off || off.availablePackages.length === 0) {
+          // Truly nothing to sell — surface it instead of a dead button.
+          Alert.alert(
+            'Subscriptions unavailable',
+            'We couldn’t load the upgrade options right now. Please check your connection and try again.',
+          );
+          resolve(false);
+          return;
+        }
+        fallbackResolver.current = resolve;
+        setFallbackVisible(true);
+      };
+
+      const existing = offeringRef.current;
+      if (existing && existing.availablePackages.length > 0) {
+        present(existing);
         return;
       }
-      fallbackResolver.current = resolve;
-      setFallbackVisible(true);
+
+      // Offering not loaded yet (startup race, or no "current" offering set in
+      // the dashboard). Wait for init, then fetch fresh and fall back to any
+      // non-empty offering so the paywall still opens.
+      (async () => {
+        try {
+          if (initPromiseRef.current) {
+            try { await initPromiseRef.current; } catch { /* best-effort */ }
+          }
+          let off = offeringRef.current;
+          if (!off || off.availablePackages.length === 0) {
+            const offs = await Purchases.getOfferings();
+            off =
+              offs.current ??
+              Object.values(offs.all).find((o) => o.availablePackages.length > 0) ??
+              null;
+            if (off) setOfferings(off);
+          }
+          present(off);
+        } catch {
+          present(null);
+        }
+      })();
     });
   }, []);
 
