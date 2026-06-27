@@ -47,3 +47,9 @@ the KPI number for a non-today create is a cold restart refetch. Fix = drop the
 CONTAINING window's totals is correct regardless of which day inside the window
 it falls on, and the scoping prevents inflating non-containing windows. This
 makes create consistent with the edit flow.
+
+Update: keyWindowContainsDate + the create rollup reducer are now extracted into
+`earnings-ninja-expo/lib/rollupWindow.ts` (pure, like lib/goalOptimistic.ts) and
+guarded by `__tests__/rollupWindow.test.ts`. Both take an optional `base` (EST
+today) param ONLY for deterministic tests; production omits it. Any future
+date-window/KPI refactor should keep that test green.
