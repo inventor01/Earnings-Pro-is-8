@@ -33,7 +33,6 @@ import Purchases, {
   type PurchasesOffering,
   type PurchasesPackage,
 } from 'react-native-purchases';
-import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useTheme } from './theme';
 import { useAuth } from './authContext';
 
@@ -266,22 +265,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   const presentPaywall = useCallback(async (): Promise<boolean> => {
     if (!availableRef.current) return true; // gating disabled on this build
-    try {
-      const result = await RevenueCatUI.presentPaywall();
-      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
-        const info = await Purchases.getCustomerInfo();
-        setCustomerInfo(info);
-        return isEntitled(info);
-      }
-      if (result === PAYWALL_RESULT.NOT_PRESENTED) {
-        // No dashboard paywall published for the current offering → fallback.
-        return await openFallback();
-      }
-      return isProRef.current; // CANCELLED or ERROR
-    } catch {
-      // RevenueCatUI unavailable or threw → custom fallback paywall.
-      return await openFallback();
-    }
+    // Always present our custom redesigned upgrade page. We intentionally do NOT
+    // call RevenueCatUI.presentPaywall() here: whenever a paywall is published in
+    // the RevenueCat dashboard for the offering it would take over and hide our
+    // custom page. openFallback() reads live prices from the offering, so the
+    // custom page stays accurate without the dashboard paywall.
+    return await openFallback();
   }, [openFallback]);
 
   const requirePro = useCallback(async (): Promise<boolean> => {

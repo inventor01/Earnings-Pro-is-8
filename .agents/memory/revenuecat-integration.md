@@ -20,6 +20,10 @@ Pro subscriptions use the **official React Native SDK** (not the SwiftUI/native 
 
 - **Fallback paywall prices are always read live from the offering, never hardcoded** (test-store prices are immutable; prod prices come from the stores).
 
+- **The app deliberately ALWAYS presents the custom in-app upgrade page (the `FallbackPaywall`) and does NOT call `RevenueCatUI.presentPaywall()`.** `presentPaywall()` in `lib/revenuecat.tsx` calls `openFallback()` directly.
+  **Why:** if a paywall is published in the RevenueCat dashboard for the offering, `RevenueCatUI.presentPaywall()` silently takes over and renders the dashboard paywall, completely hiding the custom redesigned page — so any in-app paywall copy/design change is invisible no matter how many builds ship. Confirmed in production (user had a dashboard paywall published; the custom redesign never appeared until the bypass).
+  **How to apply:** all in-app upgrade-page copy/design lives in the `FallbackPaywall` component (React). Do not re-introduce the `RevenueCatUI.presentPaywall()` call unless the intent is to switch back to dashboard-managed paywalls. The `react-native-purchases-ui` paywall import is intentionally removed.
+
 - **The RevenueCat Customer Center is dashboard-configured, just like the Paywall visual.** If it isn't published in the dashboard, `RevenueCatUI.presentCustomerCenter()` throws — and a silent `catch` makes the "Manage Subscription" button a dead end. Always fall back to the OS-native subscription manager (`https://apps.apple.com/account/subscriptions` on iOS, the Play equivalent on Android) so the button always does something.
 
 ## Provisioning is connector/dashboard-only
