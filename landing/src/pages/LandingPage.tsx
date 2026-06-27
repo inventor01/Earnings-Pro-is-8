@@ -218,7 +218,6 @@ function Screenshots() {
     { src: SCREENSHOTS.topDays, label: 'Top earning days' },
     { src: SCREENSHOTS.analytics, label: 'Peak earning hours' },
     { src: SCREENSHOTS.platforms, label: 'Best-paying platforms' },
-    { src: SCREENSHOTS.goals, label: 'Monthly goal & history' },
     { src: SCREENSHOTS.settings, label: 'CSV export & themes' },
   ]
   return (
