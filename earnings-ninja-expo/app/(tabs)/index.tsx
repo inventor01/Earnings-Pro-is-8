@@ -2462,15 +2462,19 @@ function ImportCsvRow({ onDone }: { onDone: () => void }) {
   );
 }
 
-function ExportCsvRow() {
+function ExportCsvRow({ onNeedUpgrade }: { onNeedUpgrade: () => void }) {
   const { SURFACE, BORDER, PRI_LITE, PRIMARY, PRIMARY_TXT, TEXT, MUTED } = useTheme();
-  const { requirePro } = useSubscription();
+  const { available: proAvailable, isPro } = useSubscription();
   const [busy, setBusy] = useState(false);
 
   const onExport = async () => {
     if (busy) return;
     hTap();
-    if (!(await requirePro())) return;
+    // Pro gate. We can't call requirePro() here because it presents the paywall
+    // Modal, which silently fails while the Settings sheet is open on iOS.
+    // Route through onNeedUpgrade (closes Settings, then presents) instead.
+    // Fail OPEN when RevenueCat is unavailable on this build (matches requirePro).
+    if (proAvailable && !isPro) { onNeedUpgrade(); return; }
     try {
       setBusy(true);
       // Pull the entire history with a deliberately wide date window so the
@@ -2605,6 +2609,20 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   const { logout, user } = useAuth();
   const { available: proAvailable, isPro, presentPaywall, presentCustomerCenter, restore } = useSubscription();
   const queryClient = useQueryClient();
+  // iOS only presents one modal per view controller at a time, so opening the
+  // paywall (a root-level Modal) while this Settings sheet is still presented
+  // silently does nothing. On iOS we close Settings first and present the
+  // paywall in this sheet's onDismiss (fires once dismissal fully completes).
+  // Android stacks modals fine, so present directly there.
+  const pendingUpgrade = useRef(false);
+  const triggerUpgrade = () => {
+    if (Platform.OS === 'ios') {
+      pendingUpgrade.current = true;
+      onClose();
+    } else {
+      presentPaywall();
+    }
+  };
   const [editingGoal, setEditingGoal] = useState<TimeframeType | null>(null);
   const [goalInput, setGoalInput] = useState('');
 
@@ -2689,7 +2707,18 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   ];
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      onDismiss={() => {
+        if (pendingUpgrade.current) {
+          pendingUpgrade.current = false;
+          presentPaywall();
+        }
+      }}
+    >
       <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>⚙️ Settings</Text>
@@ -2997,7 +3026,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             </Text>
             {!isPro && (
               <Pressable
-                onPress={async () => { hTap(); await presentPaywall(); }}
+                onPress={() => { hTap(); triggerUpgrade(); }}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1.5, borderColor: PRIMARY, padding: 14, marginBottom: 12 }}
               >
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center' }}>
@@ -3064,7 +3093,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           onDone={() => invalidateEntryData(queryClient)}
         />
         <View style={{ height: 12 }} />
-        <ExportCsvRow />
+        <ExportCsvRow onNeedUpgrade={triggerUpgrade} />
 
         {/* Delete Account — Apple Guideline 5.1.1(v) requires apps that support */}
         {/* account creation to also support in-app account deletion. */}
