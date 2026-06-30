@@ -26,6 +26,7 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
 import { TransactionDetailModal } from '../../components/TransactionDetailModal';
 import { TwoFactorRow } from '../../components/TwoFactorRow';
+import { EmailVerifyBanner } from '../../components/EmailVerifyBanner';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
@@ -4961,6 +4962,11 @@ export default function DashboardScreen() {
               </PressScale>
             )}
           </ScrollView>
+        </View>
+
+        {/* ── Confirm-email nudge (non-blocking) ────────────────────────────── */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+          <EmailVerifyBanner />
         </View>
 
         {/* ── Search Bar (collapsible) ──────────────────────────────────────── */}

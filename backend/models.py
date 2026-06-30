@@ -51,6 +51,14 @@ class AuthUser(Base):
     mfa_code_hash = Column(String, nullable=True)
     mfa_code_expires_at = Column(String, nullable=True)  # ISO8601 UTC
     mfa_code_attempts = Column(Integer, default=0, nullable=False)
+    # Email confirmation (NON-blocking). New email/password signups start
+    # unverified and see a gentle in-app nudge; Apple/demo/existing rows are
+    # grandfathered to verified. The 6-digit code is hashed here with an ISO
+    # expiry + attempt counter, mirroring the MFA columns above.
+    email_verified = Column(Boolean, default=False, nullable=False)
+    email_verification_code_hash = Column(String, nullable=True)
+    email_verification_expires_at = Column(String, nullable=True)  # ISO8601 UTC
+    email_verification_attempts = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

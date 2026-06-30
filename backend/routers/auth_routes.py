@@ -12,7 +12,12 @@ from backend.models import (
 )
 import secrets
 from backend.auth import get_current_user, verify_prelaunch_token
-from backend.services.email_service import send_password_reset_email, send_mfa_code_email
+from backend.services.email_service import (
+    send_password_reset_email,
+    send_mfa_code_email,
+    send_email_verification_email,
+    send_welcome_email,
+)
 import jwt
 import os
 from typing import Dict, Optional
@@ -230,15 +235,53 @@ def _decode_mfa_challenge(token: str) -> Dict:
     return payload
 
 
+# ---------------------------------------------------------------------------
+# Email confirmation (NON-blocking gentle nudge — code entered in-app like MFA)
+# ---------------------------------------------------------------------------
+# Codes live a full day because confirmation is optional and the app is usable
+# meanwhile — the nudge can sit on the dashboard until the driver gets to it.
+EMAIL_VERIFY_CODE_TTL = timedelta(hours=24)
+EMAIL_VERIFY_MAX_ATTEMPTS = 5
+
+
+class EmailVerifyRequest(BaseModel):
+    code: str
+
+
+async def _issue_email_verification(user: AuthUser, db: Session) -> Optional[str]:
+    """Generate a fresh 6-digit confirmation code, persist its bcrypt hash / ISO
+    expiry / reset attempt counter on the user, and return the plaintext code so
+    the caller can email it (directly or via a background task). Returns None and
+    does nothing for accounts that shouldn't be nudged (already verified, demo,
+    or no email on file)."""
+    if user.is_demo or not user.email or user.email_verified:
+        return None
+    code = _generate_mfa_code()
+    user.email_verification_code_hash = hash_password(code)
+    user.email_verification_expires_at = (datetime.utcnow() + EMAIL_VERIFY_CODE_TTL).isoformat()
+    user.email_verification_attempts = 0
+    db.commit()
+    return code
+
+
 @router.post("/auth/signup", response_model=AuthResponse)
 @auth_limiter.limit("5/hour")
-async def signup(request: Request, body: SignupRequest, db: Session = Depends(get_db)):
+async def signup(
+    request: Request,
+    body: SignupRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     # `request` is required by slowapi; alias the legacy `request` body to `body`.
     _require_prelaunch_token(body.prelaunch_token)
-    return await _signup(body, db)
+    return await _signup(body, db, background_tasks)
 
 
-async def _signup(request: SignupRequest, db: Session = Depends(get_db)):
+async def _signup(
+    request: SignupRequest,
+    db: Session = Depends(get_db),
+    background_tasks: Optional[BackgroundTasks] = None,
+):
     """Sign up new user"""
     if not request.email or not request.password:
         raise HTTPException(status_code=400, detail="Email and password are required")
@@ -295,6 +338,27 @@ async def _signup(request: SignupRequest, db: Session = Depends(get_db)):
             await apply_referral(db, user, request.referral_code)
         except Exception:
             db.rollback()
+
+    # Email-confirmation nudge (NON-blocking) + welcome email, both right after
+    # signup. Best-effort: a Resend hiccup must never break account creation, so
+    # email-sending runs as a background task when one is available.
+    try:
+        verify_code = await _issue_email_verification(user, db)
+        recipient = user.email
+        first_name = user.first_name
+        if recipient:
+            if background_tasks is not None:
+                background_tasks.add_task(send_welcome_email, recipient, first_name)
+                if verify_code:
+                    background_tasks.add_task(
+                        send_email_verification_email, recipient, verify_code, first_name
+                    )
+            else:
+                await send_welcome_email(recipient, first_name)
+                if verify_code:
+                    await send_email_verification_email(recipient, verify_code, first_name)
+    except Exception as e:
+        print(f"[Signup] Failed to queue welcome/verification email: {e}")
 
     token = create_access_token(user.id, user.email)
     return {
@@ -395,6 +459,9 @@ async def apple_sign_in(request: Request, body: AppleSignInRequest, db: Session 
             first_name=body.first_name,
             last_name=body.last_name,
             is_demo=False,
+            # Apple has already verified the email it returns, so there's nothing
+            # for us to nudge — mark it confirmed up front.
+            email_verified=True,
         )
         db.add(user)
         db.flush()
@@ -587,8 +654,95 @@ async def get_current_user_info(current_user: AuthUser = Depends(get_current_use
         "email": current_user.email,
         "first_name": current_user.first_name,
         "last_name": current_user.last_name,
-        "profile_image_url": current_user.profile_image_url
+        "profile_image_url": current_user.profile_image_url,
+        "email_verified": bool(current_user.email_verified),
     }
+
+
+def _email_verification_needed(user: AuthUser) -> bool:
+    """A confirmation nudge is only relevant for non-demo accounts that have an
+    email on file and haven't confirmed it yet."""
+    return bool(user.email) and not user.is_demo and not user.email_verified
+
+
+@router.get("/auth/email/status")
+async def email_verification_status(current_user: AuthUser = Depends(get_current_user)) -> Dict:
+    """Lightweight poll for the in-app confirmation banner. `needs_verification`
+    is the single flag the client uses to decide whether to show the nudge."""
+    return {
+        "email": current_user.email,
+        "email_verified": bool(current_user.email_verified),
+        "needs_verification": _email_verification_needed(current_user),
+    }
+
+
+@router.post("/auth/verify-email")
+@auth_limiter.limit("10/minute")
+async def verify_email(
+    request: Request,
+    body: EmailVerifyRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Dict:
+    """Confirm the account email with the 6-digit code we sent. Idempotent for
+    already-verified accounts. Enforces an attempt cap and expiry like MFA."""
+    if current_user.email_verified:
+        return {"email_verified": True, "needs_verification": False}
+    if not current_user.email or current_user.is_demo:
+        raise HTTPException(status_code=400, detail="This account doesn't need email confirmation.")
+
+    code = (body.code or "").strip()
+    if not code:
+        raise HTTPException(status_code=400, detail="Enter the code from your email.")
+
+    if not current_user.email_verification_code_hash or not current_user.email_verification_expires_at:
+        raise HTTPException(status_code=400, detail="No active code. Tap resend to get a new one.")
+
+    try:
+        expires_at = datetime.fromisoformat(current_user.email_verification_expires_at)
+    except (ValueError, TypeError):
+        expires_at = datetime.utcnow() - timedelta(seconds=1)
+    if datetime.utcnow() > expires_at:
+        raise HTTPException(status_code=400, detail="That code expired. Tap resend to get a new one.")
+
+    if (current_user.email_verification_attempts or 0) >= EMAIL_VERIFY_MAX_ATTEMPTS:
+        raise HTTPException(status_code=429, detail="Too many attempts. Tap resend to get a new code.")
+
+    if not verify_password(code, current_user.email_verification_code_hash):
+        current_user.email_verification_attempts = (current_user.email_verification_attempts or 0) + 1
+        db.commit()
+        raise HTTPException(status_code=400, detail="That code is incorrect.")
+
+    current_user.email_verified = True
+    current_user.email_verification_code_hash = None
+    current_user.email_verification_expires_at = None
+    current_user.email_verification_attempts = 0
+    db.commit()
+    return {"email_verified": True, "needs_verification": False}
+
+
+@router.post("/auth/verify-email/resend")
+@auth_limiter.limit("5/hour")
+async def resend_email_verification(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Dict:
+    """Mint and email a fresh confirmation code. Anti-enumeration isn't a concern
+    here (the caller is authenticated and confirming their own email)."""
+    if current_user.email_verified:
+        return {"sent": False, "email_verified": True, "needs_verification": False}
+    if not current_user.email or current_user.is_demo:
+        raise HTTPException(status_code=400, detail="This account doesn't need email confirmation.")
+
+    code = await _issue_email_verification(current_user, db)
+    if code:
+        background_tasks.add_task(
+            send_email_verification_email, current_user.email, code, current_user.first_name
+        )
+    return {"sent": bool(code), "email_verified": False, "needs_verification": True}
+
 
 @router.post("/auth/validate-token")
 async def validate_token(current_user: AuthUser = Depends(get_current_user)) -> Dict:
@@ -865,7 +1019,9 @@ async def create_demo_session(request: Request, body: DemoRequest = DemoRequest(
         email=demo_email,
         first_name="Demo User",
         last_name="",
-        is_demo=True
+        is_demo=True,
+        # Demo accounts are throwaway and never see the confirmation nudge.
+        email_verified=True,
     )
     db.add(user)
     db.flush()
