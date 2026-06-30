@@ -19,6 +19,10 @@ ACTION (needs DNS records).
 **How to test without an inbox:** send to `delivered@resend.dev` (always accepted)
 or to the owner address; sending to any other address surfaces the restriction
 error verbatim.
+**A @gmail.com can NEVER be the From sender** — Resend only verifies domains you
+own via DNS, and nobody can add DNS to gmail.com. A gmail can only be the
+**reply-to** (`RESEND_REPLY_TO` env, default `earningsninjaapp@gmail.com`), so
+driver replies reach a monitored inbox; the From must still be the verified domain.
 
 ## 2. `get_app_url()` falls back to localhost on Railway
 The app URL helper read only `REPLIT_DEV_DOMAIN`/`REPLIT_DOMAINS`, which do NOT
