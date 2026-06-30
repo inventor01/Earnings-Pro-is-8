@@ -185,6 +185,7 @@ export interface User {
   username?: string;
   first_name?: string;
   last_name?: string;
+  email_verified?: boolean;
 }
 
 export interface ReferralInfo {
@@ -296,6 +297,46 @@ export const api = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'Could not turn off two-factor');
+    }
+    return res.json();
+  },
+
+  // Email confirmation (NON-blocking nudge). `needs_verification` drives the
+  // dashboard banner; it's false for verified, demo, and no-email accounts.
+  async getEmailVerifyStatus(): Promise<{
+    email?: string;
+    email_verified: boolean;
+    needs_verification: boolean;
+  }> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/auth/email/status`, { headers });
+    if (!res.ok) throw new Error(`getEmailVerifyStatus failed: ${res.status}`);
+    return res.json();
+  },
+
+  async verifyEmail(code: string): Promise<{ email_verified: boolean; needs_verification: boolean }> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/auth/verify-email`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not confirm your email');
+    }
+    return res.json();
+  },
+
+  async resendEmailVerification(): Promise<{ sent: boolean; needs_verification: boolean }> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/auth/verify-email/resend`, {
+      method: 'POST',
+      headers,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not resend the code');
     }
     return res.json();
   },

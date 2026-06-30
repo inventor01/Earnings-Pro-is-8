@@ -288,12 +288,45 @@ def _migrate_auth_users_add_mfa() -> None:
     logger.warning("Ensured auth_users MFA columns exist (email two-factor auth).")
 
 
+def _migrate_auth_users_add_email_verification() -> None:
+    """Add email-confirmation columns to `auth_users`. All additive ADD COLUMNs
+    (safe on Postgres + SQLite). CRITICAL: the one-time backfill that marks
+    existing rows verified runs ONLY when the column is first created — re-running
+    it on every boot would silently re-verify legitimately-unverified new signups.
+    Safe to re-run."""
+    insp = inspect(engine)
+    if not insp.has_table("auth_users"):
+        return
+    cols = {c["name"] for c in insp.get_columns("auth_users")}
+    is_pg = engine.dialect.name == "postgresql"
+    false_default = "FALSE" if is_pg else "0"
+    true_value = "TRUE" if is_pg else "1"
+    with engine.begin() as conn:
+        if "email_verified" not in cols:
+            conn.execute(text(
+                f"ALTER TABLE auth_users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT {false_default}"
+            ))
+            # Grandfather every pre-existing account (incl. demo) as verified so
+            # the nudge only ever targets accounts created after this feature.
+            conn.execute(text(f"UPDATE auth_users SET email_verified = {true_value}"))
+        if "email_verification_code_hash" not in cols:
+            conn.execute(text("ALTER TABLE auth_users ADD COLUMN email_verification_code_hash VARCHAR"))
+        if "email_verification_expires_at" not in cols:
+            conn.execute(text("ALTER TABLE auth_users ADD COLUMN email_verification_expires_at VARCHAR"))
+        if "email_verification_attempts" not in cols:
+            conn.execute(text(
+                "ALTER TABLE auth_users ADD COLUMN email_verification_attempts INTEGER NOT NULL DEFAULT 0"
+            ))
+    logger.warning("Ensured auth_users email-verification columns exist.")
+
+
 _migrate_api_credentials_for_multi_user()
 _migrate_synced_orders_for_multi_user()
 _migrate_entries_add_idempotency_key()
 _migrate_points_for_multi_user()
 _migrate_auth_users_add_referral_code()
 _migrate_auth_users_add_mfa()
+_migrate_auth_users_add_email_verification()
 
 Base.metadata.create_all(bind=engine)
 
