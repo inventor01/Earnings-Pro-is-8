@@ -22,7 +22,6 @@ import { hydrateQueryClient, startPersisting } from '@/lib/queryPersist';
 import { initConnectivity } from '@/lib/connectivity';
 import { setSyncing, subscribeSync, getSyncState } from '@/lib/syncStatus';
 import { refreshPendingCount } from '@/lib/pendingCount';
-import { SyncIndicator } from '@/components/SyncIndicator';
 import * as Notifications from 'expo-notifications';
 
 SplashScreen.preventAutoHideAsync();
@@ -312,7 +311,6 @@ function RootNav() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="index" />
       </Stack>
-      <SyncIndicator />
     </>
   );
 }
