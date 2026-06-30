@@ -14,7 +14,7 @@ Resend's shared sandbox sender is hard-restricted: it returns
 except the account owner. So every email to an actual user is REJECTED in prod.
 **Fix:** sender is configurable via `RESEND_FROM` env (default still the sandbox).
 Production MUST verify a domain at resend.com/domains and set `RESEND_FROM` to an
-address on it (e.g. `Earnings Ninja <noreply@earningsninja.app>`). This is a USER
+address on it (e.g. `Earnings Ninja <noreply@earningsninja.com>`). This is a USER
 ACTION (needs DNS records).
 **How to test without an inbox:** send to `delivered@resend.dev` (always accepted)
 or to the owner address; sending to any other address surfaces the restriction
