@@ -62,7 +62,7 @@
     "production": {
       "ios": {
         "appleId": "REPLACE_WITH_YOUR_APPLE_ID_EMAIL",
-        "ascAppId": "REPLACE_WITH_APP_STORE_CONNECT_APP_ID",
+        "ascAppId": "6784464357",
         "appleTeamId": "77827G7735"
       }
     }
