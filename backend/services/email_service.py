@@ -5,9 +5,25 @@ from typing import Optional
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 APP_NAME = "Earnings Ninja"
 
+# Sender address. `onboarding@resend.dev` is Resend's shared sandbox sender and
+# can ONLY deliver to the Resend account owner's own address — every email to a
+# real user is rejected. In production set RESEND_FROM to an address on a domain
+# verified at resend.com/domains (e.g. "Earnings Ninja <noreply@earningsninja.app>").
+RESEND_FROM = os.environ.get("RESEND_FROM", "Earnings Ninja <onboarding@resend.dev>")
+
 resend.api_key = RESEND_API_KEY
 
 def get_app_url() -> str:
+    # Prefer an explicit public URL so links work on hosts that don't set the
+    # Replit env vars (e.g. Railway in production). Without this, reset/welcome
+    # links fall back to http://localhost:5000 and are broken for real users.
+    explicit = (
+        os.environ.get("PUBLIC_APP_URL", "")
+        or os.environ.get("APP_BASE_URL", "")
+        or os.environ.get("FRONTEND_URL", "")
+    ).strip()
+    if explicit:
+        return explicit.rstrip("/")
     domain = os.environ.get("REPLIT_DEV_DOMAIN", "")
     if domain:
         return f"https://{domain}"
@@ -85,7 +101,7 @@ If you didn't request a password reset, you can safely ignore this email.
     
     try:
         params = {
-            "from": "Earnings Ninja <onboarding@resend.dev>",
+            "from": RESEND_FROM,
             "to": [to_email],
             "subject": f"Reset Your {APP_NAME} Password",
             "html": html_content,
@@ -96,8 +112,10 @@ If you didn't request a password reset, you can safely ignore this email.
         print(f"[Email Service] Password reset email sent to {to_email}, id: {email_response.get('id', 'unknown')}")
         return True
     except Exception as e:
+        # Never log the reset URL on a runtime send failure — it carries a live
+        # reset token (account-takeover secret). The dev no-key branch above is
+        # the only place the link is printed (local testing without an inbox).
         print(f"[Email Service] Failed to send email to {to_email}: {e}")
-        print(f"[Email Service] Reset link (fallback): {reset_url}")
         return False
 
 
@@ -162,7 +180,7 @@ This code expires in 10 minutes. If you didn't try to sign in, change your passw
 
     try:
         params = {
-            "from": "Earnings Ninja <onboarding@resend.dev>",
+            "from": RESEND_FROM,
             "to": [to_email],
             "subject": f"Your {APP_NAME} verification code: {code}",
             "html": html_content,
@@ -172,8 +190,10 @@ This code expires in 10 minutes. If you didn't try to sign in, change your passw
         print(f"[Email Service] MFA code email sent to {to_email}, id: {email_response.get('id', 'unknown')}")
         return True
     except Exception as e:
+        # Never log the plaintext MFA code on a runtime send failure — that would
+        # leak a valid OTP into production logs. The dev no-key branch above is
+        # the only place the code is printed (local testing without an inbox).
         print(f"[Email Service] Failed to send MFA email to {to_email}: {e}")
-        print(f"[Email Service] MFA code (fallback) for {to_email}: {code}")
         return False
 
 
@@ -237,7 +257,7 @@ This code expires in 24 hours. If you didn't create an account, ignore this emai
 
     try:
         params = {
-            "from": "Earnings Ninja <onboarding@resend.dev>",
+            "from": RESEND_FROM,
             "to": [to_email],
             "subject": f"Confirm your {APP_NAME} email: {code}",
             "html": html_content,
@@ -326,7 +346,7 @@ Drive smart, earn more. We're glad you're here.
 
     try:
         params = {
-            "from": "Earnings Ninja <onboarding@resend.dev>",
+            "from": RESEND_FROM,
             "to": [to_email],
             "subject": f"Welcome to {APP_NAME}! 🥷",
             "html": html_content,
