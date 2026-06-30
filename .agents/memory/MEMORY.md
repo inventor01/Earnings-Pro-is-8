@@ -16,3 +16,4 @@
 - [RevenueCat integration](revenuecat-integration.md) — Pro subscriptions via RN SDK; entitlement id `pro` (client+seed must match), gating fails OPEN, fallback paywall, connector-only provisioning, native build (not OTA).
 - [Dependency vuln triage](dependency-vuln-triage.md) — all dep-audit vulns are in earnings-ninja-expo's transitive build tooling (0 in frontend/landing/root); safe fix = `npm audit fix` non-force; remaining need majors (uuid→11, js-yaml→4), build-time only.
 - [Public web domain serves landing](public-web-domain-serves-landing.md) — the domain deploys landing/, NOT the frontend/ webapp (dead by design); backend SPA-serves landing/dist, /api excluded from fallback, legal pages kept.
+- [Offline overlay on success path](offline-overlay-on-success-path.md) — online entry/rollup reads must re-overlay the pending queue (not just the catch path) or refetch erases queued saves; dedupe replayed creates by idempotency_key.

@@ -13,7 +13,10 @@ import {
   getLocalGoal,
   getLocalEntry,
   removeLocalEntries,
+  overlayPendingOnEntries,
+  overlayPendingOnRollup,
 } from './localStore';
+import { rangeForTimeframe, rangeForDates } from './estRange';
 
 // Priority: EXPO_PUBLIC env var → app.json extra → production fallback.
 // Production fallback points at the Railway-hosted backend so the shipped
@@ -120,6 +123,9 @@ export interface Entry {
   is_business_expense?: boolean;
   created_at: string;
   updated_at: string;
+  // Stable client key echoed back by the server (see EntryCreate.idempotency_key).
+  // Lets the offline overlay drop a still-queued create once its real row lands.
+  idempotency_key?: string;
 }
 
 // Generates a stable, highly-unique client key for idempotent creates. Only
@@ -317,7 +323,12 @@ export const api = {
       return localRollupForTimeframe(timeframe, dayOffset);
     }
     if (!res.ok) throw new Error('Failed to fetch rollup');
-    return res.json();
+    const data: Rollup = await res.json();
+    // Layer pending offline mutations onto the KPIs so a refetch doesn't snap
+    // them back to a server total that excludes a still-queued entry. No-op when
+    // nothing is queued.
+    const { fromMs, toMs } = rangeForTimeframe(timeframe, dayOffset);
+    return overlayPendingOnRollup(data, fromMs, toMs, data.goal ?? null);
   },
 
   async getRollupInRange(fromIso: string, toIso: string): Promise<Rollup> {
@@ -330,7 +341,12 @@ export const api = {
       return localRollupForRange(fromIso, toIso);
     }
     if (!res.ok) throw new Error('Failed to fetch rollup');
-    return res.json();
+    const data: Rollup = await res.json();
+    // Layer pending offline mutations onto the KPIs (see getRollup). No-op when
+    // the queue is empty; skipped if the range can't be parsed into EST bounds.
+    const bounds = rangeForDates(fromIso, toIso);
+    if (!bounds) return data;
+    return overlayPendingOnRollup(data, bounds.fromMs, bounds.toMs, data.goal ?? null);
   },
 
   async getEntries(timeframe: string = 'TODAY', limit = 200, dayOffset: number = 0): Promise<Entry[]> {
@@ -348,7 +364,11 @@ export const api = {
     // local mirror; otherwise an edit fired before this lands would enqueue with
     // no LWW baseline and the strict drain gate would drop it (lost write).
     await mergeServerEntries(data).catch(() => {});
-    return data;
+    // Layer any still-pending offline mutations back on top so a successful
+    // refetch (pull-to-refresh / focus / staleTime) can't erase a queued entry.
+    // No-op when nothing is queued.
+    const { fromMs, toMs } = rangeForTimeframe(timeframe, dayOffset);
+    return overlayPendingOnEntries(data, fromMs, toMs, limit);
   },
 
   async getEntriesInRange(fromIso: string, toIso: string, limit = 1000): Promise<Entry[]> {
@@ -365,7 +385,11 @@ export const api = {
     // AWAIT the mirror write (see getEntries) so a baseline is always available
     // before the UI can fire an edit against any row from this range.
     await mergeServerEntries(data).catch(() => {});
-    return data;
+    // Layer pending offline mutations back on (see getEntries). No-op when the
+    // queue is empty; skipped if the range can't be parsed into EST bounds.
+    const bounds = rangeForDates(fromIso, toIso);
+    if (!bounds) return data;
+    return overlayPendingOnEntries(data, bounds.fromMs, bounds.toMs, limit);
   },
 
   // Full pull of the user's entries into the local mirror (authoritative). Run

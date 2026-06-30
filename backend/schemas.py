@@ -78,6 +78,10 @@ class EntryResponse(BaseModel):
     during_business_hours: Optional[bool]
     created_at: datetime
     updated_at: datetime
+    # Echo the stable client key back so the mobile offline overlay can tell when
+    # a still-queued create has already landed on the server (timed-out-but-saved
+    # replay) and suppress the transient duplicate until the queue drains.
+    idempotency_key: Optional[str] = None
     
     class Config:
         from_attributes = True
