@@ -22,9 +22,17 @@ import { hydrateQueryClient, startPersisting } from '@/lib/queryPersist';
 import { initConnectivity } from '@/lib/connectivity';
 import { setSyncing, subscribeSync, getSyncState } from '@/lib/syncStatus';
 import { refreshPendingCount } from '@/lib/pendingCount';
+import { registerDrainHandler } from '@/lib/syncTrigger';
 import * as Notifications from 'expo-notifications';
 
 SplashScreen.preventAutoHideAsync();
+
+// Backoff bounds for the foreground auto-sync retry loop. While the app is
+// open and anything is still queued, we re-attempt a drain on a delay that
+// starts short and doubles up to a cap; a successful flush (or a fresh trigger)
+// resets it back to the base so the next hiccup retries quickly.
+const SYNC_RETRY_BASE_MS = 3000;
+const SYNC_RETRY_MAX_MS = 60000;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -98,19 +106,47 @@ function RootNav() {
     return () => sub.remove();
   }, []);
 
-  // Drain the offline entry queue whenever the app comes to the foreground
-  // (or on cold start when we already have an auth token). Re-entrancy
-  // guarded by `draining` so a quick background/foreground cycle doesn't
-  // fire two concurrent drains. On any flush we invalidate the lists the
-  // dashboard renders so the newly-synced entries appear.
+  // Drain the offline queues so synced data lands without the user ever having
+  // to close + reopen the app. A drain runs on cold start, on foreground, on a
+  // connectivity flip offline->online, the moment a write falls back to a queue
+  // (requestDrain from api.ts), AND on a self-rescheduling backoff retry while
+  // the app stays open and anything is still queued. Re-entrancy is guarded by
+  // `draining` so overlapping triggers never fire two concurrent drains; on any
+  // real flush we invalidate the dashboard lists so the synced rows appear.
   useEffect(() => {
     if (!token) return;
+
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let backoffMs = SYNC_RETRY_BASE_MS;
+    let appActive = AppState.currentState === 'active';
+    // Set by cleanup so a drain that finishes AFTER the effect is torn down
+    // (token change / unmount) can't re-arm a stray retry timer from its finally.
+    let disposed = false;
+
+    const clearRetry = () => {
+      if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+    };
+
+    // Re-arm a backoff retry only while foregrounded AND something is still
+    // queued. Empties → stop and reset the backoff. This is what lets a write
+    // that hit a transient hiccup (server reachable, so connectivity never
+    // flipped to offline) finally sync with the app left open the whole time.
+    const scheduleRetry = async () => {
+      clearRetry();
+      if (disposed || !appActive) return;
+      const [createDepth, opDepth] = await Promise.all([getQueueDepth(), getOpQueueDepth()]);
+      if (createDepth + opDepth === 0) { backoffMs = SYNC_RETRY_BASE_MS; return; }
+      const delay = backoffMs;
+      backoffMs = Math.min(backoffMs * 2, SYNC_RETRY_MAX_MS);
+      retryTimer = setTimeout(() => { tryDrain(); }, delay);
+    };
+
     const tryDrain = async () => {
       if (draining.current) return;
       draining.current = true;
+      let changed = false;
       try {
         const [createDepth, opDepth] = await Promise.all([getQueueDepth(), getOpQueueDepth()]);
-        let changed = false;
 
         // 1. Push offline-created rows first (brand-new records, no conflict
         //    possible) so a create that earns a real server id isn't later
@@ -201,6 +237,11 @@ function RootNav() {
         setSyncing(false);
         draining.current = false;
         await refreshPendingCount();
+        // A real flush means progress — retry the next hiccup fast.
+        if (changed) backoffMs = SYNC_RETRY_BASE_MS;
+        // Keep retrying on a backoff while anything is still queued and we're
+        // foregrounded; this is the loop that drains without a close/reopen.
+        scheduleRetry();
       }
     };
     // Re-arm the daily motivation notifications with the latest numbers. No-ops
@@ -211,17 +252,36 @@ function RootNav() {
     tryDrain();
     refreshNotifs();
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') { tryDrain(); refreshNotifs(); }
+      const nowActive = state === 'active';
+      if (nowActive && !appActive) {
+        // Returning to foreground — reset the backoff and try immediately.
+        appActive = true;
+        backoffMs = SYNC_RETRY_BASE_MS;
+        tryDrain();
+        refreshNotifs();
+      } else if (!nowActive && appActive) {
+        // Backgrounded — stop the retry loop; it resumes on the next foreground
+        // (timers are throttled in the background anyway).
+        appActive = false;
+        clearRetry();
+      }
     });
     // Also drain the instant connectivity flips from offline → online (the
     // health probe recovered), without waiting for a foreground event.
     let wasOnline = getSyncState().online;
     const unsubscribeSync = subscribeSync(() => {
       const nowOnline = getSyncState().online;
-      if (nowOnline && !wasOnline) tryDrain();
+      if (nowOnline && !wasOnline) { backoffMs = SYNC_RETRY_BASE_MS; tryDrain(); }
       wasOnline = nowOnline;
     });
-    return () => { sub.remove(); unsubscribeSync(); };
+    // Let api.ts ask for a flush the moment a write is queued, instead of
+    // waiting for a lifecycle/connectivity event. Reset the backoff so the very
+    // next attempt is immediate.
+    const unregisterDrain = registerDrainHandler(() => {
+      backoffMs = SYNC_RETRY_BASE_MS;
+      tryDrain();
+    });
+    return () => { disposed = true; sub.remove(); unsubscribeSync(); unregisterDrain(); clearRetry(); };
   }, [token, queryClient]);
 
   // Re-author the scheduled notifications the instant Hidden Mode changes, so a
