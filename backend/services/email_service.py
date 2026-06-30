@@ -1,3 +1,4 @@
+import asyncio
 import os
 import resend
 from typing import Optional
@@ -49,60 +50,69 @@ async def send_password_reset_email(to_email: str, reset_token: str, user_name: 
     
     greeting = f"Hi {user_name}," if user_name else "Hi,"
     
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-            .header {{ background: linear-gradient(135deg, #84cc16, #22c55e); padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }}
-            .header h1 {{ color: white; margin: 0; font-size: 28px; }}
-            .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
-            .button {{ display: inline-block; background: #84cc16; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }}
-            .button:hover {{ background: #65a30d; }}
-            .footer {{ text-align: center; margin-top: 20px; color: #666; font-size: 12px; }}
-            .warning {{ background: #fff3cd; border: 1px solid #ffc107; padding: 10px; border-radius: 4px; margin-top: 20px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>{APP_NAME}</h1>
-            </div>
-            <div class="content">
-                <p>{greeting}</p>
-                <p>We received a request to reset your password for your {APP_NAME} account.</p>
-                <p>Click the button below to create a new password:</p>
-                <p style="text-align: center;">
-                    <a href="{reset_url}" class="button">Reset Password</a>
-                </p>
-                <p>Or copy and paste this link into your browser:</p>
-                <p style="word-break: break-all; color: #0066cc;">{reset_url}</p>
-                <div class="warning">
-                    <strong>Important:</strong> This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.
-                </div>
-            </div>
-            <div class="footer">
-                <p>This email was sent by {APP_NAME}</p>
-                <p>Track your delivery driver earnings like a ninja!</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    text_content = f"""
-{greeting}
+    # NOTE: all styling is INLINE on each element. Email clients (Gmail in
+    # particular) strip <head><style> blocks, which would otherwise collapse the
+    # branded button into a plain text link. The button uses a bulletproof
+    # bgcolor-on-<td> + padded <a> pattern so it renders as a solid button across
+    # Gmail, Apple Mail, and Outlook, including on mobile.
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Reset your {APP_NAME} password</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0a0a0a;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0a0a0a;">Reset your {APP_NAME} password — this secure link expires in 1 hour.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0a0a;">
+<tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;width:100%;background-color:#111111;border:1px solid #262626;border-radius:16px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<tr><td align="center" style="padding:32px 24px 20px;">
+<span style="font-size:24px;font-weight:800;color:#facc15;letter-spacing:0.3px;">🥷 {APP_NAME}</span>
+</td></tr>
+<tr><td style="padding:0 28px;">
+<h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#ffffff;">Reset your password</h1>
+<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#d4d4d8;">{greeting}</p>
+<p style="margin:0 0 4px;font-size:15px;line-height:1.6;color:#a1a1aa;">We got a request to reset the password for your {APP_NAME} account. Tap the button below to choose a new one.</p>
+</td></tr>
+<tr><td align="center" style="padding:24px 28px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+<tr><td align="center" bgcolor="#facc15" style="border-radius:10px;">
+<a href="{reset_url}" target="_blank" style="display:inline-block;padding:16px 44px;font-size:16px;font-weight:800;color:#000000;text-decoration:none;border-radius:10px;background-color:#facc15;">Reset Password</a>
+</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding:16px 28px 0;">
+<p style="margin:0 0 6px;font-size:13px;color:#71717a;">Or paste this link into your browser:</p>
+<p style="margin:0 0 20px;font-size:13px;line-height:1.5;word-break:break-all;"><a href="{reset_url}" style="color:#facc15;text-decoration:underline;">{reset_url}</a></p>
+</td></tr>
+<tr><td style="padding:0 28px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#1c1917;border:1px solid #3f3206;border-radius:10px;">
+<tr><td style="padding:14px 16px;">
+<p style="margin:0;font-size:13px;line-height:1.5;color:#e4c95b;">⏳ This link expires in <strong>1 hour</strong> and can only be used once. If you didn't request a reset, you can safely ignore this email — your password won't change.</p>
+</td></tr>
+</table>
+</td></tr>
+<tr><td align="center" style="padding:24px 28px 28px;">
+<p style="margin:0;font-size:12px;color:#52525b;">{APP_NAME} · Drive smart, earn more.</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>"""
+
+    text_content = f"""{greeting}
 
 We received a request to reset your password for your {APP_NAME} account.
 
-Click this link to create a new password:
+Reset your password here:
 {reset_url}
 
-This link will expire in 1 hour.
+This link expires in 1 hour and can only be used once.
 
-If you didn't request a password reset, you can safely ignore this email.
+If you didn't request a password reset, you can safely ignore this email — your password won't change.
 
 - The {APP_NAME} Team
 """
@@ -116,7 +126,11 @@ If you didn't request a password reset, you can safely ignore this email.
             "text": text_content,
         }
         
-        email_response = resend.Emails.send(params)
+        # resend.Emails.send is a synchronous (blocking) HTTP call. Running it
+        # directly inside an async route/background task stalls the whole event
+        # loop until Resend responds, serializing every other request behind it.
+        # Offload to a worker thread so dispatch is non-blocking and concurrent.
+        email_response = await asyncio.to_thread(resend.Emails.send, params)
         print(f"[Email Service] Password reset email sent to {to_email}, id: {email_response.get('id', 'unknown')}")
         return True
     except Exception as e:
@@ -194,7 +208,11 @@ This code expires in 10 minutes. If you didn't try to sign in, change your passw
             "html": html_content,
             "text": text_content,
         }
-        email_response = resend.Emails.send(params)
+        # resend.Emails.send is a synchronous (blocking) HTTP call. Running it
+        # directly inside an async route/background task stalls the whole event
+        # loop until Resend responds, serializing every other request behind it.
+        # Offload to a worker thread so dispatch is non-blocking and concurrent.
+        email_response = await asyncio.to_thread(resend.Emails.send, params)
         print(f"[Email Service] MFA code email sent to {to_email}, id: {email_response.get('id', 'unknown')}")
         return True
     except Exception as e:
@@ -271,7 +289,11 @@ This code expires in 24 hours. If you didn't create an account, ignore this emai
             "html": html_content,
             "text": text_content,
         }
-        email_response = resend.Emails.send(params)
+        # resend.Emails.send is a synchronous (blocking) HTTP call. Running it
+        # directly inside an async route/background task stalls the whole event
+        # loop until Resend responds, serializing every other request behind it.
+        # Offload to a worker thread so dispatch is non-blocking and concurrent.
+        email_response = await asyncio.to_thread(resend.Emails.send, params)
         print(f"[Email Service] Verification email sent to {to_email}, id: {email_response.get('id', 'unknown')}")
         return True
     except Exception as e:
@@ -360,7 +382,11 @@ Drive smart, earn more. We're glad you're here.
             "html": html_content,
             "text": text_content,
         }
-        email_response = resend.Emails.send(params)
+        # resend.Emails.send is a synchronous (blocking) HTTP call. Running it
+        # directly inside an async route/background task stalls the whole event
+        # loop until Resend responds, serializing every other request behind it.
+        # Offload to a worker thread so dispatch is non-blocking and concurrent.
+        email_response = await asyncio.to_thread(resend.Emails.send, params)
         print(f"[Email Service] Welcome email sent to {to_email}, id: {email_response.get('id', 'unknown')}")
         return True
     except Exception as e:

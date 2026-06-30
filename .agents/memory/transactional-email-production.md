@@ -41,3 +41,19 @@ to the landing router, not frontend/.
 The runtime send-failure `except` must NOT print the secret (reset URL/token, MFA
 or verify OTP). Plaintext is only acceptable in the explicit `if not RESEND_API_KEY`
 dev branch. A leak here is account-takeover-grade.
+
+## 4. Email HTML must be INLINE-styled — Gmail strips `<head><style>`
+A `<head><style>{.button{...}}</style>` design renders fine in Apple Mail but
+Gmail (web + app) strips the whole `<head>`, so class-based buttons collapse into
+an unstyled text link → users perceive "the reset email is just a link/code, no
+button." **Fix:** put every style as an inline `style="..."` attribute, and build
+the CTA as a bulletproof button — a `<table>` with `bgcolor` on the `<td>` plus a
+padded `<a>` (also inline-styled). This survives Gmail/Apple Mail/Outlook and is
+tappable on mobile. Add `<meta name="viewport">` and always keep a plaintext part.
+
+## 5. `resend.Emails.send` is SYNCHRONOUS — never call it bare in async code
+The resend python SDK is blocking (requests under the hood). Calling it directly
+inside an `async def` (route or BackgroundTask) stalls the single event loop until
+Resend replies, serializing every other request behind each email. **Fix:**
+`await asyncio.to_thread(resend.Emails.send, params)`. `resend.api_key` is a module
+global set once at import, so the threaded call is safe.
