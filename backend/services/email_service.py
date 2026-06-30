@@ -12,6 +12,12 @@ APP_NAME = "Earnings Ninja"
 # verified at resend.com/domains (e.g. "Earnings Ninja <noreply@earningsninja.app>").
 RESEND_FROM = os.environ.get("RESEND_FROM", "Earnings Ninja <onboarding@resend.dev>")
 
+# Reply-To. The "From" must be on a domain we verify in Resend (a @gmail.com can
+# never be a verified sender — Google owns gmail.com), but replies CAN be routed
+# to any inbox. Driver replies to transactional emails land here. Override with
+# RESEND_REPLY_TO; set to empty to omit the header entirely.
+RESEND_REPLY_TO = os.environ.get("RESEND_REPLY_TO", "earningsninjaapp@gmail.com").strip()
+
 resend.api_key = RESEND_API_KEY
 
 def get_app_url() -> str:
@@ -124,6 +130,7 @@ If you didn't request a password reset, you can safely ignore this email — you
             "subject": f"Reset Your {APP_NAME} Password",
             "html": html_content,
             "text": text_content,
+            **({"reply_to": RESEND_REPLY_TO} if RESEND_REPLY_TO else {}),
         }
         
         # resend.Emails.send is a synchronous (blocking) HTTP call. Running it
@@ -207,6 +214,7 @@ This code expires in 10 minutes. If you didn't try to sign in, change your passw
             "subject": f"Your {APP_NAME} verification code: {code}",
             "html": html_content,
             "text": text_content,
+            **({"reply_to": RESEND_REPLY_TO} if RESEND_REPLY_TO else {}),
         }
         # resend.Emails.send is a synchronous (blocking) HTTP call. Running it
         # directly inside an async route/background task stalls the whole event
@@ -288,6 +296,7 @@ This code expires in 24 hours. If you didn't create an account, ignore this emai
             "subject": f"Confirm your {APP_NAME} email: {code}",
             "html": html_content,
             "text": text_content,
+            **({"reply_to": RESEND_REPLY_TO} if RESEND_REPLY_TO else {}),
         }
         # resend.Emails.send is a synchronous (blocking) HTTP call. Running it
         # directly inside an async route/background task stalls the whole event
@@ -381,6 +390,7 @@ Drive smart, earn more. We're glad you're here.
             "subject": f"Welcome to {APP_NAME}! 🥷",
             "html": html_content,
             "text": text_content,
+            **({"reply_to": RESEND_REPLY_TO} if RESEND_REPLY_TO else {}),
         }
         # resend.Emails.send is a synchronous (blocking) HTTP call. Running it
         # directly inside an async route/background task stalls the whole event
