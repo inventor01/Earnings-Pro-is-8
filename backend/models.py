@@ -44,6 +44,13 @@ class AuthUser(Base):
     # referral. Generated lazily on first GET /referrals/me. Nullable for
     # legacy rows; unique so a code maps to exactly one referrer.
     referral_code = Column(String, nullable=True, unique=True, index=True)
+    # Opt-in email two-factor auth. When mfa_enabled is true, /auth/login emails a
+    # 6-digit code (hashed here with an ISO-string expiry + attempt counter) and
+    # withholds the access token until /auth/mfa/verify exchanges the code for it.
+    mfa_enabled = Column(Boolean, default=False, nullable=False)
+    mfa_code_hash = Column(String, nullable=True)
+    mfa_code_expires_at = Column(String, nullable=True)  # ISO8601 UTC
+    mfa_code_attempts = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

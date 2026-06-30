@@ -25,6 +25,7 @@ import * as Haptics from 'expo-haptics';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
 import { TransactionDetailModal } from '../../components/TransactionDetailModal';
+import { TwoFactorRow } from '../../components/TwoFactorRow';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
@@ -3013,6 +3014,13 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         />
         <View style={{ height: 12 }} />
         <ExportCsvRow onNeedUpgrade={triggerUpgrade} />
+
+        {/* Account Security — opt-in email two-factor at sign-in. */}
+        <View style={{ height: 28 }} />
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+          🔒  Account Security
+        </Text>
+        <TwoFactorRow />
 
         {/* Delete Account — Apple Guideline 5.1.1(v) requires apps that support */}
         {/* account creation to also support in-app account deletion. */}

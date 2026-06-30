@@ -262,11 +262,38 @@ def _migrate_auth_users_add_referral_code() -> None:
     logger.warning("Added auth_users.referral_code for the referral program.")
 
 
+def _migrate_auth_users_add_mfa() -> None:
+    """Add opt-in email-2FA columns to `auth_users`. All additive ADD COLUMNs
+    (safe on both Postgres and SQLite); booleans/integers get a server default
+    so existing rows backfill to "MFA off, 0 attempts". Safe to re-run."""
+    insp = inspect(engine)
+    if not insp.has_table("auth_users"):
+        return
+    cols = {c["name"] for c in insp.get_columns("auth_users")}
+    is_pg = engine.dialect.name == "postgresql"
+    false_default = "FALSE" if is_pg else "0"
+    with engine.begin() as conn:
+        if "mfa_enabled" not in cols:
+            conn.execute(text(
+                f"ALTER TABLE auth_users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT {false_default}"
+            ))
+        if "mfa_code_hash" not in cols:
+            conn.execute(text("ALTER TABLE auth_users ADD COLUMN mfa_code_hash VARCHAR"))
+        if "mfa_code_expires_at" not in cols:
+            conn.execute(text("ALTER TABLE auth_users ADD COLUMN mfa_code_expires_at VARCHAR"))
+        if "mfa_code_attempts" not in cols:
+            conn.execute(text(
+                "ALTER TABLE auth_users ADD COLUMN mfa_code_attempts INTEGER NOT NULL DEFAULT 0"
+            ))
+    logger.warning("Ensured auth_users MFA columns exist (email two-factor auth).")
+
+
 _migrate_api_credentials_for_multi_user()
 _migrate_synced_orders_for_multi_user()
 _migrate_entries_add_idempotency_key()
 _migrate_points_for_multi_user()
 _migrate_auth_users_add_referral_code()
+_migrate_auth_users_add_mfa()
 
 Base.metadata.create_all(bind=engine)
 
