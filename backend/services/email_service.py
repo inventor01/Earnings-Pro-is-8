@@ -99,3 +99,79 @@ If you didn't request a password reset, you can safely ignore this email.
         print(f"[Email Service] Failed to send email to {to_email}: {e}")
         print(f"[Email Service] Reset link (fallback): {reset_url}")
         return False
+
+
+async def send_mfa_code_email(to_email: str, code: str, user_name: Optional[str] = None) -> bool:
+    """Email a 6-digit two-factor verification code. Returns True if Resend
+    accepted it. When the key is missing (dev), the code is logged so the flow
+    is still testable without a real inbox."""
+    if not RESEND_API_KEY:
+        print(f"[Email Service] Resend API key not configured. MFA code for {to_email}: {code}")
+        return False
+
+    greeting = f"Hi {user_name}," if user_name else "Hi,"
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: linear-gradient(135deg, #84cc16, #22c55e); padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }}
+            .header h1 {{ color: white; margin: 0; font-size: 28px; }}
+            .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
+            .code {{ font-size: 36px; font-weight: bold; letter-spacing: 8px; text-align: center; color: #111; background: #fff; border: 2px dashed #84cc16; border-radius: 10px; padding: 18px; margin: 20px 0; }}
+            .footer {{ text-align: center; margin-top: 20px; color: #666; font-size: 12px; }}
+            .warning {{ background: #fff3cd; border: 1px solid #ffc107; padding: 10px; border-radius: 4px; margin-top: 20px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>{APP_NAME}</h1>
+            </div>
+            <div class="content">
+                <p>{greeting}</p>
+                <p>Use this code to finish signing in to your {APP_NAME} account:</p>
+                <div class="code">{code}</div>
+                <div class="warning">
+                    <strong>Important:</strong> This code expires in 10 minutes. If you didn't try to sign in, someone may have your password — change it right away.
+                </div>
+            </div>
+            <div class="footer">
+                <p>This email was sent by {APP_NAME}</p>
+                <p>Track your delivery driver earnings like a ninja!</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    text_content = f"""
+{greeting}
+
+Use this code to finish signing in to your {APP_NAME} account:
+
+{code}
+
+This code expires in 10 minutes. If you didn't try to sign in, change your password right away.
+
+- The {APP_NAME} Team
+"""
+
+    try:
+        params = {
+            "from": "Earnings Ninja <onboarding@resend.dev>",
+            "to": [to_email],
+            "subject": f"Your {APP_NAME} verification code: {code}",
+            "html": html_content,
+            "text": text_content,
+        }
+        email_response = resend.Emails.send(params)
+        print(f"[Email Service] MFA code email sent to {to_email}, id: {email_response.get('id', 'unknown')}")
+        return True
+    except Exception as e:
+        print(f"[Email Service] Failed to send MFA email to {to_email}: {e}")
+        print(f"[Email Service] MFA code (fallback) for {to_email}: {code}")
+        return False

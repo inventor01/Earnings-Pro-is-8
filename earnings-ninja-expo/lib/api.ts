@@ -201,8 +201,15 @@ export interface RedeemResponse {
   referee_reward_granted: boolean;
 }
 
+// /auth/login returns one of two shapes: a normal access token, or — when the
+// account has email 2FA enabled — an `mfa_required` challenge that the login
+// screen completes with a code via verifyMfa().
+export type LoginResult =
+  | { access_token: string; mfa_required?: undefined }
+  | { mfa_required: true; challenge_token: string; email?: string };
+
 export const api = {
-  async login(credential: string, password: string): Promise<{ access_token: string }> {
+  async login(credential: string, password: string): Promise<LoginResult> {
     const res = await trackedFetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -211,6 +218,84 @@ export const api = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'Login failed');
+    }
+    // Either an access token, OR — when the account has email 2FA on — an
+    // `mfa_required` challenge the caller must complete via verifyMfa().
+    return res.json();
+  },
+
+  // Exchange an emailed 6-digit code (+ the login challenge token) for an
+  // access token. Used by the login screen's 2FA step.
+  async verifyMfa(challengeToken: string, code: string): Promise<{ access_token: string }> {
+    const res = await trackedFetch(`${API_BASE}/api/auth/mfa/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challenge_token: challengeToken, code }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not verify code');
+    }
+    return res.json();
+  },
+
+  // Confirm an emailed code that turns 2FA ON (purpose='enable'). Same endpoint
+  // as verifyMfa but returns a success flag instead of an access token.
+  async confirmMfaEnable(challengeToken: string, code: string): Promise<{ success: boolean }> {
+    const res = await trackedFetch(`${API_BASE}/api/auth/mfa/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challenge_token: challengeToken, code }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not verify code');
+    }
+    return res.json();
+  },
+
+  async resendMfa(challengeToken: string): Promise<{ challenge_token: string; email?: string }> {
+    const res = await trackedFetch(`${API_BASE}/api/auth/mfa/resend`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challenge_token: challengeToken }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not resend code');
+    }
+    return res.json();
+  },
+
+  async getMfaStatus(): Promise<{ enabled: boolean; email?: string }> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/auth/mfa/status`, { headers });
+    if (!res.ok) throw new Error(`getMfaStatus failed: ${res.status}`);
+    return res.json();
+  },
+
+  // Begin enabling 2FA — server emails a confirmation code and returns a
+  // challenge the user confirms via confirmMfaEnable().
+  async enableMfa(): Promise<{ challenge_token?: string; already_enabled?: boolean; email?: string }> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/auth/mfa/enable`, { method: 'POST', headers });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not start two-factor setup');
+    }
+    return res.json();
+  },
+
+  async disableMfa(password?: string): Promise<{ success: boolean }> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/auth/mfa/disable`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: password ?? null }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not turn off two-factor');
     }
     return res.json();
   },

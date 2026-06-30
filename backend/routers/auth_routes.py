@@ -12,7 +12,7 @@ from backend.models import (
 )
 import secrets
 from backend.auth import get_current_user, verify_prelaunch_token
-from backend.services.email_service import send_password_reset_email
+from backend.services.email_service import send_password_reset_email, send_mfa_code_email
 import jwt
 import os
 from typing import Dict, Optional
@@ -119,6 +119,117 @@ def create_access_token(user_id: str, email: str) -> str:
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
 
+
+# ---------------------------------------------------------------------------
+# Email two-factor auth (opt-in)
+# ---------------------------------------------------------------------------
+MFA_CODE_TTL = timedelta(minutes=10)
+# The challenge token outlives the code slightly so "Resend" still works after
+# the first code expires without forcing the user back to the password screen.
+# This window is anchored to the FIRST issue (iat0) and is NOT renewed by Resend,
+# so the whole verification session has a hard ceiling.
+MFA_CHALLENGE_TTL = timedelta(minutes=15)
+MFA_MAX_ATTEMPTS = 5
+# Resend mints a new code (each with its own MFA_MAX_ATTEMPTS budget). Capping the
+# number of resends per session bounds total guesses to (MFA_MAX_RESENDS + 1) *
+# MFA_MAX_ATTEMPTS against independent random codes — without this an attacker who
+# already has the password could cycle Resend forever to brute the second factor.
+MFA_MAX_RESENDS = 3
+
+
+class MfaVerifyRequest(BaseModel):
+    challenge_token: str
+    code: str
+
+
+class MfaResendRequest(BaseModel):
+    challenge_token: str
+
+
+class MfaDisableRequest(BaseModel):
+    password: Optional[str] = None
+
+
+def _mask_email(email: str) -> str:
+    """`john@x.com` -> `j**n@x.com`. Shown to the user so they know which inbox
+    to check without echoing the full address back over the wire."""
+    try:
+        local, domain = email.split("@", 1)
+    except ValueError:
+        return email
+    if len(local) <= 2:
+        masked = local[0] + "*"
+    else:
+        masked = local[0] + "*" * (len(local) - 2) + local[-1]
+    return f"{masked}@{domain}"
+
+
+def _generate_mfa_code() -> str:
+    """Cryptographically-random 6-digit code (secrets, not random)."""
+    return f"{secrets.randbelow(1000000):06d}"
+
+
+async def _issue_mfa_challenge(
+    user: AuthUser,
+    purpose: str,
+    db: Session,
+    *,
+    gen: int = 0,
+    issued_at: Optional[datetime] = None,
+) -> str:
+    """Generate + email a fresh code, persist its bcrypt hash / ISO expiry /
+    reset attempt counter on the user, and return a signed short-lived challenge
+    token (`typ='mfa'`) that only /auth/mfa/verify accepts. `purpose` is 'login'
+    (exchange for an access token) or 'enable' (flip mfa_enabled on).
+
+    `gen` is the resend generation (0 = first code). `issued_at` anchors the
+    challenge's expiry to the ORIGINAL issue so Resend can mint a new code but
+    never extend the overall window — once `issued_at + MFA_CHALLENGE_TTL` passes
+    the session is dead and the user must re-enter their password."""
+    code = _generate_mfa_code()
+    user.mfa_code_hash = hash_password(code)
+    user.mfa_code_expires_at = (datetime.utcnow() + MFA_CODE_TTL).isoformat()
+    user.mfa_code_attempts = 0
+    db.commit()
+    try:
+        await send_mfa_code_email(user.email, code, user.first_name)
+    except Exception as e:
+        # Don't 500 on email failure — the user can hit Resend. Never log the code.
+        print(f"[MFA] Failed to send code to {_mask_email(user.email or '')}: {e}")
+    now = datetime.utcnow()
+    origin = issued_at or now
+    # Hard ceiling anchored to the first issue; clamp so we never mint an already-
+    # expired token if Resend is hit right at the edge of the window.
+    exp = origin + MFA_CHALLENGE_TTL
+    if exp <= now:
+        exp = now + timedelta(seconds=30)
+    payload = {
+        "sub": user.id,
+        "typ": "mfa",
+        "purpose": purpose,
+        "gen": gen,
+        "iat0": int(origin.timestamp()),
+        "iat": now,
+        "exp": exp,
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+
+def _decode_mfa_challenge(token: str) -> Dict:
+    """Decode + validate an MFA challenge token. Raises 400 on anything off."""
+    try:
+        payload = jwt.decode(
+            token, SECRET_KEY, algorithms=[JWT_ALGORITHM], options={"require": ["sub", "exp"]}
+        )
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="This verification session expired. Please sign in again.")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=400, detail="Invalid verification session.")
+    if payload.get("typ") != "mfa":
+        raise HTTPException(status_code=400, detail="Invalid verification session.")
+    return payload
+
+
 @router.post("/auth/signup", response_model=AuthResponse)
 @auth_limiter.limit("5/hour")
 async def signup(request: Request, body: SignupRequest, db: Session = Depends(get_db)):
@@ -193,7 +304,7 @@ async def _signup(request: SignupRequest, db: Session = Depends(get_db)):
         "email": user.email
     }
 
-@router.post("/auth/login", response_model=AuthResponse)
+@router.post("/auth/login")
 @auth_limiter.limit("10/minute")
 async def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     return await _login(body, db)
@@ -326,7 +437,19 @@ async def _login(request: LoginRequest, db: Session = Depends(get_db)):
     
     if not verify_password(request.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email, username, or password")
-    
+
+    # Password is correct. If this user opted into email 2FA, withhold the access
+    # token: email a code and return a challenge the client exchanges at
+    # /auth/mfa/verify. Branching only AFTER the password check means we never
+    # reveal whether MFA is on for an account the caller can't authenticate to.
+    if user.mfa_enabled and user.email:
+        challenge = await _issue_mfa_challenge(user, "login", db)
+        return {
+            "mfa_required": True,
+            "challenge_token": challenge,
+            "email": _mask_email(user.email),
+        }
+
     token = create_access_token(user.id, user.email)
     return {
         "access_token": token,
@@ -334,6 +457,127 @@ async def _login(request: LoginRequest, db: Session = Depends(get_db)):
         "user_id": user.id,
         "email": user.email
     }
+
+
+@router.post("/auth/mfa/verify")
+@auth_limiter.limit("10/minute")
+async def mfa_verify(request: Request, body: MfaVerifyRequest, db: Session = Depends(get_db)):
+    """Exchange a challenge token + emailed code for an access token (login) or
+    flip mfa_enabled on (enable). Enforces expiry + a 5-attempt cap per code."""
+    payload = _decode_mfa_challenge(body.challenge_token)
+    user = db.query(AuthUser).filter(AuthUser.id == str(payload.get("sub"))).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid verification session.")
+    if not user.mfa_code_hash or not user.mfa_code_expires_at:
+        raise HTTPException(status_code=400, detail="No code is pending. Please request a new one.")
+
+    try:
+        expires = datetime.fromisoformat(user.mfa_code_expires_at)
+    except Exception:
+        expires = datetime.utcnow() - timedelta(seconds=1)
+    if datetime.utcnow() > expires:
+        user.mfa_code_hash = None
+        user.mfa_code_expires_at = None
+        user.mfa_code_attempts = 0
+        db.commit()
+        raise HTTPException(status_code=400, detail="That code expired. Please request a new one.")
+
+    if (user.mfa_code_attempts or 0) >= MFA_MAX_ATTEMPTS:
+        user.mfa_code_hash = None
+        user.mfa_code_expires_at = None
+        user.mfa_code_attempts = 0
+        db.commit()
+        raise HTTPException(status_code=429, detail="Too many incorrect codes. Please request a new one.")
+
+    code = (body.code or "").strip()
+    if not verify_password(code, user.mfa_code_hash):
+        user.mfa_code_attempts = (user.mfa_code_attempts or 0) + 1
+        db.commit()
+        remaining = max(0, MFA_MAX_ATTEMPTS - user.mfa_code_attempts)
+        raise HTTPException(status_code=400, detail=f"Incorrect code. {remaining} attempt(s) left.")
+
+    # Correct — consume the code so it can't be replayed.
+    user.mfa_code_hash = None
+    user.mfa_code_expires_at = None
+    user.mfa_code_attempts = 0
+    if payload.get("purpose") == "enable":
+        user.mfa_enabled = True
+        db.commit()
+        return {"success": True, "mfa_enabled": True}
+
+    db.commit()
+    token = create_access_token(user.id, user.email)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "email": user.email,
+    }
+
+
+@router.post("/auth/mfa/resend")
+@auth_limiter.limit("5/minute")
+async def mfa_resend(request: Request, body: MfaResendRequest, db: Session = Depends(get_db)):
+    """Issue a brand-new code for an in-flight challenge (login or enable).
+
+    Capped at MFA_MAX_RESENDS per session and anchored to the original challenge
+    window so Resend can't be cycled to defeat the per-code attempt cap."""
+    payload = _decode_mfa_challenge(body.challenge_token)
+    user = db.query(AuthUser).filter(AuthUser.id == str(payload.get("sub"))).first()
+    if not user or not user.email:
+        raise HTTPException(status_code=400, detail="Invalid verification session.")
+    gen = int(payload.get("gen") or 0)
+    if gen >= MFA_MAX_RESENDS:
+        raise HTTPException(status_code=429, detail="Too many code requests. Please sign in again.")
+    iat0 = payload.get("iat0")
+    issued_at = datetime.utcfromtimestamp(iat0) if iat0 else None
+    challenge = await _issue_mfa_challenge(
+        user, payload.get("purpose") or "login", db, gen=gen + 1, issued_at=issued_at,
+    )
+    return {"challenge_token": challenge, "email": _mask_email(user.email)}
+
+
+@router.get("/auth/mfa/status")
+async def mfa_status(current_user: AuthUser = Depends(get_current_user)):
+    return {"enabled": bool(current_user.mfa_enabled), "email": current_user.email}
+
+
+@router.post("/auth/mfa/enable")
+@auth_limiter.limit("5/minute")
+async def mfa_enable(
+    request: Request,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Start enabling 2FA: email a confirmation code and return a challenge. The
+    user must confirm via /auth/mfa/verify (purpose='enable') so we never turn on
+    2FA for an inbox they can't actually receive mail at (lockout protection)."""
+    if not current_user.email:
+        raise HTTPException(status_code=400, detail="Add an email to your account before turning on two-factor.")
+    if current_user.mfa_enabled:
+        return {"already_enabled": True, "email": _mask_email(current_user.email)}
+    challenge = await _issue_mfa_challenge(current_user, "enable", db)
+    return {"challenge_token": challenge, "email": _mask_email(current_user.email)}
+
+
+@router.post("/auth/mfa/disable")
+async def mfa_disable(
+    body: MfaDisableRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Turn off 2FA. Password-based accounts must re-enter their password so a
+    stolen unlocked session can't silently strip the second factor."""
+    if current_user.password_hash:
+        if not body.password or not verify_password(body.password, current_user.password_hash):
+            raise HTTPException(status_code=401, detail="Incorrect password.")
+    current_user.mfa_enabled = False
+    current_user.mfa_code_hash = None
+    current_user.mfa_code_expires_at = None
+    current_user.mfa_code_attempts = 0
+    db.commit()
+    return {"success": True, "mfa_enabled": False}
+
 
 @router.get("/auth/me")
 async def get_current_user_info(current_user: AuthUser = Depends(get_current_user)) -> Dict:

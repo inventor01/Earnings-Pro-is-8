@@ -118,6 +118,13 @@ def get_current_user(
     except jwt.InvalidTokenError:
         raise _unauthorized("Invalid token")
 
+    # Reject MFA challenge tokens. They carry `sub`+`exp` (so they'd otherwise
+    # satisfy the decode above) but are only valid at /auth/mfa/verify — never as
+    # a full access token. Without this guard a half-authenticated user (password
+    # correct, 2nd factor NOT yet supplied) could call any protected route.
+    if payload.get("typ") == "mfa":
+        raise _unauthorized("Invalid token")
+
     user_id = payload.get("sub")
     if not user_id:
         raise _unauthorized("Invalid token")

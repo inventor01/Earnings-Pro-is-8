@@ -88,19 +88,78 @@ export default function LoginScreen() {
   const [forgotMessage, setForgotMessage] = useState('');
   const [forgotError, setForgotError] = useState('');
 
+  // Email 2FA step — shown after a correct password when the account has it on.
+  const [showMfa, setShowMfa] = useState(false);
+  const [mfaChallenge, setMfaChallenge] = useState('');
+  const [mfaEmail, setMfaEmail] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaError, setMfaError] = useState('');
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaResending, setMfaResending] = useState(false);
+  const [mfaResent, setMfaResent] = useState(false);
+
   const handleSubmit = async () => {
     setError('');
     setLoading(true);
     try {
-      const res = mode === 'login'
-        ? await api.login(credential, password)
-        : await api.signup(credential, password, username, referralCode);
-      if (mode === 'signup') await clearPendingReferral();
+      if (mode === 'signup') {
+        const res = await api.signup(credential, password, username, referralCode);
+        await clearPendingReferral();
+        login(res.access_token);
+        return;
+      }
+      const res = await api.login(credential, password);
+      if ('mfa_required' in res && res.mfa_required) {
+        // Password OK but the account requires a 2nd factor — collect the code.
+        setMfaChallenge(res.challenge_token);
+        setMfaEmail(res.email || '');
+        setMfaCode('');
+        setMfaError('');
+        setMfaResent(false);
+        setShowMfa(true);
+        return;
+      }
       login(res.access_token);
     } catch (e: any) {
       setError(e.message || 'Something went wrong');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const submitMfa = async () => {
+    setMfaError('');
+    const code = mfaCode.trim();
+    if (code.length < 6) {
+      setMfaError('Enter the 6-digit code from your email');
+      return;
+    }
+    setMfaLoading(true);
+    try {
+      const res = await api.verifyMfa(mfaChallenge, code);
+      setShowMfa(false);
+      login(res.access_token);
+    } catch (e: any) {
+      setMfaError(e.message || 'Could not verify code');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const resendMfa = async () => {
+    setMfaError('');
+    setMfaResent(false);
+    setMfaResending(true);
+    try {
+      const res = await api.resendMfa(mfaChallenge);
+      setMfaChallenge(res.challenge_token);
+      if (res.email) setMfaEmail(res.email);
+      setMfaCode('');
+      setMfaResent(true);
+    } catch (e: any) {
+      setMfaError(e.message || 'Could not resend code');
+    } finally {
+      setMfaResending(false);
     }
   };
 
@@ -548,6 +607,109 @@ export default function LoginScreen() {
                   }
                 </Pressable>
               )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Email 2FA code-entry modal */}
+      <Modal visible={showMfa} animationType="fade" transparent onRequestClose={() => setShowMfa(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
+          <View style={{
+            backgroundColor: CARD,
+            borderRadius: 18,
+            borderWidth: 1,
+            borderColor: BORDER,
+            padding: 22,
+          }}>
+            <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginBottom: 6 }}>
+              Enter your code
+            </Text>
+            <Text style={{ color: MUTED, fontSize: 13, marginBottom: 16, lineHeight: 18 }}>
+              We emailed a 6-digit code{mfaEmail ? ` to ${mfaEmail}` : ''}. Enter it below to finish signing in.
+            </Text>
+
+            <Text style={{ color: MUTED, fontSize: 12, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>
+              Verification code
+            </Text>
+            <TextInput
+              value={mfaCode}
+              onChangeText={(v) => setMfaCode(v.replace(/[^0-9]/g, '').slice(0, 6))}
+              placeholder="123456"
+              placeholderTextColor={MUTED}
+              keyboardType="number-pad"
+              autoFocus
+              maxLength={6}
+              editable={!mfaLoading}
+              style={{
+                backgroundColor: INPUT_BG,
+                borderWidth: 1,
+                borderColor: BORDER,
+                borderRadius: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                color: TEXT,
+                fontSize: 24,
+                letterSpacing: 8,
+                textAlign: 'center',
+                marginBottom: 12,
+              }}
+            />
+
+            {mfaResent ? (
+              <View style={{ backgroundColor: 'rgba(34,197,94,0.12)', borderWidth: 1, borderColor: GREEN, borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                <Text style={{ color: GREEN, fontSize: 13, textAlign: 'center' }}>A new code is on its way.</Text>
+              </View>
+            ) : null}
+            {mfaError ? (
+              <View style={{ backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: '#ef4444', borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                <Text style={{ color: '#f87171', fontSize: 13, textAlign: 'center' }}>{mfaError}</Text>
+              </View>
+            ) : null}
+
+            <Pressable
+              onPress={resendMfa}
+              disabled={mfaResending || mfaLoading}
+              hitSlop={8}
+              style={{ alignSelf: 'center', marginBottom: 14, paddingVertical: 4 }}
+            >
+              <Text style={{ color: ACCENT_TXT, fontSize: 13, fontWeight: '700' }}>
+                {mfaResending ? 'Sending…' : "Didn't get it? Resend code"}
+              </Text>
+            </Pressable>
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Pressable
+                onPress={() => setShowMfa(false)}
+                style={{
+                  flex: 1,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: BORDER,
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <Text style={{ color: TEXT, fontWeight: '700', fontSize: 15 }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={submitMfa}
+                disabled={mfaLoading}
+                style={{
+                  flex: 1,
+                  borderRadius: 12,
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                  backgroundColor: ACCENT,
+                  opacity: mfaLoading ? 0.7 : 1,
+                }}
+              >
+                {mfaLoading
+                  ? <ActivityIndicator color={ON_PRIMARY} />
+                  : <Text style={{ color: ON_PRIMARY, fontWeight: '900', fontSize: 15 }}>Verify</Text>
+                }
+              </Pressable>
             </View>
           </View>
         </View>
