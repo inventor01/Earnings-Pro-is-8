@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import { getToken } from './tokenStorage';
 import { reportSuccess, reportFailure } from './connectivity';
 import { refreshPendingCount } from './pendingCount';
+import { requestDrain } from './syncTrigger';
 import {
   localRollupForTimeframe,
   localRollupForRange,
@@ -478,6 +479,10 @@ export const api = {
       // Keep the sync indicator's pending count honest right after an offline add
       // (the edit/delete/goal paths already do this).
       await refreshPendingCount();
+      // Ask the layout to flush right now (and arm its backoff retry) so a write
+      // that hit a transient hiccup syncs while the app stays open — no need to
+      // close + reopen to trigger a drain.
+      requestDrain();
       return synthesizeEntry(item);
     }
   },
@@ -554,6 +559,7 @@ export const api = {
       const { enqueueMutation } = await import('./mutationQueue');
       await enqueueMutation({ kind: 'deleteEntry', id, baseUpdatedAt });
       await refreshPendingCount();
+      requestDrain();
     }
   },
 
@@ -608,6 +614,7 @@ export const api = {
       const { enqueueMutation } = await import('./mutationQueue');
       await enqueueMutation({ kind: 'updateEntry', id, patch, baseUpdatedAt });
       await refreshPendingCount();
+      requestDrain();
       return synthEntryFromPatch(id, patch);
     }
   },
@@ -681,6 +688,7 @@ export const api = {
       const { enqueueMutation } = await import('./mutationQueue');
       await enqueueMutation({ kind: 'upsertGoal', timeframe, target_profit, baseUpdatedAt });
       await refreshPendingCount();
+      requestDrain();
       // Synthetic goal so the optimistic UI flow doesn't break offline.
       return { id: -1, timeframe, target_profit, goal_name: 'Goal' };
     }
