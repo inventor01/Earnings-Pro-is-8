@@ -9,7 +9,7 @@ APP_NAME = "Earnings Ninja"
 # Sender address. `onboarding@resend.dev` is Resend's shared sandbox sender and
 # can ONLY deliver to the Resend account owner's own address — every email to a
 # real user is rejected. In production set RESEND_FROM to an address on a domain
-# verified at resend.com/domains (e.g. "Earnings Ninja <noreply@earningsninja.app>").
+# verified at resend.com/domains (e.g. "Earnings Ninja <noreply@earningsninja.com>").
 RESEND_FROM = os.environ.get("RESEND_FROM", "Earnings Ninja <onboarding@resend.dev>")
 
 # Reply-To. The "From" must be on a domain we verify in Resend (a @gmail.com can
