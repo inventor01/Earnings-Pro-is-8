@@ -30,6 +30,14 @@ def get_app_url() -> str:
     domains = os.environ.get("REPLIT_DOMAINS", "")
     if domains:
         return f"https://{domains.split(',')[0]}"
+    # Railway injects this automatically for any service with a public domain, so
+    # production reset/welcome links resolve with zero env config. We use the
+    # Railway origin (not the earningsninja.app vanity domain) because it serves
+    # landing/dist + /api on the same origin with no 301 that could drop the
+    # ?token= query param.
+    railway = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "").strip()
+    if railway:
+        return f"https://{railway.rstrip('/')}"
     return "http://localhost:5000"
 
 async def send_password_reset_email(to_email: str, reset_token: str, user_name: Optional[str] = None) -> bool:
