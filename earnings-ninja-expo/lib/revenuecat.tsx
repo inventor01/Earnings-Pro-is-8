@@ -35,6 +35,7 @@ import Purchases, {
 } from 'react-native-purchases';
 import { useTheme } from './theme';
 import { useAuth } from './authContext';
+import { API_BASE } from './api';
 
 // The RevenueCat entitlement that unlocks premium features (CSV export +
 // advanced analytics). Display name in the RevenueCat dashboard is
@@ -948,7 +949,7 @@ function FallbackPaywall({
             style={{ flexDirection: 'row', justifyContent: 'center', gap: 18, marginTop: 12 }}
           >
             <Pressable
-              onPress={() => Linking.openURL('https://earningsninja.app/privacy')}
+              onPress={() => Linking.openURL(`${API_BASE}/privacy`)}
               hitSlop={8}
             >
               <Text
