@@ -1697,7 +1697,17 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // and drop the row from any list whose timeframe doesn't actually contain
       // the entry's timestamp. Brief (<200ms) cross-window flash is acceptable
       // and far better than the previous "wait for the server" experience.
-      await queryClient.cancelQueries({ queryKey: ['entries'] });
+      //
+      // ONLY cancel in-flight fetches for windows that already HOLD data — those
+      // are the only ones whose optimistic patch an incoming response could
+      // stomp (the patch loops below skip data-less windows entirely). Cancelling
+      // a window's FIRST fetch (no data yet — e.g. right after a cold start or
+      // after swiping to a fresh period) left that query pending forever when
+      // the save fell into the offline queue (negative id → onSuccess skips the
+      // invalidation that would normally restart it), so the dashboard showed
+      // the loading skeleton — "cleared" — until a chip tap changed the key.
+      const hasData = (q: { state: { data?: unknown } }) => q.state.data !== undefined;
+      await queryClient.cancelQueries({ queryKey: ['entries'], predicate: hasData });
       const prevEntries = queryClient.getQueriesData<Entry[]>({ queryKey: ['entries'] });
       // The synthetic row MUST carry the same instant convention the server
       // stores (UTC). The History list sorts via parseServerDate(), which
@@ -1768,7 +1778,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // window the entry falls on, and the window scoping prevents it from
       // inflating windows that don't contain the date. The onSuccess invalidation
       // still reconciles the exact numbers ~200ms later when the save persists.
-      await queryClient.cancelQueries({ queryKey: ['rollup'] });
+      await queryClient.cancelQueries({ queryKey: ['rollup'], predicate: hasData });
       const prevRollup = applyOptimisticCreateRollup(queryClient, vars, estDateStr);
       // Close the modal immediately so the user sees the already-patched
       // dashboard right away, instead of waiting for the network round-trip
@@ -1808,6 +1818,16 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         // dashboard lists AND the Analytics modal's separate cache keys so a
         // newly-added entry shows everywhere instantly (no 30s staleTime gap).
         invalidateEntryData(queryClient);
+      } else {
+        // Queued-offline save: skipping invalidateEntryData protects the
+        // optimistic patches from being wiped by stale server data — but any
+        // ACTIVE window left with NO data (its first fetch raced this save)
+        // holds no optimistic patch to protect, and with the invalidation
+        // skipped nothing would ever fetch it → the dashboard skeleton sticks
+        // until the user changes period. Refetch just those data-less windows.
+        const noData = { predicate: (q: { state: { data?: unknown } }) => q.state.data === undefined, type: 'active' as const };
+        queryClient.refetchQueries({ queryKey: ['rollup'], ...noData });
+        queryClient.refetchQueries({ queryKey: ['entries'], ...noData });
       }
       hNotifyOk();
       // Satisfying cash-register "ka-ching" on a successful save. This is the
