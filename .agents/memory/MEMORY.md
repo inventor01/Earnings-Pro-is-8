@@ -22,3 +22,4 @@
 - [MFA resend/attempt-cap](mfa-resend-attempt-cap.md) — a per-code OTP attempt cap is bypassable if Resend is uncapped; must also cap resends + anchor the challenge window to its original issue.
 - [Foreground auto-sync](foreground-auto-sync.md) — offline-queue drain needs a post-enqueue trigger + foreground backoff retry, not just lifecycle/connectivity events; a server-reachable transient 5xx never flips connectivity offline.
 - [Offline overlay on success path](offline-overlay-on-success-path.md) — online entry/rollup reads must re-overlay the pending queue (not just the catch path) or refetch erases queued saves; dedupe replayed creates by idempotency_key.
+- [cancelQueries data-less skeleton](cancelqueries-dataless-skeleton.md) — onMutate must only cancel queries that hold data, or a killed first fetch strands the dashboard on its skeleton.
