@@ -18,3 +18,20 @@ separate Railway backend.)
 - `backend/app.py` lists `landing/dist` (and `/app/landing/dist`) as the FIRST `_possible_dist` candidates, so it static-serves the landing build. A `_SPAStaticFiles` fallback returns `index.html` for unknown paths (history-API routes like `/upgrade`) but EXCLUDES `/api/*` so unknown API paths still return real 404 JSON — the mobile/Railway backend depends on that.
 - Do NOT "fix" the deployment back to building/serving `frontend/`. The webapp source still exists but is dead at the domain by design.
 - Deployment-config changes only take effect after the user publishes from the main repl.
+
+## In-app legal links MUST use API_BASE, never the vanity domain
+
+Apple rejected the app (3.1.2c) because the paywall's Privacy Policy link pointed at
+`https://earningsninja.app/privacy`, which returns **404** — the vanity domain serves
+the static landing deploy, and the legal pages (`/privacy`, `/support`) are served only
+by the Railway backend.
+
+**Why:** Apple taps every legal link during review; a dead privacy link in a
+subscription purchase flow is an automatic rejection.
+
+**How to apply:** any in-app link to legal pages must be `${API_BASE}/privacy` (the
+mobile app's backend base, which is Railway in store builds). Terms of Use uses
+Apple's standard EULA URL (`apple.com/legal/internet-services/itunes/dev/stdeula/`).
+Before any submission, `curl -L` every URL that appears in-app AND in ASC metadata
+and require HTTP 200. The ASC "Privacy Policy URL" field must also point at a live
+200 URL (Railway `/privacy`) until the vanity domain proxies the backend legal pages.

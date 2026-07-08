@@ -4,7 +4,7 @@ import {
   RefreshControl, ActivityIndicator, Image, Alert,
   TextInput, KeyboardAvoidingView, Platform, Share,
   ViewStyle, TextStyle, StyleSheet,
-  NativeSyntheticEvent, NativeScrollEvent,
+  NativeSyntheticEvent, NativeScrollEvent, Linking,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withSequence, withRepeat, withDelay,
@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup, Goal,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
-  ReferralInfo,
+  ReferralInfo, API_BASE,
 } from '@/lib/api';
 import { applyOptimisticGoal, rollbackOptimisticGoal } from '@/lib/goalOptimistic';
 import { useAuth } from '@/lib/authContext';
@@ -2679,9 +2679,28 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         {/* Build / version — always visible (NOT gated by RevenueCat) so the
             running build is identifiable during testing. If this doesn't read
             "build 11"+, the device is on an older install. */}
-        <Text style={{ color: MUTED, fontSize: 11, textAlign: 'center', marginBottom: 24 }}>
+        <Text style={{ color: MUTED, fontSize: 11, textAlign: 'center', marginBottom: 12 }}>
           Earnings Ninja v{Application.nativeApplicationVersion ?? '—'} (build {Application.nativeBuildVersion ?? '—'})
         </Text>
+
+        {/* Legal links — Apple 3.1.2 requires functional Privacy Policy +
+            Terms of Use links inside the app. Privacy is served by the
+            backend (API_BASE/privacy); Terms uses Apple's standard EULA. */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 18, marginBottom: 24 }}>
+          <Pressable onPress={() => Linking.openURL(`${API_BASE}/privacy`)} hitSlop={8}>
+            <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', textDecorationLine: 'underline' }}>
+              Privacy Policy
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}
+            hitSlop={8}
+          >
+            <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', textDecorationLine: 'underline' }}>
+              Terms of Use
+            </Text>
+          </Pressable>
+        </View>
 
         {/* Refresh data — moved out of the header to make room for the
             settings icon. Invalidates the same queries pull-to-refresh does. */}
