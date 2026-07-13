@@ -591,11 +591,10 @@ function FallbackPaywall({
     if (ok) onClose();
   };
 
-  const ctaPrice = selected
-    ? introPhrase(selected)
-      ? selected.product.introPrice?.priceString
-      : selected.product.priceString
-    : '';
+  // The CTA always carries the FULL BILLED amount — never the intro/trial
+  // price. App Review 3.1.2(c): the billed amount must be the most clear and
+  // conspicuous pricing element; intro/trial info is subordinate elsewhere.
+  const ctaPrice = selected ? selected.product.priceString : '';
 
   return (
     <Modal
@@ -659,27 +658,10 @@ function FallbackPaywall({
             >
               <Ionicons name="rocket" size={34} color="#000" />
             </LinearGradient>
-            {trialLabel && (
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 6,
-                  backgroundColor: t.PRI_LITE,
-                  borderWidth: 1,
-                  borderColor: t.PRIMARY,
-                  borderRadius: 999,
-                  paddingHorizontal: 12,
-                  paddingVertical: 5,
-                  marginBottom: 12,
-                }}
-              >
-                <Ionicons name="gift" size={13} color={t.PRIMARY_TXT} />
-                <Text style={{ color: t.PRIMARY_TXT, fontSize: 11.5, fontWeight: '900', letterSpacing: 0.5 }}>
-                  {trialLabel.toUpperCase()} FREE TRIAL
-                </Text>
-              </View>
-            )}
+            {/* NOTE (App Review 3.1.2(c)): no standalone free-trial hero badge.
+                Apple rejected the paywall for promoting the trial/intro offer
+                more conspicuously than the billed amount — trial info may only
+                appear SUBORDINATE to the billed price (plan rows + CTA note). */}
             <Text
               style={{
                 color: t.TEXT,
@@ -818,10 +800,13 @@ function FallbackPaywall({
                         <Text style={{ color: t.TEXT, fontSize: 16, fontWeight: '800' }}>
                           {packageLabel(pkg)}
                         </Text>
+                        {/* Trial / intro chips are OUTLINE-muted on purpose —
+                            the billed price (right, 17pt/900) must stay the most
+                            conspicuous pricing element per App Review 3.1.2(c). */}
                         {trialLbl && (
-                          <View style={{ backgroundColor: t.GREEN, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-                            <Text style={{ color: '#04210f', fontSize: 10, fontWeight: '900', letterSpacing: 0.3 }}>
-                              {trialLbl.toUpperCase()} FREE
+                          <View style={{ borderWidth: 1, borderColor: t.BORDER, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                            <Text style={{ color: t.MUTED, fontSize: 10, fontWeight: '700', letterSpacing: 0.3 }}>
+                              {trialLbl} free trial
                             </Text>
                           </View>
                         )}
@@ -833,9 +818,9 @@ function FallbackPaywall({
                           </View>
                         )}
                         {intro && (
-                          <View style={{ backgroundColor: t.PRIMARY, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-                            <Text style={{ color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 0.3 }}>
-                              LAUNCH DEAL
+                          <View style={{ borderWidth: 1, borderColor: t.BORDER, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                            <Text style={{ color: t.MUTED, fontSize: 10, fontWeight: '700', letterSpacing: 0.3 }}>
+                              intro offer
                             </Text>
                           </View>
                         )}
@@ -845,14 +830,15 @@ function FallbackPaywall({
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
+                      {/* ALWAYS the full billed amount, biggest & boldest price
+                          on the row (App Review 3.1.2(c)) — intro/trial detail
+                          lives in the subordinate subtitle text only. */}
                       {intro ? (
                         <>
                           <Text style={{ color: t.PRIMARY_TXT, fontSize: 17, fontWeight: '900' }}>
-                            {pkg.product.introPrice?.priceString}
-                          </Text>
-                          <Text style={{ color: t.MUTED, fontSize: 12, textDecorationLine: 'line-through' }}>
                             {pkg.product.priceString}
                           </Text>
+                          <Text style={{ color: t.MUTED, fontSize: 11, marginTop: 1 }}>after intro</Text>
                         </>
                       ) : (
                         <>
@@ -1020,13 +1006,18 @@ function FallbackPaywall({
             {busy ? (
               <ActivityIndicator color="#000" />
             ) : (
-              <Text style={{ color: '#000', fontSize: 17, fontWeight: '900', letterSpacing: 0.2 }}>
-                {selTrialLabel
-                  ? `Try Pro Free for ${selTrialLabel}`
-                  : selected
-                    ? `Upgrade${ctaPrice ? ` — ${ctaPrice}` : ''}`
-                    : 'Upgrade to Pro'}
-              </Text>
+              <View style={{ alignItems: 'center' }}>
+                {/* Billed amount leads (App Review 3.1.2(c)); the free-trial
+                    mention is a smaller subordinate line below it. */}
+                <Text style={{ color: '#000', fontSize: 17, fontWeight: '900', letterSpacing: 0.2 }}>
+                  {selected ? `Upgrade${ctaPrice ? ` — ${ctaPrice}` : ''}` : 'Upgrade to Pro'}
+                </Text>
+                {selTrialLabel && (
+                  <Text style={{ color: '#000', fontSize: 11.5, fontWeight: '600', opacity: 0.75, marginTop: 2 }}>
+                    Includes {selTrialLabel} free trial
+                  </Text>
+                )}
+              </View>
             )}
           </AnimatedPressable>
           <Pressable onPress={onClose} disabled={busy} hitSlop={8} style={{ paddingVertical: 10, alignItems: 'center' }}>
