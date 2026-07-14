@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --yellow:#facc15; --green:#22c55e; --red:#ef4444;
+    --text:#0f172a; --muted:#64748b; --border:#e2e8f0; --surface:#ffffff; --bg:#f8fafc;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+  body{background:#ddd}
+  .slide{width:645px;height:1398px;position:relative;overflow:hidden;
+    background:linear-gradient(180deg,#ffffff 0%,#fdfbf3 55%,#faf3d0 100%);
+    display:flex;flex-direction:column;align-items:center;}
+  .headline{margin-top:64px;text-align:center;padding:0 48px;z-index:5}
+  .headline h1{font-size:44px;font-weight:900;color:var(--text);letter-spacing:-1px;line-height:1.12}
+  .headline h1 .hl{background:var(--yellow);border-radius:10px;padding:0 10px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  .headline p{margin-top:14px;font-size:20px;font-weight:500;color:var(--muted)}
+  /* iPhone frame */
+  .phone{margin-top:44px;width:430px;height:1160px;background:#0b0b0f;border-radius:64px;padding:14px;
+    box-shadow:0 40px 80px rgba(15,23,42,.28), 0 0 0 2px rgba(0,0,0,.06);position:relative;z-index:2}
+  .screen{width:100%;height:100%;background:var(--bg);border-radius:50px;overflow:hidden;position:relative}
+  .island{position:absolute;top:26px;left:50%;transform:translateX(-50%);width:110px;height:32px;background:#0b0b0f;border-radius:20px;z-index:9}
+  .status{display:flex;justify-content:space-between;align-items:center;padding:22px 30px 0;font-size:15px;font-weight:700;color:var(--text)}
+  .content{padding:18px 20px 0}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .glow{box-shadow:0 0 22px rgba(250,204,21,.45),0 1px 3px rgba(15,23,42,.05)}
+  .lbl{font-size:10px;font-weight:800;letter-spacing:1.4px;color:var(--muted);text-transform:uppercase}
+  .money{font-weight:900;color:var(--text)}
+  .g{color:var(--green)} .r{color:var(--red)} .y{color:#000}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--yellow);color:#000;font-weight:800;border-radius:999px;padding:6px 14px;font-size:13px}
+  .row{display:flex;gap:12px}
+  .chipbar{display:flex;gap:8px;margin:14px 0}
+  .chip{padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;border:1px solid var(--border);background:#fff;color:var(--muted)}
+  .chip.on{background:#000;color:var(--yellow);border-color:#000}
+  .icontile{width:38px;height:38px;border-radius:12px;background:#000;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .entry{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:13px 14px;margin-bottom:10px}
+  .entry .app{font-weight:800;font-size:15px;color:var(--text)}
+  .entry .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .entry .amt{margin-left:auto;font-weight:900;font-size:17px}
+  .badge{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#fff}
+  .kpi{flex:1;background:#fff;border:1px solid var(--border);border-radius:18px;padding:14px}
+  .kpi .v{font-size:22px;font-weight:900;margin-top:6px}
+  .footerbrand{position:absolute;bottom:28px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:10px;z-index:5}
+  .footerbrand img{width:30px;height:30px;border-radius:8px}
+  .footerbrand span{font-weight:800;font-size:16px;color:var(--text)}
+  .tabbar{position:absolute;bottom:0;left:0;right:0;height:78px;background:#ffffffee;border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:center;padding-bottom:14px}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--muted)}
+  .tab.on{color:#000}
+  .tab .ic{font-size:20px}
+  .tab.on .ic{filter:drop-shadow(0 0 6px rgba(250,204,21,.9))}
+  .bar{border-radius:8px 8px 0 0;background:var(--yellow);width:34px}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .key{background:#fff;border:1px solid var(--border);border-radius:16px;height:64px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--text)}
+  .progress{height:12px;border-radius:999px;background:#eef1f6;overflow:hidden}
+  .progress i{display:block;height:100%;border-radius:999px;background:var(--yellow);box-shadow:0 0 12px rgba(250,204,21,.8)}
+</style>
+</head>
+<body>
+
+<!-- 1 ▸ DASHBOARD -->
+<section class="slide" id="s1">
+  <div class="headline"><h1><span class="hl">Real Profit</span> Tracking</h1><p>Earnings − expenses − mileage. The truth.</p></div>
+  <div class="phone"><div class="screen"><div class="island"></div>
+    <div class="status"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="content">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:20px;font-weight:900">Today</div><div class="pill">🥷 Ninja Mode</div>
+      </div>
+      <div class="card glow" style="text-align:center;padding:24px 16px">
+        <div class="lbl">Net Profit</div>
+        <div class="money g" style="font-size:52px;margin-top:6px">$247.83</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px">Revenue $312.50 · Expenses $64.67</div>
+        <div class="progress" style="margin-top:16px"><i style="width:82%"></i></div>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:8px">82% of $300 daily goal 🎯</div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="kpi"><div class="lbl">$/Hour</div><div class="v g">$31.20</div></div>
+        <div class="kpi"><div class="lbl">$/Mile</div><div class="v g">$2.14</div></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="kpi"><div class="lbl">Miles</div><div class="v">116.3</div></div>
+        <div class="kpi"><div class="lbl">Hours</div><div class="v">7.9</div></div>
+        <div class="kpi"><div class="lbl">Trips</div><div class="v">23</div></div>
+      </div>
+      <div class="chipbar" style="margin-top:16px">
+        <div class="chip on">Today</div><div class="chip">Week</div><div class="chip">Month</div><div class="chip">Year</div>
+      </div>
+      <div class="lbl" style="margin:10px 0 8px">Recent</div>
+      <div class="entry"><div class="badge" style="background:#ef2b2d">DD</div><div><div class="app">DoorDash</div><div class="sub">6:42 PM · 4.2 mi</div></div><div class="amt g">+$14.75</div></div>
+      <div class="entry"><div class="badge" style="background:#06c167">UE</div><div><div class="app">UberEats</div><div class="sub">5:58 PM · 6.1 mi</div></div><div class="amt g">+$19.20</div></div>
+      <div class="entry"><div class="badge" style="background:#43b02a">IC</div><div><div class="app">Instacart</div><div class="sub">4:31 PM · 8.7 mi</div></div><div class="amt g">+$27.40</div></div>
+    </div>
+    <div class="tabbar">
+      <div class="tab on"><div class="ic">⚡</div>Dashboard</div>
+      <div class="tab"><div class="ic">➕</div>Add</div>
+      <div class="tab"><div class="ic">📊</div>Analytics</div>
+      <div class="tab"><div class="ic">⚙️</div>Settings</div>
+    </div>
+  </div></div>
+</section>
+
+<!-- 2 ▸ CALCULATOR ENTRY -->
+<section class="slide" id="s2">
+  <div class="headline"><h1>Log a Trip in <span class="hl">Seconds</span></h1><p>Calculator-style entry. No fiddly forms.</p></div>
+  <div class="phone"><div class="screen"><div class="island"></div>
+    <div class="status"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="content">
+      <div style="font-size:20px;font-weight:900;margin-bottom:12px">Add Earning</div>
+      <div class="chipbar" style="gap:6px">
+        <div class="chip on" style="padding:8px 12px;font-size:12px">DoorDash</div><div class="chip" style="padding:8px 12px;font-size:12px">UberEats</div><div class="chip" style="padding:8px 12px;font-size:12px">Instacart</div><div class="chip" style="padding:8px 12px;font-size:12px">GrubHub</div>
+      </div>
+      <div class="card glow" style="text-align:center;padding:22px">
+        <div class="lbl">Amount</div>
+        <div class="money" style="font-size:56px">$18.50</div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="keypad">
+        <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+        <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+        <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+        <div class="key">.</div><div class="key">0</div><div class="key">⌫</div>
+      </div>
+      <div style="margin-top:16px;background:var(--yellow);border-radius:18px;height:62px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:19px;color:#000;box-shadow:0 0 18px rgba(250,204,21,.55)">Save Entry 🥷</div>
+    </div>
+  </div></div>
+</section>
+
+<!-- 3 ▸ HISTORY -->
+<section class="slide" id="s3">
+  <div class="headline"><h1>See Exactly <span class="hl">What You Make</span></h1><p>Every trip. Every platform. One place.</p></div>
+  <div class="phone"><div class="screen"><div class="island"></div>
+    <div class="status"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="content">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:20px;font-weight:900">History</div><div class="pill">📅 This Week</div>
+      </div>
+      <div class="lbl" style="margin-bottom:8px">Monday · Jul 13</div>
+      <div class="entry"><div class="badge" style="background:#ef2b2d">DD</div><div><div class="app">DoorDash</div><div class="sub">6:42 PM · 4.2 mi · 18 min</div></div><div class="amt g">+$14.75</div></div>
+      <div class="entry"><div class="badge" style="background:#06c167">UE</div><div><div class="app">UberEats</div><div class="sub">5:58 PM · 6.1 mi · 24 min</div></div><div class="amt g">+$19.20</div></div>
+      <div class="entry"><div class="badge" style="background:#43b02a">IC</div><div><div class="app">Instacart</div><div class="sub">4:31 PM · 8.7 mi · 41 min</div></div><div class="amt g">+$27.40</div></div>
+      <div class="entry"><div class="badge" style="background:#f63440">GH</div><div><div class="app">GrubHub</div><div class="sub">3:12 PM · 3.3 mi · 15 min</div></div><div class="amt g">+$11.05</div></div>
+      <div class="entry"><div class="icontile">⛽</div><div><div class="app">Gas</div><div class="sub">2:40 PM · Shell</div></div><div class="amt r">−$38.20</div></div>
+      <div class="entry"><div class="badge" style="background:#ef2b2d">DD</div><div><div class="app">DoorDash</div><div class="sub">1:22 PM · 5.5 mi · 22 min</div></div><div class="amt g">+$16.80</div></div>
+      <div class="card" style="margin-top:6px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:800;font-size:14px">Day total</span><span class="money g" style="font-size:20px">+$51.00</span>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab"><div class="ic">⚡</div>Dashboard</div>
+      <div class="tab on"><div class="ic">🧾</div>History</div>
+      <div class="tab"><div class="ic">📊</div>Analytics</div>
+      <div class="tab"><div class="ic">⚙️</div>Settings</div>
+    </div>
+  </div></div>
+</section>
+
+<!-- 4 ▸ ANALYTICS -->
+<section class="slide" id="s4">
+  <div class="headline"><h1>Know Your <span class="hl">Best Days</span></h1><p>Charts that show when driving pays off.</p></div>
+  <div class="phone"><div class="screen"><div class="island"></div>
+    <div class="status"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="content">
+      <div style="font-size:20px;font-weight:900;margin-bottom:12px">Analytics</div>
+      <div class="card">
+        <div class="lbl">Profit by day</div>
+        <div style="display:flex;align-items:flex-end;gap:14px;margin-top:14px;padding:0 6px">
+          <div style="flex:1;text-align:center"><div class="bar" style="height:82px;margin:0 auto 6px"></div><span class="lbl">M</span></div>
+          <div style="flex:1;text-align:center"><div class="bar" style="height:61px;margin:0 auto 6px"></div><span class="lbl">T</span></div>
+          <div style="flex:1;text-align:center"><div class="bar" style="height:99px;margin:0 auto 6px"></div><span class="lbl">W</span></div>
+          <div style="flex:1;text-align:center"><div class="bar" style="height:75px;margin:0 auto 6px"></div><span class="lbl">T</span></div>
+          <div style="flex:1;text-align:center"><div class="bar" style="height:150px;margin:0 auto 6px;box-shadow:0 0 16px rgba(250,204,21,.8)"></div><span class="lbl" style="color:#000">F</span></div>
+          <div style="flex:1;text-align:center"><div class="bar" style="height:170px;margin:0 auto 6px;box-shadow:0 0 16px rgba(250,204,21,.8)"></div><span class="lbl" style="color:#000">S</span></div>
+          <div style="flex:1;text-align:center"><div class="bar" style="height:119px;margin:0 auto 6px"></div><span class="lbl">S</span></div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="kpi"><div class="lbl">Best day</div><div class="v">Saturday</div><div style="font-size:12px;color:var(--muted);margin-top:2px">avg $291 profit</div></div>
+        <div class="kpi"><div class="lbl">Best app</div><div class="v">Instacart</div><div style="font-size:12px;color:var(--muted);margin-top:2px">$2.61 / mile</div></div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="lbl">Platform mix</div>
+        <div style="margin-top:12px;display:flex;height:20px;border-radius:999px;overflow:hidden">
+          <div style="width:38%;background:#ef2b2d"></div><div style="width:27%;background:#06c167"></div><div style="width:22%;background:#43b02a"></div><div style="width:13%;background:#f63440"></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:10px;font-size:11px;font-weight:700;color:var(--muted)">
+          <span>● DoorDash 38%</span><span>● UberEats 27%</span><span>● Instacart 22%</span><span>● GrubHub 13%</span>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab"><div class="ic">⚡</div>Dashboard</div>
+      <div class="tab"><div class="ic">🧾</div>History</div>
+      <div class="tab on"><div class="ic">📊</div>Analytics</div>
+      <div class="tab"><div class="ic">⚙️</div>Settings</div>
+    </div>
+  </div></div>
+</section>
+
+<!-- 5 ▸ AI SUGGESTIONS -->
+<section class="slide" id="s5">
+  <div class="headline"><h1><span class="hl">AI Suggestions</span> That Pay</h1><p>Your data, turned into your next move.</p></div>
+  <div class="phone"><div class="screen"><div class="island"></div>
+    <div class="status"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="content">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div class="icontile" style="box-shadow:0 0 14px rgba(250,204,21,.6)">✨</div>
+        <div style="font-size:20px;font-weight:900">Earning Coach</div>
+      </div>
+      <div class="card glow" style="border-left:5px solid var(--yellow)">
+        <div class="lbl">Top opportunity</div>
+        <div style="font-weight:800;font-size:16px;margin-top:6px;line-height:1.4">Friday 5–9 PM is your gold window — you average <span class="g">$34.70/hr</span>, 28% above your normal rate.</div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="lbl">Cost insight</div>
+        <div style="font-weight:700;font-size:15px;margin-top:6px;line-height:1.45;color:var(--text)">Gas is eating <span class="r">21%</span> of DoorDash earnings. Instacart batches near you pay <span class="g">$2.61/mi</span> — prioritize them on short shifts.</div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="lbl">Goal pace</div>
+        <div style="font-weight:700;font-size:15px;margin-top:6px;line-height:1.45">You're <span class="g">$118 ahead</span> of your monthly goal. Two more Saturday dinners locks in your best month yet. 🥷</div>
+      </div>
+      <div style="margin-top:16px;background:#000;border-radius:18px;height:58px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:var(--yellow)">Get Fresh Suggestions ✨</div>
+    </div>
+  </div></div>
+</section>
+
+<!-- 6 ▸ EXPENSES -->
+<section class="slide" id="s6">
+  <div class="headline"><h1><span class="hl">Track Expenses</span> Effortlessly</h1><p>Gas, tolls, phone — with receipt photos.</p></div>
+  <div class="phone"><div class="screen"><div class="island"></div>
+    <div class="status"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="content">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:20px;font-weight:900">Expenses</div><div class="pill">July</div>
+      </div>
+      <div class="card glow" style="text-align:center;padding:20px">
+        <div class="lbl">This month</div>
+        <div class="money r" style="font-size:42px;margin-top:4px">−$412.36</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">12.9% of revenue · tax-deductible</div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="entry"><div class="icontile">⛽</div><div><div class="app">Gas</div><div class="sub">18 fill-ups</div></div><div class="amt r">−$286.40</div></div>
+      <div class="entry"><div class="icontile">🚗</div><div><div class="app">Car wash</div><div class="sub">3 washes</div></div><div class="amt r">−$36.00</div></div>
+      <div class="entry"><div class="icontile">📱</div><div><div class="app">Phone plan</div><div class="sub">50% business use</div></div><div class="amt r">−$42.50</div></div>
+      <div class="entry"><div class="icontile">🛣️</div><div><div class="app">Tolls</div><div class="sub">7 crossings</div></div><div class="amt r">−$24.46</div></div>
+      <div class="entry"><div class="icontile">🧰</div><div><div class="app">Maintenance</div><div class="sub">Oil change</div></div><div class="amt r">−$23.00</div></div>
+      <div class="card" style="margin-top:6px;display:flex;align-items:center;gap:10px">
+        <div class="icontile">📸</div><div style="font-weight:700;font-size:14px">Snap receipts — attached to every expense</div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- 7 ▸ WIDGET -->
+<section class="slide" id="s7">
+  <div class="headline"><h1>Profit on Your <span class="hl">Home Screen</span></h1><p>The iOS widget keeps score while you drive.</p></div>
+  <div class="phone"><div class="screen" style="background:linear-gradient(160deg,#fdf6d8,#f5f7fb 60%)"><div class="island"></div>
+    <div class="status"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="content" style="padding-top:34px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:0 6px">
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+      </div>
+      <div class="card glow" style="margin-top:26px;border-radius:26px;padding:20px;background:#0b0b0f;border-color:#0b0b0f">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">🥷</span><span style="font-weight:800;font-size:13px;color:var(--yellow);letter-spacing:1px">EARNINGS NINJA</span>
+        </div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px">
+          <div><div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:1.2px">TODAY'S PROFIT</div>
+          <div style="font-size:42px;font-weight:900;color:var(--yellow);text-shadow:0 0 16px rgba(250,204,21,.7)">$247.83</div></div>
+          <div style="text-align:right;padding-bottom:4px">
+            <div style="font-size:12px;font-weight:800;color:#22c55e">$31.20/hr</div>
+            <div style="font-size:12px;font-weight:800;color:#e5e7eb;margin-top:3px">116 mi · 23 trips</div>
+          </div>
+        </div>
+        <div class="progress" style="margin-top:12px;background:#26262e"><i style="width:82%"></i></div>
+        <div style="font-size:11px;font-weight:700;color:#9ca3af;margin-top:7px">82% of daily goal</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:0 6px;margin-top:26px">
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:0 6px;margin-top:26px">
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:0 6px;margin-top:26px">
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+        <div style="text-align:center"><div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea;margin:0 auto"></div></div>
+      </div>
+      <div style="position:absolute;bottom:26px;left:26px;right:26px;height:96px;background:rgba(255,255,255,.65);border-radius:30px;display:flex;align-items:center;justify-content:space-around;backdrop-filter:blur(6px)">
+        <div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea"></div>
+        <div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea"></div>
+        <div style="width:58px;height:58px;border-radius:15px;background:linear-gradient(160deg,#0b0b0f,#26262e);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 0 12px rgba(250,204,21,.7)">🥷</div>
+        <div style="width:58px;height:58px;border-radius:15px;background:#e2e5ea"></div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- 8 ▸ TRIAL -->
+<section class="slide" id="s8">
+  <div class="headline"><h1>Try Pro <span class="hl">Free for 7 Days</span></h1><p>CSV export, advanced analytics &amp; more.</p></div>
+  <div class="phone"><div class="screen"><div class="island"></div>
+    <div class="status"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="content">
+      <div style="text-align:center;margin:8px 0 16px">
+        <div style="font-size:44px">🥷</div>
+        <div style="font-size:22px;font-weight:900;margin-top:4px">Earnings Ninja Pro</div>
+      </div>
+      <div class="card" style="display:flex;gap:12px;align-items:center;margin-bottom:10px"><div class="icontile" style="box-shadow:0 0 10px rgba(250,204,21,.5)"><span style="color:var(--yellow)">📈</span></div><div style="font-weight:700;font-size:14px">Advanced analytics &amp; trends</div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:center;margin-bottom:10px"><div class="icontile"><span style="color:var(--yellow)">📤</span></div><div style="font-weight:700;font-size:14px">CSV import &amp; export for taxes</div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:center;margin-bottom:16px"><div class="icontile"><span style="color:var(--yellow)">✨</span></div><div style="font-weight:700;font-size:14px">Unlimited AI earning suggestions</div></div>
+      <div class="card glow" style="border:2px solid #000;background:var(--yellow);position:relative;overflow:hidden;padding:0">
+        <div style="background:#000;color:var(--yellow);text-align:center;font-size:11px;font-weight:900;letter-spacing:1.2px;padding:5px">7 DAYS FREE · BEST VALUE</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px">
+          <div><div style="font-weight:900;font-size:17px;color:#000">Yearly</div><div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.7)">Save 45%</div></div>
+          <div style="font-weight:900;font-size:22px;color:#000">$39.99/yr</div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+        <div style="font-weight:900;font-size:17px">Monthly</div><div style="font-weight:900;font-size:20px">$5.99/mo</div>
+      </div>
+      <div style="text-align:center;font-size:13px;font-weight:700;color:var(--green);margin-top:14px">✓ No Payment Due Now</div>
+      <div style="margin-top:10px;background:#000;border-radius:18px;height:60px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;color:var(--yellow);box-shadow:0 0 18px rgba(250,204,21,.45)">Start My 7-Day Free Trial</div>
+    </div>
+  </div></div>
+</section>
+
+</body>
+</html>
