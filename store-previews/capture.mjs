@@ -8,7 +8,7 @@ const browser = await puppeteer.launch({
   args: ['--no-sandbox', '--disable-dev-shm-usage', '--force-color-profile=srgb', '--font-render-hinting=none'],
 });
 const page = await browser.newPage();
-await page.setViewport({ width: 700, height: 1398, deviceScaleFactor: 2 });
+await page.setViewport({ width: 700, height: 1368, deviceScaleFactor: 2 });
 await page.goto('file://' + path.resolve('store-previews/slides.html'), { waitUntil: 'networkidle0' });
 await page.evaluateHandle('document.fonts.ready');
 await new Promise(r => setTimeout(r, 500));
