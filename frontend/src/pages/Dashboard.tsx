@@ -743,7 +743,7 @@ export function Dashboard({}: DashboardProps) {
                 style={{
                   filter: logoMilestoneGlow 
                     ? 'drop-shadow(0 0 20px rgba(250, 204, 21, 0.8)) drop-shadow(0 0 40px rgba(34, 197, 94, 0.6))' 
-                    : 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.4))',
+                    : 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.4))',
                   animation: logoAnimating ? 'pulse-gold 0.6s ease-out' : logoMilestoneGlow ? 'ninja-milestone-glow 1.5s ease-in-out' : 'none',
                   transition: 'filter 0.3s ease-in-out',
                 }}
