@@ -726,6 +726,8 @@ function FallbackPaywall({
                         height: 38,
                         borderRadius: 19,
                         backgroundColor: '#000000',
+                        borderWidth: 1.5,
+                        borderColor: t.isDark ? 'rgba(250,204,21,0.55)' : '#000000',
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
@@ -751,7 +753,7 @@ function FallbackPaywall({
               marginTop: 26,
               backgroundColor: t.SURFACE,
               borderWidth: 1,
-              borderColor: t.BORDER,
+              borderColor: t.isDark ? 'rgba(255,255,255,0.18)' : t.BORDER,
               borderRadius: 20,
               paddingHorizontal: 16,
               paddingVertical: 6,
@@ -775,6 +777,8 @@ function FallbackPaywall({
                     height: 38,
                     borderRadius: 12,
                     backgroundColor: '#000000',
+                    borderWidth: 1.5,
+                    borderColor: t.isDark ? 'rgba(250,204,21,0.55)' : '#000000',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
@@ -807,16 +811,22 @@ function FallbackPaywall({
                     onPress={() => setSelectedId(pkg.identifier)}
                     style={{
                       borderWidth: 2,
-                      borderColor: isSel ? '#000000' : t.BORDER,
+                      borderColor: isSel
+                        ? '#000000'
+                        : t.isDark
+                          ? 'rgba(255,255,255,0.18)'
+                          : t.BORDER,
                       backgroundColor: isSel ? '#facc15' : t.SURFACE,
                       borderRadius: 20,
                       overflow: 'hidden',
                       ...(isSel
                         ? {
-                            shadowColor: t.PRIMARY,
-                            shadowOpacity: 0.18,
-                            shadowRadius: 10,
-                            shadowOffset: { width: 0, height: 3 },
+                            /* Neon glow halo around the active plan card */
+                            shadowColor: '#facc15',
+                            shadowOpacity: 0.65,
+                            shadowRadius: 18,
+                            shadowOffset: { width: 0, height: 0 },
+                            elevation: 12,
                           }
                         : null),
                     }}
