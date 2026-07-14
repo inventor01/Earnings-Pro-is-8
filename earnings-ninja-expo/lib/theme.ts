@@ -65,8 +65,8 @@ export const dark: Theme = {
 // ── Light — clean white with the SAME brand neon accents/glows ──────────────
 // PRIMARY stays neon yellow (#facc15) so fills, glows, progress bars, borders
 // and active states keep the exact brand pop. Because neon yellow is unreadable
-// as text on white, PRIMARY_TXT switches to a deep brand gold (#a16207, ~5.4:1
-// on white = WCAG AA) for accent text/icons. GREEN keeps the brand #22c55e.
+// as text on white, PRIMARY_TXT switches to black (brand rule: accents are
+// strictly black or #facc15 — no brown/gold). GREEN keeps the brand #22c55e.
 export const light: Theme = {
   name: 'light',
   label: 'Light',
@@ -77,7 +77,7 @@ export const light: Theme = {
   CARD: '#ffffff',
   BORDER: '#e2e8f0',
   PRIMARY: '#facc15',
-  PRIMARY_TXT: '#a16207',
+  PRIMARY_TXT: '#000000',
   ACCENT: '#facc15',
   PRI_LITE: '#fef9c3',
   PRI_DARK: '#ca8a04',
