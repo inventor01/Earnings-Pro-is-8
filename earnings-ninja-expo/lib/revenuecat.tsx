@@ -725,15 +725,15 @@ function FallbackPaywall({
                         width: 38,
                         height: 38,
                         borderRadius: 19,
-                        backgroundColor: t.PRI_LITE,
+                        backgroundColor: '#000000',
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
                     >
-                      <Ionicons name={s.icon as any} size={18} color={t.PRIMARY_TXT} />
+                      <Ionicons name={s.icon as any} size={18} color="#facc15" />
                     </View>
                     {i < arr.length - 1 && (
-                      <View style={{ width: 3, flex: 1, minHeight: 18, borderRadius: 2, backgroundColor: t.PRI_LITE }} />
+                      <View style={{ width: 3, flex: 1, minHeight: 18, borderRadius: 2, backgroundColor: '#facc15' }} />
                     )}
                   </View>
                   <View style={{ flex: 1, paddingBottom: i < arr.length - 1 ? 16 : 0 }}>
@@ -774,12 +774,12 @@ function FallbackPaywall({
                     width: 38,
                     height: 38,
                     borderRadius: 12,
-                    backgroundColor: t.PRI_LITE,
+                    backgroundColor: '#000000',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Ionicons name={b.icon as any} size={19} color={t.PRIMARY_TXT} />
+                  <Ionicons name={b.icon as any} size={19} color="#facc15" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.TEXT, fontSize: 15.5, fontWeight: '800' }}>{b.title}</Text>
@@ -807,8 +807,8 @@ function FallbackPaywall({
                     onPress={() => setSelectedId(pkg.identifier)}
                     style={{
                       borderWidth: 2,
-                      borderColor: isSel ? t.PRIMARY : t.BORDER,
-                      backgroundColor: isSel ? t.PRI_LITE : t.SURFACE,
+                      borderColor: isSel ? '#000000' : t.BORDER,
+                      backgroundColor: isSel ? '#facc15' : t.SURFACE,
                       borderRadius: 20,
                       overflow: 'hidden',
                       ...(isSel
@@ -825,8 +825,8 @@ function FallbackPaywall({
                         has a free trial. Small caps text — the billed price
                         below stays the dominant price (App Review 3.1.2(c)). */}
                     {trialLbl && (
-                      <View style={{ backgroundColor: t.TEXT, paddingVertical: 4, alignItems: 'center' }}>
-                        <Text style={{ color: t.BG, fontSize: 10.5, fontWeight: '900', letterSpacing: 1 }}>
+                      <View style={{ backgroundColor: '#000000', paddingVertical: 4, alignItems: 'center' }}>
+                        <Text style={{ color: '#facc15', fontSize: 10.5, fontWeight: '900', letterSpacing: 1 }}>
                           {trialLbl.toUpperCase()} FREE
                         </Text>
                       </View>
@@ -835,11 +835,11 @@ function FallbackPaywall({
                       <Ionicons
                         name={isSel ? 'checkmark-circle' : 'ellipse-outline'}
                         size={24}
-                        color={isSel ? t.PRIMARY_TXT : t.MUTED}
+                        color={isSel ? '#000000' : t.MUTED}
                       />
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <Text style={{ color: t.TEXT, fontSize: 16.5, fontWeight: '800' }}>
+                          <Text style={{ color: isSel ? '#000000' : t.TEXT, fontSize: 16.5, fontWeight: '800' }}>
                             {packageLabel(pkg)}
                           </Text>
                           {isAnnual && (
@@ -850,14 +850,14 @@ function FallbackPaywall({
                             </View>
                           )}
                           {intro && (
-                            <View style={{ borderWidth: 1, borderColor: t.BORDER, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-                              <Text style={{ color: t.MUTED, fontSize: 10, fontWeight: '700', letterSpacing: 0.3 }}>
+                            <View style={{ borderWidth: 1, borderColor: isSel ? 'rgba(0,0,0,0.4)' : t.BORDER, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                              <Text style={{ color: isSel ? 'rgba(0,0,0,0.75)' : t.MUTED, fontSize: 10, fontWeight: '700', letterSpacing: 0.3 }}>
                                 intro offer
                               </Text>
                             </View>
                           )}
                         </View>
-                        <Text style={{ color: t.MUTED, fontSize: 12.5, marginTop: 2 }}>
+                        <Text style={{ color: isSel ? 'rgba(0,0,0,0.7)' : t.MUTED, fontSize: 12.5, marginTop: 2 }}>
                           {trial ??
                             intro ??
                             (isAnnual && perMo
@@ -871,10 +871,10 @@ function FallbackPaywall({
                         {/* ALWAYS the full billed amount, biggest & boldest price
                             on the row (App Review 3.1.2(c)) — intro/trial detail
                             lives in the subordinate subtitle text only. */}
-                        <Text style={{ color: t.PRIMARY_TXT, fontSize: 18, fontWeight: '900' }}>
+                        <Text style={{ color: isSel ? '#000000' : t.TEXT, fontSize: 18, fontWeight: '900' }}>
                           {pkg.product.priceString}
                         </Text>
-                        <Text style={{ color: t.MUTED, fontSize: 11, marginTop: 1 }}>
+                        <Text style={{ color: isSel ? 'rgba(0,0,0,0.7)' : t.MUTED, fontSize: 11, marginTop: 1 }}>
                           {intro
                             ? 'after intro'
                             : trial
