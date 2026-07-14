@@ -490,6 +490,20 @@ function trialTotalDays(pkg: PurchasesPackage): number | null {
   }
 }
 
+// Longest free-trial length (in days) across an offering's packages. Lets
+// upgrade entry points (Settings, gates) lead with truthful trial copy —
+// returns null when ASC has no free trial configured, so trial claims
+// disappear automatically (App Review 3.1.2(c) safety).
+export function offeringTrialDays(offering: PurchasesOffering | null): number | null {
+  if (!offering) return null;
+  let best: number | null = null;
+  for (const pkg of offering.availablePackages) {
+    const d = trialTotalDays(pkg);
+    if (d != null && (best == null || d > best)) best = d;
+  }
+  return best;
+}
+
 // "/year"-style billing-unit suffix for a package's billed price.
 function periodSuffix(pkg: PurchasesPackage): string | null {
   switch (pkg.packageType) {
@@ -828,10 +842,10 @@ function FallbackPaywall({
                           <Text style={{ color: t.TEXT, fontSize: 16.5, fontWeight: '800' }}>
                             {packageLabel(pkg)}
                           </Text>
-                          {isAnnual && savings != null && (
+                          {isAnnual && (
                             <View style={{ backgroundColor: t.GREEN, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
                               <Text style={{ color: '#04210f', fontSize: 10, fontWeight: '900', letterSpacing: 0.3 }}>
-                                SAVE {savings}%
+                                {savings != null ? `BEST VALUE · SAVE ${savings}%` : 'BEST VALUE'}
                               </Text>
                             </View>
                           )}
