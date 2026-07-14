@@ -2333,12 +2333,17 @@ function csvRowsToEntries(rows: string[][]): { entries: EntryCreate[]; skipped: 
   return { entries: out, skipped };
 }
 
-function ImportCsvRow({ onDone }: { onDone: () => void }) {
+function ImportCsvRow({ onDone, onNeedUpgrade }: { onDone: () => void; onNeedUpgrade: () => void }) {
   const { SURFACE, BORDER, PRI_LITE, PRIMARY, PRIMARY_TXT, TEXT, MUTED } = useTheme();
+  const { available: proAvailable, isPro } = useSubscription();
   const [busy, setBusy] = useState(false);
 
   const onPick = async () => {
     if (busy) return;
+    // Pro gate — same pattern as ExportCsvRow: route through onNeedUpgrade
+    // (closes Settings, then presents the paywall). Fail OPEN when RevenueCat
+    // is unavailable on this build.
+    if (proAvailable && !isPro) { hTap(); onNeedUpgrade(); return; }
     try {
       const res = await DocumentPicker.getDocumentAsync({
         type: ['text/csv', 'text/comma-separated-values', 'public.comma-separated-values-text', '*/*'],
@@ -3060,6 +3065,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         </Text>
         <ImportCsvRow
           onDone={() => invalidateEntryData(queryClient)}
+          onNeedUpgrade={triggerUpgrade}
         />
         <View style={{ height: 12 }} />
         <ExportCsvRow onNeedUpgrade={triggerUpgrade} />
