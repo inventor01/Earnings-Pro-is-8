@@ -40,6 +40,7 @@ Backend: FastAPI (Python 3.11) + SQLAlchemy. Frontend: React 18 + TypeScript + V
 
 ## Current App Store status (Jul 14)
 - **Build 27** (`8e488cc5`, `ios.buildNumber` "27") FINISHED + submitted to ASC (submission `6361b2b0` FINISHED; a duplicate kickoff `3f22ee98` also built, its submission errored harmlessly as "already submitted") — adds the 7-day-free-trial offer rollout: trial-aware Settings upgrade row ("Try Pro Free for N Days", live from `offeringTrialDays()`), "BEST VALUE · SAVE X%" badge on the annual plan card, landing site trial-forward pricing. Supersedes build 26 (`ec6204a0`, Cal-AI trial-forward paywall, submitted to ASC). Select **build 27** for the App Store version once processed.
+- **Build 25 got the full paywall via OTA** (Jul 14, update group `cb1fa94f`, runtime `afb43f5f`, branch `preview`): buildNumber was temporarily reverted 27→25 so the fingerprint matched, then restored — build 25 installs now carry the same trial-forward paywall + BEST VALUE badge + trial-aware Settings row as build 27.
 - RevenueCat: fully provisioned (project `proj08f4330c`, entitlement `pro`, offering `default` with `$rc_lifetime`/`$rc_annual`/`$rc_monthly`); production `appl_` key baked into `testflight`/`production` profiles; Apple Paid Applications agreement ACTIVE. Detail: `.agents/memory/revenuecat-integration.md`.
 
 ## Outstanding [USER ACTION] items
