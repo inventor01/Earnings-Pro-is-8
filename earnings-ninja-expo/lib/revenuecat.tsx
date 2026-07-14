@@ -24,7 +24,6 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Purchases, {
@@ -471,6 +470,38 @@ function trialPhrase(pkg: PurchasesPackage): string | null {
   return `Free for ${label}, then ${pkg.product.priceString}`;
 }
 
+// Total free-trial length in days (approx for month/year units) — powers the
+// "how your trial works" timeline + CTA copy. Null when no free trial.
+function trialTotalDays(pkg: PurchasesPackage): number | null {
+  const intro = pkg.product.introPrice;
+  if (!intro || intro.price !== 0) return null;
+  const units = (intro.cycles || 1) * (intro.periodNumberOfUnits || 1);
+  switch ((intro.periodUnit ?? '').toUpperCase()) {
+    case 'DAY':
+      return units;
+    case 'WEEK':
+      return units * 7;
+    case 'MONTH':
+      return units * 30;
+    case 'YEAR':
+      return units * 365;
+    default:
+      return null;
+  }
+}
+
+// "/year"-style billing-unit suffix for a package's billed price.
+function periodSuffix(pkg: PurchasesPackage): string | null {
+  switch (pkg.packageType) {
+    case 'ANNUAL':
+      return '/year';
+    case 'MONTHLY':
+      return '/month';
+    default:
+      return null;
+  }
+}
+
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // The Pro value props — deliberately minimal (Cal-AI-style paywall: few words,
@@ -542,9 +573,9 @@ function FallbackPaywall({
   const perMo = annual ? perMonthString(annual) : null;
   // Free-trial framing — only surfaces when an intro free trial is actually
   // configured in App Store Connect, so the copy never over-promises.
-  const trialLabel = packages.map(trialDurationLabel).find((x): x is string => !!x) ?? null;
   const selTrial = selected ? trialPhrase(selected) : null;
-  const selTrialLabel = selected ? trialDurationLabel(selected) : null;
+  const selTrialDays = selected ? trialTotalDays(selected) : null;
+  const selSuffix = selected ? periodSuffix(selected) : null;
 
   const scale = useSharedValue(1);
   const ctaStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -612,34 +643,11 @@ function FallbackPaywall({
             paddingBottom: 180,
           }}
         >
-          {/* ── Hero (Cal-AI style: calm, bold, minimal) ─────────────────── */}
+          {/* ── Hero (Cal-AI style: huge bold headline, minimal) ─────────── */}
           <Animated.View
             entering={FadeInDown.springify().damping(18)}
             style={{ alignItems: 'center', marginBottom: 6 }}
           >
-            <LinearGradient
-              colors={[t.PRIMARY, t.PRI_DARK]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 20,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
-                shadowColor: t.PRIMARY,
-                shadowOpacity: 0.25,
-                shadowRadius: 14,
-                shadowOffset: { width: 0, height: 4 },
-              }}
-            >
-              <Ionicons name="rocket" size={30} color="#000" />
-            </LinearGradient>
-            {/* NOTE (App Review 3.1.2(c)): no standalone free-trial hero badge.
-                Apple rejected the paywall for promoting the trial/intro offer
-                more conspicuously than the billed amount — trial info may only
-                appear SUBORDINATE to the billed price (plan rows + CTA note). */}
             <Text
               style={{
                 color: t.TEXT,
@@ -647,10 +655,12 @@ function FallbackPaywall({
                 fontWeight: '900',
                 textAlign: 'center',
                 letterSpacing: -0.5,
-                lineHeight: 35,
+                lineHeight: 36,
               }}
             >
-              See your real{'\n'}take-home pay.
+              {selTrialDays
+                ? `Start your ${selTrialDays}-day\nfree trial to continue.`
+                : 'See your real\ntake-home pay.'}
             </Text>
             <Text
               style={{
@@ -665,7 +675,62 @@ function FallbackPaywall({
             </Text>
           </Animated.View>
 
-          {/* ── Benefits (one calm grouped card, simple icon + text rows) ── */}
+          {/* ── How your trial works (Cal-AI timeline; only with a trial) ── */}
+          {selTrialDays ? (
+            <Animated.View
+              entering={FadeInDown.delay(60).springify().damping(18)}
+              style={{ marginTop: 26, gap: 4 }}
+            >
+              {[
+                {
+                  icon: 'lock-open',
+                  title: 'Today',
+                  sub: 'Unlock Real Net Profit, AI Suggestions, Widgets & Tax Reports.',
+                },
+                ...(selTrialDays >= 3
+                  ? [
+                      {
+                        icon: 'notifications',
+                        title: `Day ${selTrialDays - 2} — Reminder`,
+                        sub: "We'll remind you before your trial ends. Cancel anytime.",
+                      },
+                    ]
+                  : []),
+                {
+                  icon: 'card',
+                  title: `Day ${selTrialDays} — Billing starts`,
+                  /* Billed amount stated plainly right in the timeline
+                     (App Review 3.1.2(c): billing terms clear & conspicuous). */
+                  sub: `You'll be charged ${selected?.product.priceString ?? ''}${selSuffix ?? ''} unless you cancel first.`,
+                },
+              ].map((s, i, arr) => (
+                <View key={s.title} style={{ flexDirection: 'row', gap: 14 }}>
+                  <View style={{ alignItems: 'center' }}>
+                    <View
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 19,
+                        backgroundColor: t.PRI_LITE,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name={s.icon as any} size={18} color={t.PRIMARY_TXT} />
+                    </View>
+                    {i < arr.length - 1 && (
+                      <View style={{ width: 3, flex: 1, minHeight: 18, borderRadius: 2, backgroundColor: t.PRI_LITE }} />
+                    )}
+                  </View>
+                  <View style={{ flex: 1, paddingBottom: i < arr.length - 1 ? 16 : 0 }}>
+                    <Text style={{ color: t.TEXT, fontSize: 16.5, fontWeight: '800' }}>{s.title}</Text>
+                    <Text style={{ color: t.MUTED, fontSize: 13.5, lineHeight: 19, marginTop: 2 }}>{s.sub}</Text>
+                  </View>
+                </View>
+              ))}
+            </Animated.View>
+          ) : (
+            /* Benefits — one calm grouped card; shown when no trial */
           <Animated.View
             entering={FadeInDown.delay(60).springify().damping(18)}
             style={{
@@ -710,6 +775,7 @@ function FallbackPaywall({
               </View>
             ))}
           </Animated.View>
+          )}
 
           {/* ── Plans ────────────────────────────────────────────────────── */}
           {packages.length > 0 && (
@@ -720,19 +786,17 @@ function FallbackPaywall({
                 const trial = trialPhrase(pkg);
                 const trialLbl = trialDurationLabel(pkg);
                 const intro = trial ? null : introPhrase(pkg);
+                const suffix = periodSuffix(pkg);
                 return (
                   <Pressable
                     key={pkg.identifier}
                     onPress={() => setSelectedId(pkg.identifier)}
                     style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 12,
                       borderWidth: 2,
                       borderColor: isSel ? t.PRIMARY : t.BORDER,
                       backgroundColor: isSel ? t.PRI_LITE : t.SURFACE,
                       borderRadius: 20,
-                      padding: 16,
+                      overflow: 'hidden',
                       ...(isSel
                         ? {
                             shadowColor: t.PRIMARY,
@@ -743,66 +807,69 @@ function FallbackPaywall({
                         : null),
                     }}
                   >
-                    <Ionicons
-                      name={isSel ? 'radio-button-on' : 'radio-button-off'}
-                      size={22}
-                      color={isSel ? t.PRIMARY_TXT : t.MUTED}
-                    />
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <Text style={{ color: t.TEXT, fontSize: 16, fontWeight: '800' }}>
-                          {packageLabel(pkg)}
+                    {/* Cal-AI-style ribbon across the card top when this plan
+                        has a free trial. Small caps text — the billed price
+                        below stays the dominant price (App Review 3.1.2(c)). */}
+                    {trialLbl && (
+                      <View style={{ backgroundColor: t.TEXT, paddingVertical: 4, alignItems: 'center' }}>
+                        <Text style={{ color: t.BG, fontSize: 10.5, fontWeight: '900', letterSpacing: 1 }}>
+                          {trialLbl.toUpperCase()} FREE
                         </Text>
-                        {/* Trial / intro chips are OUTLINE-muted on purpose —
-                            the billed price (right, 17pt/900) must stay the most
-                            conspicuous pricing element per App Review 3.1.2(c). */}
-                        {trialLbl && (
-                          <View style={{ borderWidth: 1, borderColor: t.BORDER, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-                            <Text style={{ color: t.MUTED, fontSize: 10, fontWeight: '700', letterSpacing: 0.3 }}>
-                              {trialLbl} free trial
-                            </Text>
-                          </View>
-                        )}
-                        {isAnnual && savings != null && (
-                          <View style={{ backgroundColor: t.GREEN, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-                            <Text style={{ color: '#04210f', fontSize: 10, fontWeight: '900', letterSpacing: 0.3 }}>
-                              SAVE {savings}%
-                            </Text>
-                          </View>
-                        )}
-                        {intro && (
-                          <View style={{ borderWidth: 1, borderColor: t.BORDER, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-                            <Text style={{ color: t.MUTED, fontSize: 10, fontWeight: '700', letterSpacing: 0.3 }}>
-                              intro offer
-                            </Text>
-                          </View>
-                        )}
                       </View>
-                      <Text style={{ color: t.MUTED, fontSize: 12.5, marginTop: 2 }}>
-                        {trial ?? intro ?? (isAnnual && perMo ? `Just ${perMo}/mo, billed yearly` : pkg.product.title)}
-                      </Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      {/* ALWAYS the full billed amount, biggest & boldest price
-                          on the row (App Review 3.1.2(c)) — intro/trial detail
-                          lives in the subordinate subtitle text only. */}
-                      {intro ? (
-                        <>
-                          <Text style={{ color: t.PRIMARY_TXT, fontSize: 17, fontWeight: '900' }}>
-                            {pkg.product.priceString}
+                    )}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 }}>
+                      <Ionicons
+                        name={isSel ? 'checkmark-circle' : 'ellipse-outline'}
+                        size={24}
+                        color={isSel ? t.PRIMARY_TXT : t.MUTED}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <Text style={{ color: t.TEXT, fontSize: 16.5, fontWeight: '800' }}>
+                            {packageLabel(pkg)}
                           </Text>
-                          <Text style={{ color: t.MUTED, fontSize: 11, marginTop: 1 }}>after intro</Text>
-                        </>
-                      ) : (
-                        <>
-                          <Text style={{ color: t.PRIMARY_TXT, fontSize: 17, fontWeight: '900' }}>
-                            {pkg.product.priceString}
-                          </Text>
-                          {trial && (
-                            <Text style={{ color: t.MUTED, fontSize: 11, marginTop: 1 }}>after trial</Text>
+                          {isAnnual && savings != null && (
+                            <View style={{ backgroundColor: t.GREEN, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                              <Text style={{ color: '#04210f', fontSize: 10, fontWeight: '900', letterSpacing: 0.3 }}>
+                                SAVE {savings}%
+                              </Text>
+                            </View>
                           )}
-                        </>
-                      )}
+                          {intro && (
+                            <View style={{ borderWidth: 1, borderColor: t.BORDER, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                              <Text style={{ color: t.MUTED, fontSize: 10, fontWeight: '700', letterSpacing: 0.3 }}>
+                                intro offer
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={{ color: t.MUTED, fontSize: 12.5, marginTop: 2 }}>
+                          {trial ??
+                            intro ??
+                            (isAnnual && perMo
+                              ? `Just ${perMo}/mo, billed yearly`
+                              : pkg.packageType === 'LIFETIME'
+                                ? 'One-time purchase, yours forever'
+                                : pkg.product.title)}
+                        </Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        {/* ALWAYS the full billed amount, biggest & boldest price
+                            on the row (App Review 3.1.2(c)) — intro/trial detail
+                            lives in the subordinate subtitle text only. */}
+                        <Text style={{ color: t.PRIMARY_TXT, fontSize: 18, fontWeight: '900' }}>
+                          {pkg.product.priceString}
+                        </Text>
+                        <Text style={{ color: t.MUTED, fontSize: 11, marginTop: 1 }}>
+                          {intro
+                            ? 'after intro'
+                            : trial
+                              ? suffix
+                                ? `${suffix}, after trial`
+                                : 'after trial'
+                              : (suffix ?? 'one time')}
+                        </Text>
+                      </View>
                     </View>
                   </Pressable>
                 );
@@ -870,9 +937,19 @@ function FallbackPaywall({
             paddingBottom: insets.bottom + 12,
           }}
         >
-          <Text style={{ color: t.MUTED, fontSize: 12, fontWeight: '600', textAlign: 'center', marginBottom: 10 }}>
-            Cancel anytime · No commitment
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 10 }}>
+            {selTrialDays ? <Ionicons name="checkmark" size={15} color={t.TEXT} /> : null}
+            <Text
+              style={{
+                color: selTrialDays ? t.TEXT : t.MUTED,
+                fontSize: selTrialDays ? 13.5 : 12,
+                fontWeight: selTrialDays ? '800' : '600',
+                textAlign: 'center',
+              }}
+            >
+              {selTrialDays ? 'No Payment Due Now' : 'Cancel anytime · No commitment'}
+            </Text>
+          </View>
           <AnimatedPressable
             onPressIn={() => {
               scale.value = withSpring(0.97);
@@ -903,20 +980,23 @@ function FallbackPaywall({
             {busy ? (
               <ActivityIndicator color="#000" />
             ) : (
-              <View style={{ alignItems: 'center' }}>
-                {/* Billed amount leads (App Review 3.1.2(c)); the free-trial
-                    mention is a smaller subordinate line below it. */}
-                <Text style={{ color: '#000', fontSize: 17, fontWeight: '900', letterSpacing: 0.2 }}>
-                  {selected ? `Upgrade${ctaPrice ? ` — ${ctaPrice}` : ''}` : 'Upgrade to Pro'}
-                </Text>
-                {selTrialLabel && (
-                  <Text style={{ color: '#000', fontSize: 11.5, fontWeight: '600', opacity: 0.75, marginTop: 2 }}>
-                    Includes {selTrialLabel} free trial
-                  </Text>
-                )}
-              </View>
+              <Text style={{ color: '#000', fontSize: 17, fontWeight: '900', letterSpacing: 0.2 }}>
+                {selTrialDays
+                  ? `Start My ${selTrialDays}-Day Free Trial`
+                  : selected
+                    ? `Upgrade${ctaPrice ? ` — ${ctaPrice}` : ''}`
+                    : 'Upgrade to Pro'}
+              </Text>
             )}
           </AnimatedPressable>
+          {/* Billed amount stated immediately below the trial CTA
+              (App Review 3.1.2(c): billing terms adjacent & unambiguous). */}
+          {selTrialDays && ctaPrice ? (
+            <Text style={{ color: t.MUTED, fontSize: 11.5, textAlign: 'center', marginTop: 8, lineHeight: 16 }}>
+              {selTrialDays} days free, then {ctaPrice}
+              {selSuffix ? ` per ${selSuffix.slice(1)}` : ''}. Auto-renews unless you cancel.
+            </Text>
+          ) : null}
           <Pressable onPress={onClose} disabled={busy} hitSlop={8} style={{ paddingVertical: 10, alignItems: 'center' }}>
             <Text style={{ color: t.MUTED, fontSize: 13.5, fontWeight: '600' }}>Maybe later</Text>
           </Pressable>
