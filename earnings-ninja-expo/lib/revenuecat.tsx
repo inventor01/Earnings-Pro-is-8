@@ -473,35 +473,13 @@ function trialPhrase(pkg: PurchasesPackage): string | null {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-// The Pro value props (kept deliberately short — minimal copy, max impact).
+// The Pro value props — deliberately minimal (Cal-AI-style paywall: few words,
+// bold type, one calm grouped card).
 const PRO_BENEFITS: { icon: string; title: string; sub: string }[] = [
-  { icon: 'trending-up', title: 'Advanced Analytics', sub: 'Your best days, hours & trends' },
+  { icon: 'trending-up', title: 'Real Net Profit', sub: 'What is truly left after gas & miles' },
   { icon: 'sparkles', title: 'AI Suggestions', sub: 'Earn more, drive less' },
-  { icon: 'sync', title: 'Auto Imports', sub: 'Uber Eats & Shipt, synced for you' },
-  { icon: 'document-text', title: 'Tax-Ready Exports', sub: 'Your whole year, one tap' },
-  { icon: 'phone-portrait', title: 'Widgets & No Ads', sub: 'Profit on your Lock Screen' },
-];
-
-// Compact Free-vs-Pro comparison.
-const COMPARE: { label: string; free: boolean }[] = [
-  { label: 'Unlimited logging & live profit', free: true },
-  { label: 'Goals, widgets & themes', free: true },
-  { label: 'Advanced analytics', free: false },
-  { label: 'AI earning suggestions', free: false },
-  { label: 'Auto imports + tax exports', free: false },
-];
-
-// Short, illustrative driver quotes.
-const QUOTES: { q: string; who: string }[] = [
-  { q: 'Finally saw my real $/hour. Stopped taking junk orders the same day.', who: 'Marcus · DoorDash' },
-  { q: 'Tax season took 20 minutes. The export paid for itself.', who: 'Priya · Uber Eats' },
-];
-
-// Short, punchy agitation in driver language (kept to 3 lines, max impact).
-const PROBLEMS: { icon: string; text: string }[] = [
-  { icon: 'eye-off', text: 'The apps only show gross — never your real take-home.' },
-  { icon: 'trending-down', text: 'Gas, miles & fees quietly eat your profit every shift.' },
-  { icon: 'alert-circle', text: "You're grinding hard — but guessing your numbers." },
+  { icon: 'phone-portrait', title: 'Widgets', sub: 'Profit on your Lock Screen' },
+  { icon: 'document-text', title: 'Tax Reports', sub: 'Your whole year, one tap' },
 ];
 
 // Per-month equivalent of an annual package, formatted in its own currency.
@@ -634,7 +612,7 @@ function FallbackPaywall({
             paddingBottom: 180,
           }}
         >
-          {/* ── Hero ─────────────────────────────────────────────────────── */}
+          {/* ── Hero (Cal-AI style: calm, bold, minimal) ─────────────────── */}
           <Animated.View
             entering={FadeInDown.springify().damping(18)}
             style={{ alignItems: 'center', marginBottom: 6 }}
@@ -644,19 +622,19 @@ function FallbackPaywall({
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
-                width: 72,
-                height: 72,
-                borderRadius: 22,
+                width: 64,
+                height: 64,
+                borderRadius: 20,
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: 18,
+                marginBottom: 16,
                 shadowColor: t.PRIMARY,
-                shadowOpacity: 0.6,
-                shadowRadius: 18,
-                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.25,
+                shadowRadius: 14,
+                shadowOffset: { width: 0, height: 4 },
               }}
             >
-              <Ionicons name="rocket" size={34} color="#000" />
+              <Ionicons name="rocket" size={30} color="#000" />
             </LinearGradient>
             {/* NOTE (App Review 3.1.2(c)): no standalone free-trial hero badge.
                 Apple rejected the paywall for promoting the trial/intro offer
@@ -679,84 +657,59 @@ function FallbackPaywall({
                 color: t.MUTED,
                 fontSize: 15,
                 textAlign: 'center',
-                marginTop: 10,
+                marginTop: 8,
                 lineHeight: 21,
               }}
             >
-              Most apps show gross. Pro reveals what is really left after gas and miles — so you never drive for free.
+              Know what is really left after gas and miles.
             </Text>
           </Animated.View>
 
-          {/* ── Problem agitation ────────────────────────────────────────── */}
+          {/* ── Benefits (one calm grouped card, simple icon + text rows) ── */}
           <Animated.View
             entering={FadeInDown.delay(60).springify().damping(18)}
             style={{
-              marginTop: 24,
+              marginTop: 26,
               backgroundColor: t.SURFACE,
               borderWidth: 1,
               borderColor: t.BORDER,
-              borderRadius: 16,
-              padding: 16,
-              gap: 12,
+              borderRadius: 20,
+              paddingHorizontal: 16,
+              paddingVertical: 6,
             }}
           >
-            <Text
-              style={{
-                color: t.PRIMARY_TXT,
-                fontSize: 11,
-                fontWeight: '900',
-                letterSpacing: 1,
-                textTransform: 'uppercase',
-              }}
-            >
-              Stop driving blind
-            </Text>
-            {PROBLEMS.map((p) => (
-              <View key={p.text} style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
-                <Ionicons name={p.icon as any} size={18} color={t.MUTED} />
-                <Text style={{ flex: 1, color: t.TEXT_MID, fontSize: 14, lineHeight: 19, fontWeight: '600' }}>
-                  {p.text}
-                </Text>
-              </View>
-            ))}
-          </Animated.View>
-
-          {/* ── Benefits ─────────────────────────────────────────────────── */}
-          <View style={{ marginTop: 26, gap: 12 }}>
             {PRO_BENEFITS.map((b, i) => (
-              <Animated.View
+              <View
                 key={b.title}
-                entering={FadeInDown.delay(80 + i * 60).springify().damping(18)}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 14,
-                  backgroundColor: t.SURFACE,
-                  borderWidth: 1,
-                  borderColor: t.BORDER,
-                  borderRadius: 16,
-                  padding: 14,
+                  paddingVertical: 13,
+                  borderTopWidth: i === 0 ? 0 : 1,
+                  borderTopColor: t.DIVIDER,
                 }}
               >
                 <View
                   style={{
-                    width: 42,
-                    height: 42,
+                    width: 38,
+                    height: 38,
                     borderRadius: 12,
                     backgroundColor: t.PRI_LITE,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Ionicons name={b.icon as any} size={21} color={t.PRIMARY_TXT} />
+                  <Ionicons name={b.icon as any} size={19} color={t.PRIMARY_TXT} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.TEXT, fontSize: 15.5, fontWeight: '800' }}>{b.title}</Text>
                   <Text style={{ color: t.MUTED, fontSize: 13, marginTop: 1 }}>{b.sub}</Text>
                 </View>
-              </Animated.View>
+                <Ionicons name="checkmark-circle" size={20} color={t.GREEN} />
+              </View>
             ))}
-          </View>
+          </Animated.View>
 
           {/* ── Plans ────────────────────────────────────────────────────── */}
           {packages.length > 0 && (
@@ -778,14 +731,14 @@ function FallbackPaywall({
                       borderWidth: 2,
                       borderColor: isSel ? t.PRIMARY : t.BORDER,
                       backgroundColor: isSel ? t.PRI_LITE : t.SURFACE,
-                      borderRadius: 16,
+                      borderRadius: 20,
                       padding: 16,
                       ...(isSel
                         ? {
                             shadowColor: t.PRIMARY,
-                            shadowOpacity: 0.35,
-                            shadowRadius: 12,
-                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.18,
+                            shadowRadius: 10,
+                            shadowOffset: { width: 0, height: 3 },
                           }
                         : null),
                     }}
@@ -857,65 +810,6 @@ function FallbackPaywall({
             </View>
           )}
 
-          {/* ── Free vs Pro ──────────────────────────────────────────────── */}
-          <View
-            style={{
-              marginTop: 30,
-              backgroundColor: t.SURFACE,
-              borderWidth: 1,
-              borderColor: t.BORDER,
-              borderRadius: 16,
-              paddingHorizontal: 16,
-              paddingVertical: 6,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}>
-              <Text style={{ flex: 1, color: t.LABEL, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>
-                What you get
-              </Text>
-              <Text style={{ width: 50, textAlign: 'center', color: t.MUTED, fontSize: 11, fontWeight: '800' }}>Free</Text>
-              <Text style={{ width: 50, textAlign: 'center', color: t.PRIMARY_TXT, fontSize: 11, fontWeight: '900' }}>Pro</Text>
-            </View>
-            {COMPARE.map((row) => (
-              <View
-                key={row.label}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: t.DIVIDER }}
-              >
-                <Text style={{ flex: 1, color: t.TEXT_MID, fontSize: 13.5 }}>{row.label}</Text>
-                <View style={{ width: 50, alignItems: 'center' }}>
-                  {row.free ? (
-                    <Ionicons name="checkmark" size={18} color={t.GREEN} />
-                  ) : (
-                    <Ionicons name="remove" size={18} color={t.LABEL} />
-                  )}
-                </View>
-                <View style={{ width: 50, alignItems: 'center' }}>
-                  <Ionicons name="checkmark-circle" size={18} color={t.GREEN} />
-                </View>
-              </View>
-            ))}
-          </View>
-
-          {/* ── Social proof ─────────────────────────────────────────────── */}
-          <View style={{ marginTop: 28, gap: 12 }}>
-            {QUOTES.map((qq) => (
-              <View
-                key={qq.who}
-                style={{ backgroundColor: t.SURFACE, borderWidth: 1, borderColor: t.BORDER, borderRadius: 16, padding: 16 }}
-              >
-                <View style={{ flexDirection: 'row', gap: 2, marginBottom: 8 }}>
-                  {[0, 1, 2, 3, 4].map((s) => (
-                    <Ionicons key={s} name="star" size={13} color={t.PRIMARY} />
-                  ))}
-                </View>
-                <Text style={{ color: t.TEXT, fontSize: 14.5, lineHeight: 20, fontWeight: '600' }}>
-                  &ldquo;{qq.q}&rdquo;
-                </Text>
-                <Text style={{ color: t.MUTED, fontSize: 12.5, marginTop: 8, fontWeight: '700' }}>{qq.who}</Text>
-              </View>
-            ))}
-          </View>
-
           {/* Restore + legal */}
           <Pressable onPress={onRestore} disabled={busy} hitSlop={8} style={{ paddingVertical: 16, alignItems: 'center' }}>
             <Text style={{ color: t.MUTED, fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' }}>
@@ -976,6 +870,9 @@ function FallbackPaywall({
             paddingBottom: insets.bottom + 12,
           }}
         >
+          <Text style={{ color: t.MUTED, fontSize: 12, fontWeight: '600', textAlign: 'center', marginBottom: 10 }}>
+            Cancel anytime · No commitment
+          </Text>
           <AnimatedPressable
             onPressIn={() => {
               scale.value = withSpring(0.97);
@@ -989,7 +886,7 @@ function FallbackPaywall({
               ctaStyle,
               {
                 backgroundColor: t.PRIMARY,
-                borderRadius: 16,
+                borderRadius: 999,
                 paddingVertical: 17,
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -997,9 +894,9 @@ function FallbackPaywall({
                 gap: 8,
                 opacity: !selected ? 0.5 : 1,
                 shadowColor: t.PRIMARY,
-                shadowOpacity: 0.5,
-                shadowRadius: 16,
-                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.25,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
               },
             ]}
           >
