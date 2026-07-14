@@ -102,3 +102,57 @@ id = "-6Njv2r72MumTFf0hQDmd"
 uri = "file://appstore_screenshots/06.png"
 type = "image"
 title = "6. Track earnings day by day"
+
+[[outputs]]
+id = "fU0qZFREjtm-BHg9IZ0zs"
+uri = "file://store-previews/earnings-ninja-app-store-previews.zip"
+type = "unspecified"
+title = "All 8 App Store previews (1290×2796, ZIP)"
+
+[[outputs]]
+id = "U4G8SaLhIzHm5DjA_9LCe"
+uri = "file://store-previews/out/1-real-profit-tracking.png"
+type = "image"
+title = "1 · Real Profit Tracking"
+
+[[outputs]]
+id = "8KozqES0EkxsjSpcbB46M"
+uri = "file://store-previews/out/2-log-in-seconds.png"
+type = "image"
+title = "2 · Log a Trip in Seconds"
+
+[[outputs]]
+id = "evtbOlqG09nv-_dgKeZRq"
+uri = "file://store-previews/out/3-see-what-you-make.png"
+type = "image"
+title = "3 · See Exactly What You Make"
+
+[[outputs]]
+id = "FiGeF6NyAFIG2_G9jFR6u"
+uri = "file://store-previews/out/4-best-days.png"
+type = "image"
+title = "4 · Know Your Best Days"
+
+[[outputs]]
+id = "cLQGBxIOwDthjXqvVWAA-"
+uri = "file://store-previews/out/5-ai-suggestions.png"
+type = "image"
+title = "5 · AI Suggestions That Pay"
+
+[[outputs]]
+id = "01A27sMJEYVVTmd5ykPz5"
+uri = "file://store-previews/out/6-track-expenses.png"
+type = "image"
+title = "6 · Track Expenses Effortlessly"
+
+[[outputs]]
+id = "DoRgTJol89-jSuVH30Fo9"
+uri = "file://store-previews/out/7-home-screen-widget.png"
+type = "image"
+title = "7 · Profit on Your Home Screen"
+
+[[outputs]]
+id = "NHwCQHIm7_sg4RN0vgjoV"
+uri = "file://store-previews/out/8-free-trial.png"
+type = "image"
+title = "8 · Try Pro Free for 7 Days"
