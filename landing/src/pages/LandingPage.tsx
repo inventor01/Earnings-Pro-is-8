@@ -70,7 +70,7 @@ function Hero() {
                 to="/upgrade"
                 className="inline-flex items-center gap-2 bg-primary text-black font-bold px-6 py-3.5 rounded-2xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                Try free for 7 days
+                Try Pro free for 7 days
                 <span aria-hidden>→</span>
               </Link>
             </div>
@@ -366,19 +366,22 @@ function PricingTeaser() {
       <div className="max-w-3xl mx-auto px-5 text-center">
         <SectionLabel>Simple pricing</SectionLabel>
         <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
-          Start free. Go Pro for the price of one bad order.
+          Try Pro <span className="text-primary animate-glow">free for 7 days</span>.
         </h2>
         <p className="mt-4 text-muted text-lg">
-          The core tracker is free forever. Pro unlocks analytics, tax exports, AI suggestions, and
-          automatic imports for <span className="text-white font-semibold">$2.99/mo</span> — or{' '}
-          <span className="text-white font-semibold">$29.99/yr</span> (2 months free).
+          The core tracker is free forever. Try every Pro feature — analytics, tax exports, AI
+          suggestions, and automatic imports — free for 7 days. Then just{' '}
+          <span className="text-white font-semibold">$2.99/mo</span> or{' '}
+          <span className="text-white font-semibold">$29.99/yr</span>{' '}
+          <span className="text-green font-semibold">(Best Value — 2 months free)</span>. Cancel
+          anytime before day 7 and pay nothing.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/upgrade"
             className="inline-flex items-center gap-2 bg-primary text-black font-bold px-8 py-4 rounded-2xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            Compare Free vs Pro
+            Start your 7-day free trial
             <span aria-hidden>→</span>
           </Link>
           <AppStoreBadge />

@@ -39,11 +39,11 @@ Backend: FastAPI (Python 3.11) + SQLAlchemy. Frontend: React 18 + TypeScript + V
 - `eas` CLI needs `GIT_CEILING_DIRECTORIES=/home/runner EAS_NO_VCS=1`; `eas build` can exit -1 silently yet still register — verify via `eas build:list --json`. Submissions checkable via Expo GraphQL.
 
 ## Current App Store status (Jul 14)
-- **Build 26** (`ec6204a0`, `ios.buildNumber` "26") FINISHED + submitted to ASC — carries the Cal-AI trial-forward paywall. Supersedes build 25 (compliant billed-first paywall, was in review after the Jul 13 3.1.2(c) rejection of build 24).
+- **Build 27** (`8e488cc5`, `ios.buildNumber` "27") FINISHED + submitted to ASC (submission `6361b2b0` FINISHED; a duplicate kickoff `3f22ee98` also built, its submission errored harmlessly as "already submitted") — adds the 7-day-free-trial offer rollout: trial-aware Settings upgrade row ("Try Pro Free for N Days", live from `offeringTrialDays()`), "BEST VALUE · SAVE X%" badge on the annual plan card, landing site trial-forward pricing. Supersedes build 26 (`ec6204a0`, Cal-AI trial-forward paywall, submitted to ASC). Select **build 27** for the App Store version once processed.
 - RevenueCat: fully provisioned (project `proj08f4330c`, entitlement `pro`, offering `default` with `$rc_lifetime`/`$rc_annual`/`$rc_monthly`); production `appl_` key baked into `testflight`/`production` profiles; Apple Paid Applications agreement ACTIVE. Detail: `.agents/memory/revenuecat-integration.md`.
 
 ## Outstanding [USER ACTION] items
-- **ASC resubmission**: add IAP review screenshots ("Ready to Submit"), attach the 3 IAPs to the app version, select **build 26**, submit for review. Also create `pro_lifetime` ($79.99 non-consumable) as a separate IAP in ASC if not done.
+- **ASC resubmission**: add IAP review screenshots ("Ready to Submit"), attach the 3 IAPs to the app version, select **build 27**, submit for review. Also create `pro_lifetime` ($79.99 non-consumable) as a separate IAP in ASC if not done.
 - **Configure the 7-day free trial** (intro offer) on `pro_yearly` in ASC — the trial-forward paywall UI only appears when a real free trial exists; intro offers surface automatically via `product.introPrice`.
 - Enable the **Sign In with Apple** capability on App ID `com.earningsninja.app` in the Apple Developer portal (needed at runtime).
 - **Add `REVENUECAT_SECRET_API_KEY` (v1 secret key) to Railway** — without it, referral free-month grants are skipped (fail-soft; referrals still recorded, slot pending).

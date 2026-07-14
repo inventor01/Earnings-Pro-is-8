@@ -32,7 +32,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
-import { useSubscription } from '@/lib/revenuecat';
+import { useSubscription, offeringTrialDays } from '@/lib/revenuecat';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import { syncNotifState, enableMotivation, disableMotivation } from '@/lib/notifications';
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
@@ -2548,7 +2548,10 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   const { themeName, setThemeName } = useThemeControls();
   const { hidden, toggle: toggleHidden } = useHiddenMode();
   const { logout, user } = useAuth();
-  const { available: proAvailable, isPro, presentPaywall, presentCustomerCenter, restore } = useSubscription();
+  const { available: proAvailable, isPro, presentPaywall, presentCustomerCenter, restore, offerings } = useSubscription();
+  // Trial-forward upgrade copy — only when a real ASC free trial exists
+  // (offeringTrialDays reads live intro-offer data; never hardcoded).
+  const trialDays = offeringTrialDays(offerings);
   const queryClient = useQueryClient();
   // iOS only presents one modal per view controller at a time, so opening the
   // paywall (a root-level Modal) while this Settings sheet is still presented
@@ -2993,8 +2996,14 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                   <Ionicons name="rocket" size={18} color={PRIMARY_TXT} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Upgrade to Pro</Text>
-                  <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>Analytics, AI, tax exports & more</Text>
+                  <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>
+                    {trialDays ? `Try Pro Free for ${trialDays} Days` : 'Upgrade to Pro'}
+                  </Text>
+                  <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>
+                    {trialDays
+                      ? 'Analytics, AI & tax exports — cancel anytime'
+                      : 'Analytics, AI, tax exports & more'}
+                  </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={PRIMARY_TXT} />
               </Pressable>

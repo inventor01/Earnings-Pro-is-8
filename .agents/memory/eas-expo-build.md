@@ -39,3 +39,6 @@ on the build server and a failure aborts the build. Two gotchas that bit this ap
 
 ## Store submission uses the `testflight` profile, not `production`
 For App Store Connect builds, build+submit with `--profile testflight` (+ `--auto-submit`). `submit.testflight` holds the real `ascAppId`/`appleTeamId`, while `submit.production` is placeholder-only, so auto-submit on `production` fails. The production iOS RevenueCat key (`EXPO_PUBLIC_REVENUECAT_IOS_API_KEY`, publishable `appl_…`) lives in the `testflight`+`production` `env` blocks; the embedded default is only RevenueCat's Test Store key. Bump `ios.buildNumber` before each store build (testflight `autoIncrement:false`).
+
+## Silent -1 kickoff may still succeed — check before retrying
+A `eas build` kickoff killed at the tool timeout (exit -1, no output) can still have fully registered the build AND scheduled its auto-submit. Retrying blindly creates a duplicate build of the same buildNumber whose submission errors with "already submitted" (harmless, but wastes a build). Always run `eas build:list --json` (wait ~20s) before retrying a kickoff.
