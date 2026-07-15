@@ -1006,7 +1006,7 @@ function FallbackPaywall({
             ) : (
               <Text style={{ color: '#000', fontSize: 17, fontWeight: '900', letterSpacing: 0.2 }}>
                 {selTrialDays
-                  ? `Start My ${selTrialDays}-Day Free Trial`
+                  ? `Start My ${selTrialDays}-Day Trial`
                   : selected
                     ? `Upgrade${ctaPrice ? ` — ${ctaPrice}` : ''}`
                     : 'Upgrade to Pro'}
