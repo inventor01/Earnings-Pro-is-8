@@ -654,7 +654,7 @@ function FallbackPaywall({
           contentContainerStyle={{
             paddingTop: insets.top + 28,
             paddingHorizontal: 22,
-            paddingBottom: 180,
+            paddingBottom: 260 + insets.bottom,
           }}
         >
           {/* ── Hero (Cal-AI style: huge bold headline, minimal) ─────────── */}
@@ -1024,6 +1024,25 @@ function FallbackPaywall({
           <Pressable onPress={onClose} disabled={busy} hitSlop={8} style={{ paddingVertical: 10, alignItems: 'center' }}>
             <Text style={{ color: t.MUTED, fontSize: 13.5, fontWeight: '600' }}>Maybe later</Text>
           </Pressable>
+          {/* Always-visible legal links (App Review Guideline 4: must not be
+              hidden behind the sticky footer after scrolling). */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 18 }}>
+            <Pressable onPress={() => Linking.openURL(`${API_BASE}/privacy`)} hitSlop={8}>
+              <Text style={{ color: t.MUTED, fontSize: 11.5, fontWeight: '700', textDecorationLine: 'underline' }}>
+                Privacy Policy
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() =>
+                Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')
+              }
+              hitSlop={8}
+            >
+              <Text style={{ color: t.MUTED, fontSize: 11.5, fontWeight: '700', textDecorationLine: 'underline' }}>
+                Terms of Use
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </Modal>
