@@ -2668,31 +2668,49 @@ function InviteDriverRow() {
   useEffect(() => load(), [load]);
 
   const onShare = async () => {
-    if (failed || (!info && !loading)) {
-      // Couldn't load a code (offline / server error) — retry instead of
-      // silently doing nothing.
-      load();
-      return;
-    }
-    if (!info) return;
     hTap();
-    // HTTPS invite page: tappable in Messages/Mail/WhatsApp and works even if
-    // the recipient doesn't have the app installed (custom-scheme links are
-    // neither). The page deep-links into the app when it IS installed.
-    const link = `${API_BASE}/invite/${info.code}`;
+    // ALWAYS open the share sheet on tap — App Review rejected a build where
+    // this button looked unresponsive because the code fetch had failed and
+    // the tap only kicked off another (silent) retry. If we have no code,
+    // share a generic invite instead and retry the fetch in the background.
+    let current = info;
+    if (!current) {
+      // One quick foreground attempt so a transient blip still shares a code.
+      try {
+        // Cap the foreground attempt at 4s so the share sheet always appears
+        // promptly even on a stalled connection.
+        current = await Promise.race([
+          api.getReferralInfo(),
+          new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
+        ]);
+        setInfo(current);
+        setFailed(false);
+        setLoading(false);
+      } catch {
+        load(); // background retry for next time; still share generically now
+      }
+    }
+    const message = current
+      ? `Track your delivery earnings with Earnings Ninja 🥷\n` +
+        `Use my code ${current.code} when you sign up and we BOTH get 1 free month of Pro!\n` +
+        `${API_BASE}/invite/${current.code}`
+      : `Track your delivery earnings with Earnings Ninja 🥷\n` +
+        `Sign up and start tracking your profit across every gig app!\n` +
+        `https://earningsninja.com`;
     try {
       await Share.share(
-        {
-          message:
-            `Track your delivery earnings with Earnings Ninja 🥷\n` +
-            `Use my code ${info.code} when you sign up and we BOTH get 1 free month of Pro!\n${link}`,
-        },
-        { subject: 'Join me on Earnings Ninja — free month of Pro' },
+        { message },
+        { subject: 'Join me on Earnings Ninja' },
       );
     } catch (e: any) {
       // Real failures only — user dismissing the sheet doesn't reject on iOS.
       if (e?.message && !/cancel|dismiss/i.test(String(e.message))) {
-        Alert.alert('Sharing unavailable', 'Could not open the share sheet. You can share your code manually: ' + info.code);
+        Alert.alert(
+          'Sharing unavailable',
+          current
+            ? 'Could not open the share sheet. You can share your code manually: ' + current.code
+            : 'Could not open the share sheet. Please try again.',
+        );
       }
     }
   };
@@ -2700,7 +2718,6 @@ function InviteDriverRow() {
   return (
     <Pressable
       onPress={onShare}
-      disabled={loading}
       style={{
         backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1.5, borderColor: PRIMARY,
         padding: 16, opacity: loading ? 0.6 : 1,
