@@ -974,7 +974,7 @@ function FallbackPaywall({
           )}
 
           {/* Restore + legal */}
-          <Pressable onPress={onRestore} disabled={busy} hitSlop={8} style={{ paddingVertical: 16, alignItems: 'center' }}>
+          <Pressable onPress={onRestore} disabled={busy} hitSlop={12} style={{ paddingVertical: 16, alignItems: 'center' }}>
             <Text style={{ color: t.MUTED, fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' }}>
               Restore purchases
             </Text>
@@ -993,7 +993,7 @@ function FallbackPaywall({
           >
             <Pressable
               onPress={() => Linking.openURL(`${API_BASE}/privacy`)}
-              hitSlop={8}
+              hitSlop={12}
             >
               <Text
                 style={{ color: t.MUTED, fontSize: 11.5, fontWeight: '700', textDecorationLine: 'underline' }}
@@ -1007,7 +1007,7 @@ function FallbackPaywall({
                   'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
                 )
               }
-              hitSlop={8}
+              hitSlop={12}
             >
               <Text
                 style={{ color: t.MUTED, fontSize: 11.5, fontWeight: '700', textDecorationLine: 'underline' }}
@@ -1093,13 +1093,13 @@ function FallbackPaywall({
               {selSuffix ? ` per ${selSuffix.slice(1)}` : ''}. Auto-renews unless you cancel.
             </Text>
           ) : null}
-          <Pressable onPress={onClose} disabled={busy} hitSlop={8} style={{ paddingVertical: 10, alignItems: 'center' }}>
+          <Pressable onPress={onClose} disabled={busy} hitSlop={12} style={{ paddingVertical: 10, alignItems: 'center' }}>
             <Text style={{ color: t.MUTED, fontSize: 13.5, fontWeight: '600' }}>Maybe later</Text>
           </Pressable>
           {/* Always-visible legal links (App Review Guideline 4: must not be
               hidden behind the sticky footer after scrolling). */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 18 }}>
-            <Pressable onPress={() => Linking.openURL(`${API_BASE}/privacy`)} hitSlop={8}>
+            <Pressable onPress={() => Linking.openURL(`${API_BASE}/privacy`)} hitSlop={12}>
               <Text style={{ color: t.MUTED, fontSize: 11.5, fontWeight: '700', textDecorationLine: 'underline' }}>
                 Privacy Policy
               </Text>
@@ -1108,7 +1108,7 @@ function FallbackPaywall({
               onPress={() =>
                 Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')
               }
-              hitSlop={8}
+              hitSlop={12}
             >
               <Text style={{ color: t.MUTED, fontSize: 11.5, fontWeight: '700', textDecorationLine: 'underline' }}>
                 Terms of Use

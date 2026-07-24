@@ -219,6 +219,7 @@ export default function LoginScreen() {
         {/* Logo + Title */}
         <View style={{ alignItems: 'center', marginBottom: 32 }}>
           <Image
+            accessibilityLabel="Earnings Ninja logo"
             source={require('../assets/ninja-logo.png')}
             style={{
               width: 180,
