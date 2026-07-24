@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, Entry, APP_LABELS, APP_COLORS } from '../lib/api';
 import { useTheme } from '../lib/theme';
 import { useHiddenMode, MASK } from '../lib/hiddenMode';
+import { compactMoney } from '../lib/compactMoney';
 
 // ─── Theme palette is read inside each component via useTheme() ──────────────
 // Heat-map intensity overlays (kept module-level since alpha-tinted shades
@@ -762,20 +763,45 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                     >
                       {cell.day}
                     </Text>
-                    {/* Profit/loss dot — fixed-height row so cells stay aligned */}
+                    {/* Per-day amount — fixed-height row so cells stay aligned.
+                        Hidden Mode falls back to the old colored dot so no
+                        dollar values leak on screen. Empty days stay blank. */}
                     <View style={{
-                      height: 10,
-                      marginTop: 4,
+                      height: 12,
+                      marginTop: 3,
                       alignItems: 'center',
                       justifyContent: 'center',
+                      alignSelf: 'stretch',
+                      paddingHorizontal: 1,
                     }}>
-                      {dotColor && (
-                        <View style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: 3,
-                          backgroundColor: dotColor,
-                        }} />
+                      {hasData && (
+                        hidden ? (
+                          <View style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor: dotColor || MUTED,
+                          }} />
+                        ) : (
+                          <Text
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.7}
+                            style={{
+                              // Zero for the selected metric (e.g. Revenue view
+                              // on an expenses-only day) renders a muted "$0" so
+                              // data-bearing days are never confused with empty
+                              // ones.
+                              color: dotColor || MUTED,
+                              fontSize: 10,
+                              fontWeight: '800',
+                              includeFontPadding: false,
+                              textAlign: 'center',
+                            }}
+                          >
+                            {compactMoney(metric === 'expenses' ? -value : value)}
+                          </Text>
+                        )
                       )}
                     </View>
                   </Pressable>
