@@ -1734,7 +1734,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const pickFromCamera = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Camera access denied', 'Enable camera access in Settings to take receipt photos.');
+      Alert.alert('Camera access denied', 'Enable camera access in Settings to take receipt photos.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Open Settings', onPress: () => Linking.openSettings() },
+      ]);
       return;
     }
     // base64:false — we re-encode in handleAssetResult after downscaling.
@@ -1747,7 +1750,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const pickFromLibrary = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Photo access denied', 'Enable photo access in Settings to attach a receipt.');
+      Alert.alert('Photo access denied', 'Enable photo access in Settings to attach a receipt.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Open Settings', onPress: () => Linking.openSettings() },
+      ]);
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
