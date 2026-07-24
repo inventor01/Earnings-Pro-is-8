@@ -27,3 +27,5 @@ stomping an optimistic patch — and the optimistic patch loops skip windows wit
 is pure downside. Mutations whose success path ALWAYS invalidates (edit/delete)
 self-heal and don't strictly need the predicate, but any path that skips
 invalidation (offline queue) must never leave a cancelled first fetch behind.
+
+**Update (Jul 24, 2026):** the bug recurred — the create flow was guarded but edit/delete/goal onMutate paths reintroduced unguarded prefix cancels, stranding data-less first fetches ("app empty until restart"). Fix: ALL optimistic cancels must go through `cancelQueriesWithData()` in `lib/queryInvalidation.ts` (never call `queryClient.cancelQueries` directly in app code). Regression test: `__tests__/cancelDatalessStranding.test.ts` empirically reproduces the stranding.

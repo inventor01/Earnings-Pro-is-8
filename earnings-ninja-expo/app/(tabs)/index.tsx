@@ -38,7 +38,7 @@ import { syncNotifState, enableMotivation, disableMotivation, notifyEarningsChan
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
-import { invalidateEntryData } from '@/lib/queryInvalidation';
+import { invalidateEntryData, cancelQueriesWithData } from '@/lib/queryInvalidation';
 import { keyWindowContainsDate, applyOptimisticCreateRollup } from '@/lib/rollupWindow';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Application from 'expo-application';
@@ -1706,8 +1706,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // the save fell into the offline queue (negative id → onSuccess skips the
       // invalidation that would normally restart it), so the dashboard showed
       // the loading skeleton — "cleared" — until a chip tap changed the key.
-      const hasData = (q: { state: { data?: unknown } }) => q.state.data !== undefined;
-      await queryClient.cancelQueries({ queryKey: ['entries'], predicate: hasData });
+      await cancelQueriesWithData(queryClient, ['entries']);
       const prevEntries = queryClient.getQueriesData<Entry[]>({ queryKey: ['entries'] });
       // The synthetic row MUST carry the same instant convention the server
       // stores (UTC). The History list sorts via parseServerDate(), which
@@ -1778,7 +1777,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // window the entry falls on, and the window scoping prevents it from
       // inflating windows that don't contain the date. The onSuccess invalidation
       // still reconciles the exact numbers ~200ms later when the save persists.
-      await queryClient.cancelQueries({ queryKey: ['rollup'], predicate: hasData });
+      await cancelQueriesWithData(queryClient, ['rollup']);
       const prevRollup = applyOptimisticCreateRollup(queryClient, vars, estDateStr);
       // Close the modal immediately so the user sees the already-patched
       // dashboard right away, instead of waiting for the network round-trip
@@ -1874,8 +1873,12 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const updateMutation = useMutation({
     mutationFn: ({ id, patch }: { id: number; patch: Partial<EntryCreate> }) => api.updateEntry(id, patch),
     onMutate: async ({ id, patch }) => {
-      await queryClient.cancelQueries({ queryKey: ['rollup'] });
-      await queryClient.cancelQueries({ queryKey: ['entries'] });
+      // Guarded cancels: only kill in-flight fetches for windows that already
+      // hold data. Cancelling a window's FIRST fetch strands it pending with
+      // no data (empty screen until full restart) when the edit is queued
+      // offline or errors. See queryInvalidation.ts / the create-flow comment.
+      await cancelQueriesWithData(queryClient, ['rollup']);
+      await cancelQueriesWithData(queryClient, ['entries']);
       const prevRollup  = queryClient.getQueriesData<Rollup>({ queryKey: ['rollup'] });
       const prevEntries = queryClient.getQueriesData<Entry[]>({ queryKey: ['entries'] });
 
@@ -4498,8 +4501,11 @@ export default function DashboardScreen() {
   };
 
   const optimisticRemove = useCallback(async (ids: number[]): Promise<DeleteCtx> => {
-    await queryClient.cancelQueries({ queryKey: ['rollup'] });
-    await queryClient.cancelQueries({ queryKey: ['entries'] });
+    // Guarded cancels (see queryInvalidation.ts): cancelling a data-less first
+    // fetch here stranded the active window pending-forever when the delete
+    // errored — the dashboard rendered empty until a full restart.
+    await cancelQueriesWithData(queryClient, ['rollup']);
+    await cancelQueriesWithData(queryClient, ['entries']);
     // Snapshot ALL rollup/entries caches for an exact rollback, but only PATCH
     // the ACTIVE period's rollup. The deleted rows belong to the list the user
     // is deleting from (the active entries cache), so applying the delta to the
@@ -4632,8 +4638,12 @@ export default function DashboardScreen() {
     // (the onSuccess refetch fails and is retained, so this patch is what the
     // user keeps seeing until the queued upsert drains on reconnect).
     onMutate: async ({ target }) => {
-      await queryClient.cancelQueries({ queryKey: ['goal', goalKey] });
-      await queryClient.cancelQueries({ queryKey: rollupKey });
+      // Guarded cancels (see queryInvalidation.ts): the rollup cancel is the
+      // dangerous one — onSuccess here never invalidates ['rollup'], so a
+      // cancelled data-less first fetch of the active rollup had NOTHING to
+      // restart it and the KPIs stayed empty until a full restart.
+      await cancelQueriesWithData(queryClient, ['goal', goalKey]);
+      await cancelQueriesWithData(queryClient, rollupKey);
       const prevGoal = queryClient.getQueryData<Goal | null>(['goal', goalKey]);
       const prevRollup = queryClient.getQueryData<Rollup>(rollupKey);
       queryClient.setQueryData(['goal', goalKey], (old: any) => ({
