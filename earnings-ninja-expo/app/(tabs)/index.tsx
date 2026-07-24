@@ -32,7 +32,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
-import { useSubscription, offeringTrialDays } from '@/lib/revenuecat';
+import { useSubscription, offeringTrialDays, restoreAlertCopy } from '@/lib/revenuecat';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import { syncNotifState, enableMotivation, disableMotivation } from '@/lib/notifications';
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
@@ -2600,6 +2600,9 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   };
   const [editingGoal, setEditingGoal] = useState<TimeframeType | null>(null);
   const [goalInput, setGoalInput] = useState('');
+  // In-flight guard + spinner for Restore Purchases (prevents double taps and
+  // gives visible feedback while the store call runs).
+  const [restoring, setRestoring] = useState(false);
 
   // Daily motivation notifications toggle. Hydrated from the persisted flag on
   // open so it reflects the real OS/AsyncStorage state.
@@ -3053,23 +3056,29 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
               <Ionicons name="chevron-forward" size={18} color={MUTED} />
             </Pressable>
             <Pressable
+              disabled={restoring}
               onPress={async () => {
+                if (restoring) return;
                 hTap();
-                const ok = await restore();
-                Alert.alert(
-                  ok ? 'Purchases restored' : 'Nothing to restore',
-                  ok ? 'Your Pro access is active.' : 'No previous purchases were found for this account.',
-                );
+                setRestoring(true);
+                try {
+                  const result = await restore();
+                  const { title, message } = restoreAlertCopy(result);
+                  Alert.alert(title, message);
+                } finally {
+                  setRestoring(false);
+                }
               }}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14 }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, opacity: restoring ? 0.6 : 1 }}
             >
               <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="refresh" size={18} color={PRIMARY_TXT} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Restore Purchases</Text>
+                {restoring && <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>Contacting the store…</Text>}
               </View>
-              <Ionicons name="chevron-forward" size={18} color={MUTED} />
+              {restoring ? <ActivityIndicator color={PRIMARY_TXT} /> : <Ionicons name="chevron-forward" size={18} color={MUTED} />}
             </Pressable>
           </>
         )}
