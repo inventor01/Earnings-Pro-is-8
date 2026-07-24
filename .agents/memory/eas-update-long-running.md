@@ -60,3 +60,5 @@ your `--message`/code was ignored.
 **Rule:** don't trust publish output; confirm via `eas update:list` (check the
 timestamp + a unique marker in your message). If it deduped, your content is already
 live; to force a new group, make any real one-line bundle change.
+
+**Build kickoff (Jul 24):** detached/nohup/setsid `eas build` kickoffs get killed by the tool sandbox before the build registers. Working pattern: run `eas build --no-wait` in the FOREGROUND (2-min tool limit is enough — upload ~90s); verify with `eas build:list --json` and check the auto-submit submission via Expo GraphQL.
