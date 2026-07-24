@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, Pressable, TextInput, Modal, ActivityIndicator,
+  Keyboard, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -115,8 +116,18 @@ export function EmailVerifyBanner() {
       </View>
 
       <Modal visible={showCode} animationType="fade" transparent onRequestClose={() => setShowCode(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 22 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+        <Pressable
+          onPress={Keyboard.dismiss}
+          accessible={false}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}
+        >
+          <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 22 }}
+            onStartShouldSetResponder={() => true}
+          >
             <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginBottom: 6 }}>Confirm your email</Text>
             <Text style={{ color: MUTED, fontSize: 13, marginBottom: 16, lineHeight: 18 }}>
               We emailed a 6-digit code{email ? ` to ${email}` : ''}. Enter it to confirm your account.
@@ -160,7 +171,8 @@ export function EmailVerifyBanner() {
               </Pressable>
             </View>
           </View>
-        </View>
+        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );
