@@ -2762,215 +2762,6 @@ function InviteDriverRow() {
   );
 }
 
-// ─── Edit Profile (username / email) ─────────────────────────────────────────
-// Self-contained modal opened from the Settings account card. Two modes:
-//  • 'username' — one input, validated server-side (3–20 chars, allowed charset,
-//    case-insensitive duplicate prevention) and mirrored client-side.
-//  • 'email' — new email + current password (re-auth), then an inline 6-digit
-//    verification step for the NEW address (same code flow as signup). The
-//    server returns a fresh access token (JWT embeds the email claim) which we
-//    persist via login() so auth state stays in sync across restarts.
-function EditProfileModal({ mode, onClose }: { mode: 'username' | 'email' | null; onClose: () => void }) {
-  const { SURFACE, BORDER, CARD_BG, PRIMARY, PRIMARY_TXT, TEXT, MUTED, GREEN, RED, ON_PRIMARY } = useTheme();
-  const { user, login, refreshUser } = useAuth();
-
-  const [value, setValue] = useState('');
-  const [password, setPassword] = useState('');
-  const [err, setErr] = useState('');
-  const [busy, setBusy] = useState(false);
-  // Email flow: after the address change succeeds we switch to the code step.
-  const [codeStep, setCodeStep] = useState(false);
-  const [code, setCode] = useState('');
-  const [resending, setResending] = useState(false);
-  const [resent, setResent] = useState(false);
-
-  // Reset per open, seeding the input with the current value for easy editing.
-  useEffect(() => {
-    if (!mode) return;
-    setValue(mode === 'username' ? (user?.username || user?.first_name || '') : '');
-    setPassword(''); setErr(''); setBusy(false);
-    setCodeStep(false); setCode(''); setResent(false);
-  }, [mode]);
-
-  const validUsername = (u: string) =>
-    u.length >= 3 && u.length <= 20 && /^[A-Za-z0-9](?:[A-Za-z0-9_. -]*[A-Za-z0-9])?$/.test(u);
-  const validEmail = (e: string) => /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(e);
-
-  const save = async () => {
-    setErr('');
-    const v = value.trim();
-    if (mode === 'username') {
-      if (!validUsername(v)) {
-        setErr('Username must be 3–20 characters using letters, numbers, spaces, dots, dashes or underscores.');
-        return;
-      }
-      setBusy(true);
-      try {
-        await api.changeUsername(v);
-        await refreshUser();
-        onClose();
-        Alert.alert('Username Updated', `You're now "${v}".`);
-      } catch (e: any) {
-        setErr(e?.message || 'Could not change your username. Check your connection and try again.');
-      } finally {
-        setBusy(false);
-      }
-      return;
-    }
-    // Email
-    if (!validEmail(v)) { setErr('Enter a valid email address.'); return; }
-    setBusy(true);
-    try {
-      const r = await api.changeEmail(v.toLowerCase(), password || undefined);
-      // Persist the fresh token + refetch /auth/me (login() does both), so the
-      // new email survives an app restart.
-      if (r.access_token) await login(r.access_token);
-      else await refreshUser();
-      setCodeStep(true);
-    } catch (e: any) {
-      setErr(e?.message || 'Could not change your email. Check your connection and try again.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const confirmCode = async () => {
-    setErr('');
-    const c = code.trim();
-    if (c.length < 6) { setErr('Enter the 6-digit code from your email.'); return; }
-    setBusy(true);
-    try {
-      await api.verifyEmail(c);
-      await refreshUser();
-      onClose();
-      Alert.alert('Email Updated', 'Your new email is confirmed.');
-    } catch (e: any) {
-      setErr(e?.message || 'Could not confirm your email.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const resend = async () => {
-    setErr(''); setResent(false); setResending(true);
-    try {
-      await api.resendEmailVerification();
-      setCode('');
-      setResent(true);
-    } catch (e: any) {
-      setErr(e?.message || 'Could not resend the code.');
-    } finally {
-      setResending(false);
-    }
-  };
-
-  const inputStyle = {
-    backgroundColor: CARD_BG, borderWidth: 1, borderColor: BORDER, borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 12, color: TEXT, fontSize: 16, marginBottom: 12,
-  } as const;
-
-  return (
-    <Modal visible={mode !== null} animationType="fade" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 22 }}>
-            {codeStep ? (
-              <>
-                <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginBottom: 6 }}>Confirm your new email</Text>
-                <Text style={{ color: MUTED, fontSize: 13, marginBottom: 16, lineHeight: 18 }}>
-                  Your email was changed. We sent a 6-digit code to {value.trim().toLowerCase()} — enter it to confirm the new address. You can also do this later from the dashboard reminder.
-                </Text>
-                <TextInput
-                  value={code}
-                  onChangeText={(v) => setCode(v.replace(/[^0-9]/g, '').slice(0, 6))}
-                  placeholder="123456"
-                  placeholderTextColor={MUTED}
-                  keyboardType="number-pad"
-                  autoFocus
-                  maxLength={6}
-                  editable={!busy}
-                  style={{ ...inputStyle, fontSize: 24, letterSpacing: 8, textAlign: 'center' }}
-                />
-                {resent ? (
-                  <View style={{ backgroundColor: 'rgba(34,197,94,0.12)', borderWidth: 1, borderColor: GREEN, borderRadius: 10, padding: 10, marginBottom: 12 }}>
-                    <Text style={{ color: GREEN, fontSize: 13, textAlign: 'center' }}>A new code is on its way.</Text>
-                  </View>
-                ) : null}
-                {err ? (
-                  <View style={{ backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: RED, borderRadius: 10, padding: 10, marginBottom: 12 }}>
-                    <Text style={{ color: RED, fontSize: 13, textAlign: 'center' }}>{err}</Text>
-                  </View>
-                ) : null}
-                <Pressable onPress={resend} disabled={resending || busy} hitSlop={8} style={{ alignSelf: 'center', marginBottom: 14, paddingVertical: 4 }}>
-                  <Text style={{ color: PRIMARY_TXT, fontSize: 13, fontWeight: '700' }}>
-                    {resending ? 'Sending\u2026' : "Didn't get it? Resend code"}
-                  </Text>
-                </Pressable>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <Pressable onPress={onClose} style={{ flex: 1, borderRadius: 12, borderWidth: 1, borderColor: BORDER, paddingVertical: 12, alignItems: 'center' }}>
-                    <Text style={{ color: TEXT, fontWeight: '700', fontSize: 15 }}>Later</Text>
-                  </Pressable>
-                  <Pressable onPress={confirmCode} disabled={busy} style={{ flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center', backgroundColor: PRIMARY, opacity: busy ? 0.7 : 1 }}>
-                    {busy ? <ActivityIndicator color={ON_PRIMARY} /> : <Text style={{ color: ON_PRIMARY, fontWeight: '900', fontSize: 15 }}>Confirm</Text>}
-                  </Pressable>
-                </View>
-              </>
-            ) : (
-              <>
-                <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginBottom: 6 }}>
-                  {mode === 'username' ? 'Change Username' : 'Change Email'}
-                </Text>
-                <Text style={{ color: MUTED, fontSize: 13, marginBottom: 16, lineHeight: 18 }}>
-                  {mode === 'username'
-                    ? '3–20 characters. Letters, numbers, spaces, dots, dashes and underscores.'
-                    : `Currently ${user?.email || 'not set'}. We'll email a confirmation code to the new address.`}
-                </Text>
-                <TextInput
-                  value={value}
-                  onChangeText={setValue}
-                  placeholder={mode === 'username' ? 'Your username' : 'new@email.com'}
-                  placeholderTextColor={MUTED}
-                  autoFocus
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType={mode === 'email' ? 'email-address' : 'default'}
-                  editable={!busy}
-                  style={inputStyle}
-                />
-                {mode === 'email' && (
-                  <TextInput
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="Current password"
-                    placeholderTextColor={MUTED}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    editable={!busy}
-                    style={inputStyle}
-                  />
-                )}
-                {err ? (
-                  <View style={{ backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: RED, borderRadius: 10, padding: 10, marginBottom: 12 }}>
-                    <Text style={{ color: RED, fontSize: 13, textAlign: 'center' }}>{err}</Text>
-                  </View>
-                ) : null}
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <Pressable onPress={onClose} disabled={busy} style={{ flex: 1, borderRadius: 12, borderWidth: 1, borderColor: BORDER, paddingVertical: 12, alignItems: 'center' }}>
-                    <Text style={{ color: TEXT, fontWeight: '700', fontSize: 15 }}>Cancel</Text>
-                  </Pressable>
-                  <Pressable onPress={save} disabled={busy} style={{ flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center', backgroundColor: PRIMARY, opacity: busy ? 0.7 : 1 }}>
-                    {busy ? <ActivityIndicator color={ON_PRIMARY} /> : <Text style={{ color: ON_PRIMARY, fontWeight: '900', fontSize: 15 }}>Save</Text>}
-                  </Pressable>
-                </View>
-              </>
-            )}
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-}
-
 function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { BG, SURFACE, BORDER, PRIMARY, PRIMARY_TXT, PRI_LITE, TEXT, MUTED, LABEL, GREEN, RED, RED_LT, ON_PRIMARY } = useTheme();
   const { themeName, setThemeName } = useThemeControls();
@@ -2997,9 +2788,6 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   };
   const [editingGoal, setEditingGoal] = useState<TimeframeType | null>(null);
   const [goalInput, setGoalInput] = useState('');
-  // Edit-profile modal (change username / change email) opened from the
-  // account card. Rendered nested inside this sheet so it stacks on iOS.
-  const [editProfile, setEditProfile] = useState<'username' | 'email' | null>(null);
   // In-flight guard + spinner for Restore Purchases (prevents double taps and
   // gives visible feedback while the store call runs).
   const [restoring, setRestoring] = useState(false);
@@ -3125,24 +2913,10 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           }}>
             <Text style={{ fontSize: 22 }}>🥷</Text>
           </View>
-          <Pressable
-            style={{ flex: 1 }}
-            onPress={() => {
-              hTap();
-              Alert.alert('Edit Profile', 'What would you like to change?', [
-                { text: 'Change Username', onPress: () => setEditProfile('username') },
-                { text: 'Change Email', onPress: () => setEditProfile('email') },
-                { text: 'Cancel', style: 'cancel' },
-              ]);
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={{ color: TEXT, fontSize: 16, fontWeight: '700' }}>{user?.username || user?.first_name || 'Driver'}</Text>
-              <Ionicons name="pencil" size={13} color={MUTED} />
-            </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT, fontSize: 16, fontWeight: '700' }}>{user?.username || user?.first_name || 'Driver'}</Text>
             <Text style={{ color: MUTED, fontSize: 12 }}>{user?.email || ''}</Text>
-            <Text style={{ color: PRIMARY_TXT, fontSize: 11, fontWeight: '700', marginTop: 2 }}>Tap to edit</Text>
-          </Pressable>
+          </View>
           <Pressable
             onPress={() => Alert.alert('Sign Out', 'Are you sure?', [
               { text: 'Cancel', style: 'cancel' },
@@ -3587,10 +3361,6 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           <Text style={{ color: MUTED, fontSize: 11, marginTop: 4 }}>Permanently erase all of your data</Text>
         </Pressable>
       </ScrollView>
-
-      {/* Change-username / change-email editor, nested so it stacks above
-          this pageSheet on iOS. */}
-      <EditProfileModal mode={editProfile} onClose={() => setEditProfile(null)} />
     </Modal>
   );
 }
