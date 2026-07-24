@@ -10,6 +10,7 @@ from backend.models import (
     Friend, Achievement, Congratulation,
     ApiCredential, SyncedOrder,
 )
+import re
 import secrets
 from backend.auth import get_current_user, verify_prelaunch_token
 from backend.services.email_service import (
@@ -652,6 +653,7 @@ async def get_current_user_info(current_user: AuthUser = Depends(get_current_use
     return {
         "id": current_user.id,
         "email": current_user.email,
+        "username": current_user.first_name,
         "first_name": current_user.first_name,
         "last_name": current_user.last_name,
         "profile_image_url": current_user.profile_image_url,
@@ -742,6 +744,136 @@ async def resend_email_verification(
             send_email_verification_email, current_user.email, code, current_user.first_name
         )
     return {"sent": bool(code), "email_verified": False, "needs_verification": True}
+
+
+class ChangeUsernameRequest(BaseModel):
+    username: str
+
+
+class ChangeEmailRequest(BaseModel):
+    email: str
+    # Required for accounts that have a password: changing the login email is a
+    # sensitive operation, so we re-confirm the user's identity first.
+    password: Optional[str] = None
+
+
+USERNAME_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_. -]*[A-Za-z0-9])?$")
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$")
+
+
+@router.post("/auth/change-username")
+@auth_limiter.limit("10/hour")
+async def change_username(
+    request: Request,
+    body: ChangeUsernameRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Dict:
+    """Change the account's username (stored as first_name — the same field
+    signup and login-by-username use). Case-insensitive duplicate prevention
+    against all non-demo accounts."""
+    if current_user.is_demo:
+        raise HTTPException(status_code=400, detail="Demo accounts can't change their username.")
+
+    username = (body.username or "").strip()
+    if len(username) < 3 or len(username) > 20:
+        raise HTTPException(status_code=400, detail="Username must be 3–20 characters.")
+    if not USERNAME_RE.match(username):
+        raise HTTPException(
+            status_code=400,
+            detail="Username can only use letters, numbers, spaces, dots, dashes and underscores.",
+        )
+
+    # No-op rename (same name, possibly different casing) is always allowed.
+    if (current_user.first_name or "").lower() != username.lower():
+        taken = db.query(AuthUser).filter(
+            func.lower(AuthUser.first_name) == username.lower(),
+            AuthUser.is_demo == False,
+            AuthUser.id != current_user.id,
+        ).first()
+        if taken:
+            raise HTTPException(status_code=409, detail="Username already taken.")
+
+    current_user.first_name = username
+    db.commit()
+    return {"success": True, "username": username}
+
+
+@router.post("/auth/change-email")
+@auth_limiter.limit("5/hour")
+async def change_email(
+    request: Request,
+    body: ChangeEmailRequest,
+    background_tasks: BackgroundTasks,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Dict:
+    """Change the account's login email. Requires the current password (when the
+    account has one), enforces uniqueness, resets verification state, emails a
+    fresh 6-digit confirmation code to the NEW address, and returns a fresh
+    access token (tokens embed the email claim)."""
+    if current_user.is_demo:
+        raise HTTPException(status_code=400, detail="Demo accounts can't change their email.")
+
+    email = (body.email or "").strip().lower()
+    if not EMAIL_RE.match(email):
+        raise HTTPException(status_code=400, detail="Enter a valid email address.")
+
+    # Re-authenticate before changing the login identifier. Password accounts
+    # must re-enter their password; passwordless accounts (e.g. Sign in with
+    # Apple) have no credential to re-verify, so a stolen session token alone
+    # would be enough to rebind the login email — block them instead of
+    # silently allowing an account takeover pivot.
+    if current_user.password_hash:
+        if not body.password or not verify_password(body.password, current_user.password_hash):
+            raise HTTPException(status_code=401, detail="Incorrect password.")
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "This account signs in without a password, so its email can't be "
+                "changed here. Set a password first using 'Forgot password' on the "
+                "sign-in screen, then try again."
+            ),
+        )
+
+    if (current_user.email or "").lower() == email:
+        raise HTTPException(status_code=400, detail="That's already your email.")
+
+    taken = db.query(AuthUser).filter(
+        func.lower(AuthUser.email) == email,
+        AuthUser.id != current_user.id,
+    ).first()
+    if taken:
+        raise HTTPException(status_code=409, detail="That email is already in use.")
+
+    current_user.email = email
+    # The new address is unconfirmed until the user enters the code we send it.
+    current_user.email_verified = False
+    current_user.email_verification_code_hash = None
+    current_user.email_verification_expires_at = None
+    current_user.email_verification_attempts = 0
+    db.commit()
+
+    try:
+        code = await _issue_email_verification(current_user, db)
+        if code:
+            background_tasks.add_task(
+                send_email_verification_email, email, code, current_user.first_name
+            )
+    except Exception as e:
+        # Best-effort: the email change itself succeeded; the user can resend.
+        print(f"[ChangeEmail] Failed to queue verification email: {e}")
+
+    token = create_access_token(current_user.id, current_user.email)
+    return {
+        "success": True,
+        "email": email,
+        "email_verified": False,
+        "needs_verification": True,
+        "access_token": token,
+        "token_type": "bearer",
+    }
 
 
 @router.post("/auth/validate-token")

@@ -53,6 +53,10 @@ interface AuthContextType {
   isLoading: boolean;
   login: (token: string) => Promise<void>;
   logout: () => Promise<void>;
+  // Refetch /auth/me and update the in-memory + cached user (after profile
+  // changes like username/email edits). Best-effort: keeps existing state on
+  // network failure.
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -61,6 +65,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   login: async () => {},
   logout: async () => {},
+  refreshUser: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -117,6 +122,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   };
 
+  const refreshUser = async () => {
+    try {
+      const u = await api.getMe();
+      setUser(u);
+      await writeCachedUser(u);
+    } catch {
+      // Offline / transient failure — keep the current user state.
+    }
+  };
+
   const logout = async () => {
     await clearToken();
     await writeCachedUser(null);
@@ -127,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ token, user, isLoading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
