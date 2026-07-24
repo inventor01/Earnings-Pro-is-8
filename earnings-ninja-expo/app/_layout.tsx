@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Platform, type AppStateStatus } from 'react-native';
+import { AppState, Platform, Text, TextInput, type AppStateStatus } from 'react-native';
+
+// HIG Dynamic Type: respect the user's system text size but cap the multiplier
+// so the dense KPI/dashboard layouts scale up gracefully instead of breaking.
+// (Applied globally; individual Text components can still override.)
+const T = Text as unknown as { defaultProps?: { maxFontSizeMultiplier?: number } };
+const TI = TextInput as unknown as { defaultProps?: { maxFontSizeMultiplier?: number } };
+T.defaultProps = { ...(T.defaultProps ?? {}), maxFontSizeMultiplier: 1.35 };
+TI.defaultProps = { ...(TI.defaultProps ?? {}), maxFontSizeMultiplier: 1.35 };
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

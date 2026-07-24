@@ -52,7 +52,9 @@ export const dark: Theme = {
   TEXT: '#f1f5f9',
   TEXT_MID: '#cbd5e1',
   MUTED: '#94a3b8',
-  LABEL: '#64748b',
+  // HIG contrast: #64748b on the dark surface fell below WCAG AA for small
+  // text; #7d8ba3 keeps the muted look while staying readable.
+  LABEL: '#7d8ba3',
   DIM: '#64748b',
   GREEN: '#22c55e',
   GREEN_LT: '#052e16',
