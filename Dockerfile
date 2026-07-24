@@ -4,7 +4,11 @@
 FROM node:20-alpine as landing-builder
 WORKDIR /app/landing
 COPY landing/package*.json ./
-RUN npm ci
+# Railway injects service env vars (incl. NODE_ENV=production) into the Docker
+# build, which makes `npm ci` skip devDependencies — but vite lives there.
+# Force-include dev deps so `vite build` is available.
+ENV NODE_ENV=development
+RUN npm ci --include=dev
 COPY landing/ .
 RUN npm run build
 
