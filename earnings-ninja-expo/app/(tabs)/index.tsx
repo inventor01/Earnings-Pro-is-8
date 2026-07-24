@@ -2863,7 +2863,10 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
     // Logic lives in lib/goalOptimistic so it can be unit-tested in isolation.
     onMutate: ({ tf, target }) =>
       applyOptimisticGoal(queryClient, tf === 'TODAY' ? settingsDailyKey : tf, target),
-    onError: (_err, _vars, ctx) => rollbackOptimisticGoal(queryClient, ctx),
+    onError: (_err, _vars, ctx) => {
+      rollbackOptimisticGoal(queryClient, ctx);
+      Alert.alert('Goal not saved', 'Your goal could not be saved. Please try again.');
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goal'] });
       setEditingGoal(null);
@@ -2892,7 +2895,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         }
       }}
     >
-      <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>⚙️ Settings</Text>
           <Pressable onPress={onClose} style={{ padding: 6 }}>
@@ -3893,9 +3896,55 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
           })}
         </View>
 
+        {/* Free-plan banner: lock + message + inline upgrade CTA, always visible
+            above the (blurred) analytics so the page reads as a premium preview
+            rather than broken/empty data. */}
+        {locked && (
+          <View style={{
+            backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1.5, borderColor: PRIMARY,
+            padding: 16, marginBottom: 20, alignItems: 'center',
+          }}>
+            <Ionicons name="lock-closed" size={26} color={PRIMARY_TXT} style={{ marginBottom: 8 }} />
+            <Text style={{ color: TEXT, fontSize: 16, fontWeight: '900', textAlign: 'center' }}>
+              Unlock Premium Analytics
+            </Text>
+            <Text style={{ color: MUTED, fontSize: 12, textAlign: 'center', marginTop: 6, lineHeight: 18 }}>
+              Upgrade to view your real earnings, trends, hourly income and advanced insights.
+              Your full dashboard is below — the numbers unlock with Pro.
+            </Text>
+            <PressScale
+              onPress={async () => { hTap(); await presentPaywall(); }}
+              scale={0.97}
+              style={[{
+                marginTop: 12, backgroundColor: PRIMARY, borderRadius: 12,
+                paddingVertical: 12, paddingHorizontal: 24,
+              }, neonGlow(PRIMARY, 10, 0.35)]}
+            >
+              <Text style={{ color: ON_PRIMARY, fontSize: 14, fontWeight: '900' }}>Upgrade to Premium</Text>
+            </PressScale>
+          </View>
+        )}
+
         {loading ? (
           <View style={{ paddingVertical: 80, alignItems: 'center' }}>
             <ActivityIndicator color={PRIMARY_TXT} />
+          </View>
+        ) : (rollupQuery.isError || entriesQuery.isError) ? (
+          /* Never show a blank page: on a failed load, keep the layout with an
+             explicit message + retry instead of empty cards. */
+          <View style={{ paddingVertical: 60, alignItems: 'center', gap: 12 }}>
+            <Ionicons name="cloud-offline-outline" size={34} color={MUTED} />
+            <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Couldn't load your analytics</Text>
+            <Text style={{ color: MUTED, fontSize: 12, textAlign: 'center' }}>
+              Check your connection and try again.
+            </Text>
+            <PressScale
+              onPress={() => { hTap(); rollupQuery.refetch(); entriesQuery.refetch(); }}
+              scale={0.96}
+              style={{ backgroundColor: PRIMARY, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 28, marginTop: 4 }}
+            >
+              <Text style={{ color: ON_PRIMARY, fontWeight: '900', fontSize: 14 }}>Retry</Text>
+            </PressScale>
           </View>
         ) : (
           <>
@@ -4560,6 +4609,10 @@ export default function DashboardScreen() {
     }
   }, [searchParams.openEntry, searchParams.type, searchParams.amount]);
   const [editingGoal, setEditingGoal] = useState(false);
+  // Transient "✓ Goal saved" confirmation shown on the goal card after a save.
+  const [goalSaved, setGoalSaved] = useState(false);
+  const goalSavedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (goalSavedTimer.current) clearTimeout(goalSavedTimer.current); }, []);
   const [goalInput, setGoalInput] = useState('');
   const [showAllEntries, setShowAllEntries] = useState(false);
   // Incremental render window for the expanded History list. Tapping "Show all"
@@ -4887,15 +4940,23 @@ export default function DashboardScreen() {
       return { prevGoal, prevRollup };
     },
     onError: (_err, _vars, ctx) => {
-      if (!ctx) return;
-      queryClient.setQueryData(['goal', goalKey], ctx.prevGoal);
-      queryClient.setQueryData(rollupKey, ctx.prevRollup);
+      if (ctx) {
+        queryClient.setQueryData(['goal', goalKey], ctx.prevGoal);
+        queryClient.setQueryData(rollupKey, ctx.prevRollup);
+      }
+      // Permanent failure (transient ones are queued and resolve as success) —
+      // never fail silently, or Save looks like it did nothing.
+      Alert.alert('Goal not saved', 'Your goal could not be saved. Please try again.');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goal'] });
       refetchGoal();
       setEditingGoal(false);
       hNotifyOk();
+      // Transient "✓ Goal saved" confirmation on the goal card.
+      setGoalSaved(true);
+      if (goalSavedTimer.current) clearTimeout(goalSavedTimer.current);
+      goalSavedTimer.current = setTimeout(() => setGoalSaved(false), 2500);
       // A new/changed goal target alters "remaining to goal" in the recap.
       notifyEarningsChanged();
     },
@@ -5133,6 +5194,10 @@ export default function DashboardScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
         contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
+        // Without this, the FIRST tap on the goal editor's Save button while the
+        // keyboard is open only dismisses the keyboard — the press never reaches
+        // the button, which reads as "Save does nothing".
+        keyboardShouldPersistTaps="handled"
       >
         {/* ── Header ────────────────────────────────────────────────────────── */}
         <View style={{
@@ -5669,13 +5734,20 @@ export default function DashboardScreen() {
                     />
                     <Pressable
                       onPress={() => {
-                        const val = parseFloat(goalInput);
-                        if (!val || val <= 0) return;
+                        // Accept comma decimals ("12,50") from EU-style keypads.
+                        const val = parseFloat(goalInput.replace(',', '.'));
+                        if (!val || val <= 0) {
+                          Alert.alert('Enter a goal', 'Type a dollar amount greater than 0, then tap Save.');
+                          return;
+                        }
                         upsertGoalMutation.mutate({ target: val });
                       }}
-                      style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
+                      disabled={upsertGoalMutation.isPending}
+                      style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center', opacity: upsertGoalMutation.isPending ? 0.7 : 1 }}
                     >
-                      <Text style={{ color: ON_PRIMARY, fontWeight: '800' }}>Save</Text>
+                      {upsertGoalMutation.isPending
+                        ? <ActivityIndicator color={ON_PRIMARY} />
+                        : <Text style={{ color: ON_PRIMARY, fontWeight: '800' }}>Save</Text>}
                     </Pressable>
                     <Pressable
                       onPress={() => setEditingGoal(false)}
@@ -5691,9 +5763,14 @@ export default function DashboardScreen() {
                   }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                       <View>
-                        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
-                          {periodLabel} Target
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
+                            {periodLabel} Target
+                          </Text>
+                          {goalSaved && (
+                            <Text style={{ color: GREEN, fontSize: 11, fontWeight: '800' }}>✓ Goal saved</Text>
+                          )}
+                        </View>
                         <Text style={{
                           color: isGoalLoss ? RED : TEXT,
                           fontSize: 22, fontWeight: '800', marginTop: 2,
