@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { Goal, TimeframeType } from './api';
+import { cancelQueriesWithData } from './queryInvalidation';
 
 // Goal cache key: a timeframe OR a per-date daily key ('DAILY:YYYY-MM-DD').
 export type GoalKey = TimeframeType | string;
@@ -23,7 +24,10 @@ export async function applyOptimisticGoal(
   tf: GoalKey,
   target: number,
 ): Promise<OptimisticGoalCtx> {
-  await qc.cancelQueries({ queryKey: ['goal', tf] });
+  // Guarded: never cancel a data-less first fetch (it would strand the goal
+  // query pending-forever on the offline synthetic-success path — the row
+  // then shows empty until a full restart). See queryInvalidation.ts.
+  await cancelQueriesWithData(qc, ['goal', tf]);
   const prevGoal = qc.getQueryData<Goal | null>(['goal', tf]);
   qc.setQueryData(['goal', tf], (old: any) => ({
     id: old?.id ?? -1,
