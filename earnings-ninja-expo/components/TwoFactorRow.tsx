@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, Pressable, TextInput, Modal,
-  ActivityIndicator, Switch, Alert,
+  ActivityIndicator, Switch, Alert, Keyboard, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
@@ -162,8 +162,18 @@ export function TwoFactorRow() {
 
       {/* Enable-confirm code modal */}
       <Modal visible={showCode} animationType="fade" transparent onRequestClose={() => setShowCode(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 22 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+        <Pressable
+          onPress={Keyboard.dismiss}
+          accessible={false}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}
+        >
+          <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 22 }}
+            onStartShouldSetResponder={() => true}
+          >
             <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginBottom: 6 }}>Confirm your email</Text>
             <Text style={{ color: MUTED, fontSize: 13, marginBottom: 16, lineHeight: 18 }}>
               We emailed a 6-digit code{codeEmail ? ` to ${codeEmail}` : ''}. Enter it to turn on two-factor.
@@ -207,13 +217,24 @@ export function TwoFactorRow() {
               </Pressable>
             </View>
           </View>
-        </View>
+        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Disable (password) modal */}
       <Modal visible={showPw} animationType="fade" transparent onRequestClose={() => setShowPw(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 22 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+        <Pressable
+          onPress={Keyboard.dismiss}
+          accessible={false}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}
+        >
+          <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 22 }}
+            onStartShouldSetResponder={() => true}
+          >
             <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginBottom: 6 }}>Turn off two-factor?</Text>
             <Text style={{ color: MUTED, fontSize: 13, marginBottom: 16, lineHeight: 18 }}>
               Enter your password to confirm. Leave blank if you sign in with Apple.
@@ -244,7 +265,8 @@ export function TwoFactorRow() {
               </Pressable>
             </View>
           </View>
-        </View>
+        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   View, Text, TextInput, Pressable,
   ScrollView, ActivityIndicator, KeyboardAvoidingView,
-  Platform, Image, Modal,
+  Platform, Image, Modal, Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/authContext';
@@ -522,8 +522,18 @@ export default function LoginScreen() {
 
       {/* Forgot-password modal */}
       <Modal visible={showForgot} animationType="fade" transparent onRequestClose={() => setShowForgot(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
-          <View style={{
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+        <Pressable
+          onPress={Keyboard.dismiss}
+          accessible={false}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}
+        >
+          <View
+            onStartShouldSetResponder={() => true}
+            style={{
             backgroundColor: CARD,
             borderRadius: 18,
             borderWidth: 1,
@@ -610,13 +620,24 @@ export default function LoginScreen() {
               )}
             </View>
           </View>
-        </View>
+        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Email 2FA code-entry modal */}
       <Modal visible={showMfa} animationType="fade" transparent onRequestClose={() => setShowMfa(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
-          <View style={{
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+        <Pressable
+          onPress={Keyboard.dismiss}
+          accessible={false}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}
+        >
+          <View
+            onStartShouldSetResponder={() => true}
+            style={{
             backgroundColor: CARD,
             borderRadius: 18,
             borderWidth: 1,
@@ -713,7 +734,8 @@ export default function LoginScreen() {
               </Pressable>
             </View>
           </View>
-        </View>
+        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </KeyboardAvoidingView>
   );
