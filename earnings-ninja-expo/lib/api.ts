@@ -384,6 +384,41 @@ export const api = {
     return res.json();
   },
 
+  // Account profile changes. Both throw with the server's human-readable
+  // `detail` message so the Settings UI can surface it directly.
+  async changeUsername(username: string): Promise<{ success: boolean; username: string }> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/auth/change-username`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not change your username');
+    }
+    return res.json();
+  },
+
+  async changeEmail(email: string, password?: string): Promise<{
+    success: boolean;
+    email: string;
+    needs_verification: boolean;
+    access_token: string;
+  }> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/auth/change-email`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: password ?? null }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not change your email');
+    }
+    return res.json();
+  },
+
   async getMe(): Promise<User> {
     const headers = await getAuthHeaders();
     const res = await trackedFetch(`${API_BASE}/api/auth/me`, { headers });
