@@ -3397,6 +3397,23 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   const [aPeriod, setAPeriod] = useState<AnalyticsPeriod>(initialPeriod);
   const [showAllDays, setShowAllDays] = useState(false);
 
+  // ── Free-plan upsell preview ────────────────────────────────────────────
+  // Free users see the ENTIRE analytics page — every card, chart, trend and
+  // animation — but with the financial values blurred, plus a sticky upgrade
+  // CTA. Fails OPEN when RevenueCat is unavailable on this build (matches
+  // requirePro / the CSV gates). Non-financial stats (orders, days, miles)
+  // stay readable.
+  const { available: proAvailable, isPro, presentPaywall } = useSubscription();
+  const locked = proAvailable && !isPro;
+  // Blur that keeps the EXACT glyph metrics of the real string: the text is
+  // rendered transparent and only its soft shadow (in the value's own theme
+  // color) is visible. Same string + same font ⇒ zero layout shift, and the
+  // shadow inherits whatever color the value uses in Light or Dark mode.
+  const blur = (c: string): TextStyle | undefined =>
+    locked
+      ? { color: 'transparent', textShadowColor: c, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }
+      : undefined;
+
   // Open to the timeframe the user is currently viewing on the dashboard: sync
   // the selected period to `initialPeriod` each time the modal becomes visible
   // (the component stays mounted, so state would otherwise persist the last-used
@@ -3657,7 +3674,8 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}>
+      <View style={{ flex: 1, backgroundColor: BG }}>
+      <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 + (locked ? 84 : 0) }}>
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>📊 Analytics</Text>
@@ -3712,7 +3730,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                   <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
                     {k.label}
                   </Text>
-                  <Text style={{ color: k.color ?? TEXT, fontSize: 20, fontWeight: '900', marginTop: 6 }}>
+                  <Text style={[{ color: k.color ?? TEXT, fontSize: 20, fontWeight: '900', marginTop: 6 }, k.hide ? blur(k.color ?? TEXT) : undefined]}>
                     {hidden && k.hide ? MASK : k.value}
                   </Text>
                 </View>
@@ -3733,7 +3751,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                     Business Expenses (Tax-Deductible)
                   </Text>
                 </View>
-                <Text style={{ color: TEXT, fontSize: 24, fontWeight: '900' }}>
+                <Text style={[{ color: TEXT, fontSize: 24, fontWeight: '900' }, blur(TEXT)]}>
                   {hidden ? MASK : money(businessExpenses.total)}
                 </Text>
                 <Text style={{ color: LABEL, fontSize: 12, marginTop: 4 }}>
@@ -3751,7 +3769,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                     borderWidth: 1, borderColor: GREEN, padding: 14,
                   }, neonGlow(GREEN, 7, 0.18)]}>
                     <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>🔥 Best Day</Text>
-                    <Text style={{ color: GREEN, fontSize: 20, fontWeight: '900', marginTop: 6 }}>{hidden ? MASK : money(bestDay.net)}</Text>
+                    <Text style={[{ color: GREEN, fontSize: 20, fontWeight: '900', marginTop: 6 }, blur(GREEN)]}>{hidden ? MASK : money(bestDay.net)}</Text>
                     <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', marginTop: 2 }}>{fmtDayLabel(bestDay.date)}</Text>
                   </View>
                 )}
@@ -3790,7 +3808,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                 <>
                   <Text style={{ color: TEXT_MID, fontSize: 12, fontWeight: '600', marginBottom: 12 }}>
                     Best hour: <Text style={{ color: PRIMARY_TXT, fontWeight: '900' }}>{hourTick(peakHour)}–{hourTick((peakHour + 1) % 24)}</Text>
-                    {!hidden && <Text style={{ color: MUTED }}>  ·  {money(hourly[peakHour])}</Text>}
+                    {!hidden && <Text style={{ color: MUTED }}>  ·  <Text style={blur(MUTED)}>{money(hourly[peakHour])}</Text></Text>}
                   </Text>
                   <VBarChart
                     buckets={hourly}
@@ -3861,7 +3879,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                         <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700' }}>{fmtDayLabel(d.date)}</Text>
                         <Text style={{ color: MUTED, fontSize: 11, fontWeight: '600' }}>{d.orders} orders · {d.miles.toFixed(1)} mi</Text>
                       </View>
-                      <Text style={{ color: pos ? GREEN : RED, fontSize: 15, fontWeight: '900' }}>{hidden ? MASK : money(d.net)}</Text>
+                      <Text style={[{ color: pos ? GREEN : RED, fontSize: 15, fontWeight: '900' }, blur(pos ? GREEN : RED)]}>{hidden ? MASK : money(d.net)}</Text>
                     </View>
                   );
                 })}
@@ -3885,12 +3903,12 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: TEXT, fontSize: 13, fontWeight: '700' }}>{fmtDayLabel(d.date)}</Text>
                         <Text style={{ color: MUTED, fontSize: 11, fontWeight: '600', marginTop: 2 }}>
-                          {hidden ? MASK : `$${d.revenue.toFixed(0)} in`}
-                          {d.expenses > 0 && <Text style={{ color: RED }}>{hidden ? '' : `  ·  $${d.expenses.toFixed(0)} out`}</Text>}
+                          <Text style={blur(MUTED)}>{hidden ? MASK : `$${d.revenue.toFixed(0)} in`}</Text>
+                          {d.expenses > 0 && <Text style={[{ color: RED }, blur(RED)]}>{hidden ? '' : `  ·  $${d.expenses.toFixed(0)} out`}</Text>}
                           <Text>{`  ·  ${d.orders} ord`}</Text>
                         </Text>
                       </View>
-                      <Text style={{ color: pos ? GREEN : RED, fontSize: 14, fontWeight: '900' }}>{hidden ? MASK : money(d.net)}</Text>
+                      <Text style={[{ color: pos ? GREEN : RED, fontSize: 14, fontWeight: '900' }, blur(pos ? GREEN : RED)]}>{hidden ? MASK : money(d.net)}</Text>
                     </View>
                   );
                 })}
@@ -3916,7 +3934,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
               ) : (
                 <>
                   <Text style={{ color: RED, fontSize: 22, fontWeight: '900', marginBottom: 14 }}>
-                    {hidden ? MASK : `$${categoryData.total.toFixed(2)}`} <Text style={{ color: MUTED, fontSize: 12, fontWeight: '700' }}>total spend</Text>
+                    <Text style={blur(RED)}>{hidden ? MASK : `$${categoryData.total.toFixed(2)}`}</Text> <Text style={{ color: MUTED, fontSize: 12, fontWeight: '700' }}>total spend</Text>
                   </Text>
                   {categoryData.rows.map(r => (
                     <View key={r.cat} style={{ marginBottom: 12 }}>
@@ -3925,7 +3943,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                           {EXPENSE_EMOJIS[r.cat]} {r.cat.charAt(0) + r.cat.slice(1).toLowerCase()}
                         </Text>
                         <Text style={{ color: TEXT, fontSize: 13, fontWeight: '800' }}>
-                          {hidden ? MASK : `$${r.amt.toFixed(2)}`} <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700' }}>· {r.pct.toFixed(0)}%</Text>
+                          <Text style={blur(TEXT)}>{hidden ? MASK : `$${r.amt.toFixed(2)}`}</Text> <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700' }}>· {r.pct.toFixed(0)}%</Text>
                         </Text>
                       </View>
                       <View style={{ height: 8, borderRadius: 4, backgroundColor: DIVIDER, overflow: 'hidden' }}>
@@ -3951,7 +3969,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                     <View key={r.app} style={{ marginBottom: 12 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
                         <Text style={{ color: TEXT_MID, fontSize: 13, fontWeight: '600' }}>{APP_LABELS[r.app]}</Text>
-                        <Text style={{ color: pos ? GREEN : RED, fontSize: 13, fontWeight: '800' }}>
+                        <Text style={[{ color: pos ? GREEN : RED, fontSize: 13, fontWeight: '800' }, blur(pos ? GREEN : RED)]}>
                           {hidden ? MASK : `${pos ? '' : '-'}$${Math.abs(r.amt).toFixed(2)}`}
                         </Text>
                       </View>
@@ -3966,6 +3984,28 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
           </>
         )}
       </ScrollView>
+
+      {/* Sticky upgrade CTA — free-plan preview only. Overlays the scroll
+          (extra contentContainer padding keeps the last card reachable). */}
+      {locked && (
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, paddingBottom: Math.max(insets.bottom, 12) + 8 }}>
+          <PressScale
+            onPress={async () => { hTap(); await presentPaywall(); }}
+            scale={0.97}
+            style={[
+              {
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                backgroundColor: PRIMARY, borderRadius: 16, paddingVertical: 16,
+              },
+              neonGlow(PRIMARY, 14, 0.45),
+            ]}
+          >
+            <Ionicons name="lock-closed" size={18} color={ON_PRIMARY} />
+            <Text style={{ color: ON_PRIMARY, fontSize: 16, fontWeight: '900' }}>Upgrade to Unlock Your Numbers</Text>
+          </PressScale>
+        </View>
+      )}
+      </View>
     </Modal>
   );
 }
@@ -5396,7 +5436,7 @@ export default function DashboardScreen() {
 
               {/* ── Analytics entry point (full-screen modal) ──────────────── */}
               <PressScale
-                onPress={async () => { hTap(); if (await requirePro()) setShowAnalytics(true); }}
+                onPress={() => { hTap(); setShowAnalytics(true); }}
                 scale={0.97}
                 style={[
                   {
