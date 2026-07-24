@@ -76,7 +76,7 @@ const neonGlow = (color: string, radius: number = 16, opacity: number = 0.45): V
 
 // ─── Press-scale Pressable (mirrors web active:scale-95) ─────────────────────
 function PressScale({
-  children, onPress, onLongPress, scale = 0.96, style, hitSlop, disabled,
+  children, onPress, onLongPress, scale = 0.96, style, hitSlop, disabled, accessibilityLabel,
 }: {
   children: React.ReactNode;
   onPress?: () => void;
@@ -85,6 +85,7 @@ function PressScale({
   style?: ViewStyle | ViewStyle[];
   hitSlop?: number;
   disabled?: boolean;
+  accessibilityLabel?: string;
 }) {
   return (
     <Pressable
@@ -92,6 +93,8 @@ function PressScale({
       onLongPress={onLongPress}
       disabled={disabled}
       hitSlop={hitSlop}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
       style={({ pressed }) => [
         Array.isArray(style) ? Object.assign({}, ...style) : style,
@@ -700,11 +703,11 @@ function EntryRow({
       {!selectionMode && (
         <>
           {onEdit && (
-            <Pressable onPress={() => onEdit(entry)} style={{ marginLeft: 8, padding: 6 }} hitSlop={6}>
+            <Pressable onPress={() => onEdit(entry)} style={{ marginLeft: 8, padding: 6 }} hitSlop={12} accessibilityRole="button" accessibilityLabel="Edit entry">
               <Ionicons name="pencil-outline" size={14} color={LABEL} />
             </Pressable>
           )}
-          <Pressable onPress={() => onDelete(entry.id)} style={{ marginLeft: 4, padding: 6 }} hitSlop={6}>
+          <Pressable onPress={() => onDelete(entry.id)} style={{ marginLeft: 4, padding: 6 }} hitSlop={12} accessibilityRole="button" accessibilityLabel="Delete entry">
             <Ionicons name="trash-outline" size={14} color={LABEL} />
           </Pressable>
         </>
@@ -2898,7 +2901,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
       <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>⚙️ Settings</Text>
-          <Pressable onPress={onClose} style={{ padding: 6 }}>
+          <Pressable onPress={onClose} style={{ padding: 6 }} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close-circle" size={28} color={MUTED} />
           </Pressable>
         </View>
@@ -3865,7 +3868,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>📊 Analytics</Text>
-          <Pressable onPress={onClose} style={{ padding: 6 }}>
+          <Pressable onPress={onClose} style={{ padding: 6 }} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close-circle" size={28} color={MUTED} />
           </Pressable>
         </View>
@@ -4347,7 +4350,7 @@ function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => 
           borderBottomWidth: 1, borderBottomColor: DIVIDER,
         }}>
           <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>💸 Expenses</Text>
-          <Pressable onPress={onClose} style={{ padding: 6 }}>
+          <Pressable onPress={onClose} style={{ padding: 6 }} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close-circle" size={28} color={MUTED} />
           </Pressable>
         </View>
@@ -5235,6 +5238,7 @@ export default function DashboardScreen() {
           <View style={{ flexDirection: 'row', gap: 8, flexShrink: 0 }}>
             <PressScale
               hitSlop={8}
+              accessibilityLabel={showSearchBar ? 'Close search' : 'Search entries'}
               onPress={() => {
                 hTap();
                 // Functional updater is closure-safe under rapid taps. The
@@ -5257,6 +5261,7 @@ export default function DashboardScreen() {
             </PressScale>
             <PressScale
               hitSlop={8}
+              accessibilityLabel="Open calendar"
               onPress={() => { hTap(); setShowCalendar(true); }}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
@@ -5264,6 +5269,7 @@ export default function DashboardScreen() {
             </PressScale>
             <PressScale
               hitSlop={8}
+              accessibilityLabel={hidden ? 'Show amounts' : 'Hide amounts'}
               onPress={() => { hTap(); toggleHidden(); }}
               style={[
                 {
@@ -5279,6 +5285,7 @@ export default function DashboardScreen() {
             </PressScale>
             <PressScale
               hitSlop={8}
+              accessibilityLabel={themeName === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
               onPress={() => { hTap(); setThemeName(themeName === 'dark' ? 'light' : 'dark'); }}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
@@ -5286,6 +5293,7 @@ export default function DashboardScreen() {
             </PressScale>
             <PressScale
               hitSlop={8}
+              accessibilityLabel="Open settings"
               onPress={() => { hTap(); setShowSettings(true); }}
               style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
