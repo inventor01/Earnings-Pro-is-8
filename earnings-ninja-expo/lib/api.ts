@@ -127,6 +127,9 @@ export interface Entry {
   // Stable client key echoed back by the server (see EntryCreate.idempotency_key).
   // Lets the offline overlay drop a still-queued create once its real row lands.
   idempotency_key?: string;
+  // Display name for entries logged against a user-created platform. When set,
+  // `app` is always 'OTHER' — this carries the real identity for display.
+  custom_app?: string | null;
 }
 
 // Generates a stable, highly-unique client key for idempotent creates. Only
@@ -155,6 +158,14 @@ export interface EntryCreate {
   // the server but the phone saw a timeout, the backend returns the original row
   // instead of inserting a duplicate (see backend create_entry).
   idempotency_key?: string;
+  // User-created platform name; sent with app='OTHER' (see Entry.custom_app).
+  custom_app?: string | null;
+}
+
+// A user-created delivery platform (server-persisted, per account).
+export interface UserPlatform {
+  id: number;
+  name: string;
 }
 
 export interface Rollup {
@@ -662,6 +673,32 @@ export const api = {
       let msg = 'Apple sign-in failed';
       try { const j = await res.json(); if (j?.detail) msg = j.detail; } catch {}
       throw new Error(msg);
+    }
+    return res.json();
+  },
+
+  // User-created platforms (server-persisted per account). GET returns the
+  // full list; POST adds one (409 = duplicate, incl. clashes with built-ins).
+  async getPlatforms(): Promise<UserPlatform[]> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/platforms`, { headers });
+    if (!res.ok) throw new Error('Failed to fetch platforms');
+    return res.json();
+  },
+
+  async addPlatform(name: string): Promise<UserPlatform> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/platforms`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      let msg = 'Failed to add platform';
+      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
+      const e: any = new Error(msg);
+      e.status = res.status;
+      throw e;
     }
     return res.json();
   },
