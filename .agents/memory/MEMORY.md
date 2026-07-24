@@ -1,6 +1,7 @@
 - [Save-time not open-time](entry-save-time-not-open-time.md) — new-entry time must be captured at SAVE, not modal-open; a stale seeded entryDate caused "always 9:28am".
 - [Edit/delete 404 (stale id)](entry-edit-stale-positive-id-404.md) — a positive-id PUT/DELETE 404 means the cached row diverged from server; treat as resync (rollback+refetch+friendly msg), not a hard error.
 - [Optimistic create window-scoping](optimistic-create-window-scoping.md) — Add-Entry optimistic insert must target only windows whose date range contains the entry.
+- [Random data-wipe root cause](random-data-wipe-root-cause.md) — old Railway code silently fell back to ephemeral SQLite; every redeploy wiped ALL data; guard fixed locally, live only after push+DATABASE_URL.
 - [Railway prod backend](railway-prod-backend.md) — live backend is on Railway, not Replit; Replit Postgres is a stale backup. Verify via the live Railway URL + demo account.
 - [Web domain routing](web-domain-routing.md) — earningsninja.app 301-redirects to Railway (not Replit); mobile hardcodes the Railway URL so the domain can be repointed safely; landing needs a vm deploy (legal pages come from backend, not landing/dist).
 - [eas update long-running](eas-update-long-running.md) — `eas update` exceeds the tool limit; run foreground, confirm with `eas update:list`. Main agent publishes via `GIT_CEILING_DIRECTORIES=… EAS_NO_VCS=1`.
