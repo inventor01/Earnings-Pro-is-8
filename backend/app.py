@@ -7,7 +7,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import inspect, text
-from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard, waitlist_routes, referrals
+from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard, waitlist_routes, referrals, platforms
 from backend.db import engine, Base
 from backend.services.background_jobs import start_background_jobs, stop_background_jobs
 import os
@@ -170,6 +170,38 @@ def _migrate_entries_add_idempotency_key() -> None:
     logger.warning("Added entries.idempotency_key for create de-duplication.")
 
 
+def _migrate_entries_add_custom_app() -> None:
+    """Add nullable `custom_app` to `entries` for user-created platforms.
+    Entries logged against a custom platform keep app=OTHER (the enum column is
+    untouched) and carry the display name here. Plain ADD COLUMN works on both
+    Postgres and SQLite; safe to re-run — no-ops once the column exists."""
+    insp = inspect(engine)
+    if not insp.has_table("entries"):
+        return
+    cols = {c["name"] for c in insp.get_columns("entries")}
+    if "custom_app" in cols:
+        return
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE entries ADD COLUMN custom_app VARCHAR"))
+    logger.warning("Added entries.custom_app for user-created platforms.")
+
+
+def _migrate_user_platforms_ci_unique() -> None:
+    """Enforce case-insensitive per-user uniqueness for custom platforms at the
+    DB level: a functional unique index on (user_id, lower(name)). Without it,
+    two concurrent creates like 'Roadie' and 'roadie' could both commit past
+    the route's pre-insert check. Works on both Postgres and SQLite (both
+    support expression indexes with IF NOT EXISTS); safe to re-run."""
+    insp = inspect(engine)
+    if not insp.has_table("user_platforms"):
+        return
+    with engine.begin() as conn:
+        conn.execute(text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_user_platforms_user_lname "
+            "ON user_platforms (user_id, lower(name))"
+        ))
+
+
 def _migrate_points_for_multi_user() -> None:
     """Scope the gamification tables to authenticated users.
 
@@ -324,6 +356,8 @@ def _migrate_auth_users_add_email_verification() -> None:
 _migrate_api_credentials_for_multi_user()
 _migrate_synced_orders_for_multi_user()
 _migrate_entries_add_idempotency_key()
+_migrate_entries_add_custom_app()
+_migrate_user_platforms_ci_unique()
 _migrate_points_for_multi_user()
 _migrate_auth_users_add_referral_code()
 _migrate_auth_users_add_mfa()
@@ -417,6 +451,7 @@ app.include_router(auth_routes.router, prefix="/api", tags=["auth"])
 app.include_router(settings.router, prefix="/api", tags=["settings"])
 app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
 app.include_router(entries.router, prefix="/api", tags=["entries"])
+app.include_router(platforms.router, prefix="/api", tags=["platforms"])
 app.include_router(rollup.router, prefix="/api", tags=["rollup"])
 app.include_router(goals.router, prefix="/api", tags=["goals"])
 app.include_router(suggestions.router, prefix="/api", tags=["suggestions"])

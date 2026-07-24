@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup, Goal,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
-  ReferralInfo, API_BASE,
+  ReferralInfo, API_BASE, UserPlatform,
 } from '@/lib/api';
 import { applyOptimisticGoal, rollbackOptimisticGoal } from '@/lib/goalOptimistic';
 import { useAuth } from '@/lib/authContext';
@@ -36,6 +36,11 @@ import { useSubscription, offeringTrialDays, restoreAlertCopy } from '@/lib/reve
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import { syncNotifState, enableMotivation, disableMotivation, notifyEarningsChanged } from '@/lib/notifications';
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
+import {
+  customKey, isCustomKey, customNameFromKey, keyForEntry,
+  entryAppLabel, entryAppColor, colorForCustomName,
+  readPlatformsMirror, writePlatformsMirror, findDuplicatePlatform, MAX_PLATFORM_NAME_LEN,
+} from '@/lib/platforms';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
 import { invalidateEntryData, cancelQueriesWithData } from '@/lib/queryInvalidation';
@@ -621,7 +626,7 @@ function EntryRow({
   const isExpense = entry.amount < 0;
   const isBusiness = !!entry.is_business_expense;
   const BIZ = '#3b82f6';
-  const appColor  = APP_COLORS[entry.app] || MUTED;
+  const appColor  = entryAppColor(entry) || MUTED;
   // Render in US/Eastern — the SAME zone the add/edit modal shows and the
   // Today/Yesterday windows bucket by. Without an explicit timeZone these used
   // the device's local zone, so a non-Eastern driver saw a list time shifted
@@ -665,13 +670,13 @@ function EntryRow({
           <Text style={{ fontSize: 16 }}>💼</Text>
         ) : (
           <Text style={{ fontSize: 14, fontWeight: '900', color: appColor }}>
-            {(APP_LABELS[entry.app] || 'O')[0]}
+            {(entryAppLabel(entry) || 'O')[0]}
           </Text>
         )}
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
-          {APP_LABELS[entry.app]}
+          {entryAppLabel(entry)}
           <Text style={{ color: LABEL, fontWeight: '400', fontSize: 12 }}> · {entry.type}</Text>
           {isBusiness ? (
             <Text style={{ color: BIZ, fontWeight: '700', fontSize: 12 }}> · 💼 Business</Text>
@@ -1081,6 +1086,7 @@ function FormInput({
 
 function DetailsForm({
   isExp, amount, entryType, setEntryType, app, setApp, appAutoFilled, lastAppLabel, category, setCategory,
+  platformOptions, onAddPlatform,
   isBusiness, setIsBusiness,
   miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
   receiptUri, onPickReceipt, onRemoveReceipt,
@@ -1090,10 +1096,14 @@ function DetailsForm({
   amount: string;
   entryType: EntryType;
   setEntryType: (t: EntryType) => void;
-  app: AppType;
-  setApp: (a: AppType) => void;
+  app: string;
+  setApp: (a: string) => void;
   appAutoFilled: boolean;
   lastAppLabel: string;
+  // Built-ins + user-created platforms, already merged by the parent so every
+  // platform selector renders the same synced list.
+  platformOptions: { key: string; label: string; color: string }[];
+  onAddPlatform: () => void;
   category: ExpenseCategory;
   setCategory: (c: ExpenseCategory) => void;
   isBusiness: boolean;
@@ -1215,9 +1225,17 @@ function DetailsForm({
               <PillSelect
                 scroll
                 dot
-                options={APPS.map(a => ({ key: a.key, label: a.label, color: a.color }))}
+                options={[
+                  ...platformOptions,
+                  // Trailing "+" pill — opens the add-platform prompt instead
+                  // of selecting; intercepted in onChange below.
+                  { key: '__ADD_PLATFORM__', label: '＋ Add', color: '#6b7280' },
+                ]}
                 value={app}
-                onChange={setApp}
+                onChange={(k) => {
+                  if (k === '__ADD_PLATFORM__') { onAddPlatform(); return; }
+                  setApp(k);
+                }}
               />
             </View>
           )}
@@ -1461,7 +1479,36 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const [amount, setAmount]       = useState('0');
   const [mode, setMode]           = useState<'add' | 'subtract'>('add');
   const [entryType, setEntryType] = useState<EntryType>('ORDER');
-  const [app, setApp]             = useState<AppType>('DOORDASH');
+  // Selection key: an AppType for built-ins, or 'CUSTOM:<name>' for a
+  // user-created platform (see lib/platforms.ts).
+  const [app, setApp]             = useState<string>('DOORDASH');
+  // User-created platforms — server list via React Query, seeded instantly
+  // from the AsyncStorage mirror so the pills show on cold start / offline.
+  const platformsQuery = useQuery({
+    queryKey: ['platforms'],
+    queryFn: async () => {
+      const list = await api.getPlatforms();
+      writePlatformsMirror(list).catch(() => {});
+      return list;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const [mirrorPlatforms, setMirrorPlatforms] = useState<UserPlatform[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    readPlatformsMirror().then(list => { if (!cancelled) setMirrorPlatforms(list); });
+    return () => { cancelled = true; };
+  }, []);
+  const customPlatforms = platformsQuery.data ?? mirrorPlatforms;
+  const platformOptions = useMemo(() => ([
+    ...APPS.map(a => ({ key: a.key as string, label: a.label, color: a.color })),
+    ...customPlatforms.map(p => ({ key: customKey(p.name), label: p.name, color: colorForCustomName(p.name) })),
+  ]), [customPlatforms]);
+  // Add-platform prompt state
+  const [addPlatformVisible, setAddPlatformVisible] = useState(false);
+  const [newPlatformName, setNewPlatformName] = useState('');
+  const [addPlatformBusy, setAddPlatformBusy] = useState(false);
+  const [addPlatformError, setAddPlatformError] = useState<string | null>(null);
   const [category, setCategory]  = useState<ExpenseCategory>('GAS');
   const [miles, setMiles]         = useState('');
   const [minutes, setMinutes]     = useState('');
@@ -1507,9 +1554,46 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     setAppAutoFilled(false);
   };
 
+  // Create a new custom platform: instant local dup check, then POST. On
+  // success the new platform is merged into the ['platforms'] cache (and the
+  // AsyncStorage mirror) so EVERY platform selector shows it immediately, and
+  // it becomes the current selection without leaving the form.
+  const submitNewPlatform = async () => {
+    const name = newPlatformName.trim();
+    if (!name || addPlatformBusy) return;
+    const dup = findDuplicatePlatform(name, customPlatforms);
+    if (dup) {
+      setAddPlatformError(dup === 'builtin' ? 'That platform is already built in.' : 'You already added that platform.');
+      return;
+    }
+    setAddPlatformBusy(true);
+    setAddPlatformError(null);
+    try {
+      const created = await api.addPlatform(name);
+      queryClient.setQueryData<UserPlatform[]>(['platforms'], (old) => {
+        const list = Array.isArray(old) ? old : customPlatforms;
+        if (list.some(p => p.name.trim().toLowerCase() === created.name.trim().toLowerCase())) return list;
+        const next = [...list, created];
+        writePlatformsMirror(next).catch(() => {});
+        return next;
+      });
+      // Also update the local mirror-backed state so the pill shows even if
+      // the query cache hasn't hydrated yet (cold start / offline seed path).
+      setMirrorPlatforms(prev => prev.some(p => p.name.trim().toLowerCase() === created.name.trim().toLowerCase()) ? prev : [...prev, created]);
+      handleAppChange(customKey(created.name));
+      setAddPlatformVisible(false);
+      setNewPlatformName('');
+      hTap();
+    } catch (e: any) {
+      setAddPlatformError(e?.message || 'Failed to add platform. Check your connection and try again.');
+    } finally {
+      setAddPlatformBusy(false);
+    }
+  };
+
   // User manually changed the platform → drop the auto-fill flag (and its hint)
   // and mark the picker "touched" so a late last-used read can't overwrite it.
-  const handleAppChange = (a: AppType) => {
+  const handleAppChange = (a: string) => {
     appTouchedRef.current = true;
     setApp(a);
     setAppAutoFilled(false);
@@ -1564,8 +1648,11 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       if (appTouchedRef.current || entryTypeRef.current !== 'ORDER') return;
       // The key is written ONLY on a successful ORDER save, so any stored value
       // (including OTHER) reflects a real order platform and is safe to restore.
-      if (VALID_APPS.has(stored)) {
-        setApp(stored as AppType);
+      // Built-in keys are validated against VALID_APPS; a 'CUSTOM:<name>' key
+      // is accepted as-is — worst case (platform since removed server-side)
+      // the entry still saves as OTHER + that name, which is harmless.
+      if (VALID_APPS.has(stored) || isCustomKey(stored)) {
+        setApp(stored);
         setAppAutoFilled(true);
       }
     }).catch(() => {});
@@ -1582,7 +1669,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     setAmount(amt.toString());
     setMode(editing.amount < 0 ? 'subtract' : 'add');
     setEntryType(editing.type);
-    setApp(editing.app);
+    setApp(keyForEntry(editing));
     setCategory((editing.category as ExpenseCategory) || 'GAS');
     setMiles(editing.distance_miles ? String(editing.distance_miles) : '');
     setMinutes(editing.duration_minutes ? String(editing.duration_minutes) : '');
@@ -1736,6 +1823,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         timestamp: syntheticTs,
         type: vars.type,
         app: vars.app,
+        custom_app: vars.custom_app ?? null,
         amount: vars.type === 'EXPENSE' ? -Math.abs(vars.amount || 0) : Math.abs(vars.amount || 0),
         distance_miles: vars.distance_miles || 0,
         duration_minutes: vars.duration_minutes || 0,
@@ -1841,7 +1929,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // Remember the last app the user logged revenue against — the Add Entry
       // modal defaults new orders to it (read back via LAST_ORDER_APP_KEY).
       if (vars.type === 'ORDER' && vars.app) {
-        AsyncStorage.setItem(LAST_ORDER_APP_KEY, vars.app).catch(() => {});
+        // Store the SELECTION key (custom platforms as 'CUSTOM:<name>') so the
+        // next open re-selects the exact same pill, not the generic OTHER.
+        const key = vars.custom_app ? customKey(vars.custom_app) : vars.app;
+        AsyncStorage.setItem(LAST_ORDER_APP_KEY, key).catch(() => {});
       }
     },
     onError: (_err, _vars, ctx) => {
@@ -1975,6 +2066,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
           ...e,
           type: patch.type ?? e.type,
           app: patch.app ?? e.app,
+          custom_app: patch.custom_app !== undefined ? patch.custom_app : e.custom_app,
           amount: newSigned,
           distance_miles: newMiles,
           duration_minutes: newMin,
@@ -2053,9 +2145,14 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     // non-EST user's first order after the EST midnight rollover (e.g. 9pm Pacific)
     // gets mislabeled and lands in Yesterday. Reuses the CSV exporter's helper.
     const { date: dateStr, time: timeStr } = easternDateTime(saveInstant);
+    // A custom platform selection ('CUSTOM:<name>') maps to app=OTHER with the
+    // name carried in custom_app. On edit, send custom_app: null explicitly
+    // when switching back to a built-in so the server clears the old name.
+    const isCustom = isCustomKey(app);
     const payload: Partial<EntryCreate> = {
       type: entryType,
-      app,
+      app: (isCustom ? 'OTHER' : app) as AppType,
+      custom_app: isCustom ? customNameFromKey(app) : (editing ? null : undefined),
       amount: mode === 'subtract' ? -num : num,
       distance_miles: miles ? parseFloat(miles) : undefined,
       duration_minutes: minutes ? parseInt(minutes) : undefined,
@@ -2158,8 +2255,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               setEntryType={setEntryType}
               app={app}
               setApp={handleAppChange}
+              platformOptions={platformOptions}
+              onAddPlatform={() => { setNewPlatformName(''); setAddPlatformError(null); setAddPlatformVisible(true); }}
               appAutoFilled={appAutoFilled && entryType !== 'EXPENSE'}
-              lastAppLabel={APPS.find(a => a.key === app)?.label ?? app}
+              lastAppLabel={isCustomKey(app) ? customNameFromKey(app) : (APPS.find(a => a.key === app)?.label ?? app)}
               category={category}
               setCategory={setCategory}
               isBusiness={isBusiness}
@@ -2253,6 +2352,70 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
             </View>
           );
         })()}
+
+        {/* ── Add-platform prompt — opened by the trailing "＋ Add" pill in the
+            Platform selector. Validates locally (dup vs built-ins + existing
+            customs) for instant feedback; the server enforces the same rules. */}
+        <Modal visible={addPlatformVisible} transparent animationType="fade" onRequestClose={() => setAddPlatformVisible(false)}>
+          <Pressable
+            onPress={() => !addPlatformBusy && setAddPlatformVisible(false)}
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 }}
+          >
+            <Pressable onPress={() => {}} style={{
+              backgroundColor: '#ffffff', borderRadius: 16, padding: 20, gap: 12,
+            }}>
+              <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>Add a platform</Text>
+              <Text style={{ fontSize: 13, color: '#6b7280' }}>
+                Name the delivery app or gig platform you want to track (e.g. Roadie, Amazon Flex).
+              </Text>
+              <TextInput
+                value={newPlatformName}
+                onChangeText={(t) => { setNewPlatformName(t); if (addPlatformError) setAddPlatformError(null); }}
+                placeholder="Platform name"
+                placeholderTextColor="#9ca3af"
+                autoFocus
+                maxLength={MAX_PLATFORM_NAME_LEN}
+                autoCapitalize="words"
+                returnKeyType="done"
+                onSubmitEditing={() => submitNewPlatform()}
+                style={{
+                  backgroundColor: '#ffffff', borderWidth: 2,
+                  borderColor: addPlatformError ? '#ef4444' : '#d1d5db',
+                  borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
+                  color: '#0f172a', fontSize: 16, fontWeight: '600',
+                }}
+              />
+              {addPlatformError ? (
+                <Text style={{ color: '#ef4444', fontSize: 13, fontWeight: '600' }}>{addPlatformError}</Text>
+              ) : null}
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                <Pressable
+                  onPress={() => { hTap(); setAddPlatformVisible(false); }}
+                  disabled={addPlatformBusy}
+                  style={({ pressed }) => ({
+                    flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+                    backgroundColor: '#e5e7eb', opacity: pressed ? 0.85 : 1,
+                  })}
+                >
+                  <Text style={{ color: '#374151', fontWeight: '700', fontSize: 15 }}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => submitNewPlatform()}
+                  disabled={addPlatformBusy || !newPlatformName.trim()}
+                  style={({ pressed }) => ({
+                    flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+                    backgroundColor: (!newPlatformName.trim() || addPlatformBusy) ? '#fde68a' : '#facc15',
+                    opacity: pressed ? 0.85 : 1,
+                  })}
+                >
+                  {addPlatformBusy
+                    ? <ActivityIndicator color="#0f172a" />
+                    : <Text style={{ color: '#0f172a', fontWeight: '800', fontSize: 15 }}>Add</Text>}
+                </Pressable>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -3714,14 +3877,17 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   // Top platforms by NET earnings (signed sum per app — mirrors the backend's
   // by_app rollup, so expenses/cancellations logged under a platform net out).
   const platformData = useMemo(() => {
-    const map = new Map<AppType, number>();
+    // Group by DISPLAY identity so a user-created platform (app=OTHER +
+    // custom_app) gets its own bar instead of lumping into "Other".
+    const map = new Map<string, { label: string; color: string; amt: number }>();
     for (const e of entries) {
-      const a = e.app as AppType;
-      map.set(a, (map.get(a) ?? 0) + (Number(e.amount) || 0));
+      const label = entryAppLabel(e);
+      const key = label.toLowerCase();
+      const prev = map.get(key);
+      const amt = (prev?.amt ?? 0) + (Number(e.amount) || 0);
+      map.set(key, { label, color: prev?.color ?? entryAppColor(e), amt });
     }
-    const rows = Array.from(map.entries())
-      .map(([app, amt]) => ({ app, amt }))
-      .sort((a, b) => b.amt - a.amt);
+    const rows = Array.from(map.values()).sort((a, b) => b.amt - a.amt);
     const maxAbs = Math.max(1, ...rows.map(r => Math.abs(r.amt)));
     return { rows, maxAbs };
   }, [entries]);
@@ -4193,12 +4359,12 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
               ) : (
                 platformData.rows.map(r => {
                   const pos = r.amt >= 0;
-                  const barColor = APP_COLORS[r.app] ?? GREEN;
+                  const barColor = r.color ?? GREEN;
                   const width = Math.max(2, (Math.abs(r.amt) / platformData.maxAbs) * 100);
                   return (
-                    <View key={r.app} style={{ marginBottom: 12 }}>
+                    <View key={r.label} style={{ marginBottom: 12 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                        <Text style={{ color: TEXT_MID, fontSize: 13, fontWeight: '600' }}>{APP_LABELS[r.app]}</Text>
+                        <Text style={{ color: TEXT_MID, fontSize: 13, fontWeight: '600' }}>{r.label}</Text>
                         <Text style={[{ color: pos ? GREEN : RED, fontSize: 13, fontWeight: '800' }, blur(pos ? GREEN : RED)]}>
                           {hidden ? MASK : `${pos ? '' : '-'}$${Math.abs(r.amt).toFixed(2)}`}
                         </Text>
@@ -4460,7 +4626,7 @@ function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => 
                   {shown.map((e, i) => {
                     const g = outflowGroup(e);
                     const biz = !!e.is_business_expense;
-                    const title = g === 'CANCELLATION' ? `Cancellation · ${APP_LABELS[e.app]}` : groupLabel(g);
+                    const title = g === 'CANCELLATION' ? `Cancellation · ${entryAppLabel(e)}` : groupLabel(g);
                     const when = parseServerDate(e.timestamp);
                     return (
                       <View
@@ -4997,7 +5163,7 @@ export default function DashboardScreen() {
           const amt = Number(e.amount);
           const fields = [
             e.app,
-            APP_LABELS[e.app] ?? '',
+            entryAppLabel(e),
             e.type,
             e.category ?? '',
             e.note ?? '',
@@ -5025,8 +5191,8 @@ export default function DashboardScreen() {
         break;
       case 'platform':
         arr.sort((a, b) => {
-          const la = (APP_LABELS[a.app] ?? a.app).toLowerCase();
-          const lb = (APP_LABELS[b.app] ?? b.app).toLowerCase();
+          const la = entryAppLabel(a).toLowerCase();
+          const lb = entryAppLabel(b).toLowerCase();
           if (la !== lb) return la < lb ? -1 : 1;
           // Tie-break alphabetical platforms by newest-first.
           return parseServerDate(b.timestamp).getTime() - parseServerDate(a.timestamp).getTime();

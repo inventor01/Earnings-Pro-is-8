@@ -84,6 +84,10 @@ class Entry(Base):
     # offline add (same key) collide instead of inserting a duplicate, while
     # still allowing unlimited NULL-key rows.
     idempotency_key = Column(String, nullable=True)
+    # Custom platform name for entries logged against a user-created platform.
+    # The enum `app` stays OTHER for these rows so existing rollups/analytics
+    # keep working; this column carries the display identity.
+    custom_app = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -96,6 +100,26 @@ class Entry(Base):
             sqlite_where=text("idempotency_key IS NOT NULL"),
             postgresql_where=text("idempotency_key IS NOT NULL"),
         ),
+    )
+
+class UserPlatform(Base):
+    """A user-created delivery platform (beyond the built-in AppType enum).
+
+    Entries logged against one of these carry app=OTHER + custom_app=<name>.
+    `name` stores the user's original casing; case-insensitive uniqueness per
+    user is enforced both in the route AND by a functional unique index on
+    (user_id, lower(name)) created in `_migrate_user_platforms_ci_unique()`,
+    so concurrent case-variant creates cannot both commit.
+    """
+    __tablename__ = "user_platforms"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_user_platforms_user_name", "user_id", "name", unique=True),
     )
 
 class Settings(Base):

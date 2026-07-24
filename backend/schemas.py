@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
@@ -23,6 +23,22 @@ def _validate_receipt(v: Optional[str]) -> Optional[str]:
     return v
 
 
+# Custom platform names: user-facing display strings. Keep them short and
+# non-empty; strip whitespace and treat blank as "not provided".
+MAX_CUSTOM_APP_LEN = 24
+
+
+def _validate_custom_app(v: Optional[str]) -> Optional[str]:
+    if v is None:
+        return v
+    v = v.strip()
+    if not v:
+        return None
+    if len(v) > MAX_CUSTOM_APP_LEN:
+        raise ValueError(f"custom_app must be at most {MAX_CUSTOM_APP_LEN} characters.")
+    return v
+
+
 class EntryCreate(BaseModel):
     timestamp: Optional[datetime] = None
     date: Optional[str] = None
@@ -39,8 +55,20 @@ class EntryCreate(BaseModel):
     is_business_expense: Optional[bool] = False
     during_business_hours: Optional[bool] = False
     idempotency_key: Optional[str] = None
+    custom_app: Optional[str] = None
 
     _validate_receipt = field_validator("receipt_url")(_validate_receipt)
+    _validate_custom_app = field_validator("custom_app")(_validate_custom_app)
+
+    @model_validator(mode="after")
+    def _enforce_custom_app_invariant(self):
+        # Invariant: a custom platform name only ever rides on app=OTHER.
+        # A custom name forces OTHER; a built-in app clears any stray name.
+        if self.custom_app:
+            self.app = AppType.OTHER
+        elif self.app is not None and self.app != AppType.OTHER:
+            self.custom_app = None
+        return self
 
 
 class EntryUpdate(BaseModel):
@@ -58,8 +86,21 @@ class EntryUpdate(BaseModel):
     receipt_url: Optional[str] = None
     is_business_expense: Optional[bool] = None
     during_business_hours: Optional[bool] = None
+    custom_app: Optional[str] = None
+
+    _validate_custom_app = field_validator("custom_app")(_validate_custom_app)
 
     _validate_receipt = field_validator("receipt_url")(_validate_receipt)
+
+    @model_validator(mode="after")
+    def _enforce_custom_app_invariant(self):
+        # Same invariant as EntryCreate, on the partial-update shape: a custom
+        # name forces app=OTHER; switching to a built-in app clears the name.
+        if self.custom_app:
+            self.app = AppType.OTHER
+        elif self.app is not None and self.app != AppType.OTHER:
+            self.custom_app = None
+        return self
 
 
 class EntryResponse(BaseModel):
@@ -82,9 +123,24 @@ class EntryResponse(BaseModel):
     # a still-queued create has already landed on the server (timed-out-but-saved
     # replay) and suppress the transient duplicate until the queue drains.
     idempotency_key: Optional[str] = None
+    custom_app: Optional[str] = None
     
     class Config:
         from_attributes = True
+
+class PlatformCreate(BaseModel):
+    name: str
+
+    _validate_name = field_validator("name")(_validate_custom_app)
+
+
+class PlatformResponse(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
 
 class SettingsResponse(BaseModel):
     cost_per_mile: Decimal

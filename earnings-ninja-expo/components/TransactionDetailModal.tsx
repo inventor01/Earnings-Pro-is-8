@@ -7,8 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import {
-  Entry, APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, parseServerDate,
+  Entry, EXPENSE_EMOJIS, parseServerDate,
 } from '@/lib/api';
+import { entryAppLabel, entryAppColor } from '@/lib/platforms';
 
 // Smooth, non-bouncy card entrance: a controlled opacity fade + a slight
 // scale-up (0.96 → 1) driven purely by withTiming. Replaces the previous
@@ -43,7 +44,7 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
   if (!entry) return null;
 
   const isExpense = entry.amount < 0;
-  const appColor = APP_COLORS[entry.app] || MUTED;
+  const appColor = entryAppColor(entry) || MUTED;
   const d = parseServerDate(entry.timestamp);
   const dateStr = d.toLocaleDateString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
@@ -102,12 +103,12 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
                     alignItems: 'center', justifyContent: 'center', marginRight: 12,
                   }}>
                     <Text style={{ color: appColor, fontSize: 17, fontWeight: '900' }}>
-                      {(APP_LABELS[entry.app] || 'O')[0]}
+                      {(entryAppLabel(entry) || 'O')[0]}
                     </Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: TEXT, fontSize: 16, fontWeight: '800' }} numberOfLines={1}>
-                      {APP_LABELS[entry.app]}
+                      {entryAppLabel(entry)}
                     </Text>
                     <Text style={{ color: LABEL, fontSize: 12, marginTop: 2 }}>
                       {entry.type}{entry.category ? ` · ${EXPENSE_EMOJIS[entry.category] || ''} ${entry.category}` : ''}
@@ -151,7 +152,7 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
                   {/* Stat grid */}
                   <DetailRow label="Date"     value={dateStr}                           TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
                   <DetailRow label="Time"     value={timeStr}                           TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
-                  <DetailRow label="Platform" value={APP_LABELS[entry.app] || entry.app} TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
+                  <DetailRow label="Platform" value={entryAppLabel(entry) || entry.app} TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
                   <DetailRow label="Type"     value={entry.type}                         TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
                   {Number(entry.distance_miles) > 0 && (
                     <DetailRow label="Miles" value={`${Number(entry.distance_miles).toFixed(2)} mi`} TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />

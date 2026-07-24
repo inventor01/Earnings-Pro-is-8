@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { api, Entry, APP_LABELS, APP_COLORS } from '../lib/api';
+import { api, Entry } from '../lib/api';
 import { useTheme } from '../lib/theme';
 import { useHiddenMode, MASK } from '../lib/hiddenMode';
 import { compactMoney } from '../lib/compactMoney';

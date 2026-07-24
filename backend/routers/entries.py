@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from backend.db import get_db
-from backend.models import Entry, EntryType, AuthUser, Goal
+from backend.models import Entry, EntryType, AppType, AuthUser, Goal
 from backend.schemas import EntryCreate, EntryUpdate, EntryResponse
 from backend.auth import get_current_user
 from typing import List, Optional
@@ -82,6 +82,7 @@ async def create_entry(entry: EntryCreate, db: Session = Depends(get_db), curren
         is_business_expense=entry.is_business_expense or False,
         during_business_hours=entry.during_business_hours or False,
         idempotency_key=entry.idempotency_key,
+        custom_app=entry.custom_app,
     )
     db.add(db_entry)
     try:
@@ -212,7 +213,14 @@ async def update_entry(entry_id: int, entry_update: EntryUpdate, db: Session = D
     
     for key, value in update_data.items():
         setattr(db_entry, key, value)
-    
+
+    # Post-apply invariant: a custom platform name only rides on app=OTHER.
+    # The schema validator can't cover the case where a client sends only
+    # `app` (exclude_unset drops the coerced custom_app=None), so enforce it
+    # against the FINAL entry state here.
+    if db_entry.custom_app and db_entry.app != AppType.OTHER:
+        db_entry.custom_app = None
+
     setattr(db_entry, 'updated_at', datetime.utcnow())
     db.commit()
     db.refresh(db_entry)
