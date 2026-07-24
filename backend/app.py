@@ -11,6 +11,7 @@ from backend.routers import health, settings, entries, rollup, goals, suggestion
 from backend.db import engine, Base
 from backend.services.background_jobs import start_background_jobs, stop_background_jobs
 import os
+import re
 import logging
 
 # Configure logging for production
@@ -464,6 +465,62 @@ async def support_page():
         os.path.join(_LEGAL_DIR, "support.html"),
         media_type="text/html",
     )
+
+# ── Referral invite landing page ─────────────────────────────────────────────
+# The mobile app shares HTTPS invite links (custom-scheme URLs are not tappable
+# in Messages/Mail/WhatsApp and are dead ends without the app installed). This
+# public page shows the code, tries to open the app via its custom scheme, and
+# falls back to download instructions. Must be registered BEFORE the SPA
+# catch-all mount below.
+_INVITE_CODE_RE = re.compile(r"^[A-Za-z2-9]{4,12}$")
+
+@app.get("/invite/{code}", include_in_schema=False)
+async def invite_page(code: str):
+    from fastapi.responses import HTMLResponse
+
+    code = code.strip().upper()
+    if not _INVITE_CODE_RE.fullmatch(code):
+        return HTMLResponse("<h1>Invalid invite link</h1>", status_code=404)
+    deep_link = f"earningsninja://referral/{code}"
+    html = f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Earnings Ninja — You're invited!</title>
+<style>
+  body {{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+         background:#0a0a0a; color:#fff; display:flex; min-height:100vh;
+         align-items:center; justify-content:center; text-align:center; }}
+  .card {{ max-width:420px; padding:40px 28px; }}
+  h1 {{ font-size:26px; margin:0 0 8px; }}
+  p {{ color:#a3a3a3; font-size:15px; line-height:1.5; }}
+  .code {{ font-size:32px; font-weight:900; letter-spacing:6px; color:#facc15;
+          background:#171717; border:1px solid #262626; border-radius:14px;
+          padding:16px 8px; margin:20px 0; user-select:all; -webkit-user-select:all; }}
+  .btn {{ display:block; background:#facc15; color:#000; font-weight:800; font-size:17px;
+         border-radius:999px; padding:16px; text-decoration:none; margin:10px 0; }}
+  .btn.ghost {{ background:transparent; color:#facc15; border:1.5px solid #facc15; }}
+  .hint {{ font-size:12.5px; color:#737373; margin-top:18px; }}
+</style>
+</head>
+<body>
+<div class="card">
+  <div style="font-size:44px">🥷</div>
+  <h1>You're invited to Earnings Ninja</h1>
+  <p>Track your delivery earnings, expenses and mileage. Sign up with this code and you <strong>both get 1 free month of Pro</strong>.</p>
+  <div class="code">{code}</div>
+  <a class="btn" href="{deep_link}">Open the app</a>
+  <a class="btn ghost" href="/">Get the app</a>
+  <p class="hint">Have the app already? Tap “Open the app”, or enter the code on the sign-up screen. Don't have it yet? Download Earnings Ninja from the App Store, then enter the code when you sign up.</p>
+</div>
+<script>
+  // If the app is installed, deep-link straight into it.
+  setTimeout(function() {{ window.location.href = "{deep_link}"; }}, 400);
+</script>
+</body>
+</html>"""
+    return HTMLResponse(html)
 
 if dist_path:
     @app.get("/sw.js")

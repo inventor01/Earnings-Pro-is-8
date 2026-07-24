@@ -2481,35 +2481,55 @@ function InviteDriverRow() {
   const { SURFACE, BORDER, PRI_LITE, PRIMARY, PRIMARY_TXT, TEXT, MUTED, GREEN } = useTheme();
   const [info, setInfo] = useState<ReferralInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
+    setFailed(false);
     let alive = true;
     api.getReferralInfo()
-      .then((r) => { if (alive) setInfo(r); })
-      .catch(() => {})
+      .then((r) => { if (alive) { setInfo(r); setFailed(false); } })
+      .catch(() => { if (alive) setFailed(true); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, []);
 
+  useEffect(() => load(), [load]);
+
   const onShare = async () => {
+    if (failed || (!info && !loading)) {
+      // Couldn't load a code (offline / server error) — retry instead of
+      // silently doing nothing.
+      load();
+      return;
+    }
     if (!info) return;
     hTap();
-    const link = `earningsninja://referral/${info.code}`;
+    // HTTPS invite page: tappable in Messages/Mail/WhatsApp and works even if
+    // the recipient doesn't have the app installed (custom-scheme links are
+    // neither). The page deep-links into the app when it IS installed.
+    const link = `${API_BASE}/invite/${info.code}`;
     try {
-      await Share.share({
-        message:
-          `Track your delivery earnings with Earnings Ninja 🥷\n` +
-          `Use my code ${info.code} when you sign up and we BOTH get 1 free month of Pro!\n${link}`,
-      });
-    } catch {
-      // user dismissed the share sheet
+      await Share.share(
+        {
+          message:
+            `Track your delivery earnings with Earnings Ninja 🥷\n` +
+            `Use my code ${info.code} when you sign up and we BOTH get 1 free month of Pro!\n${link}`,
+        },
+        { subject: 'Join me on Earnings Ninja — free month of Pro' },
+      );
+    } catch (e: any) {
+      // Real failures only — user dismissing the sheet doesn't reject on iOS.
+      if (e?.message && !/cancel|dismiss/i.test(String(e.message))) {
+        Alert.alert('Sharing unavailable', 'Could not open the share sheet. You can share your code manually: ' + info.code);
+      }
     }
   };
 
   return (
     <Pressable
       onPress={onShare}
-      disabled={loading || !info}
+      disabled={loading}
       style={{
         backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1.5, borderColor: PRIMARY,
         padding: 16, opacity: loading ? 0.6 : 1,
@@ -2527,6 +2547,12 @@ function InviteDriverRow() {
         </View>
         {loading ? <ActivityIndicator color={PRIMARY_TXT} /> : <Ionicons name="share-outline" size={20} color={PRIMARY_TXT} />}
       </View>
+
+      {failed && !loading && (
+        <Text style={{ color: MUTED, fontSize: 12, fontWeight: '600', marginTop: 10, textAlign: 'center' }}>
+          Couldn't load your invite code — check your connection, then tap to retry.
+        </Text>
+      )}
 
       {info && (
         <>
