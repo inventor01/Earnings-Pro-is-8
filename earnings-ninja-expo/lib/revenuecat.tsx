@@ -60,6 +60,66 @@ function isEntitled(info: CustomerInfo | null): boolean {
 }
 
 /**
+ * Outcome of a restore attempt, so the UI can message each case honestly:
+ * - `restored`     — Pro entitlement is active now.
+ * - `expired`      — previous purchases were found but the subscription has
+ *                    lapsed (expired or cancelled and past its period end).
+ * - `no_purchases` — this store account has no purchases to restore.
+ * - `error`        — the restore call itself failed (network / store outage);
+ *                    NOT the same as "nothing to restore".
+ * - `unavailable`  — purchases aren't supported on this build/platform.
+ */
+export type RestoreStatus = 'restored' | 'expired' | 'no_purchases' | 'error' | 'unavailable';
+export interface RestoreResult {
+  status: RestoreStatus;
+  /** True when the user is Pro after the restore attempt. */
+  isPro: boolean;
+}
+
+/** True when the account has any purchase history (even if nothing is active
+ * anymore) — used to distinguish "expired" from "never purchased". */
+function hasAnyPurchaseHistory(info: CustomerInfo): boolean {
+  return (
+    Object.keys(info.entitlements.all).length > 0 ||
+    info.allPurchasedProductIdentifiers.length > 0 ||
+    !!info.originalPurchaseDate
+  );
+}
+
+/** User-facing title + message for each restore outcome. */
+export function restoreAlertCopy(r: RestoreResult): { title: string; message: string } {
+  switch (r.status) {
+    case 'restored':
+      return { title: 'Purchases restored', message: 'Your Pro access is active.' };
+    case 'expired':
+      return {
+        title: 'Subscription expired',
+        message:
+          'We found your previous purchase, but the subscription is no longer active. Resubscribe anytime to regain Pro access.',
+      };
+    case 'no_purchases':
+      return {
+        title: 'Nothing to restore',
+        message:
+          Platform.OS === 'android'
+            ? 'No previous purchases were found for this Google account. If you subscribed with a different account, sign in to it in the Play Store and try again.'
+            : 'No previous purchases were found for this App Store account. If you subscribed with a different Apple ID, sign in to that account in the App Store and try again.',
+      };
+    case 'error':
+      return {
+        title: "Couldn't restore",
+        message:
+          'Something went wrong while contacting the store. Check your internet connection and try again.',
+      };
+    case 'unavailable':
+      return {
+        title: 'Restore unavailable',
+        message: 'Purchases aren’t supported on this version of the app.',
+      };
+  }
+}
+
+/**
  * Open the OS-native subscription management screen. Used as a fallback when
  * the RevenueCat Customer Center can't open (not configured in the dashboard,
  * or the native module is absent) so "Manage Subscription" is never a dead end.
@@ -111,8 +171,9 @@ interface SubscriptionContextValue {
   presentPaywall: () => Promise<boolean>;
   /** Present the RevenueCat Customer Center (manage / cancel subscription). */
   presentCustomerCenter: () => Promise<void>;
-  /** Restore previous purchases. Resolves to whether the user is Pro after. */
-  restore: () => Promise<boolean>;
+  /** Restore previous purchases. Resolves to a typed outcome (restored /
+   * expired / no_purchases / error / unavailable) plus the resulting isPro. */
+  restore: () => Promise<RestoreResult>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextValue>({
@@ -125,7 +186,7 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
   requirePro: async () => true,
   presentPaywall: async () => false,
   presentCustomerCenter: async () => {},
-  restore: async () => false,
+  restore: async () => ({ status: 'unavailable' as const, isPro: false }),
 });
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
@@ -333,14 +394,22 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     await openNativeSubscriptions();
   }, []);
 
-  const restore = useCallback(async (): Promise<boolean> => {
-    if (!availableRef.current) return false;
+  const restore = useCallback(async (): Promise<RestoreResult> => {
+    if (!availableRef.current) return { status: 'unavailable', isPro: isProRef.current };
     try {
       const info = await Purchases.restorePurchases();
+      // Immediate unlock: setting customerInfo re-derives isPro right away —
+      // no app restart needed for gated features to open up.
       setCustomerInfo(info);
-      return isEntitled(info);
+      if (isEntitled(info)) return { status: 'restored', isPro: true };
+      // Purchases exist but the entitlement isn't active → lapsed/cancelled
+      // subscription, which deserves different messaging than "never bought".
+      if (hasAnyPurchaseHistory(info)) return { status: 'expired', isPro: false };
+      return { status: 'no_purchases', isPro: false };
     } catch {
-      return isProRef.current;
+      // A failed store call is NOT "nothing to restore" — report it honestly
+      // so the user knows to retry rather than think their purchase is gone.
+      return { status: 'error', isPro: isProRef.current };
     }
   }, []);
 
@@ -606,12 +675,15 @@ function FallbackPaywall({
 
   const onRestore = async () => {
     if (busy) return;
-    const ok = await restore();
-    Alert.alert(
-      ok ? 'Purchases restored' : 'Nothing to restore',
-      ok ? 'Your Pro access is active.' : 'No previous purchases were found for this account.',
-    );
-    if (ok) onClose();
+    setBusy(true);
+    try {
+      const result = await restore();
+      const { title, message } = restoreAlertCopy(result);
+      Alert.alert(title, message);
+      if (result.isPro) onClose();
+    } finally {
+      setBusy(false);
+    }
   };
 
   // The CTA always carries the FULL BILLED amount — never the intro/trial
