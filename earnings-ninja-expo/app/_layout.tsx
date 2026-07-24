@@ -343,8 +343,18 @@ function RootNav() {
     const handle = async (url: string | null) => {
       if (!url) return;
       const parsed = Linking.parse(url);
-      if (parsed.hostname !== 'referral') return;
-      const code = (parsed.path ?? '').replace(/^\/+|\/+$/g, '').trim().toUpperCase();
+      // Accept both forms: the custom scheme (earningsninja://referral/CODE)
+      // and the shared HTTPS invite page (https://<backend>/invite/CODE),
+      // so a tapped invite link redeems directly if the app is installed.
+      let rawCode = '';
+      if (parsed.hostname === 'referral') {
+        rawCode = parsed.path ?? '';
+      } else {
+        const m = (parsed.path ?? '').match(/^\/?invite\/([A-Za-z0-9]+)/);
+        if (!m) return;
+        rawCode = m[1];
+      }
+      const code = rawCode.replace(/^\/+|\/+$/g, '').trim().toUpperCase();
       if (!code) return;
       if (token) {
         try {
