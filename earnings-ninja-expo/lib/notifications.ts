@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from './api';
 import { HIDDEN_MODE_KEY, MASK } from './hiddenMode';
+import { nextOccurrence, morningBody, eveningBody } from './notificationContent';
 
 // ─── Motivation Notifications ────────────────────────────────────────────────
 // Two local notifications per day: a morning motivation (9:00) and an evening
@@ -91,40 +92,6 @@ export async function cancelMotivation(): Promise<void> {
   }
 }
 
-// Next clock occurrence of the given hour today, or tomorrow if it has passed.
-function nextOccurrence(hour: number): Date {
-  const now = new Date();
-  const d = new Date();
-  d.setHours(hour, 0, 0, 0);
-  if (d.getTime() <= now.getTime()) d.setDate(d.getDate() + 1);
-  return d;
-}
-
-const usd = (n: number) => `$${Math.round(n)}`;
-
-function morningBody(hidden: boolean, todayGoal: number, weekProfit: number): string {
-  if (hidden) return 'Time to hit the road 🔥 Every order counts.';
-  if (weekProfit > 0) return `Strong week so far: ${usd(weekProfit)} 💪 Let's add to it today 🔥`;
-  if (todayGoal > 0) return `Today's goal: ${usd(todayGoal)} 🎯 Let's get it 🔥`;
-  return 'Time to hit the road 🔥 Let\u2019s stack some orders.';
-}
-
-function eveningBody(
-  hidden: boolean,
-  todayProfit: number,
-  todayGoal: number,
-  goalProgress: number | null,
-): string {
-  if (hidden) return `Strong day on the road 🔥 Open the app to see your ${MASK}.`;
-  const base = `You're crushing it! +${usd(todayProfit)} today 🔥`;
-  if (todayGoal > 0) {
-    if ((goalProgress ?? 0) >= 1) return `${base} Goal smashed! 🎉`;
-    const remaining = todayGoal - todayProfit;
-    if (remaining > 0) return `${base} Only ${usd(remaining)} to your goal 💪`;
-  }
-  return base;
-}
-
 // Coalesce concurrent/rapid reschedules. `scheduling` is a mutex so two callers
 // (e.g. foreground + a Hidden Mode toggle firing together) can't interleave the
 // cancel/schedule pair; `lastRun` enforces a short cooldown so routine
@@ -132,6 +99,33 @@ function eveningBody(
 let scheduling = false;
 let lastRun = 0;
 const COOLDOWN_MS = 30_000;
+// A refresh suppressed by the cooldown or mutex must not be DROPPED — that's
+// how stale numbers used to survive (save → refresh swallowed → notification
+// keeps the pre-save figure until the next foreground). Instead we remember
+// the request and run one trailing refresh when the window opens, so the
+// LATEST earnings always win.
+let trailingTimer: ReturnType<typeof setTimeout> | null = null;
+let trailingHidden: boolean | undefined;
+
+function armTrailingRefresh(delayMs: number, hidden?: boolean): void {
+  // Latest caller's hidden override wins (matches last-write semantics).
+  if (hidden !== undefined) trailingHidden = hidden;
+  if (trailingTimer) return; // one pending trailing run is enough — it fetches fresh data anyway
+  trailingTimer = setTimeout(() => {
+    trailingTimer = null;
+    const h = trailingHidden;
+    trailingHidden = undefined;
+    refreshMotivationSchedule({ hidden: h, force: true }).catch(() => {});
+  }, Math.max(delayMs, 250));
+}
+
+// Called after any earnings mutation confirms (entry create/edit/delete, goal
+// change) so queued notification content always reflects the latest numbers.
+// Cooldown-friendly: bursts of saves coalesce into at most one refresh per
+// window plus one trailing refresh carrying the final state.
+export function notifyEarningsChanged(): void {
+  refreshMotivationSchedule().catch(() => {});
+}
 
 // Cancel and re-arm both motivation notifications using the latest data. Safe to
 // call often (every foreground): it no-ops when the feature is disabled, and the
@@ -148,8 +142,18 @@ export async function refreshMotivationSchedule(
   if (!(await getNotifEnabled())) return;
 
   const now = Date.now();
-  if (!opts?.force && now - lastRun < COOLDOWN_MS) return;
-  if (scheduling) return;
+  if (!opts?.force && now - lastRun < COOLDOWN_MS) {
+    // Cooldown-suppressed: defer instead of dropping so the latest earnings
+    // still land in the queued notifications once the window opens.
+    armTrailingRefresh(lastRun + COOLDOWN_MS - now, opts?.hidden);
+    return;
+  }
+  if (scheduling) {
+    // Another refresh is mid-flight; a save that lands during its fetch would
+    // otherwise be lost. Trail one more run to pick up the final state.
+    armTrailingRefresh(500, opts?.hidden);
+    return;
+  }
   scheduling = true;
   lastRun = now;
   try {
@@ -182,26 +186,28 @@ async function doReschedule(hiddenOverride?: boolean): Promise<void> {
   await cancelMotivation();
 
   try {
+    const morning = nextOccurrence(MORNING_HOUR);
+    const evening = nextOccurrence(EVENING_HOUR);
     await Notifications.scheduleNotificationAsync({
       identifier: MORNING_ID,
       content: {
         title: 'Good morning, Ninja 🥷',
-        body: morningBody(hidden, todayGoal, weekProfit),
+        body: morningBody(hidden, todayGoal, weekProfit, morning.sameDay),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: nextOccurrence(MORNING_HOUR),
+        date: morning.date,
       },
     });
     await Notifications.scheduleNotificationAsync({
       identifier: EVENING_ID,
       content: {
         title: 'Evening recap 🌙',
-        body: eveningBody(hidden, todayProfit, todayGoal, goalProgress),
+        body: eveningBody(hidden, todayProfit, todayGoal, goalProgress, evening.sameDay, MASK),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: nextOccurrence(EVENING_HOUR),
+        date: evening.date,
       },
     });
   } catch {
