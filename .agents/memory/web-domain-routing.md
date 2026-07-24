@@ -3,7 +3,9 @@ name: web domain routing (earningsninja.app)
 description: How the public web domain is served vs. the Railway backend vs. the Replit deployment, and why repointing the domain is safe for the mobile app.
 ---
 
-# earningsninja.app routing
+# earningsninja domain routing
+
+- Branding moved to **earningsninja.com** (Jul 24): landing og tags + all support@ emails now use .com; user must point earningsninja.com DNS at the chosen host and set up the .com mailbox.
 
 - `earningsninja.app` is **not** served by the Replit deployment. It 301-redirects to
   the Railway app (`earnings-pro-is-8-production.up.railway.app`). Clicking "Publish"

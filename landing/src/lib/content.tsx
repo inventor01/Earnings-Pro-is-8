@@ -14,7 +14,7 @@ export const APP_DOWNLOAD_URL: string = APP_STORE_URL ?? '/'
 
 export const PRIVACY_URL = '/privacy'
 export const SUPPORT_URL = '/support'
-export const SUPPORT_EMAIL = 'support@earningsninja.app'
+export const SUPPORT_EMAIL = 'support@earningsninja.com'
 
 export const PLATFORMS = ['DoorDash', 'Uber Eats', 'Instacart', 'GrubHub', 'Shipt']
 

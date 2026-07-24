@@ -407,8 +407,8 @@ function Faq() {
         </div>
         <div className="text-center mt-10 text-sm text-muted">
           Still have questions?{' '}
-          <a href="mailto:support@earningsninja.app" className="text-primary hover:underline">
-            support@earningsninja.app
+          <a href="mailto:support@earningsninja.com" className="text-primary hover:underline">
+            support@earningsninja.com
           </a>
         </div>
       </div>
