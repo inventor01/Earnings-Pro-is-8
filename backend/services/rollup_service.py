@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from backend.models import Entry, Settings, EntryType, AppType, Goal, TimeframeType
+from backend.models import Entry, Settings, EntryType, AppType, Goal, DailyGoal, TimeframeType
+from backend.services.period import get_est_date_for_utc
 from decimal import Decimal
 from datetime import datetime
 from typing import Optional
@@ -93,11 +94,24 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
     if timeframe and user_id:
         try:
             tf = TimeframeType[timeframe]
-            goal = db.query(Goal).filter(Goal.timeframe == tf, Goal.user_id == user_id).first()
+            goal = None
+            # Day-scoped timeframes resolve a per-date DailyGoal first, keyed
+            # by the EST calendar date of the requested window, so each day's
+            # goal is independent. Falls back to the legacy timeframe row (the
+            # inherited default) when no explicit per-date goal exists.
+            if tf in (TimeframeType.TODAY, TimeframeType.YESTERDAY) and from_date is not None:
+                est_date = get_est_date_for_utc(from_date)
+                daily = db.query(DailyGoal).filter(
+                    DailyGoal.user_id == user_id, DailyGoal.goal_date == est_date
+                ).first()
+                if daily:
+                    goal = daily
+            if goal is None:
+                goal = db.query(Goal).filter(Goal.timeframe == tf, Goal.user_id == user_id).first()
             if goal:
                 goal_data = {
                     "id": goal.id,
-                    "timeframe": goal.timeframe.value,
+                    "timeframe": goal.timeframe.value if isinstance(goal, Goal) else tf.value,
                     "target_profit": float(goal.target_profit),
                     "goal_name": goal.goal_name,
                     "created_at": goal.created_at.isoformat(),

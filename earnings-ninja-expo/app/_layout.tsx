@@ -186,6 +186,7 @@ function RootNav() {
               updateEntry: (id, patch) => api.updateEntryRaw(id, patch),
               deleteEntry: (id) => api.deleteEntryRaw(id),
               upsertGoal: (tf, target) => api.upsertGoalRaw(tf, target),
+              upsertDailyGoal: (date, target) => api.upsertDailyGoalRaw(date, target),
             },
             async (op) => {
               // Strict per-record LWW by SERVER update timestamp. `baseUpdatedAt`

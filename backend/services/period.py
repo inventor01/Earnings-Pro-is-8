@@ -130,3 +130,14 @@ def get_last_month():
     end_utc = end_est.astimezone(timezone.utc).replace(tzinfo=None)
     
     return start_utc, end_utc
+
+def get_est_date_for_utc(dt_utc):
+    """EST calendar date (datetime.date) for a naive-UTC datetime — the inverse
+    of the get_*/get_day_offset boundary math, used to key per-date daily goals."""
+    est = pytz_timezone('US/Eastern')
+    return dt_utc.replace(tzinfo=timezone.utc).astimezone(est).date()
+
+def get_est_today_date():
+    """Today's EST calendar date (datetime.date)."""
+    est = pytz_timezone('US/Eastern')
+    return datetime.now(timezone.utc).astimezone(est).date()

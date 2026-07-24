@@ -113,6 +113,7 @@ const handlers = {
   updateEntry: (id: number, patch: any) => api.updateEntryRaw(id, patch),
   deleteEntry: (id: number) => api.deleteEntryRaw(id),
   upsertGoal: (tf: any, target: number) => api.upsertGoalRaw(tf, target),
+  upsertDailyGoal: (date: string, target: number) => api.upsertDailyGoalRaw(date, target),
 };
 
 // Faithful copy of the entry branch of the drain's shouldSkip predicate in

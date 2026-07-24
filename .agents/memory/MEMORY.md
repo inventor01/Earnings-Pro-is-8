@@ -26,3 +26,4 @@
 - [OTA apply crash playbook](ota-apply-crash-rollback.md) — crash on 2nd launch only = broken update-apply path, not content; isolate with identical-JS update, recover via roll-back-to-embedded on all runtimes, ship native.
 - [Notification day-boundary staleness](notification-content-day-boundary.md) — scheduled-notification copy with volatile numbers must be sameDay-aware; re-arm on every earnings mutation + queue drain, never drop suppressed refreshes.
 - [cancelQueries data-less skeleton](cancelqueries-dataless-skeleton.md) — onMutate must only cancel queries that hold data, or a killed first fetch strands the dashboard on its skeleton.
+- [Per-date daily goal keys](daily-goal-per-date-keys.md) — EST-midnight key rollover, inherited-default not mirrored under date keys, no mirror clear on transient errors.

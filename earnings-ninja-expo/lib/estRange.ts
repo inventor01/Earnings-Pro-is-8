@@ -133,3 +133,13 @@ export function rangeForTimeframe(timeframe: string, dayOffset = 0): { fromMs: n
     }
   }
 }
+
+// EST calendar date string (YYYY-MM-DD) for today + `offset` days. This is the
+// canonical key for per-date daily goals: computed from the EST clock, so a
+// device timezone change can never shift which date's goal is read or written.
+export function estDateIsoForOffset(offset = 0): string {
+  const base = estTodayUTC();
+  base.setUTCDate(base.getUTCDate() + offset);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${base.getUTCFullYear()}-${p(base.getUTCMonth() + 1)}-${p(base.getUTCDate())}`;
+}

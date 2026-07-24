@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Numeric, DateTime, Text, Enum as SQLEnum, Boolean, ForeignKey, Index, text
+from sqlalchemy import Column, Integer, String, Float, Numeric, DateTime, Date, Text, Enum as SQLEnum, Boolean, ForeignKey, Index, text
 from datetime import datetime
 from decimal import Decimal
 import enum
@@ -127,6 +127,29 @@ class Goal(Base):
     
     __table_args__ = (
         __import__('sqlalchemy').UniqueConstraint('user_id', 'timeframe', name='uq_user_timeframe'),
+    )
+
+class DailyGoal(Base):
+    """Per-calendar-date daily profit goal (EST dates, YYYY-MM-DD semantics).
+
+    Each date's goal is an independent row, so editing one day can never
+    change another day's goal. The legacy `goals` row with timeframe=TODAY is
+    retained as the *inherited default*: dates with no explicit DailyGoal row
+    fall back to it (lossless migration — no backfill required, existing
+    behavior is preserved until a user edits a specific date).
+    """
+    __tablename__ = "daily_goals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    goal_date = Column(Date, nullable=False)
+    target_profit = Column(Numeric(10, 2), nullable=False)
+    goal_name = Column(String, default="Daily Goal", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        __import__('sqlalchemy').UniqueConstraint('user_id', 'goal_date', name='uq_user_goal_date'),
     )
 
 class WaitlistSignup(Base):

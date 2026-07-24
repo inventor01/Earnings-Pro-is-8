@@ -112,6 +112,7 @@ const handlers = {
   updateEntry: (id: number, patch: any) => api.updateEntryRaw(id, patch),
   deleteEntry: (id: number) => api.deleteEntryRaw(id),
   upsertGoal: (tf: TimeframeType, target: number) => api.upsertGoalRaw(tf, target),
+  upsertDailyGoal: (date: string, target: number) => api.upsertDailyGoalRaw(date, target),
 };
 
 describe('offline goal edit survives a real reconnect (end-to-end)', () => {

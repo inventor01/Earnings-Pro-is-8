@@ -1,12 +1,15 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { Goal, TimeframeType } from './api';
 
+// Goal cache key: a timeframe OR a per-date daily key ('DAILY:YYYY-MM-DD').
+export type GoalKey = TimeframeType | string;
+
 // Pure, testable optimistic-cache helpers for the goal editors. Extracted from
 // the Settings goal mutation so the "typed value shows instantly offline and
 // sticks until sync" behavior can be unit-tested without mounting the screen.
 
 export interface OptimisticGoalCtx {
-  tf: TimeframeType;
+  tf: GoalKey;
   prevGoal: Goal | null | undefined;
 }
 
@@ -17,14 +20,14 @@ export interface OptimisticGoalCtx {
 // Returns a context for rollback.
 export async function applyOptimisticGoal(
   qc: QueryClient,
-  tf: TimeframeType,
+  tf: GoalKey,
   target: number,
 ): Promise<OptimisticGoalCtx> {
   await qc.cancelQueries({ queryKey: ['goal', tf] });
   const prevGoal = qc.getQueryData<Goal | null>(['goal', tf]);
   qc.setQueryData(['goal', tf], (old: any) => ({
     id: old?.id ?? -1,
-    timeframe: tf,
+    timeframe: (tf.startsWith('DAILY:') ? 'TODAY' : tf) as TimeframeType,
     goal_name: old?.goal_name ?? 'Goal',
     target_profit: target,
   }));

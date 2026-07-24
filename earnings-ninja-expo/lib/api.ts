@@ -820,6 +820,79 @@ export const api = {
     }
   },
 
+  // ── Per-date daily goals ────────────────────────────────────────────────────
+  // Each EST calendar date owns an independent goal (backend daily_goals). The
+  // local mirror keys these as `DAILY:YYYY-MM-DD` so offline reads/edits are
+  // date-scoped too. Falls back (server-side) to the legacy TODAY row for dates
+  // never explicitly edited.
+
+  async getDailyGoal(dateIso: string): Promise<Goal | null> {
+    const headers = await getAuthHeaders();
+    const key = `DAILY:${dateIso}`;
+    let res: Response;
+    try {
+      res = await trackedFetch(`${API_BASE}/api/goals/daily/${dateIso}`, { headers });
+    } catch {
+      // Offline → per-date mirror first, then the legacy TODAY default.
+      return (await getLocalGoal(key)) ?? (await getLocalGoal('TODAY'));
+    }
+    if (!res.ok) {
+      // Transient/server errors must NOT erase the local per-date mirror —
+      // fall back to it (then the legacy default) like the offline path.
+      return (await getLocalGoal(key)) ?? (await getLocalGoal('TODAY'));
+    }
+    const goal: (Goal & { inherited?: boolean }) | null = await res.json();
+    if (!goal) {
+      await persistGoal(null, key).catch(() => {});
+      return null;
+    }
+    // Only mirror EXPLICIT per-date goals under the date key. An inherited
+    // default must not be frozen onto the date, or a later default change
+    // would leave a stale per-date copy shadowing it offline.
+    if (!goal.inherited) await persistGoal(goal, key).catch(() => {});
+    return goal;
+  },
+
+  // Raw per-date upsert — no offline queue. Used by the drainer.
+  async upsertDailyGoalRaw(dateIso: string, target_profit: number): Promise<Goal> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/goals/daily/${dateIso}`, {
+      method: 'PUT', headers, body: JSON.stringify({ target_profit }),
+    });
+    if (!res.ok) {
+      const e: any = new Error('Failed to save daily goal');
+      e.status = res.status;
+      throw e;
+    }
+    const saved: Goal = await res.json();
+    await persistGoal(saved, `DAILY:${dateIso}`).catch(() => {});
+    return saved;
+  },
+
+  async upsertDailyGoal(dateIso: string, target_profit: number): Promise<Goal> {
+    try {
+      return await this.upsertDailyGoalRaw(dateIso, target_profit);
+    } catch (err: any) {
+      const status: number | undefined = err?.status;
+      const isTransient =
+        status === undefined ||
+        status === 401 ||
+        status === 408 ||
+        status === 429 ||
+        (status >= 500 && status < 600);
+      if (!isTransient && status >= 400 && status < 500) throw err;
+      const baseUpdatedAt = (await getLocalGoal(`DAILY:${dateIso}`))?.updated_at;
+      const { enqueueMutation } = await import('./mutationQueue');
+      await enqueueMutation({ kind: 'upsertDailyGoal', date: dateIso, target_profit, baseUpdatedAt });
+      await refreshPendingCount();
+      requestDrain();
+      // Synthetic goal + local mirror so offline reads of THIS date stick.
+      const synthetic: Goal = { id: -1, timeframe: 'TODAY', target_profit, goal_name: 'Daily Goal' };
+      await persistGoal(synthetic, `DAILY:${dateIso}`).catch(() => {});
+      return synthetic;
+    }
+  },
+
 };
 
 // Best-effort synthetic Entry returned by the offline `updateEntry` path. The
