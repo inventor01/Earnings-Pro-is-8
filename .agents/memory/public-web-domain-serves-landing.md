@@ -35,3 +35,17 @@ Apple's standard EULA URL (`apple.com/legal/internet-services/itunes/dev/stdeula
 Before any submission, `curl -L` every URL that appears in-app AND in ASC metadata
 and require HTTP 200. The ASC "Privacy Policy URL" field must also point at a live
 200 URL (Railway `/privacy`) until the vanity domain proxies the backend legal pages.
+
+## Railway Docker build: landing/dist is pre-built and committed
+
+Railway's Metal builder repeatedly failed `npm ci` inside the Dockerfile's
+node:20-alpine stage (npm error mid-install; vite never installed; exit 127 at
+`vite build`) even with `--include=dev` + NODE_ENV=development.
+
+**Decision:** the Dockerfile has NO node stage. `landing/dist` is committed to
+git (negation rules at the bottom of .gitignore) and COPY'd straight into the
+image.
+
+**How to apply:** after any landing/ change, run `cd landing && npm run build`
+and commit the refreshed `landing/dist` BEFORE the user pushes to GitHub for a
+Railway deploy — otherwise prod serves the stale site.
