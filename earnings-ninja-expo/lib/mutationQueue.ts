@@ -24,17 +24,20 @@ const QUEUE_KEY = 'offline_mutation_queue_v1';
 export type QueuedMutation =
   | { clientId: string; queuedAt: number; kind: 'updateEntry'; id: number; patch: Partial<EntryCreate>; baseUpdatedAt?: string }
   | { clientId: string; queuedAt: number; kind: 'deleteEntry'; id: number; baseUpdatedAt?: string }
-  | { clientId: string; queuedAt: number; kind: 'upsertGoal'; timeframe: TimeframeType; target_profit: number; baseUpdatedAt?: string };
+  | { clientId: string; queuedAt: number; kind: 'upsertGoal'; timeframe: TimeframeType; target_profit: number; baseUpdatedAt?: string }
+  | { clientId: string; queuedAt: number; kind: 'upsertDailyGoal'; date: string; target_profit: number; baseUpdatedAt?: string };
 
 export type EnqueueInput =
   | { kind: 'updateEntry'; id: number; patch: Partial<EntryCreate>; baseUpdatedAt?: string }
   | { kind: 'deleteEntry'; id: number; baseUpdatedAt?: string }
-  | { kind: 'upsertGoal'; timeframe: TimeframeType; target_profit: number; baseUpdatedAt?: string };
+  | { kind: 'upsertGoal'; timeframe: TimeframeType; target_profit: number; baseUpdatedAt?: string }
+  | { kind: 'upsertDailyGoal'; date: string; target_profit: number; baseUpdatedAt?: string };
 
 export interface MutationHandlers {
   updateEntry: (id: number, patch: Partial<EntryCreate>) => Promise<Entry>;
   deleteEntry: (id: number) => Promise<void>;
   upsertGoal: (timeframe: TimeframeType, target_profit: number) => Promise<Goal>;
+  upsertDailyGoal: (date: string, target_profit: number) => Promise<Goal>;
 }
 
 function randomId(): string {
@@ -107,6 +110,15 @@ export async function enqueueMutation(input: EnqueueInput): Promise<void> {
       return;
     }
 
+    // upsertDailyGoal — one pending op per calendar DATE (latest target wins);
+    // date-keyed so edits to different days never coalesce into each other.
+    if (input.kind === 'upsertDailyGoal') {
+      const kept = items.filter(it => !(it.kind === 'upsertDailyGoal' && it.date === input.date));
+      kept.push({ clientId: randomId(), queuedAt, kind: 'upsertDailyGoal', date: input.date, target_profit: input.target_profit, baseUpdatedAt: input.baseUpdatedAt });
+      await writeQueue(kept);
+      return;
+    }
+
     // upsertGoal — one pending op per timeframe (latest target wins).
     const kept = items.filter(it => !(it.kind === 'upsertGoal' && it.timeframe === input.timeframe));
     kept.push({ clientId: randomId(), queuedAt, kind: 'upsertGoal', timeframe: input.timeframe, target_profit: input.target_profit, baseUpdatedAt: input.baseUpdatedAt });
@@ -168,6 +180,8 @@ export async function drainMutationQueue(
           await handlers.updateEntry(item.id, item.patch);
         } else if (item.kind === 'deleteEntry') {
           await handlers.deleteEntry(item.id);
+        } else if (item.kind === 'upsertDailyGoal') {
+          await handlers.upsertDailyGoal(item.date, item.target_profit);
         } else {
           await handlers.upsertGoal(item.timeframe, item.target_profit);
         }

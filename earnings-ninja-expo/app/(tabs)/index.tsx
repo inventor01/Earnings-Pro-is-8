@@ -4,7 +4,7 @@ import {
   RefreshControl, ActivityIndicator, Image, Alert,
   TextInput, KeyboardAvoidingView, Platform, Share,
   ViewStyle, TextStyle, StyleSheet,
-  NativeSyntheticEvent, NativeScrollEvent, Linking,
+  NativeSyntheticEvent, NativeScrollEvent, Linking, AppState,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withSequence, withRepeat, withDelay,
@@ -2662,19 +2662,24 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
     }
   };
 
-  const goalToday = useQuery({ queryKey: ['goal', 'TODAY'],      queryFn: () => api.getGoal('TODAY') });
+  // The Settings "Daily Goal" row edits TODAY'S per-date goal (which also
+  // rolls the inherited default forward server-side for future dates).
+  const settingsDailyKey = `DAILY:${fmtUTCDate(estTodayUTC())}`;
+  const goalToday = useQuery({ queryKey: ['goal', settingsDailyKey], queryFn: () => api.getDailyGoal(fmtUTCDate(estTodayUTC())) });
   const goalWeek  = useQuery({ queryKey: ['goal', 'THIS_WEEK'],  queryFn: () => api.getGoal('THIS_WEEK') });
   const goalMonth = useQuery({ queryKey: ['goal', 'THIS_MONTH'], queryFn: () => api.getGoal('THIS_MONTH') });
   const goalQueries = [goalToday, goalWeek, goalMonth];
 
   const upsertGoal = useMutation({
-    mutationFn: ({ tf, target }: { tf: TimeframeType; target: number }) => api.upsertGoal(tf, target),
+    mutationFn: ({ tf, target }: { tf: TimeframeType; target: number }) =>
+      tf === 'TODAY' ? api.upsertDailyGoal(fmtUTCDate(estTodayUTC()), target) : api.upsertGoal(tf, target),
     // Optimistically patch this timeframe's goal query so the typed value shows
     // instantly — and STICKS when offline (the change queues and the onSuccess
     // refetch fails/retains, so this patch is what the user keeps seeing until
     // the queued upsert drains on reconnect). Mirrors the dashboard goal editor.
     // Logic lives in lib/goalOptimistic so it can be unit-tested in isolation.
-    onMutate: ({ tf, target }) => applyOptimisticGoal(queryClient, tf, target),
+    onMutate: ({ tf, target }) =>
+      applyOptimisticGoal(queryClient, tf === 'TODAY' ? settingsDailyKey : tf, target),
     onError: (_err, _vars, ctx) => rollbackOptimisticGoal(queryClient, ctx),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goal'] });
@@ -4411,11 +4416,32 @@ export default function DashboardScreen() {
     dayOffsetRef.current = isDayPeriod ? dayApiOffset : 0;
   }, [isDayPeriod, dayApiOffset]);
 
-  // Day-periods (today/yesterday, any swipe offset) share the single daily goal
-  // (the TODAY goal target), so the goal bar is consistent whether you reach a
-  // given day via the Today chip swiped back or the Yesterday chip. Aggregate
-  // periods keep their own weekly/monthly goal. Read + edit use the same key.
+  // Day-periods resolve an INDEPENDENT per-date daily goal keyed by the EST
+  // calendar date being viewed (DAILY:YYYY-MM-DD), so editing one day's goal
+  // never affects another day. Dates never explicitly edited inherit the
+  // legacy TODAY default server-side. Aggregate periods keep their own
+  // weekly/monthly goal. Read + edit use the same key.
   const goalTf = isDayPeriod ? 'TODAY' : tf;
+  // EST "today" as state so the per-date goal key rolls over at EST midnight
+  // even if the app stays open (interval tick + foreground re-check). Without
+  // this, a memo keyed only on the offset would keep reading/writing
+  // yesterday's goal after the day boundary.
+  const [estTodayIso, setEstTodayIso] = useState(() => fmtUTCDate(estTodayUTC()));
+  useEffect(() => {
+    const tick = () => {
+      const now = fmtUTCDate(estTodayUTC());
+      setEstTodayIso(prev => (prev === now ? prev : now));
+    };
+    const id = setInterval(tick, 60_000);
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') tick(); });
+    return () => { clearInterval(id); sub.remove(); };
+  }, []);
+  const dayDateIso = useMemo(() => {
+    const base = estTodayUTC();
+    base.setUTCDate(base.getUTCDate() + effectiveDayOffset);
+    return fmtUTCDate(base);
+  }, [effectiveDayOffset, estTodayIso]);
+  const goalKey = isDayPeriod ? `DAILY:${dayDateIso}` : tf;
 
   // Stable cache keys: custom range, nav range (aggregate offset), or the plain
   // timeframe+day_offset path. Each distinct window gets its own cache slot.
@@ -4452,8 +4478,8 @@ export default function DashboardScreen() {
 
   // Goals only exist for the fixed timeframes — disable the goal query in custom mode.
   const { data: goal, refetch: refetchGoal } = useQuery({
-    queryKey: ['goal', goalTf],
-    queryFn: () => api.getGoal(goalTf),
+    queryKey: ['goal', goalKey],
+    queryFn: () => (isDayPeriod ? api.getDailyGoal(dayDateIso) : api.getGoal(goalTf)),
     enabled: period !== 'custom',
   });
 
@@ -4599,17 +4625,18 @@ export default function DashboardScreen() {
   });
 
   const upsertGoalMutation = useMutation({
-    mutationFn: ({ target }: { target: number }) => api.upsertGoal(goalTf, target),
+    mutationFn: ({ target }: { target: number }) =>
+      isDayPeriod ? api.upsertDailyGoal(dayDateIso, target) : api.upsertGoal(goalTf, target),
     // Optimistically patch the goal query AND the active rollup's goal /
     // goal_progress so a saved goal shows instantly — and STICKS when offline
     // (the onSuccess refetch fails and is retained, so this patch is what the
     // user keeps seeing until the queued upsert drains on reconnect).
     onMutate: async ({ target }) => {
-      await queryClient.cancelQueries({ queryKey: ['goal', goalTf] });
+      await queryClient.cancelQueries({ queryKey: ['goal', goalKey] });
       await queryClient.cancelQueries({ queryKey: rollupKey });
-      const prevGoal = queryClient.getQueryData<Goal | null>(['goal', goalTf]);
+      const prevGoal = queryClient.getQueryData<Goal | null>(['goal', goalKey]);
       const prevRollup = queryClient.getQueryData<Rollup>(rollupKey);
-      queryClient.setQueryData(['goal', goalTf], (old: any) => ({
+      queryClient.setQueryData(['goal', goalKey], (old: any) => ({
         id: old?.id ?? -1,
         timeframe: goalTf,
         goal_name: old?.goal_name ?? 'Goal',
@@ -4628,7 +4655,7 @@ export default function DashboardScreen() {
     },
     onError: (_err, _vars, ctx) => {
       if (!ctx) return;
-      queryClient.setQueryData(['goal', goalTf], ctx.prevGoal);
+      queryClient.setQueryData(['goal', goalKey], ctx.prevGoal);
       queryClient.setQueryData(rollupKey, ctx.prevRollup);
     },
     onSuccess: () => {

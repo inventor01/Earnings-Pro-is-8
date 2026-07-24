@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Entry, EntryCreate, Goal, Rollup, TimeframeType } from './api';
-import { rangeForTimeframe, rangeForDates, estWallToUTCms, parseUTC } from './estRange';
+import { estDateIsoForOffset, rangeForTimeframe, rangeForDates, estWallToUTCms, parseUTC } from './estRange';
 import { getQueuedCreates } from './offlineQueue';
 import { getQueuedOps } from './mutationQueue';
 
@@ -90,7 +90,9 @@ export async function removeLocalEntries(ids: number[]): Promise<void> {
   });
 }
 
-export async function persistGoal(goal: Goal | null, timeframe: TimeframeType): Promise<void> {
+export type GoalKey = TimeframeType | string; // string form: 'DAILY:YYYY-MM-DD'
+
+export async function persistGoal(goal: Goal | null, timeframe: GoalKey): Promise<void> {
   // Serialize via the shared store lock so concurrent goal writes for different
   // timeframes can't clobber each other's read-modify-write of the goal map.
   await withStoreLock(async () => {
@@ -106,11 +108,11 @@ export async function persistGoal(goal: Goal | null, timeframe: TimeframeType): 
   });
 }
 
-export async function getLocalGoal(timeframe: TimeframeType): Promise<Goal | null> {
+export async function getLocalGoal(timeframe: GoalKey): Promise<Goal | null> {
   return readGoal(timeframe);
 }
 
-async function readGoal(timeframe: TimeframeType): Promise<Goal | null> {
+async function readGoal(timeframe: GoalKey): Promise<Goal | null> {
   try {
     const raw = await AsyncStorage.getItem(GOALS_KEY);
     if (!raw) return null;
@@ -262,9 +264,21 @@ function aggregate(entries: Entry[], goal: Goal | null): Rollup {
 
 export async function localRollupForTimeframe(timeframe: string, dayOffset = 0): Promise<Rollup> {
   const { fromMs, toMs } = rangeForTimeframe(timeframe, dayOffset);
+  // Day-scoped periods use the per-date daily-goal mirror first (each EST date
+  // owns an independent goal); the legacy timeframe entry is the inherited
+  // default for dates never explicitly edited.
+  let goalKey: GoalKey = timeframe as TimeframeType;
+  if (timeframe === 'TODAY' || timeframe === 'YESTERDAY') {
+    const off = timeframe === 'YESTERDAY' ? -1 : dayOffset;
+    const daily = await readGoal(`DAILY:${estDateIsoForOffset(off)}`);
+    if (daily) {
+      const all = await effectiveEntries();
+      return aggregate(all.filter(e => inRange(e, fromMs, toMs)), daily);
+    }
+  }
   const [all, goal] = await Promise.all([
     effectiveEntries(),
-    readGoal(timeframe as TimeframeType),
+    readGoal(goalKey),
   ]);
   return aggregate(all.filter(e => inRange(e, fromMs, toMs)), goal);
 }
