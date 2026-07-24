@@ -34,7 +34,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 import { useSubscription, offeringTrialDays, restoreAlertCopy } from '@/lib/revenuecat';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
-import { syncNotifState, enableMotivation, disableMotivation } from '@/lib/notifications';
+import { syncNotifState, enableMotivation, disableMotivation, notifyEarningsChanged } from '@/lib/notifications';
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
@@ -1836,6 +1836,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // No-ops when the Settings sound toggle is off or in an OTA-only build
       // that predates the expo-av native module.
       playKaching();
+      // Re-author the queued motivation notifications so the evening recap
+      // reflects this save (foreground-only refresh misses in-session saves).
+      notifyEarningsChanged();
       // Remember the last app the user logged revenue against — the Add Entry
       // modal defaults new orders to it (read back via LAST_ORDER_APP_KEY).
       if (vars.type === 'ORDER' && vars.app) {
@@ -1998,6 +2001,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     onSuccess: () => {
       invalidateEntryData(queryClient);
       hNotifyOk();
+      // Edited amounts change today's profit → refresh notification content.
+      notifyEarningsChanged();
     },
     onError: (e, _vars, ctx) => {
       if (ctx?.prevRollup)  for (const [key, data] of ctx.prevRollup)  queryClient.setQueryData(key, data);
@@ -2675,6 +2680,8 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
       queryClient.invalidateQueries({ queryKey: ['goal'] });
       setEditingGoal(null);
       hNotifyOk();
+      // A new/changed goal target alters "remaining to goal" in the recap.
+      notifyEarningsChanged();
     },
   });
 
@@ -4558,7 +4565,7 @@ export default function DashboardScreen() {
       reconcileAfterDelete();
       Alert.alert('Error', 'Failed to delete entry.');
     },
-    onSuccess: () => { reconcileAfterDelete(); },
+    onSuccess: () => { reconcileAfterDelete(); notifyEarningsChanged(); },
   });
 
   // Bulk delete — fires DELETE requests in parallel, then invalidates once
@@ -4576,6 +4583,7 @@ export default function DashboardScreen() {
     onMutate: (ids: number[]) => optimisticRemove(ids),
     onSuccess: ({ total, failed }) => {
       reconcileAfterDelete();
+      notifyEarningsChanged();
       exitSelectionMode();
       if (failed > 0) {
         Alert.alert('Partial delete', `Deleted ${total - failed} of ${total}. ${failed} failed.`);
@@ -4628,6 +4636,8 @@ export default function DashboardScreen() {
       refetchGoal();
       setEditingGoal(false);
       hNotifyOk();
+      // A new/changed goal target alters "remaining to goal" in the recap.
+      notifyEarningsChanged();
     },
   });
 

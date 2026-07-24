@@ -232,6 +232,11 @@ function RootNav() {
         if (changed) {
           try { await api.getAllEntries(); } catch {}
           invalidateEntryData(queryClient);
+          // Queued entries just reached the server, so the rollup the
+          // foreground notification refresh fetched moments ago is already
+          // stale — re-author the queued notifications with the post-drain
+          // numbers. (Coalesced internally; suppressed calls run trailing.)
+          refreshMotivationSchedule().catch(() => {});
         }
       } finally {
         setSyncing(false);
