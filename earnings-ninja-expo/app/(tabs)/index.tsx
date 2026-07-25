@@ -3754,10 +3754,15 @@ function VBarChart({
   );
 }
 
+// Editorial Story design: serif display face for the narrative headline and
+// big stat numbers. Georgia ships with iOS; Android falls back to the system
+// serif (Noto Serif).
+const EDITORIAL_SERIF = Platform.select({ ios: 'Georgia', default: 'serif' });
+
 function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible: boolean; onClose: () => void; initialPeriod?: AnalyticsPeriod }) {
   const {
     BG, SURFACE, BORDER, PRIMARY, PRIMARY_TXT, PRI_LITE, TEXT, TEXT_MID, MUTED, LABEL,
-    GREEN, GREEN_LT, RED, RED_LT, DIVIDER, ON_PRIMARY,
+    GREEN, GREEN_LT, RED, RED_LT, DIVIDER, ON_PRIMARY, isDark,
   } = useTheme();
   const { hidden } = useHiddenMode();
   const insets = useSafeAreaInsets();
@@ -4046,44 +4051,59 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   const isProfit = profit >= 0;
   const money = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(n).toFixed(2)}`;
 
-  const kpis: { label: string; value: string; color?: string; hide?: boolean }[] = [
-    { label: 'Net Profit',     value: money(profit), color: isProfit ? GREEN : RED, hide: true },
-    { label: 'Revenue',        value: `$${(rollup?.revenue ?? 0).toFixed(0)}`, color: GREEN, hide: true },
-    { label: 'Expenses',       value: `$${Math.abs(rollup?.expenses ?? 0).toFixed(0)}`, color: RED, hide: true },
-    { label: '$ / Mile',       value: `$${(rollup?.dollars_per_mile ?? 0).toFixed(2)}`, color: PRIMARY_TXT, hide: true },
-    { label: 'Avg Order',      value: `$${(rollup?.average_order_value ?? 0).toFixed(2)}`, hide: true },
-    { label: 'Orders',         value: `${totalOrders}` },
-    { label: 'Avg / Day',      value: money(dailyAverages.profit), color: isProfit ? GREEN : RED, hide: true, },
-    { label: 'Active Days',    value: `${dayAgg.length}` },
-    { label: 'Total Miles',    value: `${(rollup?.miles ?? 0).toFixed(1)}` },
-    { label: 'Miles / Day',    value: `${milesPerDay.toFixed(1)}` },
-  ];
+  // Total logged driving hours in the period (from entry durations) — powers
+  // the editorial "$/hour" narrative stat. Null when nothing has a duration.
+  const totalHours = useMemo(() => dayAgg.reduce((a, d) => a + d.minutes, 0) / 60, [dayAgg]);
+  const perHour = totalHours > 0 ? profit / totalHours : null;
 
-  const sectionTitle = (text: string) => (
-    <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, marginTop: 4 }}>
+  const periodNoun =
+    aPeriod === 'today' ? 'today'
+    : aPeriod === 'yesterday' ? 'yesterday'
+    : aPeriod === 'week' ? 'this week'
+    : aPeriod === 'month' ? 'this month'
+    : aPeriod === 'last30' ? 'these 30 days'
+    : 'all time';
+
+  // ── Editorial Story design language ─────────────────────────────────────
+  // Serif display headline + stats, sans micro-kickers, hairline dividers,
+  // thin data bars. The neon amount reads as yellow text in Dark and as a
+  // yellow highlighter behind black text in Light (neon on white is
+  // unreadable as text — brand rule: accents are strictly black or #facc15).
+  const kicker = (text: string) => (
+    <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
       {text}
     </Text>
   );
+  const hr = () => <View style={{ height: 1, backgroundColor: DIVIDER, marginVertical: 28 }} />;
+  const highlightAmount: TextStyle = isDark
+    ? { color: PRIMARY }
+    : { backgroundColor: PRIMARY, color: '#000000' };
 
-  const card: ViewStyle = {
-    backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER,
-    padding: 16, marginBottom: 20,
-  };
+  const bigStats: { value: string; caption: string; color?: string; hide?: boolean }[] = [
+    ...(perHour !== null ? [{ value: money(perHour), caption: 'Average per hour on the road.', hide: true }] : []),
+    { value: `$${(rollup?.dollars_per_mile ?? 0).toFixed(2)}`, caption: 'Average per mile driven.', hide: true },
+    { value: `$${(rollup?.average_order_value ?? 0).toFixed(2)}`, caption: 'Average order value.', hide: true },
+    { value: `${totalOrders}`, caption: 'Deliveries completed.' },
+    { value: `${(rollup?.miles ?? 0).toFixed(1)}`, caption: `Miles driven — about ${milesPerDay.toFixed(1)} per active day.` },
+    ...(!isSingleDay ? [{ value: money(dailyAverages.profit), caption: 'Average profit per active day.', color: isProfit ? GREEN : RED, hide: true }] : []),
+  ];
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose} onDismiss={onSheetDismissed}>
       <View style={{ flex: 1, backgroundColor: BG }}>
-      <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 + (locked ? 84 : 0) }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <Text style={{ color: TEXT, fontSize: 20, fontWeight: '800' }}>📊 Analytics</Text>
+      <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ paddingHorizontal: 28, paddingTop: 24, paddingBottom: insets.bottom + 48 + (locked ? 84 : 0) }}>
+        {/* Header — editorial kicker + close */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+          <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2 }}>
+            Earnings Report — {ANALYTICS_PERIODS.find(p => p.key === aPeriod)?.label ?? ''}
+          </Text>
           <Pressable onPress={onClose} style={{ padding: 6 }} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close-circle" size={28} color={MUTED} />
           </Pressable>
         </View>
 
-        {/* Period filter */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 22 }}>
+        {/* Period filter — quiet text tabs with a neon underline on the active one */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 18, rowGap: 10, marginBottom: 26 }}>
           {ANALYTICS_PERIODS.map(p => {
             const active = aPeriod === p.key;
             return (
@@ -4091,18 +4111,12 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                 key={p.key}
                 onPress={() => { hTap(); setAPeriod(p.key); }}
                 scale={0.95}
-                style={[
-                  {
-                    paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1,
-                    backgroundColor: active ? PRIMARY : SURFACE,
-                    borderColor: active ? PRIMARY : BORDER,
-                  },
-                  active ? neonGlow(PRIMARY, 8, 0.3) : undefined,
-                ].filter(Boolean) as ViewStyle[]}
+                style={{ paddingVertical: 6, paddingHorizontal: 2, minHeight: 44, justifyContent: 'center' }}
               >
-                <Text style={{ color: active ? ON_PRIMARY : TEXT_MID, fontSize: 13, fontWeight: active ? '800' : '600' }}>
+                <Text style={{ color: active ? TEXT : MUTED, fontSize: 13, fontWeight: active ? '800' : '600' }}>
                   {p.label}
                 </Text>
+                <View style={{ height: 3, borderRadius: 2, marginTop: 4, backgroundColor: active ? PRIMARY : 'transparent' }} />
               </PressScale>
             );
           })}
@@ -4160,199 +4174,205 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
           </View>
         ) : (
           <>
-            {/* KPI grid */}
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-              {kpis.map(k => (
-                <View
-                  key={k.label}
-                  style={{
-                    width: '47%', flexGrow: 1,
-                    backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER,
-                    paddingVertical: 14, paddingHorizontal: 14,
-                  }}
-                >
-                  <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
-                    {k.label}
+            {/* Editorial headline — the whole story in one serif sentence */}
+            <View style={{ marginBottom: 6 }}>
+              <Text style={{ fontFamily: EDITORIAL_SERIF, color: TEXT, fontSize: 34, lineHeight: 42, letterSpacing: -0.5 }}>
+                {isProfit ? 'You earned' : "You're down"}{'\n'}
+                <Text style={[{ fontFamily: EDITORIAL_SERIF, fontWeight: '700' }, highlightAmount, blur(isDark ? PRIMARY : '#000000')]}>
+                  {hidden ? MASK : money(Math.abs(profit))}
+                </Text>
+                {'\n'}{periodNoun}.
+              </Text>
+              <Text style={{ color: MUTED, fontSize: 14, lineHeight: 22, marginTop: 14 }}>
+                {totalOrders} {totalOrders === 1 ? 'delivery' : 'deliveries'} across {(rollup?.miles ?? 0).toFixed(1)} miles
+                {totalHours > 0 ? ` and ${totalHours.toFixed(1)} hours` : ''}.{' '}
+                {!hidden && (
+                  <>
+                    <Text style={blur(GREEN)}>{`$${(rollup?.revenue ?? 0).toFixed(0)} in`}</Text>
+                    <Text>, </Text>
+                    <Text style={blur(RED)}>{`$${Math.abs(rollup?.expenses ?? 0).toFixed(0)} out`}</Text>
+                    <Text>.</Text>
+                  </>
+                )}
+              </Text>
+            </View>
+
+            {hr()}
+
+            {/* Efficiency — big serif numbers with quiet captions */}
+            {kicker('Efficiency')}
+            <View style={{ gap: 22, marginBottom: 2 }}>
+              {bigStats.map(s => (
+                <View key={s.caption}>
+                  <Text style={[
+                    { fontFamily: EDITORIAL_SERIF, color: s.color ?? TEXT, fontSize: 30, lineHeight: 36, letterSpacing: -0.5 },
+                    s.hide ? blur(s.color ?? TEXT) : undefined,
+                  ]}>
+                    {hidden && s.hide ? MASK : s.value}
                   </Text>
-                  <Text style={[{ color: k.color ?? TEXT, fontSize: 20, fontWeight: '900', marginTop: 6 }, k.hide ? blur(k.color ?? TEXT) : undefined]}>
-                    {hidden && k.hide ? MASK : k.value}
-                  </Text>
+                  <Text style={{ color: MUTED, fontSize: 13, marginTop: 3 }}>{s.caption}</Text>
                 </View>
               ))}
             </View>
 
-            {/* Business (tax-deductible) expense summary — only shown when there
-                is at least one flagged business expense in the period. */}
-            {businessExpenses.count > 0 && (
-              <View style={{
-                backgroundColor: '#3b82f612', borderRadius: 16,
-                borderWidth: 1, borderColor: '#3b82f655',
-                padding: 16, marginBottom: 20,
-              }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <Text style={{ fontSize: 18 }}>💼</Text>
-                  <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>
-                    Business Expenses (Tax-Deductible)
-                  </Text>
-                </View>
-                <Text style={[{ color: TEXT, fontSize: 24, fontWeight: '900' }, blur(TEXT)]}>
-                  {hidden ? MASK : money(businessExpenses.total)}
-                </Text>
-                <Text style={{ color: LABEL, fontSize: 12, marginTop: 4 }}>
-                  {businessExpenses.count} {businessExpenses.count === 1 ? 'expense' : 'expenses'} · {businessExpenses.share.toFixed(0)}% of total spend
-                </Text>
-              </View>
-            )}
+            {hr()}
 
-            {/* Highlight strip — best day / peak hour / best weekday */}
-            {!isSingleDay && (bestDay || hasHourly) && (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-                {bestDay && bestDay.net > 0 && (
-                  <View style={[{
-                    flexGrow: 1, minWidth: '47%', backgroundColor: SURFACE, borderRadius: 16,
-                    borderWidth: 1, borderColor: GREEN, padding: 14,
-                  }, neonGlow(GREEN, 7, 0.18)]}>
-                    <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>🔥 Best Day</Text>
-                    <Text style={[{ color: GREEN, fontSize: 20, fontWeight: '900', marginTop: 6 }, blur(GREEN)]}>{hidden ? MASK : money(bestDay.net)}</Text>
-                    <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', marginTop: 2 }}>{fmtDayLabel(bestDay.date)}</Text>
-                  </View>
-                )}
-                {hasHourly && (
-                  <View style={[{
-                    flexGrow: 1, minWidth: '47%', backgroundColor: SURFACE, borderRadius: 16,
-                    borderWidth: 1, borderColor: PRIMARY, padding: 14,
-                  }, neonGlow(PRIMARY, 7, 0.18)]}>
-                    <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>⚡ Peak Hour</Text>
-                    <Text style={{ color: PRIMARY_TXT, fontSize: 20, fontWeight: '900', marginTop: 6 }}>{hourTick(peakHour)}–{hourTick((peakHour + 1) % 24)}</Text>
-                    <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', marginTop: 2 }}>Most earnings</Text>
-                  </View>
-                )}
-              </View>
-            )}
-
-            {/* Profit trend */}
-            <View style={card}>
-              {sectionTitle(chartTitle)}
-              <ProfitChart
-                entries={entries}
-                period={chartPeriod}
-                customRange={chartPeriod === 'custom' ? trendCustomRange : null}
-                dayOffset={0}
-                positiveColor={GREEN}
-                negativeColor={RED}
-              />
-            </View>
-
-            {/* Earnings by hour of day */}
-            <View style={card}>
-              {sectionTitle('⏰ Earnings by Hour')}
-              {!hasHourly ? (
-                <Text style={{ color: MUTED, fontSize: 13, paddingVertical: 8 }}>No earnings logged in this period.</Text>
-              ) : (
-                <>
-                  <Text style={{ color: TEXT_MID, fontSize: 12, fontWeight: '600', marginBottom: 12 }}>
-                    Best hour: <Text style={{ color: PRIMARY_TXT, fontWeight: '900' }}>{hourTick(peakHour)}–{hourTick((peakHour + 1) % 24)}</Text>
-                    {!hidden && <Text style={{ color: MUTED }}>  ·  <Text style={blur(MUTED)}>{money(hourly[peakHour])}</Text></Text>}
-                  </Text>
-                  <VBarChart
-                    buckets={hourly}
-                    positiveColor={PRIMARY}
-                    negativeColor={RED}
-                    height={120}
-                    labels={hourly.map((_, h) => (h % 6 === 0 ? hourTick(h) : null))}
-                  />
-                </>
-              )}
-            </View>
-
-            {/* Earnings by weekday (multi-day only) */}
-            {!isSingleDay && (
-              <View style={card}>
-                {sectionTitle('📆 Profit by Weekday')}
-                {weekday.every(v => v === 0) ? (
-                  <Text style={{ color: MUTED, fontSize: 13, paddingVertical: 8 }}>Not enough data yet.</Text>
-                ) : (
-                  <>
-                    <Text style={{ color: TEXT_MID, fontSize: 12, fontWeight: '600', marginBottom: 12 }}>
-                      Strongest day: <Text style={{ color: GREEN, fontWeight: '900' }}>{WEEKDAY_LABELS[bestWeekday]}</Text>
-                    </Text>
-                    <VBarChart
-                      buckets={weekday}
-                      positiveColor={GREEN}
-                      negativeColor={RED}
-                      height={120}
-                      labels={WEEKDAY_LABELS}
-                    />
-                  </>
-                )}
-              </View>
-            )}
-
-            {/* Expense trend (multi-day only) */}
-            {!isSingleDay && (
-              <View style={card}>
-                {sectionTitle('📉 Daily Expense Trend')}
-                {!hasExpenseTrend ? (
-                  <Text style={{ color: MUTED, fontSize: 13, paddingVertical: 8 }}>No expenses logged in this period.</Text>
-                ) : (
-                  <VBarChart
-                    buckets={expenseTrend.map(v => -v)}
-                    positiveColor={RED}
-                    negativeColor={RED}
-                    height={100}
-                  />
-                )}
-              </View>
-            )}
-
-            {/* Top earning days (multi-day only) */}
-            {!isSingleDay && dayAgg.length > 0 && (
-              <View style={card}>
-                {sectionTitle('🏅 Top Earning Days')}
-                {topDays.map((d, i) => {
-                  const pos = d.net >= 0;
+            {/* By Platform — thin editorial bars in each platform's color */}
+            {kicker('By Platform')}
+            {platformData.rows.length === 0 ? (
+              <Text style={{ color: MUTED, fontSize: 13 }}>No entries in this period.</Text>
+            ) : (
+              <View style={{ gap: 18 }}>
+                {platformData.rows.map(r => {
+                  const pos = r.amt >= 0;
+                  const width = Math.max(2, (Math.abs(r.amt) / platformData.maxAbs) * 100);
                   return (
-                    <View key={d.date.getTime()} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: i === topDays.length - 1 ? 0 : 12 }}>
-                      <View style={[{
-                        width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: i === 0 ? PRIMARY : SURFACE, borderWidth: 1, borderColor: i === 0 ? PRIMARY : BORDER, marginRight: 12,
-                      }, i === 0 ? neonGlow(PRIMARY, 6, 0.3) : undefined].filter(Boolean) as ViewStyle[]}>
-                        <Text style={{ color: i === 0 ? ON_PRIMARY : TEXT_MID, fontSize: 12, fontWeight: '900' }}>{i + 1}</Text>
+                    <View key={r.label}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+                        <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }}>{r.label}</Text>
+                        <Text style={[{ color: pos ? TEXT : RED, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] }, blur(pos ? TEXT : RED)]}>
+                          {hidden ? MASK : `${pos ? '' : '-'}$${Math.abs(r.amt).toFixed(2)}`}
+                        </Text>
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700' }}>{fmtDayLabel(d.date)}</Text>
-                        <Text style={{ color: MUTED, fontSize: 11, fontWeight: '600' }}>{d.orders} orders · {d.miles.toFixed(1)} mi</Text>
+                      <View style={{ height: 6, borderRadius: 3, backgroundColor: DIVIDER, overflow: 'hidden' }}>
+                        <View style={{ height: '100%', width: `${width}%`, borderRadius: 3, backgroundColor: pos ? (r.color ?? GREEN) : RED }} />
                       </View>
-                      <Text style={[{ color: pos ? GREEN : RED, fontSize: 15, fontWeight: '900' }, blur(pos ? GREEN : RED)]}>{hidden ? MASK : money(d.net)}</Text>
                     </View>
                   );
                 })}
               </View>
             )}
 
+            {/* Narrative highlights — best day / peak hour as a sentence */}
+            {!isSingleDay && ((bestDay && bestDay.net > 0) || hasHourly) && (
+              <Text style={{ color: MUTED, fontSize: 14, lineHeight: 22, marginTop: 22 }}>
+                {bestDay && bestDay.net > 0 && (
+                  <>
+                    Your best day was <Text style={{ color: TEXT, fontWeight: '700' }}>{fmtDayLabel(bestDay.date)}</Text>
+                    {!hidden && <Text> at <Text style={[{ color: GREEN, fontWeight: '700' }, blur(GREEN)]}>{money(bestDay.net)}</Text></Text>}
+                    <Text>. </Text>
+                  </>
+                )}
+                {hasHourly && (
+                  <>
+                    Most earnings landed between <Text style={{ color: TEXT, fontWeight: '700' }}>{hourTick(peakHour)}–{hourTick((peakHour + 1) % 24)}</Text>.
+                  </>
+                )}
+              </Text>
+            )}
+
+            {hr()}
+
+            {/* Profit trend */}
+            {kicker(chartTitle.replace('📈 ', ''))}
+            <ProfitChart
+              entries={entries}
+              period={chartPeriod}
+              customRange={chartPeriod === 'custom' ? trendCustomRange : null}
+              dayOffset={0}
+              positiveColor={GREEN}
+              negativeColor={RED}
+            />
+
+            {hr()}
+
+            {/* Earnings by hour of day */}
+            {kicker('Earnings by Hour')}
+            {!hasHourly ? (
+              <Text style={{ color: MUTED, fontSize: 13 }}>No earnings logged in this period.</Text>
+            ) : (
+              <>
+                <Text style={{ color: MUTED, fontSize: 13, marginBottom: 14 }}>
+                  Best hour: <Text style={{ color: TEXT, fontWeight: '700' }}>{hourTick(peakHour)}–{hourTick((peakHour + 1) % 24)}</Text>
+                  {!hidden && <Text>  ·  <Text style={blur(MUTED)}>{money(hourly[peakHour])}</Text></Text>}
+                </Text>
+                <VBarChart
+                  buckets={hourly}
+                  positiveColor={PRIMARY}
+                  negativeColor={RED}
+                  height={110}
+                  labels={hourly.map((_, h) => (h % 6 === 0 ? hourTick(h) : null))}
+                />
+              </>
+            )}
+
+            {/* Earnings by weekday (multi-day only) */}
+            {!isSingleDay && (
+              <>
+                {hr()}
+                {kicker('Profit by Weekday')}
+                {weekday.every(v => v === 0) ? (
+                  <Text style={{ color: MUTED, fontSize: 13 }}>Not enough data yet.</Text>
+                ) : (
+                  <>
+                    <Text style={{ color: MUTED, fontSize: 13, marginBottom: 14 }}>
+                      Strongest day: <Text style={{ color: GREEN, fontWeight: '700' }}>{WEEKDAY_LABELS[bestWeekday]}</Text>
+                    </Text>
+                    <VBarChart
+                      buckets={weekday}
+                      positiveColor={GREEN}
+                      negativeColor={RED}
+                      height={110}
+                      labels={WEEKDAY_LABELS}
+                    />
+                  </>
+                )}
+              </>
+            )}
+
+            {/* Top earning days (multi-day only) */}
+            {!isSingleDay && dayAgg.length > 0 && (
+              <>
+                {hr()}
+                {kicker('Top Earning Days')}
+                {topDays.map((d, i) => {
+                  const pos = d.net >= 0;
+                  return (
+                    <View key={d.date.getTime()} style={{
+                      flexDirection: 'row', alignItems: 'center', paddingVertical: 12,
+                      borderTopWidth: i === 0 ? 0 : 1, borderTopColor: DIVIDER,
+                    }}>
+                      <Text style={{
+                        fontFamily: EDITORIAL_SERIF, color: i === 0 ? (isDark ? PRIMARY : TEXT) : LABEL,
+                        fontSize: 20, width: 32,
+                      }}>
+                        {i + 1}
+                      </Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }}>{fmtDayLabel(d.date)}</Text>
+                        <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>{d.orders} orders · {d.miles.toFixed(1)} mi</Text>
+                      </View>
+                      <Text style={[{ color: pos ? GREEN : RED, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }, blur(pos ? GREEN : RED)]}>{hidden ? MASK : money(d.net)}</Text>
+                    </View>
+                  );
+                })}
+              </>
+            )}
+
             {/* Daily breakdown (multi-day only) */}
             {!isSingleDay && dayAgg.length > 0 && (
-              <View style={card}>
-                {sectionTitle('🗓️ Daily Breakdown')}
-                {(showAllDays ? dayAgg : dayAgg.slice(0, 7)).map((d, i, shown) => {
+              <>
+                {hr()}
+                {kicker('Daily Breakdown')}
+                {(showAllDays ? dayAgg : dayAgg.slice(0, 7)).map((d, i) => {
                   const pos = d.net >= 0;
                   return (
                     <View
                       key={d.date.getTime()}
                       style={{
-                        flexDirection: 'row', alignItems: 'center', paddingVertical: 10,
+                        flexDirection: 'row', alignItems: 'center', paddingVertical: 11,
                         borderTopWidth: i === 0 ? 0 : 1, borderTopColor: DIVIDER,
                       }}
                     >
                       <View style={{ flex: 1 }}>
-                        <Text style={{ color: TEXT, fontSize: 13, fontWeight: '700' }}>{fmtDayLabel(d.date)}</Text>
-                        <Text style={{ color: MUTED, fontSize: 11, fontWeight: '600', marginTop: 2 }}>
+                        <Text style={{ color: TEXT, fontSize: 13, fontWeight: '600' }}>{fmtDayLabel(d.date)}</Text>
+                        <Text style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>
                           <Text style={blur(MUTED)}>{hidden ? MASK : `$${d.revenue.toFixed(0)} in`}</Text>
                           {d.expenses > 0 && <Text style={[{ color: RED }, blur(RED)]}>{hidden ? '' : `  ·  $${d.expenses.toFixed(0)} out`}</Text>}
                           <Text>{`  ·  ${d.orders} ord`}</Text>
                         </Text>
                       </View>
-                      <Text style={[{ color: pos ? GREEN : RED, fontSize: 14, fontWeight: '900' }, blur(pos ? GREEN : RED)]}>{hidden ? MASK : money(d.net)}</Text>
+                      <Text style={[{ color: pos ? GREEN : RED, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] }, blur(pos ? GREEN : RED)]}>{hidden ? MASK : money(d.net)}</Text>
                     </View>
                   );
                 })}
@@ -4360,69 +4380,61 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                   <PressScale
                     onPress={() => { hTap(); setShowAllDays(v => !v); }}
                     scale={0.97}
-                    style={{ marginTop: 12, alignItems: 'center', paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: BORDER }}
+                    style={{ marginTop: 10, alignItems: 'center', paddingVertical: 12, minHeight: 44, justifyContent: 'center' }}
                   >
-                    <Text style={{ color: PRIMARY_TXT, fontSize: 13, fontWeight: '800' }}>
+                    <Text style={{ color: PRIMARY_TXT, fontSize: 13, fontWeight: '800', textDecorationLine: 'underline' }}>
                       {showAllDays ? 'Show less' : `Show all ${dayAgg.length} days`}
                     </Text>
                   </PressScale>
                 )}
-              </View>
+              </>
             )}
 
-            {/* Spend per category */}
-            <View style={card}>
-              {sectionTitle('💸 Spend by Category')}
+            {hr()}
+
+            {/* Expenses — soft surface panel, editorial list */}
+            <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 20, marginBottom: 4 }}>
+              <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 14 }}>
+                Expenses{!hidden && categoryData.rows.length > 0 && (
+                  <Text> (<Text style={blur(RED)}>{`$${categoryData.total.toFixed(2)}`}</Text>)</Text>
+                )}
+              </Text>
               {categoryData.rows.length === 0 ? (
-                <Text style={{ color: MUTED, fontSize: 13, paddingVertical: 8 }}>No expenses logged in this period.</Text>
+                <Text style={{ color: MUTED, fontSize: 13 }}>No expenses logged in this period.</Text>
               ) : (
                 <>
-                  <Text style={{ color: RED, fontSize: 22, fontWeight: '900', marginBottom: 14 }}>
-                    <Text style={blur(RED)}>{hidden ? MASK : `$${categoryData.total.toFixed(2)}`}</Text> <Text style={{ color: MUTED, fontSize: 12, fontWeight: '700' }}>total spend</Text>
-                  </Text>
-                  {categoryData.rows.map(r => (
-                    <View key={r.cat} style={{ marginBottom: 12 }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                        <Text style={{ color: TEXT_MID, fontSize: 13, fontWeight: '600' }}>
-                          {EXPENSE_EMOJIS[r.cat]} {r.cat.charAt(0) + r.cat.slice(1).toLowerCase()}
-                        </Text>
-                        <Text style={{ color: TEXT, fontSize: 13, fontWeight: '800' }}>
-                          <Text style={blur(TEXT)}>{hidden ? MASK : `$${r.amt.toFixed(2)}`}</Text> <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700' }}>· {r.pct.toFixed(0)}%</Text>
-                        </Text>
-                      </View>
-                      <View style={{ height: 8, borderRadius: 4, backgroundColor: DIVIDER, overflow: 'hidden' }}>
-                        <View style={[{ height: '100%', width: `${Math.max(2, r.pct)}%`, borderRadius: 4, backgroundColor: PRIMARY }, neonGlow(PRIMARY, 5, 0.25)]} />
-                      </View>
+                  {categoryData.rows.map((r, i) => (
+                    <View key={r.cat} style={{
+                      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                      paddingVertical: 9, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: DIVIDER,
+                    }}>
+                      <Text style={{ color: TEXT_MID, fontSize: 14 }}>
+                        {EXPENSE_EMOJIS[r.cat]} {r.cat.charAt(0) + r.cat.slice(1).toLowerCase()}
+                      </Text>
+                      <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+                        <Text style={blur(TEXT)}>{hidden ? MASK : `$${r.amt.toFixed(2)}`}</Text> <Text style={{ color: MUTED, fontSize: 11, fontWeight: '600' }}>· {r.pct.toFixed(0)}%</Text>
+                      </Text>
                     </View>
                   ))}
-                </>
-              )}
-            </View>
-
-            {/* Top platforms */}
-            <View style={card}>
-              {sectionTitle('🏆 Top Platforms by Earnings')}
-              {platformData.rows.length === 0 ? (
-                <Text style={{ color: MUTED, fontSize: 13, paddingVertical: 8 }}>No entries in this period.</Text>
-              ) : (
-                platformData.rows.map(r => {
-                  const pos = r.amt >= 0;
-                  const barColor = r.color ?? GREEN;
-                  const width = Math.max(2, (Math.abs(r.amt) / platformData.maxAbs) * 100);
-                  return (
-                    <View key={r.label} style={{ marginBottom: 12 }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                        <Text style={{ color: TEXT_MID, fontSize: 13, fontWeight: '600' }}>{r.label}</Text>
-                        <Text style={[{ color: pos ? GREEN : RED, fontSize: 13, fontWeight: '800' }, blur(pos ? GREEN : RED)]}>
-                          {hidden ? MASK : `${pos ? '' : '-'}$${Math.abs(r.amt).toFixed(2)}`}
-                        </Text>
-                      </View>
-                      <View style={{ height: 8, borderRadius: 4, backgroundColor: DIVIDER, overflow: 'hidden' }}>
-                        <View style={[{ height: '100%', width: `${width}%`, borderRadius: 4, backgroundColor: pos ? barColor : RED }, neonGlow(pos ? barColor : RED, 5, 0.25)]} />
-                      </View>
+                  {businessExpenses.count > 0 && (
+                    <Text style={{ color: MUTED, fontSize: 12, lineHeight: 18, marginTop: 12 }}>
+                      💼 <Text style={[{ color: TEXT, fontWeight: '700' }, blur(TEXT)]}>{hidden ? MASK : money(businessExpenses.total)}</Text> of this is tax-deductible — {businessExpenses.count} {businessExpenses.count === 1 ? 'expense' : 'expenses'}, {businessExpenses.share.toFixed(0)}% of total spend.
+                    </Text>
+                  )}
+                  {!isSingleDay && hasExpenseTrend && (
+                    <View style={{ marginTop: 16 }}>
+                      <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>
+                        Daily Expense Trend
+                      </Text>
+                      <VBarChart
+                        buckets={expenseTrend.map(v => -v)}
+                        positiveColor={RED}
+                        negativeColor={RED}
+                        height={80}
+                      />
                     </View>
-                  );
-                })
+                  )}
+                </>
               )}
             </View>
           </>
