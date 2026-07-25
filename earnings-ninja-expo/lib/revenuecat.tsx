@@ -34,7 +34,7 @@ import Purchases, {
 } from 'react-native-purchases';
 import { useTheme } from './theme';
 import { useAuth } from './authContext';
-import { API_BASE } from './api';
+import { API_BASE, PRIVACY_URL } from './api';
 
 // The RevenueCat entitlement that unlocks premium features (CSV export +
 // advanced analytics). Display name in the RevenueCat dashboard is
@@ -992,7 +992,7 @@ function FallbackPaywall({
             style={{ flexDirection: 'row', justifyContent: 'center', gap: 18, marginTop: 12 }}
           >
             <Pressable
-              onPress={() => Linking.openURL(`${API_BASE}/privacy`)}
+              onPress={() => Linking.openURL(PRIVACY_URL)}
               hitSlop={12}
             >
               <Text
@@ -1099,7 +1099,7 @@ function FallbackPaywall({
           {/* Always-visible legal links (App Review Guideline 4: must not be
               hidden behind the sticky footer after scrolling). */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 18 }}>
-            <Pressable onPress={() => Linking.openURL(`${API_BASE}/privacy`)} hitSlop={12}>
+            <Pressable onPress={() => Linking.openURL(PRIVACY_URL)} hitSlop={12}>
               <Text style={{ color: t.MUTED, fontSize: 11.5, fontWeight: '700', textDecorationLine: 'underline' }}>
                 Privacy Policy
               </Text>
