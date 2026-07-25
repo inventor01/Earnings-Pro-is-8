@@ -6,6 +6,7 @@ description: How the public web domain is served vs. the Railway backend vs. the
 # earningsninja domain routing
 
 - Branding moved to **earningsninja.com** (Jul 24): landing og tags + all support@ emails now use .com; user must point earningsninja.com DNS at the chosen host and set up the .com mailbox.
+- **earningsninja.com is served by the REPLIT vm deployment** (DNS → 34.111.179.208, Replit GCP), NOT Railway. Shipping any change to `/terms`, `/privacy`, `/api/*`-on-.com, or landing footer requires clicking **Publish/Redeploy in Replit** — a GitHub push + Railway deploy does NOT update earningsninja.com. Railway serves only its own `*.up.railway.app` URL (which the mobile API_BASE uses) and `earningsninja.app` (301 → Railway).
 
 - `earningsninja.app` is **not** served by the Replit deployment. It 301-redirects to
   the Railway app (`earnings-pro-is-8-production.up.railway.app`). Clicking "Publish"
