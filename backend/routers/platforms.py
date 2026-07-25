@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from backend.db import get_db
-from backend.models import AuthUser, UserPlatform
+from backend.models import AuthUser, UserPlatform, Entry
 from backend.schemas import PlatformCreate, PlatformResponse
 from backend.auth import get_current_user
 from typing import List
@@ -89,5 +89,63 @@ async def create_platform(
         if row is None:
             raise HTTPException(status_code=409, detail="You already added that platform.")
         return row
+    db.refresh(row)
+    return row
+
+@router.put("/platforms/{platform_id}", response_model=PlatformResponse)
+async def rename_platform(
+    platform_id: int,
+    payload: PlatformCreate,
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
+    """Rename a user-created platform. Existing entries logged against the old
+    name (app=OTHER + custom_app) are carried over to the new name so history
+    stays attached to the platform."""
+    row = (
+        db.query(UserPlatform)
+        .filter(UserPlatform.id == platform_id, UserPlatform.user_id == current_user.id)
+        .first()
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="Platform not found.")
+
+    name = (payload.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="Platform name is required.")
+
+    old_name = row.name
+    if name == old_name:
+        return row
+
+    if name.lower() in BUILTIN_PLATFORM_NAMES:
+        raise HTTPException(status_code=409, detail="That platform already exists.")
+
+    if name.lower() != old_name.lower():
+        clash = (
+            db.query(UserPlatform)
+            .filter(
+                UserPlatform.user_id == current_user.id,
+                func.lower(UserPlatform.name) == name.lower(),
+                UserPlatform.id != row.id,
+            )
+            .first()
+        )
+        if clash:
+            raise HTTPException(status_code=409, detail="You already added that platform.")
+
+    row.name = name
+    # Carry the user's existing entries over to the new name so their history
+    # follows the rename (entries store the platform as a plain string).
+    db.query(Entry).filter(
+        Entry.user_id == current_user.id,
+        Entry.custom_app == old_name,
+    ).update({Entry.custom_app: name}, synchronize_session=False)
+    try:
+        db.commit()
+    except IntegrityError:
+        # Lost a race with a concurrent create/rename to the same name.
+        db.rollback()
+        raise HTTPException(status_code=409, detail="You already added that platform.")
     db.refresh(row)
     return row
