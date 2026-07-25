@@ -1,15 +1,10 @@
 """Referral program endpoints.
 
-"Refer a driver → you both get 1 month of Pro free." The referrer's reward is
-CAPPED (default 3 free months total) to bound abuse; the referee always gets
-exactly one free month, and only once (a user can be referred a single time).
-
-Rewards are granted as RevenueCat promotional entitlements keyed by the
-backend user id (the client calls Purchases.logIn(user.id), so the RevenueCat
-app_user_id == AuthUser.id). Grants are best-effort: if RevenueCat is
-unreachable the Referral row is still recorded with the matching
-*_reward_granted flag left False, so nothing double-counts and a retry can
-re-grant later.
+Invite-a-driver sharing: each user gets a unique referral code and share link,
+and referrals are recorded for attribution. The "1 free month" promotional
+reward was RETIRED (Jul 2026): no RevenueCat grants are made anymore. The
+`rewards_*` fields in the API response are kept (frozen at their historical
+values) so older app builds that still render them keep working.
 """
 
 import logging
@@ -24,13 +19,13 @@ from sqlalchemy.orm import Session
 from backend.auth import get_current_user
 from backend.db import get_db
 from backend.models import AuthUser, Referral
-from backend.services.revenuecat_service import grant_promotional_month
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Max free months a single referrer can earn from referrals.
+# Historical cap from the retired free-month promotion. Still reported in the
+# API response so old clients render sensible numbers.
 REFERRER_REWARD_CAP = 3
 
 # Code alphabet excludes easily-confused characters (0/O, 1/I/L) so codes are
@@ -95,13 +90,13 @@ def _ensure_code(db: Session, user: AuthUser) -> str:
 
 
 async def apply_referral(db: Session, referee: AuthUser, raw_code: str) -> bool:
-    """Credit *raw_code*'s owner with a referral of *referee*.
+    """Record a referral of *referee* attributed to *raw_code*'s owner.
 
-    Returns True if a new referral was recorded (whether or not the RevenueCat
-    grant itself succeeded). Returns False when the code is invalid, is the
-    referee's own code, or the referee has already been referred. Never raises
-    for these "soft" cases so it can be called inline from signup without
-    aborting account creation.
+    Attribution only — the free-month reward promotion is retired, so no
+    entitlement grants are made. Returns True if a new referral was recorded;
+    False when the code is invalid, is the referee's own code, or the referee
+    has already been referred. Never raises for these "soft" cases so it can
+    be called inline from signup without aborting account creation.
     """
     code = (raw_code or "").strip().upper()
     if not code:
@@ -131,52 +126,8 @@ async def apply_referral(db: Session, referee: AuthUser, raw_code: str) -> bool:
         return False
     db.refresh(referral)
 
-    # Referee always gets their one free month.
-    try:
-        if await grant_promotional_month(referee.id):
-            referral.referee_reward_granted = True
-            db.commit()
-    except Exception as exc:
-        logger.warning("Referee grant failed for %s: %s", referee.id, exc)
-        db.rollback()
-
-    # Referrer gets a free month only if they're still under the cap. Enforce
-    # the cap atomically: lock the referrer row so concurrent referrals for the
-    # same referrer serialize, then count rewards already granted (not just
-    # referrals recorded, so a failed/pending grant doesn't permanently consume
-    # a slot) and optimistically "reserve" a slot by flagging THIS referral
-    # before releasing the lock. The slow RevenueCat HTTP call happens after the
-    # lock is released; if it fails we hand the slot back.
-    reserved = False
-    try:
-        db.query(AuthUser).filter(AuthUser.id == referrer.id).with_for_update().first()
-        granted_count = (
-            db.query(Referral)
-            .filter(
-                Referral.referrer_id == referrer.id,
-                Referral.referrer_reward_granted == True,  # noqa: E712
-            )
-            .count()
-        )
-        if granted_count < REFERRER_REWARD_CAP:
-            referral.referrer_reward_granted = True
-            reserved = True
-        db.commit()  # releases the row lock
-    except Exception as exc:
-        logger.warning("Referrer cap check failed for %s: %s", referrer.id, exc)
-        db.rollback()
-
-    if reserved:
-        granted = False
-        try:
-            granted = await grant_promotional_month(referrer.id)
-        except Exception as exc:
-            logger.warning("Referrer grant failed for %s: %s", referrer.id, exc)
-        if not granted:
-            # Grant didn't land — release the reserved slot so it isn't wasted.
-            referral.referrer_reward_granted = False
-            db.commit()
-
+    # Free-month promotion retired: the referral is recorded for attribution
+    # only. No RevenueCat promotional grants are made for either party.
     return True
 
 
@@ -225,6 +176,6 @@ async def redeem_referral(
     referral = db.query(Referral).filter(Referral.referee_id == current_user.id).first()
     return RedeemResponse(
         success=True,
-        message="You've earned a free month of Earnings Ninja Pro!",
+        message="Referral code applied!",
         referee_reward_granted=bool(referral and referral.referee_reward_granted),
     )

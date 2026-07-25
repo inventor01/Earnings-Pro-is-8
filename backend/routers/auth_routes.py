@@ -72,8 +72,8 @@ class SignupRequest(BaseModel):
     # Signed token issued by /api/waitlist/verify-access. Required when the
     # server has PRELAUNCH_ACCESS_CODE configured; ignored otherwise.
     prelaunch_token: Optional[str] = None
-    # Optional referral code the new driver was invited with. Both the new
-    # driver and the referrer earn a free month of Pro (referrer reward capped).
+    # Optional referral code the new driver was invited with (attribution only;
+    # the free-month reward promotion was retired).
     referral_code: Optional[str] = None
 
 class AuthResponse(BaseModel):

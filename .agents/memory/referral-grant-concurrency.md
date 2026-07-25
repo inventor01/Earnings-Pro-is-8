@@ -1,41 +1,32 @@
 ---
-name: Referral grant atomicity & fail-soft
-description: How the referral program enforces its once/cap guarantees and why grants must never break signup.
+name: Referral program — attribution-only (reward retired)
+description: Referrals are recorded for attribution only; the free-month RevenueCat grant promotion was retired. Historical concurrency rules kept for reference.
 ---
 
-# Referral program — concurrency & fail-soft rules
+# Referral program — current policy (Jul 2026)
 
-The referral feature ("refer a driver, both get 1 free month of Pro", referrer
-reward capped at 3) grants months via RevenueCat **v1 REST** promotional
-entitlements. Two non-obvious constraints drove the design:
+The "both get 1 free month" reward promotion was **RETIRED** (Jul 2026).
+Referral codes, invite sharing, and deep links remain; `apply_referral` only
+records the `Referral` row for attribution. **No RevenueCat promotional grants
+are made** — do not reintroduce grant calls without an explicit product
+decision.
 
-## Grants are best-effort; they must NEVER break signup
-**Why:** `apply_referral` runs inline from `_signup`. A RevenueCat outage or a
-missing `REVENUECAT_SECRET_API_KEY` must not abort account creation.
-**How to apply:** the Referral row is committed first; grant calls are wrapped in
-try/except and a failed/absent grant leaves `*_reward_granted=False` (a *pending*
-slot) so it can be retried later and nothing double-counts. The secret is read at
-call time — absent key → log + skip, return False.
+**Compatibility:** the `/api/referrals/me` response keeps its `rewards_*`
+fields (frozen at historical values) and `RedeemResponse` keeps
+`referee_reward_granted`, because shipped app builds still render them.
 
-## The once/cap guarantees must be atomic, not check-then-act
-**Why:** a code-level "count then grant" races under concurrency: parallel
-referees of the same referrer can each read the same count and all grant,
-exceeding the cap; concurrent double-redeem of the same referee can 500 on the
-unique constraint.
-**How to apply:**
-- **Referee-once:** rely on the DB unique constraint on `Referral.referee_id`.
-  Catch `IntegrityError` on the insert commit → rollback → return False (treat as
-  "already referred"), never let it 500.
-- **Referrer cap:** lock the referrer's `AuthUser` row with `with_for_update()`,
-  count rewards already granted, and if under cap **reserve** the slot by setting
-  `referrer_reward_granted=True` on this referral, then commit (releasing the
-  lock). Do the slow RevenueCat HTTP call *after* releasing the lock; if it fails,
-  flip the flag back to False to hand the slot back. Never hold a row lock across
-  the external HTTP call.
+## Still-relevant invariants
+- `apply_referral` must NEVER break signup: soft-fail (return False) on invalid
+  code, self-referral, or already-referred; never raise.
+- **Referee-once** is enforced by the DB unique constraint on
+  `Referral.referee_id`: catch `IntegrityError` on insert → rollback → return
+  False, never 500.
 - **Code generation** (`_ensure_code`): retry on `IntegrityError` (unique
-  `referral_code`), re-reading to adopt a code that won for this user or rolling a
-  fresh one, instead of 500-ing on a collision.
+  `referral_code`), re-reading to adopt a winning code or rolling a fresh one.
 
-## Prod runs on Railway
-`REVENUECAT_SECRET_API_KEY` must be set on Railway too, not just Replit — Replit
-is dev only. Use a **v1** secret key (grant service hits `api.revenuecat.com/v1`).
+## Historical (retired grant era)
+When grants existed, the referrer cap used a with_for_update row lock +
+reserve-then-grant pattern (never holding the lock across the RevenueCat HTTP
+call), and failed grants left `*_reward_granted=False` as retryable pending
+slots. `REVENUECAT_SECRET_API_KEY` on Railway is no longer needed for
+referrals.

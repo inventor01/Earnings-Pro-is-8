@@ -2653,10 +2653,11 @@ function ExportCsvRow({ onNeedUpgrade }: { onNeedUpgrade: () => void }) {
   );
 }
 
-// Referral program UI for the Settings sheet. Lazily loads the user's code +
-// progress from the backend, lets them share an invite deep link, and shows how
-// many of the (capped) free months they've earned. Self-contained so it owns its
-// own fetch/share state instead of bloating SettingsModal.
+// Referral/invite UI for the Settings sheet. Lazily loads the user's code from
+// the backend and lets them share an invite deep link. (The "1 free month"
+// reward promotion was retired — sharing is attribution-only now.)
+// Self-contained so it owns its own fetch/share state instead of bloating
+// SettingsModal.
 function InviteDriverRow() {
   const { SURFACE, BORDER, PRI_LITE, PRIMARY, PRIMARY_TXT, TEXT, MUTED, GREEN } = useTheme();
   const [info, setInfo] = useState<ReferralInfo | null>(null);
@@ -2701,7 +2702,7 @@ function InviteDriverRow() {
     }
     const message = current
       ? `Track your delivery earnings with Earnings Ninja 🥷\n` +
-        `Use my code ${current.code} when you sign up and we BOTH get 1 free month of Pro!\n` +
+        `Use my code ${current.code} when you sign up!\n` +
         `${API_BASE}/invite/${current.code}`
       : `Track your delivery earnings with Earnings Ninja 🥷\n` +
         `Sign up and start tracking your profit across every gig app!\n` +
@@ -2739,7 +2740,7 @@ function InviteDriverRow() {
         <View style={{ flex: 1 }}>
           <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Invite a Driver</Text>
           <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>
-            You both get 1 free month of Pro
+            Share Earnings Ninja with your crew
           </Text>
         </View>
         {loading ? <ActivityIndicator color={PRIMARY_TXT} /> : <Ionicons name="share-outline" size={20} color={PRIMARY_TXT} />}
@@ -2761,10 +2762,11 @@ function InviteDriverRow() {
               {info.code}
             </Text>
           </View>
-          <Text style={{ color: info.rewards_earned > 0 ? GREEN : MUTED, fontSize: 12, fontWeight: '700', marginTop: 10, textAlign: 'center' }}>
-            🎁 {info.rewards_earned} of {info.rewards_cap} free months earned
-            {info.referred_count > 0 ? `  ·  ${info.referred_count} signed up` : ''}
-          </Text>
+          {info.referred_count > 0 && (
+            <Text style={{ color: GREEN, fontSize: 12, fontWeight: '700', marginTop: 10, textAlign: 'center' }}>
+              🎉 {info.referred_count} driver{info.referred_count === 1 ? '' : 's'} signed up with your code
+            </Text>
+          )}
         </>
       )}
     </Pressable>
