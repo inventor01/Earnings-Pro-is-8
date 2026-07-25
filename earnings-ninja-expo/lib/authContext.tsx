@@ -7,6 +7,7 @@ import { clearLocalStore } from './localStore';
 import { clearMutationQueue } from './mutationQueue';
 import { clearQueue as clearCreateQueue } from './offlineQueue';
 import { clearPersistedCache } from './queryPersist';
+import { clearPlatformsMirror, clearLabelsMirror } from './platforms';
 import { refreshPendingCount } from './pendingCount';
 
 // Wipe every device-local copy of the signed-in user's data: the entries/goals
@@ -20,6 +21,11 @@ async function clearAllLocalData(): Promise<void> {
     clearMutationQueue(),
     clearCreateQueue(),
     clearPersistedCache(),
+    // Custom-platform + built-in label-override mirrors: without this a
+    // different account signing in on the same device could inherit the
+    // previous user's platform pills / renamed tab labels while offline.
+    clearPlatformsMirror(),
+    clearLabelsMirror(),
   ]);
   await refreshPendingCount();
 }

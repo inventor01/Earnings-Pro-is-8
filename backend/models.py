@@ -122,6 +122,28 @@ class UserPlatform(Base):
         Index("uq_user_platforms_user_name", "user_id", "name", unique=True),
     )
 
+class UserLabelOverride(Base):
+    """Per-user cosmetic rename of a BUILT-IN pill label in the entry form.
+
+    kind='platform' → keys are AppType enum values (DOORDASH, UBEREATS, ...).
+    kind='type'     → keys are entry types (ORDER, BONUS, EXPENSE, CANCELLATION).
+    Only the displayed label changes; the underlying key stored on entries is
+    untouched, so analytics/CSV/history stay stable. Deleting the row resets
+    the label back to the default.
+    """
+    __tablename__ = "user_label_overrides"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    kind = Column(String, nullable=False)
+    key = Column(String, nullable=False)
+    label = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_user_label_overrides_user_kind_key", "user_id", "kind", "key", unique=True),
+    )
+
 class Settings(Base):
     __tablename__ = "settings"
     

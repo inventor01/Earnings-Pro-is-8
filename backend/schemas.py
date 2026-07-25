@@ -142,6 +142,23 @@ class PlatformResponse(BaseModel):
         from_attributes = True
 
 
+class LabelOverrideSet(BaseModel):
+    kind: str   # 'platform' | 'type'
+    key: str    # builtin key, e.g. DOORDASH / ORDER
+    label: Optional[str] = None  # None/empty → reset to default
+
+    _validate_label = field_validator("label")(_validate_custom_app)
+
+
+class LabelOverrideResponse(BaseModel):
+    kind: str
+    key: str
+    label: str
+
+    class Config:
+        from_attributes = True
+
+
 class SettingsResponse(BaseModel):
     cost_per_mile: Decimal
     
