@@ -246,13 +246,37 @@ export function StickyCta({
   to: string
   external?: boolean
 }) {
-  const [show, setShow] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [ctaInView, setCtaInView] = useState(false)
+
   useEffect(() => {
-    const onScroll = () => setShow(window.scrollY > 560)
+    const onScroll = () => setScrolled(window.scrollY > 560)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // Hide the sticky bar whenever any inline CTA button is visible on screen,
+  // so we never stack two "Try free" buttons on top of each other.
+  useEffect(() => {
+    const targets = Array.from(document.querySelectorAll('[data-cta]'))
+    if (targets.length === 0) return
+    const visible = new Set<Element>()
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) visible.add(e.target)
+          else visible.delete(e.target)
+        }
+        setCtaInView(visible.size > 0)
+      },
+      { threshold: 0.1 },
+    )
+    targets.forEach((t) => observer.observe(t))
+    return () => observer.disconnect()
+  }, [])
+
+  const show = scrolled && !ctaInView
 
   return (
     <div

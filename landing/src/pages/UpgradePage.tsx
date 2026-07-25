@@ -54,7 +54,7 @@ function Hero() {
               tax time, and AI that points you straight at the money. Try every Pro feature{' '}
               <span className="text-white font-semibold">free for 7 days</span> — you won&rsquo;t pay a cent until day 8.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div data-cta className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <UpgradeButton label="Try free for 7 days" />
               <Link to="#pricing" className="text-sm text-muted hover:text-white inline-flex items-center gap-1.5">
                 See all plans <span aria-hidden>↓</span>
@@ -215,6 +215,7 @@ function Pricing() {
               {plan.note && <div className="mt-2 text-xs font-semibold text-green">{plan.note}</div>}
               <div className="flex-1" />
               <a
+                data-cta
                 href={APP_DEEP_LINK}
                 className={`mt-6 inline-flex items-center justify-center gap-2 font-bold px-6 py-3.5 rounded-xl text-base transition-all ${
                   plan.highlight
@@ -265,7 +266,7 @@ function Comparison() {
             </div>
           ))}
         </div>
-        <div className="mt-8 text-center">
+        <div data-cta className="mt-8 text-center">
           <UpgradeButton label="Try free for 7 days" />
         </div>
       </div>
@@ -343,7 +344,7 @@ function FinalCta() {
         <p className="mt-5 text-lg text-muted max-w-xl mx-auto">
           7 days free, then $2.99/mo or $29.99/yr. The first money-losing order you skip pays for the whole year.
         </p>
-        <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+        <div data-cta className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
           <UpgradeButton label="Try free for 7 days" />
           <Link
             to="/#faq"

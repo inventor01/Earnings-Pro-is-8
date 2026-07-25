@@ -63,7 +63,7 @@ function Hero() {
               <span className="text-white font-semibold">real net profit and dollar per mile</span>{' '}
               after gas and wear and tear — live, mid-shift, across every app you run.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
+            <div data-cta className="mt-8 flex flex-wrap items-center gap-4">
               <AppStoreBadge />
               <Link
                 to="/upgrade"
@@ -375,7 +375,7 @@ function PricingTeaser() {
           <span className="text-green font-semibold">(Best Value — 2 months free)</span>. Cancel
           anytime before day 7 and pay nothing.
         </p>
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div data-cta className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/upgrade"
             className="inline-flex items-center gap-2 bg-primary text-black font-bold px-8 py-4 rounded-2xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
@@ -457,7 +457,7 @@ function FinalCta() {
         <p className="mt-5 text-lg text-muted max-w-xl mx-auto">
           Free to start. Pro is $2.99/mo and pays for itself the first time you decline a garbage order.
         </p>
-        <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+        <div data-cta className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
           <AppStoreBadge />
           <Link
             to="/upgrade"
