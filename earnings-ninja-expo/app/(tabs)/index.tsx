@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup, Goal,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
-  ReferralInfo, API_BASE, PRIVACY_URL, UserPlatform, LabelOverride,
+  ReferralInfo, API_BASE, PRIVACY_URL, TERMS_URL, UserPlatform, LabelOverride,
 } from '@/lib/api';
 import { applyOptimisticGoal, rollbackOptimisticGoal } from '@/lib/goalOptimistic';
 import { useAuth } from '@/lib/authContext';
@@ -3123,8 +3123,8 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         </Text>
 
         {/* Legal links — Apple 3.1.2 requires functional Privacy Policy +
-            Terms of Use links inside the app. Privacy is served by the
-            backend (API_BASE/privacy); Terms uses Apple's standard EULA. */}
+            Terms of Use links inside the app. Both are served by the backend
+            on the branded domain (earningsninja.com/privacy and /terms). */}
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 18, marginBottom: 24 }}>
           <Pressable onPress={() => Linking.openURL(PRIVACY_URL)} hitSlop={8}>
             <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', textDecorationLine: 'underline' }}>
@@ -3132,7 +3132,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             </Text>
           </Pressable>
           <Pressable
-            onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}
+            onPress={() => Linking.openURL(TERMS_URL)}
             hitSlop={8}
           >
             <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', textDecorationLine: 'underline' }}>
