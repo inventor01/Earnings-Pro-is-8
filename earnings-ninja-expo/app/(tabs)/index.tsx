@@ -3789,6 +3789,26 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
     if (visible) setAPeriod(initialPeriod);
   }, [visible, initialPeriod]);
 
+  // Free members: opening Analytics goes straight to the paywall instead of
+  // landing on the blurred preview. If they upgrade, the paywall dismisses and
+  // the full page is already underneath; if they decline, close Analytics too
+  // so they return to the dashboard. The blurred preview (and its inline
+  // Upgrade CTA) stays as the backdrop while the paywall is up.
+  const paywallGateBusy = useRef(false);
+  useEffect(() => {
+    if (!visible || !locked || paywallGateBusy.current) return;
+    paywallGateBusy.current = true;
+    (async () => {
+      try {
+        const becamePro = await presentPaywall().catch(() => false);
+        if (!becamePro) onClose();
+      } finally {
+        paywallGateBusy.current = false;
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, locked]);
+
   // `todayStamp` (local YYYY-MM-DD) is part of every query key so the cached
   // range refetches automatically after a midnight rollover while the app
   // stays open. The actual range is resolved fresh inside each queryFn so the
