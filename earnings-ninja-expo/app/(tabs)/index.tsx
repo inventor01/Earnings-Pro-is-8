@@ -980,12 +980,16 @@ function PillSelect<T extends string>({
   accent = CALC.HEADER_BG,
   scroll = false,
   dot = false,
+  onLongPressOption,
 }: {
   options: { key: T; label: string; color?: string }[];
   value: T;
   onChange: (v: T) => void;
   accent?: string;
   scroll?: boolean;
+  // Optional long-press handler per pill (used by the Platform selector to
+  // open the rename prompt for user-created platforms).
+  onLongPressOption?: (v: T) => void;
   // `dot` mode (used by the Platform selector): show a leading colored dot per
   // option so brands stay distinguishable even when unselected, and fill the
   // selected chip with the solid brand color + white text for an unmistakable
@@ -1001,6 +1005,8 @@ function PillSelect<T extends string>({
           <Pressable
             key={o.key}
             onPress={() => { hTap(); onChange(o.key); }}
+            onLongPress={onLongPressOption ? () => { hTap(); onLongPressOption(o.key); } : undefined}
+            delayLongPress={350}
             style={({ pressed }) => ({
               flexDirection: 'row',
               alignItems: 'center',
@@ -1089,7 +1095,7 @@ function FormInput({
 
 function DetailsForm({
   isExp, amount, entryType, setEntryType, app, setApp, appAutoFilled, lastAppLabel, category, setCategory,
-  platformOptions, onAddPlatform,
+  platformOptions, onAddPlatform, onEditPlatform,
   isBusiness, setIsBusiness,
   miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
   receiptUri, onPickReceipt, onRemoveReceipt,
@@ -1107,6 +1113,9 @@ function DetailsForm({
   // platform selector renders the same synced list.
   platformOptions: { key: string; label: string; color: string }[];
   onAddPlatform: () => void;
+  // Long-press on a platform pill — opens the rename prompt for user-created
+  // platforms (built-ins explain they can't be renamed).
+  onEditPlatform: (key: string) => void;
   category: ExpenseCategory;
   setCategory: (c: ExpenseCategory) => void;
   isBusiness: boolean;
@@ -1238,6 +1247,10 @@ function DetailsForm({
                 onChange={(k) => {
                   if (k === '__ADD_PLATFORM__') { onAddPlatform(); return; }
                   setApp(k);
+                }}
+                onLongPressOption={(k) => {
+                  if (k === '__ADD_PLATFORM__') { onAddPlatform(); return; }
+                  onEditPlatform(k);
                 }}
               />
             </View>
@@ -1507,11 +1520,13 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     ...APPS.map(a => ({ key: a.key as string, label: a.label, color: a.color })),
     ...customPlatforms.map(p => ({ key: customKey(p.name), label: p.name, color: colorForCustomName(p.name) })),
   ]), [customPlatforms]);
-  // Add-platform prompt state
+  // Add/rename-platform prompt state. When `renamingPlatform` is set the
+  // modal is in RENAME mode for that user-created platform; otherwise ADD.
   const [addPlatformVisible, setAddPlatformVisible] = useState(false);
   const [newPlatformName, setNewPlatformName] = useState('');
   const [addPlatformBusy, setAddPlatformBusy] = useState(false);
   const [addPlatformError, setAddPlatformError] = useState<string | null>(null);
+  const [renamingPlatform, setRenamingPlatform] = useState<UserPlatform | null>(null);
   const [category, setCategory]  = useState<ExpenseCategory>('GAS');
   const [miles, setMiles]         = useState('');
   const [minutes, setMinutes]     = useState('');
@@ -1589,6 +1604,72 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       hTap();
     } catch (e: any) {
       setAddPlatformError(e?.message || 'Failed to add platform. Check your connection and try again.');
+    } finally {
+      setAddPlatformBusy(false);
+    }
+  };
+
+  // Long-press on a platform pill: user-created platforms open the rename
+  // prompt; built-ins get a brief explainer since their names are fixed.
+  const handleEditPlatform = (key: string) => {
+    if (!isCustomKey(key)) {
+      Alert.alert('Built-in platform', 'Built-in platforms can\u2019t be renamed. You can add and rename your own with the \uFF0B Add pill.');
+      return;
+    }
+    const name = customNameFromKey(key);
+    const row = customPlatforms.find(p => p.name === name);
+    if (!row) return;
+    setRenamingPlatform(row);
+    setNewPlatformName(row.name);
+    setAddPlatformError(null);
+    setAddPlatformVisible(true);
+  };
+
+  // Rename a custom platform: PUT to the server (which also carries the
+  // user's existing entries over to the new name), then patch the
+  // ['platforms'] cache + AsyncStorage mirror and refresh entry lists so
+  // every row shows the new label. Keeps the current selection pointed at
+  // the renamed platform.
+  const submitRenamePlatform = async () => {
+    if (!renamingPlatform || addPlatformBusy) return;
+    const name = newPlatformName.trim();
+    if (!name) return;
+    if (name === renamingPlatform.name) { setAddPlatformVisible(false); setRenamingPlatform(null); return; }
+    const others = customPlatforms.filter(p => p.id !== renamingPlatform.id);
+    const dup = findDuplicatePlatform(name, others);
+    if (dup && name.toLowerCase() !== renamingPlatform.name.toLowerCase()) {
+      setAddPlatformError(dup === 'builtin' ? 'That platform is already built in.' : 'You already added that platform.');
+      return;
+    }
+    setAddPlatformBusy(true);
+    setAddPlatformError(null);
+    try {
+      const updated = await api.renamePlatform(renamingPlatform.id, name);
+      const oldKey = customKey(renamingPlatform.name);
+      const patch = (list: UserPlatform[]) => list.map(p => (p.id === updated.id ? updated : p));
+      queryClient.setQueryData<UserPlatform[]>(['platforms'], (old) => {
+        const next = patch(Array.isArray(old) ? old : customPlatforms);
+        writePlatformsMirror(next).catch(() => {});
+        return next;
+      });
+      setMirrorPlatforms(prev => patch(prev));
+      if (app === oldKey) setApp(customKey(updated.name));
+      // Migrate the persisted last-used-platform key too, or the next modal
+      // open would auto-select the stale old name and save entries under it.
+      AsyncStorage.getItem(LAST_ORDER_APP_KEY).then((stored) => {
+        if (stored === oldKey) {
+          AsyncStorage.setItem(LAST_ORDER_APP_KEY, customKey(updated.name)).catch(() => {});
+        }
+      }).catch(() => {});
+      // Entry rows/labels store the old name — refetch so history follows.
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      setAddPlatformVisible(false);
+      setRenamingPlatform(null);
+      setNewPlatformName('');
+      hTap();
+    } catch (e: any) {
+      setAddPlatformError(e?.message || 'Failed to rename platform. Check your connection and try again.');
     } finally {
       setAddPlatformBusy(false);
     }
@@ -2265,7 +2346,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               app={app}
               setApp={handleAppChange}
               platformOptions={platformOptions}
-              onAddPlatform={() => { setNewPlatformName(''); setAddPlatformError(null); setAddPlatformVisible(true); }}
+              onAddPlatform={() => { setRenamingPlatform(null); setNewPlatformName(''); setAddPlatformError(null); setAddPlatformVisible(true); }}
+              onEditPlatform={handleEditPlatform}
               appAutoFilled={appAutoFilled && entryType !== 'EXPENSE'}
               lastAppLabel={isCustomKey(app) ? customNameFromKey(app) : (APPS.find(a => a.key === app)?.label ?? app)}
               category={category}
@@ -2365,17 +2447,21 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         {/* ── Add-platform prompt — opened by the trailing "＋ Add" pill in the
             Platform selector. Validates locally (dup vs built-ins + existing
             customs) for instant feedback; the server enforces the same rules. */}
-        <Modal visible={addPlatformVisible} transparent animationType="fade" onRequestClose={() => setAddPlatformVisible(false)}>
+        <Modal visible={addPlatformVisible} transparent animationType="fade" onRequestClose={() => { setAddPlatformVisible(false); setRenamingPlatform(null); }}>
           <Pressable
-            onPress={() => !addPlatformBusy && setAddPlatformVisible(false)}
+            onPress={() => { if (!addPlatformBusy) { setAddPlatformVisible(false); setRenamingPlatform(null); } }}
             style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 }}
           >
             <Pressable onPress={() => {}} style={{
               backgroundColor: '#ffffff', borderRadius: 16, padding: 20, gap: 12,
             }}>
-              <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>Add a platform</Text>
+              <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>
+                {renamingPlatform ? 'Rename platform' : 'Add a platform'}
+              </Text>
               <Text style={{ fontSize: 13, color: '#6b7280' }}>
-                Name the delivery app or gig platform you want to track (e.g. Roadie, Amazon Flex).
+                {renamingPlatform
+                  ? `New name for \u201C${renamingPlatform.name}\u201D. Your existing entries move to the new name.`
+                  : 'Name the delivery app or gig platform you want to track (e.g. Roadie, Amazon Flex).'}
               </Text>
               <TextInput
                 value={newPlatformName}
@@ -2386,7 +2472,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                 maxLength={MAX_PLATFORM_NAME_LEN}
                 autoCapitalize="words"
                 returnKeyType="done"
-                onSubmitEditing={() => submitNewPlatform()}
+                onSubmitEditing={() => (renamingPlatform ? submitRenamePlatform() : submitNewPlatform())}
                 style={{
                   backgroundColor: '#ffffff', borderWidth: 2,
                   borderColor: addPlatformError ? '#ef4444' : '#d1d5db',
@@ -2399,7 +2485,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               ) : null}
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                 <Pressable
-                  onPress={() => { hTap(); setAddPlatformVisible(false); }}
+                  onPress={() => { hTap(); setAddPlatformVisible(false); setRenamingPlatform(null); }}
                   disabled={addPlatformBusy}
                   style={({ pressed }) => ({
                     flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
@@ -2409,7 +2495,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   <Text style={{ color: '#374151', fontWeight: '700', fontSize: 15 }}>Cancel</Text>
                 </Pressable>
                 <Pressable
-                  onPress={() => submitNewPlatform()}
+                  onPress={() => (renamingPlatform ? submitRenamePlatform() : submitNewPlatform())}
                   disabled={addPlatformBusy || !newPlatformName.trim()}
                   style={({ pressed }) => ({
                     flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
@@ -2419,7 +2505,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                 >
                   {addPlatformBusy
                     ? <ActivityIndicator color="#0f172a" />
-                    : <Text style={{ color: '#0f172a', fontWeight: '800', fontSize: 15 }}>Add</Text>}
+                    : <Text style={{ color: '#0f172a', fontWeight: '800', fontSize: 15 }}>{renamingPlatform ? 'Save' : 'Add'}</Text>}
                 </Pressable>
               </View>
             </Pressable>

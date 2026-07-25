@@ -703,6 +703,25 @@ export const api = {
     return res.json();
   },
 
+  // Rename a user-created platform. The server also carries existing entries
+  // logged under the old name over to the new one (409 = duplicate name).
+  async renamePlatform(id: number, name: string): Promise<UserPlatform> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/platforms/${id}`, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      let msg = 'Failed to rename platform';
+      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
+      const e: any = new Error(msg);
+      e.status = res.status;
+      throw e;
+    }
+    return res.json();
+  },
+
   // Raw DELETE — no offline queue. Used by the mutation-queue drainer so it
   // can't recurse. ALWAYS throws on failure (network or non-2xx); the thrown
   // Error carries `.status` (including 404) so the drainer can classify a
