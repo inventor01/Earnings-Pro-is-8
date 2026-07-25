@@ -4,6 +4,7 @@ import {
   APP_STORE_URL,
   APP_DOWNLOAD_URL,
   PRIVACY_URL,
+  TERMS_URL,
   SUPPORT_URL,
   SUPPORT_EMAIL,
 } from '../lib/content'
@@ -217,6 +218,9 @@ export function Footer() {
           </Link>
           <a href={PRIVACY_URL} className="text-muted hover:text-white transition-colors">
             Privacy
+          </a>
+          <a href={TERMS_URL} className="text-muted hover:text-white transition-colors">
+            Terms
           </a>
           <a href={SUPPORT_URL} className="text-muted hover:text-white transition-colors">
             Support

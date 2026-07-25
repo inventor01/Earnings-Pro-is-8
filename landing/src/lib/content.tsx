@@ -13,6 +13,7 @@ export const APP_DEEP_LINK = 'earningsninja://'
 export const APP_DOWNLOAD_URL: string = APP_STORE_URL ?? '/'
 
 export const PRIVACY_URL = '/privacy'
+export const TERMS_URL = '/terms'
 export const SUPPORT_URL = '/support'
 export const SUPPORT_EMAIL = 'support@earningsninja.com'
 
