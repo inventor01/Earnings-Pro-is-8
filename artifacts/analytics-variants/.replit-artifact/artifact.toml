@@ -1,0 +1,22 @@
+kind = "design"
+previewPath = "/"
+title = "Analytics Design Variants"
+version = "1.0.0"
+id = "artifacts/analytics-variants"
+router = "path"
+
+[[integratedSkills]]
+name = "mockup-sandbox"
+version = "1.0.0"
+
+[[services]]
+name = "Component Preview Server"
+paths = [ "/" ]
+localPort = 21353
+
+[services.development]
+run = "npm run dev"
+
+[services.env]
+PORT = "21353"
+BASE_PATH = "/"
