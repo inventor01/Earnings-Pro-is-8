@@ -3789,25 +3789,33 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
     if (visible) setAPeriod(initialPeriod);
   }, [visible, initialPeriod]);
 
-  // Free members: opening Analytics goes straight to the paywall instead of
-  // landing on the blurred preview. If they upgrade, the paywall dismisses and
-  // the full page is already underneath; if they decline, close Analytics too
-  // so they return to the dashboard. The blurred preview (and its inline
-  // Upgrade CTA) stays as the backdrop while the paywall is up.
-  const paywallGateBusy = useRef(false);
-  useEffect(() => {
-    if (!visible || !locked || paywallGateBusy.current) return;
-    paywallGateBusy.current = true;
-    (async () => {
-      try {
-        const becamePro = await presentPaywall().catch(() => false);
-        if (!becamePro) onClose();
-      } finally {
-        paywallGateBusy.current = false;
-      }
-    })();
+  // NOTE: the free-user paywall gate now runs at the "View Analytics" button
+  // (before this sheet ever opens). Auto-presenting the fullScreen paywall on
+  // top of this pageSheet and then unwinding both was leaving the dashboard
+  // ScrollView unresponsive on iOS, so the two modals must never stack. The
+  // blurred preview + inline Upgrade CTAs below stay as a fallback for the
+  // rare case where entitlement lapses while the sheet is already open — but
+  // those CTAs must ALSO avoid stacking: on iOS they close this sheet first
+  // and only present the paywall from the Modal's onDismiss (after the sheet
+  // has fully finished dismissing). Android modals don't have this problem
+  // (and RN's Modal onDismiss is iOS-only), so it presents directly there.
+  const pendingPaywall = useRef(false);
+  const upgradeFromLockedPreview = useCallback(() => {
+    hTap();
+    if (Platform.OS === 'ios') {
+      pendingPaywall.current = true;
+      onClose();
+    } else {
+      presentPaywall();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, locked]);
+  }, [onClose, presentPaywall]);
+  const onSheetDismissed = useCallback(() => {
+    if (pendingPaywall.current) {
+      pendingPaywall.current = false;
+      presentPaywall();
+    }
+  }, [presentPaywall]);
 
   // `todayStamp` (local YYYY-MM-DD) is part of every query key so the cached
   // range refetches automatically after a midnight rollover while the app
@@ -4063,7 +4071,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose} onDismiss={onSheetDismissed}>
       <View style={{ flex: 1, backgroundColor: BG }}>
       <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 + (locked ? 84 : 0) }}>
         {/* Header */}
@@ -4117,7 +4125,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
               Your full dashboard is below — the numbers unlock with Pro.
             </Text>
             <PressScale
-              onPress={async () => { hTap(); await presentPaywall(); }}
+              onPress={upgradeFromLockedPreview}
               scale={0.97}
               style={[{
                 marginTop: 12, backgroundColor: PRIMARY, borderRadius: 12,
@@ -4426,7 +4434,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
       {locked && (
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, paddingBottom: Math.max(insets.bottom, 12) + 8 }}>
           <PressScale
-            onPress={async () => { hTap(); await presentPaywall(); }}
+            onPress={upgradeFromLockedPreview}
             scale={0.97}
             style={[
               {
@@ -4778,6 +4786,10 @@ export default function DashboardScreen() {
   const [addPrefill, setAddPrefill] = useState<AddEntryPrefill | undefined>(undefined);
   const [showSettings, setShowSettings] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  // Guards the async Pro-gate on the "View Analytics" button against
+  // double-taps (two concurrent requirePro() calls can strand the paywall
+  // promise — openFallback() has a single resolver slot).
+  const analyticsGateBusy = useRef(false);
   const [showExpenses, setShowExpenses] = useState(false);
 
   // History list multi-select state. `selectionMode` toggles the row UI into
@@ -5892,8 +5904,25 @@ export default function DashboardScreen() {
               </View>
 
               {/* ── Analytics entry point (full-screen modal) ──────────────── */}
+              {/* Pro gate runs BEFORE the sheet opens: presenting the fullScreen
+                  paywall on top of the Analytics pageSheet and then unwinding the
+                  stack leaves the dashboard ScrollView unresponsive on iOS. With
+                  the gate here, a free user only ever sees ONE modal (the
+                  paywall) and Analytics opens exclusively for entitled users. */}
               <PressScale
-                onPress={() => { hTap(); setShowAnalytics(true); }}
+                onPress={async () => {
+                  hTap();
+                  // Re-entrancy guard: a rapid double-tap would run two
+                  // concurrent requirePro() calls, and openFallback()'s single
+                  // resolver slot can strand the first caller unresolved.
+                  if (analyticsGateBusy.current) return;
+                  analyticsGateBusy.current = true;
+                  try {
+                    if (await requirePro()) setShowAnalytics(true);
+                  } finally {
+                    analyticsGateBusy.current = false;
+                  }
+                }}
                 scale={0.97}
                 style={[
                   {
