@@ -282,8 +282,9 @@ function Features() {
         <div className="max-w-2xl">
           <SectionLabel>Why drivers love it</SectionLabel>
           <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
-            Everything you need. Nothing you don&rsquo;t.
+            Run your gig work like a <span className="text-primary animate-glow">business</span> — not a side hustle.
           </h2>
+          <p className="mt-4 text-lg text-muted">Everything you need. Nothing you don&rsquo;t.</p>
         </div>
         <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {LANDING_FEATURES.map((f) => (
