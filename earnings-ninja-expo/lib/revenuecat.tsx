@@ -351,11 +351,28 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     });
   }, []);
 
+  // iOS: resolving the presentPaywall() promise the instant we hide the modal
+  // lets callers (e.g. the Analytics free-user gate) dismiss THEIR sheet while
+  // the paywall's dismissal animation is still in flight. Two concurrent modal
+  // dismissals on iOS can leave the ScrollView underneath unresponsive. So on
+  // iOS we stash the result and only resolve from the Modal's onDismiss (which
+  // fires after the dismissal fully completes). Android resolves immediately
+  // (onDismiss is iOS-only for RN Modal).
+  const fallbackResult = useRef(false);
   const closeFallback = useCallback((becamePro: boolean) => {
+    fallbackResult.current = becamePro;
     setFallbackVisible(false);
+    if (Platform.OS !== 'ios') {
+      const r = fallbackResolver.current;
+      fallbackResolver.current = null;
+      r?.(becamePro);
+    }
+  }, []);
+
+  const onFallbackDismissed = useCallback(() => {
     const r = fallbackResolver.current;
     fallbackResolver.current = null;
-    r?.(becamePro);
+    r?.(fallbackResult.current);
   }, []);
 
   const presentPaywall = useCallback(async (): Promise<boolean> => {
@@ -459,6 +476,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         visible={fallbackVisible}
         offering={offerings}
         onClose={() => closeFallback(false)}
+        onDismissed={onFallbackDismissed}
         onPurchase={onFallbackPurchase}
       />
     </SubscriptionContext.Provider>
@@ -627,11 +645,13 @@ function FallbackPaywall({
   visible,
   offering,
   onClose,
+  onDismissed,
   onPurchase,
 }: {
   visible: boolean;
   offering: PurchasesOffering | null;
   onClose: () => void;
+  onDismissed: () => void;
   onPurchase: (pkg: PurchasesPackage) => Promise<void>;
 }) {
   const t = useTheme();
@@ -697,6 +717,7 @@ function FallbackPaywall({
       animationType="slide"
       presentationStyle="fullScreen"
       onRequestClose={onClose}
+      onDismiss={onDismissed}
     >
       <View style={{ flex: 1, backgroundColor: t.BG }}>
         {/* Close */}
