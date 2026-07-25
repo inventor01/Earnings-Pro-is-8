@@ -27,6 +27,11 @@ export const API_BASE =
   (Constants.expoConfig?.extra?.apiBase as string | undefined) ||
   'https://earnings-pro-is-8-production.up.railway.app';
 
+// Public privacy policy URL. Apple requires a functional Privacy Policy link
+// in-app; it must live on the branded marketing domain (earningsninja.com),
+// which serves the same backend-rendered policy page as ${API_BASE}/privacy.
+export const PRIVACY_URL = 'https://earningsninja.com/privacy';
+
 async function getAuthToken(): Promise<string | null> {
   return getToken();
 }

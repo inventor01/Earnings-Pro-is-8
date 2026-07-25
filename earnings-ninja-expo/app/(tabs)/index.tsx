@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup, Goal,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
-  ReferralInfo, API_BASE, UserPlatform, LabelOverride,
+  ReferralInfo, API_BASE, PRIVACY_URL, UserPlatform, LabelOverride,
 } from '@/lib/api';
 import { applyOptimisticGoal, rollbackOptimisticGoal } from '@/lib/goalOptimistic';
 import { useAuth } from '@/lib/authContext';
@@ -3126,7 +3126,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             Terms of Use links inside the app. Privacy is served by the
             backend (API_BASE/privacy); Terms uses Apple's standard EULA. */}
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 18, marginBottom: 24 }}>
-          <Pressable onPress={() => Linking.openURL(`${API_BASE}/privacy`)} hitSlop={8}>
+          <Pressable onPress={() => Linking.openURL(PRIVACY_URL)} hitSlop={8}>
             <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', textDecorationLine: 'underline' }}>
               Privacy Policy
             </Text>
