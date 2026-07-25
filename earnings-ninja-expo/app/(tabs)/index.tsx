@@ -436,6 +436,7 @@ function ProfitChart({
   dayOffset,
   positiveColor,
   negativeColor,
+  showLabels = false,
 }: {
   entries: Entry[];
   period: 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth' | 'custom';
@@ -443,15 +444,20 @@ function ProfitChart({
   dayOffset: number;
   positiveColor: string;
   negativeColor: string;
+  showLabels?: boolean;
 }) {
   const { LABEL, DIVIDER } = useTheme();
 
-  // Determine buckets: list of { key, sum } where sum = signed-amount total.
-  type Bucket = { key: string; sum: number };
+  // Determine buckets: list of { key, sum, label } where sum = signed-amount
+  // total and label is the x-axis tick text (hour or date).
+  type Bucket = { key: string; sum: number; label: string };
   const buckets: Bucket[] = (() => {
     // Hourly (24) for any single-day view
     if (period === 'today' || period === 'yesterday') {
-      const arr: Bucket[] = Array.from({ length: 24 }, (_, h) => ({ key: String(h), sum: 0 }));
+      const arr: Bucket[] = Array.from({ length: 24 }, (_, h) => ({
+        key: String(h), sum: 0,
+        label: `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'a' : 'p'}`,
+      }));
       for (const e of entries) {
         const d = parseServerDate(e.timestamp);
         const h = d.getHours();
@@ -494,7 +500,7 @@ function ProfitChart({
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(endDate);
       d.setDate(endDate.getDate() - i);
-      arr.push({ key: dayKey(d), sum: 0 });
+      arr.push({ key: dayKey(d), sum: 0, label: `${d.getMonth() + 1}/${d.getDate()}` });
     }
     const indexByKey = new Map(arr.map((b, i) => [b.key, i]));
     for (const e of entries) {
@@ -529,8 +535,12 @@ function ProfitChart({
     );
   }
 
+  // Sparse x-axis ticks: hourly views tick every 6h; daily views aim for ~5
+  // evenly spaced ticks so labels never collide on narrow screens.
+  const labelStep = period === 'today' || period === 'yesterday' ? 6 : Math.max(1, Math.ceil(N / 5));
+
   return (
-    <View style={{ height: CHART_H, paddingVertical: 8, justifyContent: 'center' }}>
+    <View style={{ paddingVertical: 8, justifyContent: 'center' }}>
       <View style={{ height: CHART_H - 16, flexDirection: 'row', alignItems: 'center', gap: GAP }}>
         {buckets.map((b, i) => {
           const ratio = Math.abs(b.sum) / maxAbs; // 0..1
@@ -556,6 +566,17 @@ function ProfitChart({
           );
         })}
       </View>
+      {showLabels && (
+        <View style={{ flexDirection: 'row', marginTop: 7, gap: GAP }}>
+          {buckets.map((b, i) => (
+            <View key={b.key} style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{ color: LABEL, fontSize: 9, fontWeight: '700' }} numberOfLines={1}>
+                {i % labelStep === 0 ? b.label : ''}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -4288,6 +4309,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
               dayOffset={0}
               positiveColor={GREEN}
               negativeColor={RED}
+              showLabels
             />
 
             {hr()}
@@ -4447,6 +4469,14 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                         positiveColor={RED}
                         negativeColor={RED}
                         height={80}
+                        labels={expenseTrend.map((_, i) => {
+                          const N = expenseTrend.length;
+                          const step = Math.max(1, Math.ceil(N / 5));
+                          if (i % step !== 0) return null;
+                          const d = new Date();
+                          d.setDate(d.getDate() - (N - 1 - i));
+                          return `${d.getMonth() + 1}/${d.getDate()}`;
+                        })}
                       />
                     </View>
                   )}
