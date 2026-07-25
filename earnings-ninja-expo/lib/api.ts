@@ -168,6 +168,14 @@ export interface UserPlatform {
   name: string;
 }
 
+// A per-user cosmetic rename of a BUILT-IN Platform or Type pill label.
+// The underlying key stored on entries never changes.
+export interface LabelOverride {
+  kind: 'platform' | 'type';
+  key: string;   // e.g. DOORDASH / ORDER
+  label: string;
+}
+
 export interface Rollup {
   revenue: number;
   expenses: number;
@@ -695,6 +703,33 @@ export const api = {
     });
     if (!res.ok) {
       let msg = 'Failed to add platform';
+      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
+      const e: any = new Error(msg);
+      e.status = res.status;
+      throw e;
+    }
+    return res.json();
+  },
+
+  // Per-user cosmetic label overrides for BUILT-IN Platform/Type pills.
+  async getLabelOverrides(): Promise<LabelOverride[]> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/labels`, { headers });
+    if (!res.ok) throw new Error('Failed to load label overrides');
+    return res.json();
+  },
+
+  // Upsert one override (empty/undefined label = reset to default). Returns
+  // the full override list so callers can replace their cache atomically.
+  async setLabelOverride(kind: 'platform' | 'type', key: string, label: string | null): Promise<LabelOverride[]> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/labels`, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, key, label }),
+    });
+    if (!res.ok) {
+      let msg = 'Failed to save the label';
       try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
       const e: any = new Error(msg);
       e.status = res.status;

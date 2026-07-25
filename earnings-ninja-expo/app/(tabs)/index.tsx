@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup, Goal,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
-  ReferralInfo, API_BASE, UserPlatform,
+  ReferralInfo, API_BASE, UserPlatform, LabelOverride,
 } from '@/lib/api';
 import { applyOptimisticGoal, rollbackOptimisticGoal } from '@/lib/goalOptimistic';
 import { useAuth } from '@/lib/authContext';
@@ -40,6 +40,7 @@ import {
   customKey, isCustomKey, customNameFromKey, keyForEntry,
   entryAppLabel, entryAppColor, colorForCustomName,
   readPlatformsMirror, writePlatformsMirror, findDuplicatePlatform, MAX_PLATFORM_NAME_LEN,
+  applyLabelOverrides, platformLabel, typeLabel, readLabelsMirror, writeLabelsMirror,
 } from '@/lib/platforms';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
@@ -1095,7 +1096,7 @@ function FormInput({
 
 function DetailsForm({
   isExp, amount, entryType, setEntryType, app, setApp, appAutoFilled, lastAppLabel, category, setCategory,
-  platformOptions, onAddPlatform, onEditPlatform,
+  platformOptions, onAddPlatform, onEditPlatform, typeOptions, onEditType,
   isBusiness, setIsBusiness,
   miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
   receiptUri, onPickReceipt, onRemoveReceipt,
@@ -1113,9 +1114,12 @@ function DetailsForm({
   // platform selector renders the same synced list.
   platformOptions: { key: string; label: string; color: string }[];
   onAddPlatform: () => void;
-  // Long-press on a platform pill — opens the rename prompt for user-created
-  // platforms (built-ins explain they can't be renamed).
+  // Long-press on a platform pill — rename prompt for user-created platforms,
+  // label-override editor for built-ins.
   onEditPlatform: (key: string) => void;
+  // Type pill options (labels honor per-user overrides) + long-press editor.
+  typeOptions: { key: EntryType; label: string }[];
+  onEditType: (key: EntryType) => void;
   category: ExpenseCategory;
   setCategory: (c: ExpenseCategory) => void;
   isBusiness: boolean;
@@ -1196,18 +1200,14 @@ function DetailsForm({
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={{ padding: 18, gap: 16 }}
         >
-          {/* Type */}
+          {/* Type — long-press a pill to rename it (per-user label) */}
           <View>
             <FieldLabel>📝 Type</FieldLabel>
             <PillSelect
-              options={[
-                { key: 'ORDER',        label: 'Order' },
-                { key: 'BONUS',        label: 'Bonus' },
-                { key: 'EXPENSE',      label: 'Expense' },
-                { key: 'CANCELLATION', label: 'Cancellation' },
-              ]}
+              options={typeOptions}
               value={entryType}
               onChange={setEntryType}
+              onLongPressOption={onEditType}
             />
           </View>
 
@@ -1516,10 +1516,37 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     return () => { cancelled = true; };
   }, []);
   const customPlatforms = platformsQuery.data ?? mirrorPlatforms;
+  // Per-user label overrides for the BUILT-IN Platform/Type pills. Same
+  // pattern as platforms: server list via React Query + AsyncStorage mirror
+  // for cold start / offline. `applyLabelOverrides` feeds the module-level
+  // map that entryAppLabel/platformLabel/typeLabel read everywhere.
+  const labelsQuery = useQuery({
+    queryKey: ['labelOverrides'],
+    queryFn: async () => {
+      const list = await api.getLabelOverrides();
+      writeLabelsMirror(list).catch(() => {});
+      return list;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const [mirrorLabels, setMirrorLabels] = useState<LabelOverride[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    readLabelsMirror().then(list => { if (!cancelled) setMirrorLabels(list); });
+    return () => { cancelled = true; };
+  }, []);
+  const labelOverrides = labelsQuery.data ?? mirrorLabels;
+  useEffect(() => { applyLabelOverrides(labelOverrides); }, [labelOverrides]);
   const platformOptions = useMemo(() => ([
-    ...APPS.map(a => ({ key: a.key as string, label: a.label, color: a.color })),
+    ...APPS.map(a => ({ key: a.key as string, label: platformLabel(a.key), color: a.color })),
     ...customPlatforms.map(p => ({ key: customKey(p.name), label: p.name, color: colorForCustomName(p.name) })),
-  ]), [customPlatforms]);
+  ]), [customPlatforms, labelOverrides]);
+  const typeOptions = useMemo(() => ([
+    { key: 'ORDER' as EntryType,        label: typeLabel('ORDER', 'Order') },
+    { key: 'BONUS' as EntryType,        label: typeLabel('BONUS', 'Bonus') },
+    { key: 'EXPENSE' as EntryType,      label: typeLabel('EXPENSE', 'Expense') },
+    { key: 'CANCELLATION' as EntryType, label: typeLabel('CANCELLATION', 'Cancellation') },
+  ]), [labelOverrides]);
   // Add/rename-platform prompt state. When `renamingPlatform` is set the
   // modal is in RENAME mode for that user-created platform; otherwise ADD.
   const [addPlatformVisible, setAddPlatformVisible] = useState(false);
@@ -1527,6 +1554,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const [addPlatformBusy, setAddPlatformBusy] = useState(false);
   const [addPlatformError, setAddPlatformError] = useState<string | null>(null);
   const [renamingPlatform, setRenamingPlatform] = useState<UserPlatform | null>(null);
+  // When set, the modal edits a BUILT-IN pill label (cosmetic per-user
+  // override; the underlying key stored on entries never changes).
+  const [editingLabel, setEditingLabel] = useState<{ kind: 'platform' | 'type'; key: string; defaultLabel: string } | null>(null);
   const [category, setCategory]  = useState<ExpenseCategory>('GAS');
   const [miles, setMiles]         = useState('');
   const [minutes, setMinutes]     = useState('');
@@ -1610,19 +1640,61 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   };
 
   // Long-press on a platform pill: user-created platforms open the rename
-  // prompt; built-ins get a brief explainer since their names are fixed.
+  // prompt; built-ins open the label-override editor (cosmetic, per-user).
   const handleEditPlatform = (key: string) => {
     if (!isCustomKey(key)) {
-      Alert.alert('Built-in platform', 'Built-in platforms can\u2019t be renamed. You can add and rename your own with the \uFF0B Add pill.');
+      const def = APPS.find(a => a.key === key)?.label ?? key;
+      setEditingLabel({ kind: 'platform', key, defaultLabel: def });
+      setRenamingPlatform(null);
+      setNewPlatformName(platformLabel(key));
+      setAddPlatformError(null);
+      setAddPlatformVisible(true);
       return;
     }
     const name = customNameFromKey(key);
     const row = customPlatforms.find(p => p.name === name);
     if (!row) return;
     setRenamingPlatform(row);
+    setEditingLabel(null);
     setNewPlatformName(row.name);
     setAddPlatformError(null);
     setAddPlatformVisible(true);
+  };
+
+  // Long-press on a Type pill → edit its per-user label override.
+  const handleEditType = (key: EntryType) => {
+    const defaults: Record<EntryType, string> = { ORDER: 'Order', BONUS: 'Bonus', EXPENSE: 'Expense', CANCELLATION: 'Cancellation' };
+    setEditingLabel({ kind: 'type', key, defaultLabel: defaults[key] });
+    setRenamingPlatform(null);
+    setNewPlatformName(typeLabel(key, defaults[key]));
+    setAddPlatformError(null);
+    setAddPlatformVisible(true);
+  };
+
+  // Save (or reset, when label === null) a built-in pill label override.
+  const submitLabelOverride = async (labelArg?: string | null) => {
+    if (!editingLabel || addPlatformBusy) return;
+    const label = labelArg === null ? null : (labelArg ?? newPlatformName).trim();
+    if (label === '') return;
+    // Typing the default name back = reset to default.
+    const effective = label !== null && label.toLowerCase() === editingLabel.defaultLabel.toLowerCase() ? null : label;
+    setAddPlatformBusy(true);
+    setAddPlatformError(null);
+    try {
+      const list = await api.setLabelOverride(editingLabel.kind, editingLabel.key, effective);
+      queryClient.setQueryData<LabelOverride[]>(['labelOverrides'], list);
+      writeLabelsMirror(list).catch(() => {});
+      setMirrorLabels(list);
+      applyLabelOverrides(list);
+      setAddPlatformVisible(false);
+      setEditingLabel(null);
+      setNewPlatformName('');
+      hTap();
+    } catch (e: any) {
+      setAddPlatformError(e?.message || 'Failed to save the label. Check your connection and try again.');
+    } finally {
+      setAddPlatformBusy(false);
+    }
   };
 
   // Rename a custom platform: PUT to the server (which also carries the
@@ -2346,10 +2418,12 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               app={app}
               setApp={handleAppChange}
               platformOptions={platformOptions}
-              onAddPlatform={() => { setRenamingPlatform(null); setNewPlatformName(''); setAddPlatformError(null); setAddPlatformVisible(true); }}
+              onAddPlatform={() => { setRenamingPlatform(null); setEditingLabel(null); setNewPlatformName(''); setAddPlatformError(null); setAddPlatformVisible(true); }}
               onEditPlatform={handleEditPlatform}
+              typeOptions={typeOptions}
+              onEditType={handleEditType}
               appAutoFilled={appAutoFilled && entryType !== 'EXPENSE'}
-              lastAppLabel={isCustomKey(app) ? customNameFromKey(app) : (APPS.find(a => a.key === app)?.label ?? app)}
+              lastAppLabel={isCustomKey(app) ? customNameFromKey(app) : platformLabel(app)}
               category={category}
               setCategory={setCategory}
               isBusiness={isBusiness}
@@ -2447,19 +2521,21 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         {/* ── Add-platform prompt — opened by the trailing "＋ Add" pill in the
             Platform selector. Validates locally (dup vs built-ins + existing
             customs) for instant feedback; the server enforces the same rules. */}
-        <Modal visible={addPlatformVisible} transparent animationType="fade" onRequestClose={() => { setAddPlatformVisible(false); setRenamingPlatform(null); }}>
+        <Modal visible={addPlatformVisible} transparent animationType="fade" onRequestClose={() => { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); }}>
           <Pressable
-            onPress={() => { if (!addPlatformBusy) { setAddPlatformVisible(false); setRenamingPlatform(null); } }}
+            onPress={() => { if (!addPlatformBusy) { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); } }}
             style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 }}
           >
             <Pressable onPress={() => {}} style={{
               backgroundColor: '#ffffff', borderRadius: 16, padding: 20, gap: 12,
             }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>
-                {renamingPlatform ? 'Rename platform' : 'Add a platform'}
+                {editingLabel ? `Rename \u201C${editingLabel.defaultLabel}\u201D` : renamingPlatform ? 'Rename platform' : 'Add a platform'}
               </Text>
               <Text style={{ fontSize: 13, color: '#6b7280' }}>
-                {renamingPlatform
+                {editingLabel
+                  ? 'This only changes how the tab is shown on your account. Your entries and stats are unaffected.'
+                  : renamingPlatform
                   ? `New name for \u201C${renamingPlatform.name}\u201D. Your existing entries move to the new name.`
                   : 'Name the delivery app or gig platform you want to track (e.g. Roadie, Amazon Flex).'}
               </Text>
@@ -2472,7 +2548,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                 maxLength={MAX_PLATFORM_NAME_LEN}
                 autoCapitalize="words"
                 returnKeyType="done"
-                onSubmitEditing={() => (renamingPlatform ? submitRenamePlatform() : submitNewPlatform())}
+                onSubmitEditing={() => (editingLabel ? submitLabelOverride() : renamingPlatform ? submitRenamePlatform() : submitNewPlatform())}
                 style={{
                   backgroundColor: '#ffffff', borderWidth: 2,
                   borderColor: addPlatformError ? '#ef4444' : '#d1d5db',
@@ -2485,7 +2561,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               ) : null}
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                 <Pressable
-                  onPress={() => { hTap(); setAddPlatformVisible(false); setRenamingPlatform(null); }}
+                  onPress={() => { hTap(); setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); }}
                   disabled={addPlatformBusy}
                   style={({ pressed }) => ({
                     flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
@@ -2495,7 +2571,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   <Text style={{ color: '#374151', fontWeight: '700', fontSize: 15 }}>Cancel</Text>
                 </Pressable>
                 <Pressable
-                  onPress={() => (renamingPlatform ? submitRenamePlatform() : submitNewPlatform())}
+                  onPress={() => (editingLabel ? submitLabelOverride() : renamingPlatform ? submitRenamePlatform() : submitNewPlatform())}
                   disabled={addPlatformBusy || !newPlatformName.trim()}
                   style={({ pressed }) => ({
                     flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
@@ -2505,9 +2581,20 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                 >
                   {addPlatformBusy
                     ? <ActivityIndicator color="#0f172a" />
-                    : <Text style={{ color: '#0f172a', fontWeight: '800', fontSize: 15 }}>{renamingPlatform ? 'Save' : 'Add'}</Text>}
+                    : <Text style={{ color: '#0f172a', fontWeight: '800', fontSize: 15 }}>{(editingLabel || renamingPlatform) ? 'Save' : 'Add'}</Text>}
                 </Pressable>
               </View>
+              {editingLabel && labelOverrides.some(o => o.kind === editingLabel.kind && o.key === editingLabel.key) ? (
+                <Pressable
+                  onPress={() => submitLabelOverride(null)}
+                  disabled={addPlatformBusy}
+                  style={({ pressed }) => ({ alignItems: 'center', paddingVertical: 8, opacity: pressed ? 0.7 : 1 })}
+                >
+                  <Text style={{ color: '#6b7280', fontWeight: '700', fontSize: 13 }}>
+                    {`Reset to \u201C${editingLabel.defaultLabel}\u201D`}
+                  </Text>
+                </Pressable>
+              ) : null}
             </Pressable>
           </Pressable>
         </Modal>

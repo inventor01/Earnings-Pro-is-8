@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from backend.db import get_db
-from backend.models import AuthUser, UserPlatform, Entry
-from backend.schemas import PlatformCreate, PlatformResponse
+from backend.models import AuthUser, UserPlatform, Entry, UserLabelOverride
+from backend.schemas import PlatformCreate, PlatformResponse, LabelOverrideSet, LabelOverrideResponse
 from backend.auth import get_current_user
 from typing import List
 
@@ -149,3 +149,94 @@ async def rename_platform(
         raise HTTPException(status_code=409, detail="You already added that platform.")
     db.refresh(row)
     return row
+
+# ---------------------------------------------------------------------------
+# Built-in label overrides — per-user cosmetic renames of the built-in
+# Platform and Type pills. Only display labels change; the keys stored on
+# entries are untouched.
+# ---------------------------------------------------------------------------
+
+LABEL_KINDS = {
+    "platform": {"DOORDASH", "UBEREATS", "INSTACART", "GRUBHUB", "SHIPT", "OTHER"},
+    "type": {"ORDER", "BONUS", "EXPENSE", "CANCELLATION"},
+}
+
+
+@router.get("/labels", response_model=List[LabelOverrideResponse])
+async def list_label_overrides(
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
+    return (
+        db.query(UserLabelOverride)
+        .filter(UserLabelOverride.user_id == current_user.id)
+        .order_by(UserLabelOverride.id.asc())
+        .all()
+    )
+
+
+@router.put("/labels", response_model=List[LabelOverrideResponse])
+async def set_label_override(
+    payload: LabelOverrideSet,
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
+    """Upsert (or reset, when label is empty) one built-in label override.
+
+    Returns the caller's full override list so the client can replace its
+    cache atomically.
+    """
+    kind = (payload.kind or "").strip().lower()
+    valid_keys = LABEL_KINDS.get(kind)
+    if valid_keys is None:
+        raise HTTPException(status_code=422, detail="kind must be 'platform' or 'type'.")
+    key = (payload.key or "").strip().upper()
+    if key not in valid_keys:
+        raise HTTPException(status_code=422, detail="Unknown key for this kind.")
+
+    label = (payload.label or "").strip()
+    row = (
+        db.query(UserLabelOverride)
+        .filter(
+            UserLabelOverride.user_id == current_user.id,
+            UserLabelOverride.kind == kind,
+            UserLabelOverride.key == key,
+        )
+        .first()
+    )
+    if not label:
+        # Reset to default.
+        if row is not None:
+            db.delete(row)
+            db.commit()
+    else:
+        if row is None:
+            row = UserLabelOverride(user_id=current_user.id, kind=kind, key=key, label=label)
+            db.add(row)
+        else:
+            row.label = label
+        try:
+            db.commit()
+        except IntegrityError:
+            # Race with a concurrent upsert of the same (kind, key): retry as update.
+            db.rollback()
+            existing = (
+                db.query(UserLabelOverride)
+                .filter(
+                    UserLabelOverride.user_id == current_user.id,
+                    UserLabelOverride.kind == kind,
+                    UserLabelOverride.key == key,
+                )
+                .first()
+            )
+            if existing is None:
+                raise HTTPException(status_code=409, detail="Could not save the label. Try again.")
+            existing.label = label
+            db.commit()
+
+    return (
+        db.query(UserLabelOverride)
+        .filter(UserLabelOverride.user_id == current_user.id)
+        .order_by(UserLabelOverride.id.asc())
+        .all()
+    )

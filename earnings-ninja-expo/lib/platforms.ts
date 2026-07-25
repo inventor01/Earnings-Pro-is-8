@@ -1,5 +1,58 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppType, APP_LABELS, APP_COLORS, Entry, UserPlatform } from './api';
+import { AppType, APP_LABELS, APP_COLORS, Entry, UserPlatform, LabelOverride } from './api';
+
+// ---------------------------------------------------------------------------
+// Built-in label overrides (per-user cosmetic renames of built-in pills)
+// ---------------------------------------------------------------------------
+// Kept in a module-level map so display helpers (entryAppLabel etc.) pick the
+// override up everywhere without threading the map through every call site.
+// The Add Entry screen refreshes it whenever the ['labelOverrides'] query (or
+// its AsyncStorage mirror) resolves.
+
+let PLATFORM_LABEL_OVERRIDES: Record<string, string> = {};
+let TYPE_LABEL_OVERRIDES: Record<string, string> = {};
+
+export function applyLabelOverrides(list: LabelOverride[]): void {
+  const p: Record<string, string> = {};
+  const t: Record<string, string> = {};
+  for (const o of list) {
+    if (!o || typeof o.key !== 'string' || typeof o.label !== 'string' || !o.label) continue;
+    if (o.kind === 'platform') p[o.key] = o.label;
+    else if (o.kind === 'type') t[o.key] = o.label;
+  }
+  PLATFORM_LABEL_OVERRIDES = p;
+  TYPE_LABEL_OVERRIDES = t;
+}
+
+export function platformLabel(appKey: string): string {
+  return PLATFORM_LABEL_OVERRIDES[appKey] ?? APP_LABELS[appKey as AppType] ?? appKey;
+}
+
+export function typeLabel(typeKey: string, fallback: string): string {
+  return TYPE_LABEL_OVERRIDES[typeKey] ?? fallback;
+}
+
+const LABELS_MIRROR_KEY = 'labelOverridesMirror.v1';
+
+export async function readLabelsMirror(): Promise<LabelOverride[]> {
+  try {
+    const raw = await AsyncStorage.getItem(LABELS_MIRROR_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function writeLabelsMirror(list: LabelOverride[]): Promise<void> {
+  try { await AsyncStorage.setItem(LABELS_MIRROR_KEY, JSON.stringify(list)); } catch {}
+}
+
+export async function clearLabelsMirror(): Promise<void> {
+  try { await AsyncStorage.removeItem(LABELS_MIRROR_KEY); } catch {}
+  applyLabelOverrides([]);
+}
 
 // ---------------------------------------------------------------------------
 // Custom platform selection encoding
@@ -34,7 +87,7 @@ export function keyForEntry(e: Pick<Entry, 'app' | 'custom_app'>): string {
 
 export function entryAppLabel(e: Pick<Entry, 'app' | 'custom_app'>): string {
   if (e.custom_app) return e.custom_app;
-  return APP_LABELS[e.app] ?? e.app;
+  return platformLabel(e.app);
 }
 
 // Distinct, readable palette for custom platform dots/avatars. Picked by a
