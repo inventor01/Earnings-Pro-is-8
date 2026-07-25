@@ -4102,25 +4102,41 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
           </Pressable>
         </View>
 
-        {/* Period filter — quiet text tabs with a neon underline on the active one */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 18, rowGap: 10, marginBottom: 26 }}>
-          {ANALYTICS_PERIODS.map(p => {
-            const active = aPeriod === p.key;
-            return (
-              <PressScale
-                key={p.key}
-                onPress={() => { hTap(); setAPeriod(p.key); }}
-                scale={0.95}
-                style={{ paddingVertical: 6, paddingHorizontal: 2, minHeight: 44, justifyContent: 'center' }}
-              >
-                <Text style={{ color: active ? TEXT : MUTED, fontSize: 13, fontWeight: active ? '800' : '600' }}>
-                  {p.label}
-                </Text>
-                <View style={{ height: 3, borderRadius: 2, marginTop: 4, backgroundColor: active ? PRIMARY : 'transparent' }} />
-              </PressScale>
-            );
-          })}
-        </View>
+        {/* Period filter — sleek segmented bar: one hairline-bordered track,
+            neon active pill, single row (scrolls horizontally if needed) */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginBottom: 26, marginHorizontal: -28 }}
+          contentContainerStyle={{ paddingHorizontal: 28 }}
+        >
+          <View style={{
+            flexDirection: 'row', backgroundColor: SURFACE, borderRadius: 999,
+            borderWidth: 1, borderColor: BORDER, padding: 4,
+          }}>
+            {ANALYTICS_PERIODS.map(p => {
+              const active = aPeriod === p.key;
+              return (
+                <PressScale
+                  key={p.key}
+                  onPress={() => { hTap(); setAPeriod(p.key); }}
+                  scale={0.96}
+                  style={[
+                    {
+                      paddingHorizontal: 16, minHeight: 44, justifyContent: 'center',
+                      borderRadius: 999, backgroundColor: active ? PRIMARY : 'transparent',
+                    },
+                    active ? neonGlow(PRIMARY, 8, isDark ? 0.35 : 0.2) : undefined,
+                  ].filter(Boolean) as ViewStyle[]}
+                >
+                  <Text style={{ color: active ? ON_PRIMARY : MUTED, fontSize: 13, fontWeight: active ? '800' : '600' }}>
+                    {p.label}
+                  </Text>
+                </PressScale>
+              );
+            })}
+          </View>
+        </ScrollView>
 
         {/* Free-plan banner: lock + message + inline upgrade CTA, always visible
             above the (blurred) analytics so the page reads as a premium preview
