@@ -20,7 +20,7 @@ import { LANDING_FEATURES, TESTIMONIALS, FAQS } from '../lib/content'
 export default function LandingPage() {
   useDocumentMeta(
     'Earnings Ninja — Know Your Real Dollar Per Mile',
-    'Stop taking garbage orders. Earnings Ninja shows delivery drivers their true net profit and dollar per mile after gas and wear and tear. DoorDash, Uber Eats, Instacart, GrubHub & Shipt.',
+    'Was that order worth it? Earnings Ninja shows delivery drivers their true net profit and dollar per mile after gas and wear and tear. DoorDash, Uber Eats, Instacart, GrubHub & Shipt.',
   )
   return (
     <div className="min-h-screen text-white">
@@ -56,7 +56,7 @@ function Hero() {
               Built by a driver, for drivers — iPhone, iOS 17+
             </div>
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.02] text-balance">
-              Stop taking <span className="text-primary animate-glow">garbage orders</span>.
+              Worth it? <span className="text-primary animate-glow">Now you&rsquo;ll know</span>.
             </h1>
             <p className="mt-6 text-lg md:text-xl text-muted max-w-xl text-balance">
               The gig apps show you gross and call it a day. Earnings Ninja shows your{' '}
