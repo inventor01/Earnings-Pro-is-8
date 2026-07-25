@@ -493,6 +493,14 @@ async def privacy_policy():
         media_type="text/html",
     )
 
+@app.get("/terms", include_in_schema=False)
+@app.get("/terms.html", include_in_schema=False)
+async def terms_of_service():
+    return FileResponse(
+        os.path.join(_LEGAL_DIR, "terms.html"),
+        media_type="text/html",
+    )
+
 @app.get("/support", include_in_schema=False)
 @app.get("/support.html", include_in_schema=False)
 async def support_page():
