@@ -62,18 +62,18 @@ export const PLANS: Plan[] = [
 export const LANDING_FEATURES = [
   {
     icon: '⚡',
-    title: 'Log an order in 3 seconds',
-    body: 'A calculator-style number pad — tap, tap, save. No keyboard, no clunky forms, no excuses between stops.',
+    title: 'Log a drop-off in 3 seconds',
+    body: 'A calculator-style number pad — tap, tap, save. No keyboard, no clunky forms, no excuses between pings.',
   },
   {
     icon: '📊',
-    title: 'See your REAL hourly rate',
-    body: '$/hour, $/mile, net profit — every number updates live the second you log an entry. No more guessing.',
+    title: 'Know your real dollar per mile',
+    body: 'Net profit, hourly average, $/mile — every number updates live the second you log an entry. Know if it\u2019s worth it before you accept the next one.',
   },
   {
     icon: '🎯',
-    title: 'Hit goals that pay you back',
-    body: 'Set daily, weekly, and monthly profit targets. Watch the bar fill and the ninja glow when you crush them.',
+    title: 'Hit your daily goal',
+    body: 'Set daily, weekly, and monthly profit targets. Watch the bar fill and the ninja glow when you make today worth it.',
   },
   {
     icon: '📱',
@@ -83,7 +83,7 @@ export const LANDING_FEATURES = [
   {
     icon: '🤖',
     title: 'AI that finds you money',
-    body: 'Smart suggestions surface your best days, zones, and platforms so you stop driving for scraps.',
+    body: 'Smart suggestions surface your best days, hours, and platforms — so you skip the dead zones and stop driving for scraps.',
   },
   {
     icon: '🔒',
@@ -123,7 +123,7 @@ export interface Testimonial {
 export const TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      'I drove 11 hours thinking I crushed it. Earnings Ninja showed me I cleared $94 after gas. Brutal — but now I only take orders that actually pay.',
+      'I dashed 11 hours thinking I crushed it. Earnings Ninja showed me I cleared $94 after gas. Brutal — but now I cherry pick and only take orders that actually pay.',
     name: 'Marcus T.',
     meta: 'DoorDash · Atlanta',
   },
@@ -135,7 +135,7 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     quote:
-      'The $/mile number changed how I drive. I stopped chasing $3 orders 8 miles away and my take-home jumped almost $300 a month.',
+      'The dollar-per-mile number changed how I drive. I stopped chasing $3 pings 8 miles out and my take-home jumped almost $300 a month.',
     name: 'Devin K.',
     meta: 'Instacart · Phoenix',
   },
@@ -149,7 +149,7 @@ export interface Faq {
 export const FAQS: Faq[] = [
   {
     q: 'Which delivery platforms does it support?',
-    a: 'DoorDash, Uber Eats, Instacart, GrubHub, and Shipt — plus an "Other" option for any gig the app doesn\u2019t list by name.',
+    a: 'DoorDash, Uber Eats, Instacart, GrubHub, and Shipt — plus an "Other" option for any gig the app doesn\u2019t list by name. Multi-apping? Log every platform in one place and see which one actually pays you best.',
   },
   {
     q: 'Is there a free version?',
@@ -157,7 +157,7 @@ export const FAQS: Faq[] = [
   },
   {
     q: 'How is my net profit calculated?',
-    a: 'Net profit = revenue (orders + bonuses) minus expenses (gas, tolls, parking, etc.) minus your vehicle cost (miles driven × your cost-per-mile, or the IRS standard rate). It\u2019s the number the gig apps never show you.',
+    a: 'Net profit = what you brought in (orders, tips, Peak Pay, bonuses) minus expenses (gas, tolls, parking, etc.) minus your vehicle cost (miles driven × your cost per mile, or the IRS standard rate). It\u2019s the number the gig apps never show you.',
   },
   {
     q: 'How does billing and cancelling work?',

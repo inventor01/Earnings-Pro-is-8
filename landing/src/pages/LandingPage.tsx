@@ -19,8 +19,8 @@ import { LANDING_FEATURES, TESTIMONIALS, FAQS } from '../lib/content'
 
 export default function LandingPage() {
   useDocumentMeta(
-    'Earnings Ninja — Stop Guessing What You Actually Make',
-    'The only app that shows delivery drivers their TRUE net profit after gas, miles, and expenses. Real-time profit, AI suggestions, tax-ready exports. DoorDash, Uber Eats, Instacart, GrubHub & Shipt.',
+    'Earnings Ninja — Know Your Real Dollar Per Mile',
+    'Stop taking garbage orders. Earnings Ninja shows delivery drivers their true net profit and dollar per mile after gas and wear and tear. DoorDash, Uber Eats, Instacart, GrubHub & Shipt.',
   )
   return (
     <div className="min-h-screen text-white">
@@ -56,13 +56,12 @@ function Hero() {
               Built by a driver, for drivers — iPhone, iOS 17+
             </div>
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.02] text-balance">
-              Stop guessing what you{' '}
-              <span className="text-primary animate-glow">actually</span> make.
+              Stop taking <span className="text-primary animate-glow">garbage orders</span>.
             </h1>
             <p className="mt-6 text-lg md:text-xl text-muted max-w-xl text-balance">
-              Most apps show your gross and call it a day. Earnings Ninja shows your{' '}
-              <span className="text-white font-semibold">real net profit</span> after gas, miles, and
-              expenses — in real time, across every platform you drive for.
+              The gig apps show you gross and call it a day. Earnings Ninja shows your{' '}
+              <span className="text-white font-semibold">real net profit and dollar per mile</span>{' '}
+              after gas and wear and tear — live, mid-shift, across every app you run.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <AppStoreBadge />
@@ -100,7 +99,7 @@ function TrustBar() {
     <section className="border-y border-border bg-surface/40">
       <div className="max-w-6xl mx-auto px-5 py-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted">
         <span className="flex items-center gap-2">
-          <span className="text-primary text-base">★★★★★</span> Loved by working drivers
+          <span className="text-primary text-base">★★★★★</span> Built for cherry pickers & multi-appers
         </span>
         <span className="hidden sm:inline text-border">|</span>
         <span>DoorDash · Uber Eats · Instacart · GrubHub · Shipt</span>
@@ -116,18 +115,18 @@ function Problem() {
   const pains = [
     {
       icon: '⛽',
-      title: 'Gas eats your "earnings"',
-      body: 'That $310 day? After fill-ups it might be $180. The gig apps will never tell you that.',
+      title: 'High mileage kills your profit',
+      body: 'That $310 day? After fill-ups and wear and tear it might be $180. The offer screen will never tell you that.',
     },
     {
       icon: '🎰',
-      title: 'You take orders that lose money',
-      body: 'A $4 order 9 miles away feels like income. It\u2019s a loss once you count the mileage.',
+      title: 'Garbage orders sneak through',
+      body: 'A $4 ping 9 miles out feels like money when it\u2019s slow. Count the miles and it\u2019s a loss. No tip, no trip only works if you know your numbers.',
     },
     {
       icon: '🧾',
-      title: 'Tax season is a nightmare',
-      body: 'No records, no mileage log, no deductions tracked. You overpay or panic every April.',
+      title: 'Tax season wrecks you',
+      body: 'No mileage log, no expense records, no deductions tracked. You overpay the IRS or panic every April.',
     },
   ]
   return (
@@ -136,11 +135,11 @@ function Problem() {
         <div className="max-w-2xl">
           <SectionLabel>The problem</SectionLabel>
           <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
-            You&rsquo;re working hard. But are you actually getting paid?
+            Grinding all day. But was it actually worth it?
           </h2>
           <p className="mt-4 text-muted text-lg">
-            If you can&rsquo;t answer &ldquo;what did I really clear last week?&rdquo; in under five seconds, the
-            apps are winning and you&rsquo;re guessing.
+            If you can&rsquo;t answer &ldquo;what did I really clear last week?&rdquo; in under five seconds,
+            the apps are winning and you&rsquo;re driving blind.
           </p>
         </div>
         <div className="mt-12 grid sm:grid-cols-3 gap-4">
@@ -162,22 +161,22 @@ function HowItWorks() {
   const steps = [
     {
       n: '1',
-      title: 'Log it in 3 seconds',
-      body: 'Tap + Add Entry after each order or expense. Or let automatic imports pull them in for you.',
+      title: 'Log the ping in 3 seconds',
+      body: 'Tap + Add Entry after every drop-off, fuel stop, or expense. Or let automatic imports pull orders in for you.',
       shot: SCREENSHOTS.logger,
       alt: 'Calculator-style entry pad showing a $8.35 order being logged',
     },
     {
       n: '2',
       title: 'Watch your real numbers',
-      body: 'Net profit, $/hour, and $/mile update live — so you know if a shift is worth it while you\u2019re still out.',
+      body: 'Net profit, hourly average, and dollar per mile update live — so you know if today\u2019s run is worth it while you\u2019re still out.',
       shot: SCREENSHOTS.topDays,
       alt: 'Top earning days and daily profit breakdown',
     },
     {
       n: '3',
       title: 'Keep more of it',
-      body: 'Export tax-ready records, follow AI suggestions, and stop taking the orders that quietly cost you money.',
+      body: 'Export tax-ready records, spot your best days and dead hours, and decline the orders that quietly cost you money.',
       shot: SCREENSHOTS.settings,
       alt: 'Settings screen with CSV export and theme options',
     },
@@ -253,10 +252,10 @@ function SocialProof() {
         <div className="text-center max-w-2xl mx-auto mb-12">
           <SectionLabel>What drivers say</SectionLabel>
           <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
-            Drivers find <span className="text-primary">$150–$400+</span> more a month.
+            Drivers keep <span className="text-primary">$150–$400+</span> more a month.
           </h2>
           <p className="mt-4 text-muted text-lg">
-            Not by working more — by cutting the orders and costs that were quietly draining them.
+            Not by grinding more hours — by cherry picking smarter and cutting the runs that were quietly losing money.
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-4">
@@ -311,7 +310,7 @@ function HonestMath() {
         <div className="text-center max-w-2xl mx-auto mb-12">
           <SectionLabel>The honest math</SectionLabel>
           <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
-            What the gig apps don&rsquo;t tell you.
+            The offer screen only tells you half the story.
           </h2>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
@@ -369,8 +368,8 @@ function PricingTeaser() {
           Try Pro <span className="text-primary animate-glow">free for 7 days</span>.
         </h2>
         <p className="mt-4 text-muted text-lg">
-          The core tracker is free forever. Try every Pro feature — analytics, tax exports, AI
-          suggestions, and automatic imports — free for 7 days. Then just{' '}
+          The core tracker is free forever. Try every Pro feature — best days &amp; hours analytics,
+          tax-ready exports, AI suggestions, and automatic imports — free for 7 days. Then just{' '}
           <span className="text-white font-semibold">$2.99/mo</span> or{' '}
           <span className="text-white font-semibold">$29.99/yr</span>{' '}
           <span className="text-green font-semibold">(Best Value — 2 months free)</span>. Cancel
@@ -453,10 +452,10 @@ function FinalCta() {
       <div className="max-w-3xl mx-auto px-5 text-center relative">
         <img src={logoFull} alt="Earnings Ninja" className="h-28 w-auto mx-auto mb-6" />
         <h2 className="text-4xl md:text-6xl font-black tracking-tight text-balance">
-          Stop guessing. Start <span className="text-primary animate-glow">knowing</span>.
+          Make every shift <span className="text-primary animate-glow">worth it</span>.
         </h2>
         <p className="mt-5 text-lg text-muted max-w-xl mx-auto">
-          Free to start. Pro is $2.99/mo and pays for itself the first time you skip a money-losing order.
+          Free to start. Pro is $2.99/mo and pays for itself the first time you decline a garbage order.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
           <AppStoreBadge />
