@@ -32,6 +32,11 @@ export const API_BASE =
 // which serves the same backend-rendered policy page as ${API_BASE}/privacy.
 export const PRIVACY_URL = 'https://earningsninja.com/privacy';
 
+// Our own Terms of Service (served by the backend at /terms on the branded
+// domain). Replaces Apple's standard EULA link in-app; the page itself still
+// references Apple's EULA for the app-license portion.
+export const TERMS_URL = 'https://earningsninja.com/terms';
+
 async function getAuthToken(): Promise<string | null> {
   return getToken();
 }

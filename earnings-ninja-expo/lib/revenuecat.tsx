@@ -34,7 +34,7 @@ import Purchases, {
 } from 'react-native-purchases';
 import { useTheme } from './theme';
 import { useAuth } from './authContext';
-import { API_BASE, PRIVACY_URL } from './api';
+import { API_BASE, PRIVACY_URL, TERMS_URL } from './api';
 
 // The RevenueCat entitlement that unlocks premium features (CSV export +
 // advanced analytics). Display name in the RevenueCat dashboard is
@@ -1004,7 +1004,7 @@ function FallbackPaywall({
             <Pressable
               onPress={() =>
                 Linking.openURL(
-                  'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+                  TERMS_URL,
                 )
               }
               hitSlop={12}
@@ -1106,7 +1106,7 @@ function FallbackPaywall({
             </Pressable>
             <Pressable
               onPress={() =>
-                Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')
+                Linking.openURL(TERMS_URL)
               }
               hitSlop={12}
             >
