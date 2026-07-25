@@ -274,7 +274,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, []);
 
   // Identify the RevenueCat customer with our backend user id. This is what
-  // lets server-side promotional grants (referral free months) land on the
+  // lets any server-side promotional grants land on the
   // RIGHT customer — without it the SDK uses an anonymous app_user_id the
   // backend has no way to address. logIn/logOut are best-effort and no-op
   // when RevenueCat isn't available on this build. `rcIdentityRef` dedupes

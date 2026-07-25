@@ -349,7 +349,7 @@ function RootNav() {
 
   // Referral deep links: `earningsninja://referral/CODE`. When the user is
   // already signed in we redeem the code immediately (and refresh entitlements
-  // so any granted free month shows up); when they're logged out we stash it so
+  // so the referral attribution lands); when they're logged out we stash it so
   // the signup screen can prefill it. Runs regardless of auth state (unlike the
   // entry handler above) so the code is never lost for a logged-out invitee.
   useEffect(() => {

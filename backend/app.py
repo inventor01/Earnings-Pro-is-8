@@ -543,7 +543,7 @@ async def invite_page(code: str):
 <div class="card">
   <div style="font-size:44px">🥷</div>
   <h1>You're invited to Earnings Ninja</h1>
-  <p>Track your delivery earnings, expenses and mileage. Sign up with this code and you <strong>both get 1 free month of Pro</strong>.</p>
+  <p>Track your delivery earnings, expenses and mileage across every gig app. Use this code when you sign up.</p>
   <div class="code">{code}</div>
   <a class="btn" href="{deep_link}">Open the app</a>
   <a class="btn ghost" href="/">Get the app</a>

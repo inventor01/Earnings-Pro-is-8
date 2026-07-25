@@ -323,7 +323,7 @@ export default function LoginScreen() {
               <TextInput
                 value={referralCode}
                 onChangeText={(v) => setReferralCode(v.toUpperCase())}
-                placeholder="Get a free month"
+                placeholder="Enter a friend's code"
                 placeholderTextColor={MUTED}
                 autoCapitalize="characters"
                 autoCorrect={false}
@@ -342,7 +342,7 @@ export default function LoginScreen() {
               />
               {referralCode ? (
                 <Text style={{ color: GREEN, fontSize: 12, marginTop: 6 }}>
-                  🎁 You'll both get 1 free month of Pro
+                  ✓ Referral code will be applied
                 </Text>
               ) : null}
             </View>
