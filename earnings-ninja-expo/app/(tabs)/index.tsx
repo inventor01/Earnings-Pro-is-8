@@ -3796,7 +3796,7 @@ const SORT_OPTIONS: { key: SortKey; label: string; short: string; icon: keyof ty
 // Analytics is a full-screen modal opened from a prominent dashboard button
 // (the app has no bottom tab bar). It reuses the pure-View ProfitChart and
 // theme tokens so it stays 100% OTA-deployable (no native chart libraries).
-type AnalyticsPeriod = 'today' | 'yesterday' | 'week' | 'month' | 'last30' | 'all';
+type AnalyticsPeriod = 'today' | 'yesterday' | 'week' | 'month' | 'last30' | 'all' | 'custom';
 const ANALYTICS_PERIODS: { key: AnalyticsPeriod; label: string }[] = [
   { key: 'today',     label: 'Today' },
   { key: 'yesterday', label: 'Yesterday' },
@@ -3979,6 +3979,10 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   const insets = useSafeAreaInsets();
   const [aPeriod, setAPeriod] = useState<AnalyticsPeriod>(initialPeriod);
   const [showAllDays, setShowAllDays] = useState(false);
+  // Custom day/range picker — reuses the dashboard's CalendarModal. A single
+  // tapped day gives an hourly view (from === to), a swept range gives daily.
+  const [aCustomRange, setACustomRange] = useState<{ from: string; to: string } | null>(null);
+  const [showACalendar, setShowACalendar] = useState(false);
 
   // ── Free-plan upsell preview ────────────────────────────────────────────
   // Free users see the ENTIRE analytics page — every card, chart, trend and
@@ -4055,24 +4059,33 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
       const from = new Date(today); from.setDate(today.getDate() - 29);
       return { timeframe: null, fromIso: ymdLocal(from), toIso: ymdLocal(today) };
     }
+    if (p === 'custom' && aCustomRange) {
+      return { timeframe: null, fromIso: aCustomRange.from, toIso: aCustomRange.to };
+    }
     return { timeframe: null, fromIso: '2020-01-01', toIso: ymdLocal(today) };
   };
 
+  // Custom ranges must be part of the query key or switching between two
+  // different picked ranges would serve the first range's cached data.
+  const rangeKey = aPeriod === 'custom' ? `${aCustomRange?.from ?? ''}_${aCustomRange?.to ?? ''}` : '';
+  // A bare 'custom' with no picked range yet never fires a query.
+  const queryReady = visible && (aPeriod !== 'custom' || !!aCustomRange);
+
   const rollupQuery = useQuery({
-    queryKey: ['analytics-rollup', aPeriod, todayStamp],
+    queryKey: ['analytics-rollup', aPeriod, rangeKey, todayStamp],
     queryFn: () => {
       const r = resolveRange(aPeriod);
       return r.timeframe ? api.getRollup(r.timeframe) : api.getRollupInRange(r.fromIso!, r.toIso!);
     },
-    enabled: visible,
+    enabled: queryReady,
   });
   const entriesQuery = useQuery({
-    queryKey: ['analytics-entries', aPeriod, todayStamp],
+    queryKey: ['analytics-entries', aPeriod, rangeKey, todayStamp],
     queryFn: () => {
       const r = resolveRange(aPeriod);
       return r.timeframe ? api.getEntries(r.timeframe, 5000) : api.getEntriesInRange(r.fromIso!, r.toIso!, 5000);
     },
-    enabled: visible,
+    enabled: queryReady,
   });
 
   const rollup = rollupQuery.data;
@@ -4141,12 +4154,15 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   // The profit-trend chart shows the last 7 days (week) or last 30 days
   // (everything else), reusing the dashboard's pure-View ProfitChart.
   const trendCustomRange = useMemo(() => {
+    if (aPeriod === 'custom' && aCustomRange) return aCustomRange;
     const today = new Date();
     const from = new Date(today); from.setDate(today.getDate() - 29);
     return { from: ymdLocal(from), to: ymdLocal(today) };
-  }, []);
+  }, [aPeriod, aCustomRange]);
 
-  const isSingleDay = aPeriod === 'today' || aPeriod === 'yesterday';
+  const isSingleDay =
+    aPeriod === 'today' || aPeriod === 'yesterday' ||
+    (aPeriod === 'custom' && !!aCustomRange && aCustomRange.from === aCustomRange.to);
 
   // Per-day aggregation across the loaded entries — the backbone for the daily
   // breakdown list, top-earning-days ranking and the per-day averages.
@@ -4219,9 +4235,17 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   const expenseTrend = useMemo(() => {
     if (isSingleDay) return [];
     let days = 7;
-    const endDate = new Date();
+    let endDate = new Date();
     if (aPeriod === 'week') days = 7;
     else if (aPeriod === 'month') days = endDate.getDate();
+    else if (aPeriod === 'custom' && aCustomRange) {
+      // Picked range: end at the picked `to` day and span the whole selection.
+      const [fy, fm, fd] = aCustomRange.from.split('-').map(Number);
+      const [ty, tm, td] = aCustomRange.to.split('-').map(Number);
+      const fromD = new Date(fy, fm - 1, fd);
+      endDate = new Date(ty, tm - 1, td);
+      days = Math.max(1, Math.round((endDate.getTime() - fromD.getTime()) / 86400000) + 1);
+    }
     else days = 30;
     days = Math.min(days, 31);
     const keyOf = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -4239,7 +4263,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
       if (j !== undefined) arr[j] += -amt;
     }
     return arr;
-  }, [entries, aPeriod, isSingleDay]);
+  }, [entries, aPeriod, aCustomRange, isSingleDay]);
   const hasExpenseTrend = expenseTrend.some(v => v > 0);
 
   // Business (tax-deductible) expense summary — magnitude + count of EXPENSE
@@ -4268,6 +4292,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
     isSingleDay ? '📈 Profit by Hour'
     : aPeriod === 'week' ? '📈 Profit Trend (this week)'
     : aPeriod === 'month' ? '📈 Profit Trend (this month)'
+    : aPeriod === 'custom' ? '📈 Profit Trend (picked days)'
     : '📈 Profit Trend (last 30 days)';
 
   const profit  = rollup?.profit ?? 0;
@@ -4279,12 +4304,32 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   const totalHours = useMemo(() => dayAgg.reduce((a, d) => a + d.minutes, 0) / 60, [dayAgg]);
   const perHour = totalHours > 0 ? profit / totalHours : null;
 
+  // Friendly label for the picked calendar day/range, e.g. "Jul 4" or
+  // "Jul 4 – Jul 10" (ymd strings parsed as LOCAL dates, never UTC-shifted).
+  const parseYmd = (s: string) => {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+  const fmtShort = (s: string) =>
+    parseYmd(s).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const customLabel = aCustomRange
+    ? (aCustomRange.from === aCustomRange.to
+        ? fmtShort(aCustomRange.from)
+        : `${fmtShort(aCustomRange.from)} – ${fmtShort(aCustomRange.to)}`)
+    : 'Pick Days';
+  const periodLabel =
+    aPeriod === 'custom' ? customLabel
+    : (ANALYTICS_PERIODS.find(p => p.key === aPeriod)?.label ?? '');
+
   const periodNoun =
     aPeriod === 'today' ? 'today'
     : aPeriod === 'yesterday' ? 'yesterday'
     : aPeriod === 'week' ? 'this week'
     : aPeriod === 'month' ? 'this month'
     : aPeriod === 'last30' ? 'these 30 days'
+    : aPeriod === 'custom' ? (aCustomRange
+        ? (aCustomRange.from === aCustomRange.to ? `on ${fmtShort(aCustomRange.from)}` : `${fmtShort(aCustomRange.from)} – ${fmtShort(aCustomRange.to)}`)
+        : 'in this range')
     : 'all time';
 
   // ── Editorial Story design language ─────────────────────────────────────
@@ -4318,7 +4363,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
         {/* Header — editorial kicker + close */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
           <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2, flex: 1 }} numberOfLines={1}>
-            Earnings Report — {ANALYTICS_PERIODS.find(p => p.key === aPeriod)?.label ?? ''}
+            Earnings Report — {periodLabel}
           </Text>
           {!locked && !loading && !rollupQuery.isError && !entriesQuery.isError && (
             <Pressable
@@ -4369,6 +4414,31 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                 </PressScale>
               );
             })}
+            {/* Day picker chip — opens the calendar to pick a single day or a
+                range; the chip label shows the current selection when active. */}
+            {(() => {
+              const active = aPeriod === 'custom';
+              return (
+                <PressScale
+                  onPress={() => { hTap(); setShowACalendar(true); }}
+                  scale={0.96}
+                  style={[
+                    {
+                      flexDirection: 'row', alignItems: 'center', gap: 5,
+                      paddingHorizontal: 16, minHeight: 44, justifyContent: 'center',
+                      borderRadius: 999, backgroundColor: active ? PRIMARY : 'transparent',
+                    },
+                    active ? neonGlow(PRIMARY, 8, isDark ? 0.35 : 0.2) : undefined,
+                  ].filter(Boolean) as ViewStyle[]}
+                  accessibilityLabel="Pick specific days"
+                >
+                  <Ionicons name="calendar-outline" size={15} color={active ? ON_PRIMARY : MUTED} />
+                  <Text style={{ color: active ? ON_PRIMARY : MUTED, fontSize: 13, fontWeight: active ? '800' : '600' }}>
+                    {active ? customLabel : 'Pick Days'}
+                  </Text>
+                </PressScale>
+              );
+            })()}
           </View>
         </ScrollView>
 
@@ -4730,7 +4800,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
         <ShareCard
           ref={shareRef}
           data={{
-            periodLabel: ANALYTICS_PERIODS.find(p => p.key === aPeriod)?.label ?? '',
+            periodLabel,
             profit,
             revenue: rollup?.revenue ?? 0,
             expenses: Math.abs(rollup?.expenses ?? 0),
@@ -4763,6 +4833,17 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
         </View>
       )}
       </View>
+      {/* Day/range picker — reuses the dashboard's CalendarModal (nested Modal
+          inside this pageSheet presents on top on iOS). Read-only here: no
+          onDeleteEntries, so the calendar's bulk-erase path stays hidden. */}
+      <CalendarModal
+        visible={showACalendar}
+        onClose={() => setShowACalendar(false)}
+        onApplyRange={(from, to) => {
+          setACustomRange({ from, to });
+          setAPeriod('custom');
+        }}
+      />
     </Modal>
   );
 }
