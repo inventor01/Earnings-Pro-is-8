@@ -76,6 +76,85 @@ const neonGlow = (color: string, radius: number = 16, opacity: number = 0.45): V
   elevation: Math.round(radius / 2),
 });
 
+// ─── Chart overlay helpers (shared by ProfitChart / VBarChart) ───────────────
+// Compact dollar hint for chart gridlines: "$840", "$1.2k".
+const fmtMoneyShort = (v: number) => {
+  const a = Math.abs(v);
+  return a >= 1000 ? `$${(a / 1000).toFixed(a >= 10000 ? 0 : 1)}k` : `$${Math.round(a)}`;
+};
+
+// Reliable cross-platform dashed horizontal rule: RN dashed borders are flaky
+// on 1px-tall views, so clip a dashed-bordered box down to a 1px strip.
+function DashedRule({ color, opacity = 1 }: { color: string; opacity?: number }) {
+  return (
+    <View style={{ height: 1, overflow: 'hidden', opacity }}>
+      <View style={{ height: 3, borderWidth: 1, borderColor: color, borderStyle: 'dashed', borderRadius: 0.001 }} />
+    </View>
+  );
+}
+
+// Faint max/mid gridlines with dollar hints so bar heights read at a glance.
+// `sign` picks which half of the mirrored (zero-center-baseline) plot to mark.
+function ChartGrid({ rowH, amp, sign, maxAbs, masked }: {
+  rowH: number; amp: number; sign: 1 | -1; maxAbs: number; masked: boolean;
+}) {
+  const { LABEL, DIVIDER } = useTheme();
+  return (
+    <>
+      {[maxAbs, maxAbs / 2].map((v, i) => {
+        const top = rowH / 2 - sign * (v / maxAbs) * amp;
+        return (
+          <View key={i} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top }}>
+            <View style={{ height: 1, backgroundColor: DIVIDER, opacity: 0.55 }} />
+            {!masked && (
+              <Text style={{
+                position: 'absolute', right: 0, top: sign > 0 ? 1 : -12,
+                color: LABEL, fontSize: 8, fontWeight: '700', opacity: 0.9,
+              }}>
+                {fmtMoneyShort(v)}
+              </Text>
+            )}
+          </View>
+        );
+      })}
+    </>
+  );
+}
+
+// Dashed horizontal overlay at a signed dollar value (goal / average lines).
+function ChartValueLine({ rowH, amp, maxAbs, value, color, opacity = 0.7 }: {
+  rowH: number; amp: number; maxAbs: number; value: number; color: string; opacity?: number;
+}) {
+  const top = rowH / 2 - (value / maxAbs) * amp;
+  if (top < 0 || top > rowH) return null;
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top }}>
+      <DashedRule color={color} opacity={opacity} />
+    </View>
+  );
+}
+
+// Tap-a-bar tooltip bubble, pinned to the top of the chart and aligned toward
+// the tapped bar's side so it never clips at the edges.
+function ChartTooltip({ label, value, index, count }: {
+  label: string; value: string; index: number; count: number;
+}) {
+  const { SURFACE, BORDER, TEXT, LABEL } = useTheme();
+  const pct = (index + 0.5) / Math.max(1, count);
+  const align = pct < 0.33 ? 'flex-start' : pct > 0.67 ? 'flex-end' : 'center';
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, alignItems: align, zIndex: 10 }}>
+      <View style={[{
+        backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER, borderRadius: 8,
+        paddingVertical: 4, paddingHorizontal: 9, flexDirection: 'row', alignItems: 'center', gap: 6,
+      }, neonGlow('#000000', 6, 0.18)]}>
+        <Text style={{ color: LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>{label}</Text>
+        <Text style={{ color: TEXT, fontSize: 12, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
 // ─── Press-scale Pressable (mirrors web active:scale-95) ─────────────────────
 function PressScale({
   children, onPress, onLongPress, scale = 0.96, style, hitSlop, disabled, accessibilityLabel,
@@ -438,6 +517,10 @@ function ProfitChart({
   positiveColor,
   negativeColor,
   showLabels = false,
+  masked = false,
+  goalValue = 0,
+  showGrid = false,
+  showAverage = false,
 }: {
   entries: Entry[];
   period: 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth' | 'custom';
@@ -446,8 +529,12 @@ function ProfitChart({
   positiveColor: string;
   negativeColor: string;
   showLabels?: boolean;
+  masked?: boolean;
+  goalValue?: number;
+  showGrid?: boolean;
+  showAverage?: boolean;
 }) {
-  const { LABEL, DIVIDER } = useTheme();
+  const { LABEL, DIVIDER, PRIMARY } = useTheme();
 
   // Determine buckets: list of { key, sum, label } where sum = signed-amount
   // total and label is the x-axis tick text (hour or date).
@@ -513,14 +600,33 @@ function ProfitChart({
     return arr;
   })();
 
-  const maxAbs = Math.max(1, ...buckets.map(b => Math.abs(b.sum)));
+  const isHourly = period === 'today' || period === 'yesterday';
   const hasAny = buckets.some(b => b.sum !== 0);
+  // Goal / average overlays are multi-day-only; include the goal in the scale
+  // so its line always fits inside the plot.
+  const goal = !isHourly && goalValue > 0 ? goalValue : 0;
+  const maxAbs = Math.max(1, goal, ...buckets.map(b => Math.abs(b.sum)));
+  const avg = buckets.length > 0 ? buckets.reduce((a, b) => a + b.sum, 0) / buckets.length : 0;
+  const peakIdx = buckets.reduce((mi, b, i, a) => (Math.abs(b.sum) > Math.abs(a[mi].sum) ? i : mi), 0);
   const CHART_H = 110;
   const HALF = CHART_H / 2;
 
   // Bucket count drives bar width; keep small gaps between bars.
   const N = buckets.length;
   const GAP = N > 14 ? 1 : 2;
+
+  // Tap-a-bar tooltip; reset whenever the plotted window changes.
+  const [sel, setSel] = useState<number | null>(null);
+  // Grow-in animation: bars scale up from the zero baseline on (re)mount and
+  // whenever the plotted window changes.
+  const grow = useSharedValue(0);
+  useEffect(() => {
+    setSel(null);
+    grow.value = 0;
+    grow.value = withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period, N, customRange?.from, customRange?.to]);
+  const growStyle = useAnimatedStyle(() => ({ transform: [{ scaleY: grow.value }] }));
 
   if (!hasAny) {
     return (
@@ -540,32 +646,59 @@ function ProfitChart({
   // evenly spaced ticks so labels never collide on narrow screens.
   const labelStep = period === 'today' || period === 'yesterday' ? 6 : Math.max(1, Math.ceil(N / 5));
 
+  const rowH = CHART_H - 16;
+  const amp = HALF - 8;
+  const gridSign: 1 | -1 = buckets.some(b => b.sum > 0) ? 1 : -1;
+
   return (
     <View style={{ paddingVertical: 8, justifyContent: 'center' }}>
-      <View style={{ height: CHART_H - 16, flexDirection: 'row', alignItems: 'center', gap: GAP }}>
-        {buckets.map((b, i) => {
-          const ratio = Math.abs(b.sum) / maxAbs; // 0..1
-          const h = Math.max(b.sum !== 0 ? 2 : 0, ratio * (HALF - 8));
-          const positive = b.sum >= 0;
-          return (
-            <View key={i} style={{ flex: 1, height: '100%', justifyContent: 'center', position: 'relative' }}>
-              {/* zero baseline */}
-              <View style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 1, backgroundColor: DIVIDER, opacity: 0.4 }} />
-              {/* bar */}
-              {b.sum !== 0 && (
-                <View style={{
-                  position: 'absolute',
-                  left: 0, right: 0,
-                  top: positive ? `${50 - (h / (CHART_H - 16)) * 100}%` : '50%',
-                  height: h,
-                  backgroundColor: positive ? positiveColor : negativeColor,
-                  opacity: 0.85,
-                  borderRadius: 2,
-                }} />
-              )}
-            </View>
-          );
-        })}
+      <View style={{ height: rowH }}>
+        <Animated.View style={[{ height: rowH, flexDirection: 'row', alignItems: 'center', gap: GAP }, growStyle]}>
+          {buckets.map((b, i) => {
+            const ratio = Math.abs(b.sum) / maxAbs; // 0..1
+            const h = Math.max(b.sum !== 0 ? 2 : 0, ratio * amp);
+            const positive = b.sum >= 0;
+            const isPeak = i === peakIdx && b.sum !== 0;
+            return (
+              <Pressable
+                key={i}
+                onPress={() => setSel(s => (s === i ? null : i))}
+                style={{ flex: 1, height: '100%', justifyContent: 'center', position: 'relative' }}
+              >
+                {/* zero baseline */}
+                <View style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 1, backgroundColor: DIVIDER, opacity: 0.4 }} />
+                {/* bar */}
+                {b.sum !== 0 && (
+                  <View style={[
+                    {
+                      position: 'absolute',
+                      left: 0, right: 0,
+                      top: positive ? `${50 - (h / rowH) * 100}%` : '50%',
+                      height: h,
+                      backgroundColor: positive ? positiveColor : negativeColor,
+                      opacity: isPeak || sel === i ? 1 : 0.85,
+                      borderRadius: 2,
+                    },
+                    isPeak ? neonGlow(positive ? positiveColor : negativeColor, 8, 0.55) : null,
+                  ].filter(Boolean) as ViewStyle[]} />
+                )}
+              </Pressable>
+            );
+          })}
+        </Animated.View>
+        {showGrid && <ChartGrid rowH={rowH} amp={amp} sign={gridSign} maxAbs={maxAbs} masked={masked} />}
+        {goal > 0 && <ChartValueLine rowH={rowH} amp={amp} maxAbs={maxAbs} value={goal} color={PRIMARY} opacity={0.75} />}
+        {showAverage && !isHourly && avg !== 0 && (
+          <ChartValueLine rowH={rowH} amp={amp} maxAbs={maxAbs} value={avg} color={LABEL} opacity={0.55} />
+        )}
+        {sel !== null && buckets[sel] && (
+          <ChartTooltip
+            label={buckets[sel].label}
+            value={masked ? MASK : `${buckets[sel].sum < 0 ? '-' : ''}$${Math.abs(buckets[sel].sum).toFixed(2)}`}
+            index={sel}
+            count={N}
+          />
+        )}
       </View>
       {showLabels && (
         <View style={{ flexDirection: 'row', marginTop: 7, gap: GAP }}>
@@ -3707,20 +3840,45 @@ function VBarChart({
   negativeColor,
   height = 110,
   labels,
+  masked = false,
+  showGrid = false,
+  showAverage = false,
+  tooltipLabels,
+  resetKey,
 }: {
   buckets: number[];
   positiveColor: string;
   negativeColor: string;
   height?: number;
   labels?: (string | null)[];
+  masked?: boolean;
+  showGrid?: boolean;
+  showAverage?: boolean;
+  tooltipLabels?: (string | null)[];
+  // Changes (e.g. the selected analytics period) clear the tooltip and replay
+  // the grow-in even when the bucket COUNT stays the same (24 hours, 7 days).
+  resetKey?: string;
 }) {
   const { LABEL, DIVIDER } = useTheme();
   const maxAbs = Math.max(1, ...buckets.map(b => Math.abs(b)));
   const hasAny = buckets.some(b => b !== 0);
   const peak = buckets.reduce((mi, v, i, a) => (Math.abs(v) > Math.abs(a[mi]) ? i : mi), 0);
+  const avg = buckets.length > 0 ? buckets.reduce((a, b) => a + b, 0) / buckets.length : 0;
   const N = buckets.length;
   const GAP = N > 14 ? 1 : 3;
   const HALF = height / 2;
+
+  // Tap-a-bar tooltip; reset when the bucket count changes (period switch).
+  const [sel, setSel] = useState<number | null>(null);
+  // Grow-in animation from the zero baseline on (re)mount / period switch.
+  const grow = useSharedValue(0);
+  useEffect(() => {
+    setSel(null);
+    grow.value = 0;
+    grow.value = withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [N, height, resetKey]);
+  const growStyle = useAnimatedStyle(() => ({ transform: [{ scaleY: grow.value }] }));
 
   if (!hasAny) {
     return (
@@ -3736,32 +3894,53 @@ function VBarChart({
     );
   }
 
+  const amp = HALF - 6;
+  const gridSign: 1 | -1 = buckets.some(v => v > 0) ? 1 : -1;
+
   return (
     <View>
-      <View style={{ height, flexDirection: 'row', alignItems: 'center', gap: GAP }}>
-        {buckets.map((v, i) => {
-          const ratio = Math.abs(v) / maxAbs;
-          const h = Math.max(v !== 0 ? 3 : 0, ratio * (HALF - 6));
-          const positive = v >= 0;
-          const color = positive ? positiveColor : negativeColor;
-          const isPeak = i === peak && v !== 0;
-          return (
-            <View key={i} style={{ flex: 1, height: '100%', justifyContent: 'center', position: 'relative' }}>
-              <View style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 1, backgroundColor: DIVIDER, opacity: 0.35 }} />
-              {v !== 0 && (
-                <View style={[
-                  {
-                    position: 'absolute', left: 0, right: 0,
-                    top: positive ? `${50 - (h / height) * 100}%` : '50%',
-                    height: h, backgroundColor: color,
-                    opacity: isPeak ? 1 : 0.65, borderRadius: 3,
-                  },
-                  isPeak ? neonGlow(color, 8, 0.55) : null,
-                ].filter(Boolean) as ViewStyle[]} />
-              )}
-            </View>
-          );
-        })}
+      <View style={{ height }}>
+        <Animated.View style={[{ height, flexDirection: 'row', alignItems: 'center', gap: GAP }, growStyle]}>
+          {buckets.map((v, i) => {
+            const ratio = Math.abs(v) / maxAbs;
+            const h = Math.max(v !== 0 ? 3 : 0, ratio * amp);
+            const positive = v >= 0;
+            const color = positive ? positiveColor : negativeColor;
+            const isPeak = i === peak && v !== 0;
+            return (
+              <Pressable
+                key={i}
+                onPress={() => setSel(s => (s === i ? null : i))}
+                style={{ flex: 1, height: '100%', justifyContent: 'center', position: 'relative' }}
+              >
+                <View style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 1, backgroundColor: DIVIDER, opacity: 0.35 }} />
+                {v !== 0 && (
+                  <View style={[
+                    {
+                      position: 'absolute', left: 0, right: 0,
+                      top: positive ? `${50 - (h / height) * 100}%` : '50%',
+                      height: h, backgroundColor: color,
+                      opacity: isPeak || sel === i ? 1 : 0.65, borderRadius: 3,
+                    },
+                    isPeak ? neonGlow(color, 8, 0.55) : null,
+                  ].filter(Boolean) as ViewStyle[]} />
+                )}
+              </Pressable>
+            );
+          })}
+        </Animated.View>
+        {showGrid && <ChartGrid rowH={height} amp={amp} sign={gridSign} maxAbs={maxAbs} masked={masked} />}
+        {showAverage && avg !== 0 && (
+          <ChartValueLine rowH={height} amp={amp} maxAbs={maxAbs} value={avg} color={LABEL} opacity={0.55} />
+        )}
+        {sel !== null && buckets[sel] !== undefined && (
+          <ChartTooltip
+            label={tooltipLabels?.[sel] ?? labels?.[sel] ?? `#${sel + 1}`}
+            value={masked ? MASK : `${buckets[sel] < 0 ? '-' : ''}$${Math.abs(buckets[sel]).toFixed(2)}`}
+            index={sel}
+            count={N}
+          />
+        )}
       </View>
       {labels && (
         <View style={{ flexDirection: 'row', marginTop: 7, gap: GAP }}>
@@ -3889,6 +4068,15 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   const rollup = rollupQuery.data;
   const entries = entriesQuery.data ?? [];
   const loading = rollupQuery.isLoading || entriesQuery.isLoading;
+
+  // Today's daily profit goal — powers the dashed goal line on the multi-day
+  // Profit Trend chart. Shares its query key with the Settings goal editor.
+  const dailyGoalQuery = useQuery({
+    queryKey: ['goal', fmtUTCDate(estTodayUTC())],
+    queryFn: () => api.getDailyGoal(fmtUTCDate(estTodayUTC())),
+    enabled: visible,
+  });
+  const dailyGoal = Number(dailyGoalQuery.data?.target_profit ?? 0) || 0;
 
   // Spend per category — expenses only (stored as negative amounts), summed by
   // their category as positive totals, with each share of the total spend.
@@ -4325,6 +4513,10 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
               positiveColor={GREEN}
               negativeColor={RED}
               showLabels
+              masked={hidden || locked}
+              goalValue={dailyGoal}
+              showGrid
+              showAverage
             />
 
             {hr()}
@@ -4345,6 +4537,10 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                   negativeColor={RED}
                   height={110}
                   labels={hourly.map((_, h) => (h % 6 === 0 ? hourTick(h) : null))}
+                  masked={hidden || locked}
+                  showGrid
+                  tooltipLabels={hourly.map((_, h) => `${hourTick(h)}–${hourTick((h + 1) % 24)}`)}
+                  resetKey={aPeriod}
                 />
               </>
             )}
@@ -4367,6 +4563,9 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                       negativeColor={RED}
                       height={110}
                       labels={WEEKDAY_LABELS}
+                      masked={hidden || locked}
+                      showGrid
+                      resetKey={aPeriod}
                     />
                   </>
                 )}
@@ -4492,6 +4691,16 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                           d.setDate(d.getDate() - (N - 1 - i));
                           return `${d.getMonth() + 1}/${d.getDate()}`;
                         })}
+                        masked={hidden || locked}
+                        showGrid
+                        showAverage
+                        tooltipLabels={expenseTrend.map((_, i) => {
+                          const N = expenseTrend.length;
+                          const d = new Date();
+                          d.setDate(d.getDate() - (N - 1 - i));
+                          return `${d.getMonth() + 1}/${d.getDate()}`;
+                        })}
+                        resetKey={aPeriod}
                       />
                     </View>
                   )}
@@ -5878,6 +6087,7 @@ export default function DashboardScreen() {
                   dayOffset={effectiveDayOffset}
                   positiveColor={GREEN}
                   negativeColor={RED}
+                  masked={hidden}
                 />
 
                 {/* Three stats with count-up */}
