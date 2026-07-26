@@ -2,25 +2,20 @@ import { forwardRef } from 'react';
 import { View, Text, Image, Alert, Platform } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import { useTheme } from '../lib/theme';
 
-// Branded, always-dark share card. Rendered OFF-SCREEN (position absolute far
+// Branded, theme-aware share card. Rendered OFF-SCREEN (position absolute far
 // off-canvas, collapsable={false} so the native view survives to be captured)
 // and snapshotted with react-native-view-shot when the user taps Share. The
-// card intentionally ignores the app theme: the exported image is the brand
-// (black + neon #facc15), matching the logo, regardless of Light/Dark mode.
+// card follows the app theme: Dark mode exports the black + neon look, Light
+// mode exports a clean white card that keeps the brand neon accents (per the
+// brand rule, accent TEXT on white is black — neon yellow is unreadable there).
 //
 // NOTE: the card always shows REAL numbers even in Hidden Mode — sharing is a
 // deliberate user action (the whole point is showing off the figures), unlike
 // shoulder-surfing which Hidden Mode protects against.
 
 const NEON = '#facc15';
-const CARD_BG = '#0b0b0f';
-const CARD_SURFACE = '#15151c';
-const CARD_BORDER = 'rgba(250,204,21,0.35)';
-const CARD_MUTED = '#9aa1af';
-const GREEN = '#22c55e';
-const RED = '#ef4444';
-
 const SERIF = Platform.select({ ios: 'Georgia', default: 'serif' });
 
 export type ShareCardData = {
@@ -36,6 +31,23 @@ export type ShareCardData = {
 const money = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(n).toFixed(2)}`;
 
 export const ShareCard = forwardRef<View, { data: ShareCardData }>(({ data }, ref) => {
+  const theme = useTheme();
+  const isDark = theme.isDark;
+
+  // Per-theme card palette. Dark = brand black + neon; Light = clean white
+  // with black text and neon reserved for fills/borders/brand marks.
+  const CARD_BG = isDark ? '#0b0b0f' : '#ffffff';
+  const CARD_SURFACE = isDark ? '#15151c' : '#f4f6f9';
+  const CARD_BORDER = isDark ? 'rgba(250,204,21,0.35)' : 'rgba(250,204,21,0.8)';
+  const CARD_MUTED = isDark ? '#9aa1af' : '#64748b';
+  const TEXT = isDark ? '#ffffff' : '#0f172a';
+  const BRAND_TXT = isDark ? NEON : '#000000';       // wordmark + footer brand
+  const HEADLINE_POS = isDark ? NEON : '#000000';     // big profit figure
+  const TILE_BORDER = isDark ? 'rgba(255,255,255,0.10)' : '#e2e8f0';
+  const DIVIDER = isDark ? 'rgba(255,255,255,0.10)' : '#e8edf2';
+  const GREEN = '#22c55e';
+  const RED = '#ef4444';
+
   const pos = data.profit >= 0;
   const stats: { label: string; value: string; color?: string }[] = [
     { label: 'EARNED', value: `$${data.revenue.toFixed(0)}`, color: GREEN },
@@ -67,7 +79,7 @@ export const ShareCard = forwardRef<View, { data: ShareCardData }>(({ data }, re
           style={{ width: 34, height: 34, borderRadius: 8 }}
           resizeMode="contain"
         />
-        <Text style={{ color: NEON, fontSize: 15, fontWeight: '900', letterSpacing: 2 }}>
+        <Text style={{ color: BRAND_TXT, fontSize: 15, fontWeight: '900', letterSpacing: 2 }}>
           EARNINGS NINJA
         </Text>
       </View>
@@ -78,13 +90,13 @@ export const ShareCard = forwardRef<View, { data: ShareCardData }>(({ data }, re
       </Text>
 
       {/* Headline figure */}
-      <Text style={{ fontFamily: SERIF, color: '#ffffff', fontSize: 24, lineHeight: 32 }}>
+      <Text style={{ fontFamily: SERIF, color: TEXT, fontSize: 24, lineHeight: 32 }}>
         {pos ? 'I earned' : 'Net'}
       </Text>
       <Text
         style={{
           fontFamily: SERIF,
-          color: pos ? NEON : RED,
+          color: pos ? HEADLINE_POS : RED,
           fontSize: 52,
           lineHeight: 60,
           fontWeight: '700',
@@ -103,14 +115,14 @@ export const ShareCard = forwardRef<View, { data: ShareCardData }>(({ data }, re
               backgroundColor: CARD_SURFACE,
               borderRadius: 12,
               borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.10)',
+              borderColor: TILE_BORDER,
               paddingVertical: 10,
               paddingHorizontal: 14,
               minWidth: 88,
               flexGrow: 1,
             }}
           >
-            <Text style={{ color: s.color ?? '#ffffff', fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+            <Text style={{ color: s.color ?? TEXT, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
               {s.value}
             </Text>
             <Text style={{ color: CARD_MUTED, fontSize: 9, fontWeight: '700', letterSpacing: 1.2, marginTop: 2 }}>
@@ -121,9 +133,9 @@ export const ShareCard = forwardRef<View, { data: ShareCardData }>(({ data }, re
       </View>
 
       {/* Footer */}
-      <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.10)', paddingTop: 12 }}>
+      <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: DIVIDER, paddingTop: 12 }}>
         <Text style={{ color: CARD_MUTED, fontSize: 11 }}>
-          Tracked with <Text style={{ color: NEON, fontWeight: '800' }}>Earnings Ninja</Text> · earningsninja.com
+          Tracked with <Text style={{ color: BRAND_TXT, fontWeight: '800' }}>Earnings Ninja</Text> · earningsninja.com
         </Text>
       </View>
     </View>
