@@ -24,6 +24,10 @@ const RED_LT   = 'rgba(239,68,68,0.18)';
 const RED_MD   = 'rgba(239,68,68,0.32)';
 const RED_HI   = 'rgba(239,68,68,0.55)';
 
+// Max entries fetched per calendar window; hitting this means the response
+// may be truncated, which blocks the destructive erase path.
+const FETCH_LIMIT = 5000;
+
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -132,22 +136,43 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
   // without immediately changing the calendar until they tap a month).
   const [pickerYear, setPickerYear] = useState(now.getFullYear());
 
-  // First/last day of the visible month, padded ±36h so we don't miss entries
-  // whose UTC timestamp lands in an adjacent day when bucketed back into EST.
+  // Min/max of the current selection (for "Apply to Dashboard" range + display).
+  // Computed BEFORE the entries query so the fetch window can widen to cover a
+  // selection that spans months other than the visible one.
+  const selectionBounds = useMemo<{ from: string; to: string } | null>(() => {
+    if (selectedDays.size === 0) return null;
+    const arr = Array.from(selectedDays).sort();
+    return { from: arr[0], to: arr[arr.length - 1] };
+  }, [selectedDays]);
+
+  // Fetch window: the visible month, widened to include the full selection
+  // span (selections persist across month navigation, so selected days can
+  // live in other months). Padded ±36h so we don't miss entries whose UTC
+  // timestamp lands in an adjacent day when bucketed back into EST.
   const { fromIso, toIso } = useMemo(() => {
-    const first = new Date(year, month, 1, 0, 0, 0, 0);
-    const last  = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    let first = new Date(year, month, 1, 0, 0, 0, 0);
+    let last  = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    if (selectionBounds) {
+      const selFirst = parseEstYmd(selectionBounds.from);
+      const selLast  = parseEstYmd(selectionBounds.to);
+      selLast.setHours(23, 59, 59, 999);
+      if (selFirst.getTime() < first.getTime()) first = selFirst;
+      if (selLast.getTime()  > last.getTime())  last  = selLast;
+    }
     const pad = 36 * 60 * 60 * 1000; // 36h
     return {
       fromIso: new Date(first.getTime() - pad).toISOString(),
       toIso:   new Date(last.getTime()  + pad).toISOString(),
     };
-  }, [year, month]);
+  }, [year, month, selectionBounds]);
 
-  const { data: entries = [], isLoading, isError, refetch } = useQuery<Entry[]>({
+  const { data: entries = [], isLoading, isError, isFetching, isPlaceholderData, refetch } = useQuery<Entry[]>({
     queryKey: ['entries-range', fromIso, toIso],
-    queryFn: () => api.getEntriesInRange(fromIso, toIso, 5000),
+    queryFn: () => api.getEntriesInRange(fromIso, toIso, FETCH_LIMIT),
     enabled: visible,
+    // Widening the window (selecting days / flipping months) changes the query
+    // key; keep showing the previous data instead of blanking to a spinner.
+    placeholderData: (prev) => prev,
   });
 
   // Aggregate by day.
@@ -191,17 +216,22 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
     return cells;
   }, [year, month]);
 
-  // Month-level totals for the header strip.
+  // Visible-month key prefix (YYYY-MM). The fetched data can span extra months
+  // when the selection does, so month-scoped rollups must filter by prefix.
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+  // Month-level totals for the header strip (visible month only).
   const monthTotals = useMemo(() => {
     let profit = 0, revenue = 0, expenses = 0, days = 0;
     for (const k of Object.keys(dailyData)) {
+      if (!k.startsWith(monthPrefix)) continue;
       profit += dailyData[k].profit;
       revenue += dailyData[k].revenue;
       expenses += dailyData[k].expenses;
       if (dailyData[k].count > 0) days += 1;
     }
     return { profit, revenue, expenses, days };
-  }, [dailyData]);
+  }, [dailyData, monthPrefix]);
 
   function getValue(dateStr: string): number {
     const d = dailyData[dateStr];
@@ -238,11 +268,10 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
     setYear(t.getFullYear());
   }
 
-  // Clear selection on month change — the entries query is scoped to the
-  // visible month (±36h pad), so selected days outside it would be unverifiable
-  // and the erase action would have nothing to operate on.
+  // Month change: only cancel any in-flight drag. The selection itself is
+  // KEPT so users can pick days across multiple months — the entries query
+  // window widens to cover the whole selection span.
   useEffect(() => {
-    setSelectedDays(new Set());
     endDrag();
   }, [month, year]);
 
@@ -251,13 +280,6 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
   useEffect(() => {
     if (!visible) endDrag();
   }, [visible]);
-
-  // Min/max of the current selection (for "Apply to Dashboard" range + display).
-  const selectionBounds = useMemo<{ from: string; to: string } | null>(() => {
-    if (selectedDays.size === 0) return null;
-    const arr = Array.from(selectedDays).sort();
-    return { from: arr[0], to: arr[arr.length - 1] };
-  }, [selectedDays]);
 
   // Entries that fall on any selected day (sorted newest first).
   const selectedEntries = useMemo(() => {
@@ -292,8 +314,8 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
 
   // All days in the visible month that have at least one entry.
   const daysWithData = useMemo(
-    () => Object.keys(dailyData).filter(k => dailyData[k].count > 0),
-    [dailyData],
+    () => Object.keys(dailyData).filter(k => k.startsWith(monthPrefix) && dailyData[k].count > 0),
+    [dailyData, monthPrefix],
   );
 
   // RN Pressable fires `onPress` on release even after a long-press completes.
@@ -444,8 +466,26 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
     setSelectedDays(new Set(daysWithData));
   }
 
+  // Erase safety: never allow the destructive path while entry data may be
+  // stale or incomplete for the current (possibly widened) window.
+  // - isFetching/isPlaceholderData: the widened query is still in flight, so
+  //   selectedEntries is derived from a stale subset.
+  // - entries.length >= FETCH_LIMIT: the server response was likely truncated,
+  //   so an erase could silently delete only part of the selected days.
+  const dataStale = isFetching || isPlaceholderData;
+  const dataTruncated = entries.length >= FETCH_LIMIT;
+  const eraseBlocked = dataStale || dataTruncated;
+
   function confirmErase() {
     if (selectedEntries.length === 0 || !onDeleteEntries) return;
+    if (dataStale) return;
+    if (dataTruncated) {
+      Alert.alert(
+        'Too many entries to erase safely',
+        'This selection spans too many entries to load at once, so erasing could miss some. Narrow the selection and try again.',
+      );
+      return;
+    }
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     }
@@ -975,7 +1015,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
             color: MUTED, fontSize: 10, marginTop: 6, marginHorizontal: 16,
             textAlign: 'center',
           }}>
-            Tap days to select · long-press &amp; drag to sweep a range
+            Tap days to select · long-press &amp; drag to sweep a range · selections stick across months
           </Text>
 
           {/* ── Selected Days Detail ────────────────────────────────────────── */}
@@ -1054,7 +1094,8 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                   disabled={
                     !onDeleteEntries ||
                     selectedEntries.length === 0 ||
-                    erasing
+                    erasing ||
+                    eraseBlocked
                   }
                   style={{
                     paddingVertical: 13, borderRadius: 10,
@@ -1063,15 +1104,15 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                     alignItems: 'center', justifyContent: 'center',
                     flexDirection: 'row', gap: 8,
                     opacity:
-                      !onDeleteEntries || selectedEntries.length === 0 || erasing
+                      !onDeleteEntries || selectedEntries.length === 0 || erasing || eraseBlocked
                         ? 0.45
                         : 1,
-                    ...(selectedEntries.length > 0 && !erasing
+                    ...(selectedEntries.length > 0 && !erasing && !eraseBlocked
                       ? neonGlow(RED, 10, 0.6)
                       : {}),
                   }}
                 >
-                  {erasing ? (
+                  {erasing || dataStale ? (
                     <ActivityIndicator color={RED} />
                   ) : (
                     <Ionicons name="trash-outline" size={16} color={RED} />
@@ -1079,9 +1120,13 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                   <Text style={{ color: RED, fontWeight: '900', fontSize: 13, letterSpacing: 0.3 }}>
                     {erasing
                       ? 'Erasing…'
-                      : selectedEntries.length === 0
-                        ? 'No entries on selected days'
-                        : `Erase Selected Day${selectionTotals.daysWithData === 1 ? '' : 's'} (${selectedEntries.length})`}
+                      : dataStale
+                        ? 'Updating selection data…'
+                        : dataTruncated
+                          ? 'Selection too large to erase safely'
+                          : selectedEntries.length === 0
+                            ? 'No entries on selected days'
+                            : `Erase Selected Day${selectionTotals.daysWithData === 1 ? '' : 's'} (${selectedEntries.length})`}
                   </Text>
                 </Pressable>
               </View>
