@@ -544,7 +544,7 @@ function ProfitChart({
     if (period === 'today' || period === 'yesterday') {
       const arr: Bucket[] = Array.from({ length: 24 }, (_, h) => ({
         key: String(h), sum: 0,
-        label: `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'a' : 'p'}`,
+        label: `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'am' : 'pm'}`,
       }));
       for (const e of entries) {
         const d = parseServerDate(e.timestamp);
@@ -703,10 +703,12 @@ function ProfitChart({
       {showLabels && (
         <View style={{ flexDirection: 'row', marginTop: 7, gap: GAP }}>
           {buckets.map((b, i) => (
-            <View key={b.key} style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ color: LABEL, fontSize: 9, fontWeight: '700' }} numberOfLines={1}>
-                {i % labelStep === 0 ? b.label : ''}
-              </Text>
+            <View key={b.key} style={{ flex: 1, alignItems: 'center', overflow: 'visible' }}>
+              {i % labelStep === 0 && (
+                <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', width: 38, textAlign: 'center' }}>
+                  {b.label}
+                </Text>
+              )}
             </View>
           ))}
         </View>
@@ -3822,7 +3824,7 @@ const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const hourTick = (h: number) => {
   const am = h < 12;
   const hh = h % 12 === 0 ? 12 : h % 12;
-  return `${hh}${am ? 'a' : 'p'}`;
+  return `${hh}${am ? 'am' : 'pm'}`;
 };
 const fmtDayLabel = (d: Date) =>
   d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
@@ -3945,8 +3947,12 @@ function VBarChart({
       {labels && (
         <View style={{ flexDirection: 'row', marginTop: 7, gap: GAP }}>
           {labels.map((l, i) => (
-            <View key={i} style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ color: LABEL, fontSize: 9, fontWeight: '700' }} numberOfLines={1}>{l ?? ''}</Text>
+            <View key={i} style={{ flex: 1, alignItems: 'center', overflow: 'visible' }}>
+              {l != null && l !== '' && (
+                <Text style={{ color: LABEL, fontSize: 10, fontWeight: '700', width: 38, textAlign: 'center' }}>
+                  {l}
+                </Text>
+              )}
             </View>
           ))}
         </View>
