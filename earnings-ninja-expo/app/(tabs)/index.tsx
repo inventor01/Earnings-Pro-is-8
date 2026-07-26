@@ -539,9 +539,14 @@ function ProfitChart({
   // Determine buckets: list of { key, sum, label } where sum = signed-amount
   // total and label is the x-axis tick text (hour or date).
   type Bucket = { key: string; sum: number; label: string };
+  // A custom range covering exactly one calendar day is a single-day view too —
+  // without this it renders as ONE full-width daily bar.
+  const isHourly =
+    period === 'today' || period === 'yesterday' ||
+    (period === 'custom' && !!customRange && customRange.from === customRange.to);
   const buckets: Bucket[] = (() => {
     // Hourly (24) for any single-day view
-    if (period === 'today' || period === 'yesterday') {
+    if (isHourly) {
       const arr: Bucket[] = Array.from({ length: 24 }, (_, h) => ({
         key: String(h), sum: 0,
         label: `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'am' : 'pm'}`,
@@ -600,7 +605,6 @@ function ProfitChart({
     return arr;
   })();
 
-  const isHourly = period === 'today' || period === 'yesterday';
   const hasAny = buckets.some(b => b.sum !== 0);
   // Goal / average overlays are multi-day-only; include the goal in the scale
   // so its line always fits inside the plot.
@@ -644,7 +648,7 @@ function ProfitChart({
 
   // Sparse x-axis ticks: hourly views tick every 6h; daily views aim for ~5
   // evenly spaced ticks so labels never collide on narrow screens.
-  const labelStep = period === 'today' || period === 'yesterday' ? 6 : Math.max(1, Math.ceil(N / 5));
+  const labelStep = isHourly ? 6 : Math.max(1, Math.ceil(N / 5));
 
   const rowH = CHART_H - 16;
   const amp = HALF - 8;
