@@ -10,3 +10,5 @@ The `eas build` CLI sometimes hangs or dies silently right after "✔ Uploaded t
 - Always confirm registration via `eas build:list --json`; absence after ~3–5 min means the kickoff failed.
 - Recovery that worked: re-run with `EXPO_DEBUG=1 DEBUG=*` (and `--no-wait`) via a wrapper script — registered immediately.
 - Never `pkill -f 'eas build'` from a shell whose own command line contains that string — it self-kills the launcher. Launch via a `/tmp/*.sh` wrapper so kill patterns can't match the launching shell.
+
+- Jul 26: /tmp can be WIPED between shell commands in this environment — kickoff wrapper scripts and logs must live in `.local/scripts/` (workspace), not /tmp, or retries fail with "No such file".
