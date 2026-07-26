@@ -4,6 +4,7 @@ import {
   ViewStyle, Platform, useWindowDimensions, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -242,7 +243,14 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
   // and the erase action would have nothing to operate on.
   useEffect(() => {
     setSelectedDays(new Set());
+    endDrag();
   }, [month, year]);
+
+  // If the sheet closes mid-drag, make sure drag state (and the frozen
+  // ScrollView) doesn't leak into the next open.
+  useEffect(() => {
+    if (!visible) endDrag();
+  }, [visible]);
 
   // Min/max of the current selection (for "Apply to Dashboard" range + display).
   const selectionBounds = useMemo<{ from: string; to: string } | null>(() => {
@@ -293,6 +301,93 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
   // doesn't toggle the endpoint we just included in the range fill.
   const longPressFiredRef = useRef(false);
 
+  // ── Drag-to-select ─────────────────────────────────────────────────────────
+  // A Pan gesture on the grid (activateAfterLongPress) owns the touch: press
+  // and hold a day, then sweep — the contiguous range anchor→finger paints in
+  // one gesture. The month ScrollView is frozen while the drag is active so
+  // vertical sweeps extend the selection instead of scrolling.
+  const [dragging, setDragging] = useState(false);
+  const draggingRef = useRef(false);
+  const dragAnchorRef = useRef<string | null>(null);
+  // Selection as it was when the drag started (anchor included) — each move
+  // re-derives from this base so shrinking the sweep un-paints days that were
+  // never previously selected while keeping prior selections intact.
+  const dragBaseRef = useRef<Set<string>>(new Set());
+  const lastDragDateRef = useRef<string | null>(null);
+  // When the drag ended — the Pressable under the finger may still fire onPress
+  // on release, which would toggle the endpoint we just painted.
+  const dragEndAtRef = useRef(0);
+
+  // All EST days from `a` to `b` inclusive (either order).
+  function fillRange(a: string, b: string): string[] {
+    const from = a < b ? a : b;
+    const to   = a < b ? b : a;
+    const out: string[] = [];
+    const cursor = new Date(parseEstYmd(from));
+    const end = parseEstYmd(to);
+    while (cursor.getTime() <= end.getTime()) {
+      const y = cursor.getFullYear();
+      const m = String(cursor.getMonth() + 1).padStart(2, '0');
+      const d = String(cursor.getDate()).padStart(2, '0');
+      out.push(`${y}-${m}-${d}`);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return out;
+  }
+
+  function endDrag() {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    dragAnchorRef.current = null;
+    lastDragDateRef.current = null;
+    dragEndAtRef.current = Date.now();
+    setDragging(false);
+  }
+
+  // Map a touch point (relative to the grid view) to the day cell under it.
+  function cellAt(x: number, y: number): { day: number; dateStr: string } | null {
+    const col = Math.floor(x / cellSize);
+    const row = Math.floor(y / cellHeight);
+    if (col < 0 || col > 6 || row < 0) return null;
+    const idx = row * 7 + col;
+    if (idx >= days.length) return null;
+    return days[idx];
+  }
+
+  // Pan gesture that activates after a press-and-hold on the grid. RNGH owns
+  // the touch deterministically (it cancels the ScrollView and the day
+  // Pressables once active), and event x/y are relative to the grid view — no
+  // async measurement needed. runOnJS because handlers touch React state.
+  const dragGesture = Gesture.Pan()
+    .activateAfterLongPress(350)
+    .maxPointers(1)
+    .shouldCancelWhenOutside(false)
+    .runOnJS(true)
+    .onStart((e) => {
+      const cell = cellAt(e.x, e.y);
+      if (!cell) return;
+      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      draggingRef.current = true;
+      dragAnchorRef.current = cell.dateStr;
+      lastDragDateRef.current = cell.dateStr;
+      setDragging(true);
+      const base = new Set(selectedDays);
+      base.add(cell.dateStr);
+      dragBaseRef.current = base;
+      setSelectedDays(new Set(base));
+    })
+    .onUpdate((e) => {
+      if (!draggingRef.current || !dragAnchorRef.current) return;
+      const cell = cellAt(e.x, e.y);
+      if (!cell || cell.dateStr === lastDragDateRef.current) return;
+      lastDragDateRef.current = cell.dateStr;
+      hTap();
+      const next = new Set(dragBaseRef.current);
+      for (const d of fillRange(dragAnchorRef.current, cell.dateStr)) next.add(d);
+      setSelectedDays(next);
+    })
+    .onFinalize(() => endDrag());
+
   // Tap toggles a single day in/out of the selection.
   // IMPORTANT: decide add-vs-remove from the *current* selectedDays here,
   // BEFORE entering the updater. The functional updater can be invoked
@@ -305,6 +400,9 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
       longPressFiredRef.current = false;
       return;
     }
+    // Ignore the release-tap that can fire right after a drag ends — it would
+    // toggle the endpoint we just painted.
+    if (draggingRef.current || Date.now() - dragEndAtRef.current < 400) return;
     hTap();
     const willAdd = !selectedDays.has(dateStr);
     setSelectedDays(prev => {
@@ -315,10 +413,12 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
     });
   }
 
-  // Long-press fills a range. If nothing is selected, just selects the day.
-  // Otherwise: anchor = earliest already-selected day (or latest if pressed day
-  // is earlier than every selection), fill all days inclusive.
+  // Fallback range-fill: if the Pan gesture somehow never activates (so the
+  // Pressable's own long-press at 600ms fires instead), keep the previous
+  // behavior — fill from the earliest already-selected day to the pressed day.
+  // Normally the Pan activates at 350ms and cancels this before it runs.
   function handleDayLongPress(dateStr: string) {
+    if (draggingRef.current) return;
     longPressFiredRef.current = true;
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setSelectedDays(prev => {
@@ -329,19 +429,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
       }
       const sorted = Array.from(next).sort();
       const anchor = dateStr < sorted[0] ? sorted[sorted.length - 1] : sorted[0];
-      const from = anchor < dateStr ? anchor : dateStr;
-      const to   = anchor < dateStr ? dateStr : anchor;
-      // Walk EST days from `from` to `to` inclusive.
-      const start = parseEstYmd(from);
-      const end   = parseEstYmd(to);
-      const cursor = new Date(start);
-      while (cursor.getTime() <= end.getTime()) {
-        const y = cursor.getFullYear();
-        const m = String(cursor.getMonth() + 1).padStart(2, '0');
-        const d = String(cursor.getDate()).padStart(2, '0');
-        next.add(`${y}-${m}-${d}`);
-        cursor.setDate(cursor.getDate() + 1);
-      }
+      for (const d of fillRange(anchor, dateStr)) next.add(d);
       return next;
     });
   }
@@ -405,6 +493,10 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      {/* RN Modal creates its own native view hierarchy, so gestures inside it
+          need their own GestureHandlerRootView — the app-root one doesn't reach
+          in here. */}
+      <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={{ flex: 1, backgroundColor: BG, paddingTop: insets.top > 0 ? 0 : 12 }}>
         {/* ── Sheet Header ─────────────────────────────────────────────────── */}
         <View style={{
@@ -442,6 +534,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
         <ScrollView
           contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
           showsVerticalScrollIndicator={false}
+          scrollEnabled={!dragging}
         >
           {/* ── Month Navigator ─────────────────────────────────────────────── */}
           <View style={{
@@ -666,6 +759,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
               </PressScale>
             </View>
           ) : (
+            <GestureDetector gesture={dragGesture}>
             <View style={{
               marginHorizontal: 16,
               flexDirection: 'row',
@@ -723,7 +817,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                     key={idx}
                     onPress={() => handleDayPress(cell.dateStr)}
                     onLongPress={() => handleDayLongPress(cell.dateStr)}
-                    delayLongPress={500}
+                    delayLongPress={600}
                     style={{
                       width: cellSize,
                       height: cellHeight,
@@ -808,6 +902,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                 );
               })}
             </View>
+            </GestureDetector>
           )}
 
           {/* ── Legend ──────────────────────────────────────────────────────── */}
@@ -880,7 +975,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
             color: MUTED, fontSize: 10, marginTop: 6, marginHorizontal: 16,
             textAlign: 'center',
           }}>
-            Tap days to select · long-press to fill a range
+            Tap days to select · long-press &amp; drag to sweep a range
           </Text>
 
           {/* ── Selected Days Detail ────────────────────────────────────────── */}
@@ -1151,6 +1246,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
           </Pressable>
         </Pressable>
       </Modal>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
