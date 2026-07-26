@@ -6016,17 +6016,6 @@ export default function DashboardScreen() {
                     {heroLabel}
                   </Text>
 
-                  {/* Share this period as a branded image */}
-                  <Pressable
-                    onPress={() => { hTap(); shareCardImage(dashShareRef); }}
-                    hitSlop={8}
-                    style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginVertical: -10 }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Share earnings"
-                  >
-                    <Ionicons name="share-outline" size={20} color={PRIMARY_TXT} />
-                  </Pressable>
-
                   {/* Tappable secondary metric — tap to swap with the big number */}
                   <PressScale
                     onPress={() => { hTap(); setHeroMetric(isProfitHero ? 'revenue' : 'profit'); }}
@@ -6054,6 +6043,17 @@ export default function DashboardScreen() {
                     />
                     <Ionicons name="swap-horizontal" size={14} color={LABEL} />
                   </PressScale>
+
+                  {/* Share this period as a branded image — top-right corner */}
+                  <Pressable
+                    onPress={() => { hTap(); shareCardImage(dashShareRef); }}
+                    hitSlop={8}
+                    style={{ minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center', marginVertical: -10, marginRight: -6 }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Share earnings"
+                  >
+                    <Ionicons name="share-outline" size={20} color={PRIMARY_TXT} />
+                  </Pressable>
                 </View>
 
                 {/* Big number with count-up */}
