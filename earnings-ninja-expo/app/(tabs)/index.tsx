@@ -26,6 +26,7 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
 import { TransactionDetailModal } from '../../components/TransactionDetailModal';
 import { TwoFactorRow } from '../../components/TwoFactorRow';
+import { ShareCard, shareCardImage } from '../../components/ShareCard';
 import { EmailVerifyBanner } from '../../components/EmailVerifyBanner';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -3825,6 +3826,9 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   // and only present the paywall from the Modal's onDismiss (after the sheet
   // has fully finished dismissing). Android modals don't have this problem
   // (and RN's Modal onDismiss is iOS-only), so it presents directly there.
+  // Off-screen branded share card — captured to a PNG by the header Share button.
+  const shareRef = useRef<View | null>(null);
+
   const pendingPaywall = useRef(false);
   const upgradeFromLockedPreview = useCallback(() => {
     hTap();
@@ -4115,10 +4119,21 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
       <ScrollView style={{ flex: 1, backgroundColor: BG }} contentContainerStyle={{ paddingHorizontal: 28, paddingTop: 24, paddingBottom: insets.bottom + 48 + (locked ? 84 : 0) }}>
         {/* Header — editorial kicker + close */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-          <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2 }}>
+          <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2, flex: 1 }} numberOfLines={1}>
             Earnings Report — {ANALYTICS_PERIODS.find(p => p.key === aPeriod)?.label ?? ''}
           </Text>
-          <Pressable onPress={onClose} style={{ padding: 6 }} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close">
+          {!locked && !loading && !rollupQuery.isError && !entriesQuery.isError && (
+            <Pressable
+              onPress={() => { hTap(); shareCardImage(shareRef); }}
+              style={{ padding: 6, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Share earnings report"
+            >
+              <Ionicons name="share-outline" size={24} color={PRIMARY_TXT} />
+            </Pressable>
+          )}
+          <Pressable onPress={onClose} style={{ padding: 6, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }} hitSlop={6} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close-circle" size={28} color={MUTED} />
           </Pressable>
         </View>
@@ -4487,6 +4502,27 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
         )}
       </ScrollView>
 
+      {/* Off-screen branded share card (captured on Share tap; never visible).
+          Only rendered when sharing is actually possible — unlocked + loaded —
+          so free/loading states carry zero hidden-render cost and there is no
+          capturable card holding real numbers while the page is blurred. */}
+      {!locked && !loading && !rollupQuery.isError && !entriesQuery.isError && (
+      <View style={{ position: 'absolute', left: -1000, top: 0 }} pointerEvents="none">
+        <ShareCard
+          ref={shareRef}
+          data={{
+            periodLabel: ANALYTICS_PERIODS.find(p => p.key === aPeriod)?.label ?? '',
+            profit,
+            revenue: rollup?.revenue ?? 0,
+            expenses: Math.abs(rollup?.expenses ?? 0),
+            orders: totalOrders,
+            miles: rollup?.miles ?? 0,
+            perHour,
+          }}
+        />
+      </View>
+      )}
+
       {/* Sticky upgrade CTA — free-plan preview only. Overlays the scroll
           (extra contentContainer padding keeps the last card reachable). */}
       {locked && (
@@ -4848,6 +4884,8 @@ export default function DashboardScreen() {
   // double-taps (two concurrent requirePro() calls can strand the paywall
   // promise — openFallback() has a single resolver slot).
   const analyticsGateBusy = useRef(false);
+  // Off-screen branded share card — captured to a PNG by the hero Share button.
+  const dashShareRef = useRef<View | null>(null);
   const [showExpenses, setShowExpenses] = useState(false);
 
   // History list multi-select state. `selectionMode` toggles the row UI into
@@ -5755,9 +5793,20 @@ export default function DashboardScreen() {
               ]}>
                 {/* Title row: label on the left, tappable alternate metric inline on the right */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                  <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                  <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, flex: 1 }}>
                     {heroLabel}
                   </Text>
+
+                  {/* Share this period as a branded image */}
+                  <Pressable
+                    onPress={() => { hTap(); shareCardImage(dashShareRef); }}
+                    hitSlop={8}
+                    style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginVertical: -10 }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Share earnings"
+                  >
+                    <Ionicons name="share-outline" size={20} color={PRIMARY_TXT} />
+                  </Pressable>
 
                   {/* Tappable secondary metric — tap to swap with the big number */}
                   <PressScale
@@ -6449,6 +6498,21 @@ export default function DashboardScreen() {
         onClose={() => { setShowAdd(false); setAddPrefill(undefined); setEditingEntry(undefined); }}
       />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
+      {/* Off-screen branded share card (captured on Share tap; never visible) */}
+      <View style={{ position: 'absolute', left: -1000, top: 0 }} pointerEvents="none">
+        <ShareCard
+          ref={dashShareRef}
+          data={{
+            periodLabel,
+            profit,
+            revenue,
+            expenses: Math.abs(expenses),
+            orders: orderCount,
+            miles,
+          }}
+        />
+      </View>
+
       <AnalyticsModal visible={showAnalytics} onClose={() => setShowAnalytics(false)} initialPeriod={dashboardToAnalyticsPeriod(period)} />
       <ExpensesModal visible={showExpenses} onClose={() => setShowExpenses(false)} />
       {/* ── Sort Menu (Dark Neon bottom sheet) ────────────────────────────── */}
