@@ -37,13 +37,11 @@ export const ShareCard = forwardRef<View, { data: ShareCardData }>(({ data }, re
   // Per-theme card palette. Dark = brand black + neon; Light = clean white
   // with black text and neon reserved for fills/borders/brand marks.
   const CARD_BG = isDark ? '#0b0b0f' : '#ffffff';
-  const CARD_SURFACE = isDark ? '#15151c' : '#f4f6f9';
   const CARD_BORDER = isDark ? 'rgba(250,204,21,0.35)' : 'rgba(250,204,21,0.8)';
   const CARD_MUTED = isDark ? '#9aa1af' : '#64748b';
   const TEXT = isDark ? '#ffffff' : '#0f172a';
   const BRAND_TXT = isDark ? NEON : '#000000';       // wordmark + footer brand
   const HEADLINE_POS = isDark ? NEON : '#000000';     // big profit figure
-  const TILE_BORDER = isDark ? 'rgba(255,255,255,0.10)' : '#e2e8f0';
   const DIVIDER = isDark ? 'rgba(255,255,255,0.10)' : '#e8edf2';
   const GREEN = '#22c55e';
   const RED = '#ef4444';
@@ -58,6 +56,9 @@ export const ShareCard = forwardRef<View, { data: ShareCardData }>(({ data }, re
       ? [{ label: 'PER HOUR', value: money(data.perHour) }]
       : []),
   ];
+  // Editorial layout: two stats per hairline-separated row.
+  const statRows: (typeof stats)[] = [];
+  for (let i = 0; i < stats.length; i += 2) statRows.push(stats.slice(i, i + 2));
   return (
     <View
       ref={ref}
@@ -106,28 +107,29 @@ export const ShareCard = forwardRef<View, { data: ShareCardData }>(({ data }, re
         {money(data.profit)}
       </Text>
 
-      {/* Stat grid */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-        {stats.map(s => (
+      {/* Stat grid — editorial style: hairlines + serif figures, no boxes,
+          matching the Analytics "Editorial Story" design. */}
+      <View style={{ borderTopWidth: 1, borderTopColor: DIVIDER }}>
+        {statRows.map((row, i) => (
           <View
-            key={s.label}
+            key={i}
             style={{
-              backgroundColor: CARD_SURFACE,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: TILE_BORDER,
-              paddingVertical: 10,
-              paddingHorizontal: 14,
-              minWidth: 88,
-              flexGrow: 1,
+              flexDirection: 'row',
+              paddingVertical: 14,
+              borderBottomWidth: i < statRows.length - 1 ? 1 : 0,
+              borderBottomColor: DIVIDER,
             }}
           >
-            <Text style={{ color: s.color ?? TEXT, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
-              {s.value}
-            </Text>
-            <Text style={{ color: CARD_MUTED, fontSize: 9, fontWeight: '700', letterSpacing: 1.2, marginTop: 2 }}>
-              {s.label}
-            </Text>
+            {row.map(s => (
+              <View key={s.label} style={{ flex: 1 }}>
+                <Text style={{ color: CARD_MUTED, fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
+                  {s.label}
+                </Text>
+                <Text style={{ fontFamily: SERIF, color: s.color ?? TEXT, fontSize: 24, lineHeight: 30, letterSpacing: -0.5, fontVariant: ['tabular-nums'] }}>
+                  {s.value}
+                </Text>
+              </View>
+            ))}
           </View>
         ))}
       </View>
