@@ -1855,6 +1855,56 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     }
   };
 
+  // Delete a user-created platform (confirmed via Alert). The server keeps
+  // any entries logged under it (they store the name as a plain string), so
+  // only the selector pill disappears — history/stats are unaffected.
+  const submitDeletePlatform = () => {
+    if (!renamingPlatform || addPlatformBusy) return;
+    const row = renamingPlatform;
+    Alert.alert(
+      `Delete \u201C${row.name}\u201D?`,
+      'The platform is removed from your selector. Entries you already logged under it stay in your history and stats.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setAddPlatformBusy(true);
+            setAddPlatformError(null);
+            try {
+              await api.deletePlatform(row.id);
+              const drop = (list: UserPlatform[]) => list.filter(p => p.id !== row.id);
+              queryClient.setQueryData<UserPlatform[]>(['platforms'], (old) => {
+                const next = drop(Array.isArray(old) ? old : customPlatforms);
+                writePlatformsMirror(next).catch(() => {});
+                return next;
+              });
+              setMirrorPlatforms(prev => drop(prev));
+              const deletedKey = customKey(row.name);
+              if (app === deletedKey) setApp('OTHER');
+              // Clear the persisted last-used key so the next modal open
+              // can't auto-select a platform that no longer exists.
+              AsyncStorage.getItem(LAST_ORDER_APP_KEY).then((stored) => {
+                if (stored === deletedKey) {
+                  AsyncStorage.removeItem(LAST_ORDER_APP_KEY).catch(() => {});
+                }
+              }).catch(() => {});
+              setAddPlatformVisible(false);
+              setRenamingPlatform(null);
+              setNewPlatformName('');
+              hTap();
+            } catch (e: any) {
+              setAddPlatformError(e?.message || 'Failed to delete platform. Check your connection and try again.');
+            } finally {
+              setAddPlatformBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   // User manually changed the platform → drop the auto-fill flag (and its hint)
   // and mark the picker "touched" so a late last-used read can't overwrite it.
   const handleAppChange = (a: string) => {
@@ -2631,6 +2681,13 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
             Platform selector. Validates locally (dup vs built-ins + existing
             customs) for instant feedback; the server enforces the same rules. */}
         <Modal visible={addPlatformVisible} transparent animationType="fade" onRequestClose={() => { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); }}>
+          {/* This nested native Modal renders OUTSIDE the AddEntryModal's
+              KeyboardAvoidingView, so it needs its own — without it the form
+              bottom is cut off by the keyboard on small screens. */}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
           <Pressable
             onPress={() => { if (!addPlatformBusy) { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); } }}
             style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 }}
@@ -2704,8 +2761,22 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   </Text>
                 </Pressable>
               ) : null}
+              {renamingPlatform ? (
+                <Pressable
+                  onPress={submitDeletePlatform}
+                  disabled={addPlatformBusy}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete platform ${renamingPlatform.name}`}
+                  style={({ pressed }) => ({ alignItems: 'center', paddingVertical: 8, opacity: pressed ? 0.7 : 1 })}
+                >
+                  <Text style={{ color: '#ef4444', fontWeight: '700', fontSize: 13 }}>
+                    Delete this platform
+                  </Text>
+                </Pressable>
+              ) : null}
             </Pressable>
           </Pressable>
+          </KeyboardAvoidingView>
         </Modal>
       </KeyboardAvoidingView>
     </Modal>

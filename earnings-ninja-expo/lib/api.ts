@@ -767,6 +767,23 @@ export const api = {
     return res.json();
   },
 
+  // Delete a user-created platform. Entries logged under it are kept on the
+  // server (they store the name as a plain string) — only the pill goes away.
+  async deletePlatform(id: number): Promise<void> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/platforms/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    if (!res.ok && res.status !== 404) {
+      let msg = 'Failed to delete platform';
+      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
+      const e: any = new Error(msg);
+      e.status = res.status;
+      throw e;
+    }
+  },
+
   // Raw DELETE — no offline queue. Used by the mutation-queue drainer so it
   // can't recurse. ALWAYS throws on failure (network or non-2xx); the thrown
   // Error carries `.status` (including 404) so the drainer can classify a
