@@ -150,6 +150,27 @@ async def rename_platform(
     db.refresh(row)
     return row
 
+@router.delete("/platforms/{platform_id}", status_code=204)
+async def delete_platform(
+    platform_id: int,
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
+    """Delete a user-created platform. Entries logged under it are KEPT —
+    they store the platform name as a plain string (app=OTHER + custom_app),
+    so history and stats are unaffected; only the selector pill goes away."""
+    row = (
+        db.query(UserPlatform)
+        .filter(UserPlatform.id == platform_id, UserPlatform.user_id == current_user.id)
+        .first()
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="Platform not found.")
+    db.delete(row)
+    db.commit()
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Built-in label overrides — per-user cosmetic renames of the built-in
 # Platform and Type pills. Only display labels change; the keys stored on
