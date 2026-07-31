@@ -62,3 +62,5 @@ timestamp + a unique marker in your message). If it deduped, your content is alr
 live; to force a new group, make any real one-line bundle change.
 
 **Build kickoff (Jul 24):** detached/nohup/setsid `eas build` kickoffs get killed by the tool sandbox before the build registers. Working pattern: run `eas build --no-wait` in the FOREGROUND (2-min tool limit is enough — upload ~90s); verify with `eas build:list --json` and check the auto-submit submission via Expo GraphQL.
+
+**JSON-output gotcha (Jul 31):** with `GIT_CEILING_DIRECTORIES`+`EAS_NO_VCS=1`, `eas … --json` prepends the "Failed to get Git root path…" fallback warning to STDOUT, breaking naive JSON parsing. Pipe through `sed -n '/^\[/,$p'` (or `/^{/`) first. Auto-submit status: query Expo GraphQL `submissions.byId` with `Authorization: Bearer $EXPO_TOKEN` (the ~/.expo/state.json session is not populated here).
