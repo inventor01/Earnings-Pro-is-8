@@ -31,4 +31,5 @@
 - [Notification day-boundary staleness](notification-content-day-boundary.md) — scheduled-notification copy with volatile numbers must be sameDay-aware; re-arm on every earnings mutation + queue drain, never drop suppressed refreshes.
 - [cancelQueries data-less skeleton](cancelqueries-dataless-skeleton.md) — onMutate must only cancel queries that hold data, or a killed first fetch strands the dashboard on its skeleton.
 - [Login-identifier change step-up](change-login-identifier-stepup.md) — change-email needs re-auth (password) and must block passwordless accounts; rotate the JWT since it embeds email.
+- [Nested-modal keyboard cutoff](nested-modal-keyboard-avoiding.md) — a parent KeyboardAvoidingView never reaches inside a nested RN Modal; every form-bearing Modal needs its own KAV.
 - [Per-date daily goal keys](daily-goal-per-date-keys.md) — EST-midnight key rollover, inherited-default not mirrored under date keys, no mirror clear on transient errors.
