@@ -47,6 +47,10 @@ import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
 import { invalidateEntryData, cancelQueriesWithData } from '@/lib/queryInvalidation';
 import { keyWindowContainsDate, applyOptimisticCreateRollup } from '@/lib/rollupWindow';
+import {
+  ChartBucket, isHourlyPeriod, buildHourlyBuckets, buildDailyBuckets,
+  easternHourOfDay, easternWeekday, easternParts, dailySpan, easternDayKey,
+} from '@/lib/chartBuckets';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -538,72 +542,15 @@ function ProfitChart({
 
   // Determine buckets: list of { key, sum, label } where sum = signed-amount
   // total and label is the x-axis tick text (hour or date).
-  type Bucket = { key: string; sum: number; label: string };
-  // A custom range covering exactly one calendar day is a single-day view too —
-  // without this it renders as ONE full-width daily bar.
-  const isHourly =
-    period === 'today' || period === 'yesterday' ||
-    (period === 'custom' && !!customRange && customRange.from === customRange.to);
-  const buckets: Bucket[] = (() => {
-    // Hourly (24) for any single-day view
-    if (isHourly) {
-      const arr: Bucket[] = Array.from({ length: 24 }, (_, h) => ({
-        key: String(h), sum: 0,
-        label: `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'am' : 'pm'}`,
-      }));
-      for (const e of entries) {
-        const d = parseServerDate(e.timestamp);
-        const h = d.getHours();
-        if (h >= 0 && h < 24) arr[h].sum += Number(e.amount) || 0;
-      }
-      return arr;
-    }
-
-    // Daily for multi-day ranges. Determine the day-count from the period.
-    let days = 7;
-    let endDate = new Date();
-    if (period === 'week' || period === 'last7') {
-      days = 7;
-      endDate = new Date();
-    } else if (period === 'month') {
-      const now = new Date();
-      endDate = now;
-      days = now.getDate(); // days elapsed this month
-    } else if (period === 'lastMonth') {
-      const now = new Date();
-      // last day of previous month
-      endDate = new Date(now.getFullYear(), now.getMonth(), 0);
-      days = endDate.getDate();
-    } else if (period === 'custom' && customRange) {
-      // EST date strings 'YYYY-MM-DD' — count inclusive
-      const from = new Date(customRange.from + 'T00:00:00');
-      const to   = new Date(customRange.to   + 'T00:00:00');
-      const ms = to.getTime() - from.getTime();
-      days = Math.max(1, Math.round(ms / 86400000) + 1);
-      endDate = to;
-    }
-    // Cap at ~31 buckets so bars stay legible.
-    days = Math.min(days, 31);
-
-    // Build ascending day keys ending on endDate.
-    const dayKey = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-    const arr: Bucket[] = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(endDate);
-      d.setDate(endDate.getDate() - i);
-      arr.push({ key: dayKey(d), sum: 0, label: `${d.getMonth() + 1}/${d.getDate()}` });
-    }
-    const indexByKey = new Map(arr.map((b, i) => [b.key, i]));
-    for (const e of entries) {
-      const d = parseServerDate(e.timestamp);
-      const k = dayKey(d);
-      const idx = indexByKey.get(k);
-      if (idx !== undefined) arr[idx].sum += Number(e.amount) || 0;
-    }
-    return arr;
-  })();
+  // Bucketing is Eastern-time-aware (lib/chartBuckets.ts) so a bar always
+  // lands in the same hour/day the EST-based KPI cards above it are using —
+  // see the note in chartBuckets.ts for why this used to bucket by the
+  // DEVICE's local time instead.
+  type Bucket = ChartBucket;
+  const isHourly = isHourlyPeriod(period, customRange);
+  const buckets: Bucket[] = isHourly
+    ? buildHourlyBuckets(entries)
+    : buildDailyBuckets(entries, period, customRange);
 
   const hasAny = buckets.some(b => b.sum !== 0);
   // Goal / average overlays are multi-day-only; include the goal in the scale
@@ -2008,6 +1955,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       setApp('OTHER');
       setAppAutoFilled(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entryType]);
 
   // Image-picker helpers — request permissions, then offer Camera vs Library
@@ -4144,8 +4092,8 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
     const dayKeys = new Set<string>();
     for (const e of entries) {
       if ((Number(e.amount) || 0) <= 0) continue;
-      const d = parseServerDate(e.timestamp);
-      dayKeys.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+      // Eastern calendar day — must match dayAgg's day definition.
+      dayKeys.add(easternDayKey(parseServerDate(e.timestamp)));
     }
     const activeDays = Math.max(1, dayKeys.size);
     return totalMiles / activeDays;
@@ -4169,11 +4117,14 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   const dayAgg = useMemo(() => {
     const map = new Map<string, { date: Date; net: number; revenue: number; expenses: number; miles: number; minutes: number; orders: number }>();
     for (const e of entries) {
-      const d = parseServerDate(e.timestamp);
-      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      // Bucket by the entry's EASTERN calendar day (matches the EST-based
+      // rollups) — never the device-local day. The rec.date is built from the
+      // eastern Y/M/D as a local-midnight Date purely for display/sorting.
+      const { y, m, d: dd } = easternParts(parseServerDate(e.timestamp));
+      const key = `${y}-${m - 1}-${dd}`;
       let rec = map.get(key);
       if (!rec) {
-        rec = { date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), net: 0, revenue: 0, expenses: 0, miles: 0, minutes: 0, orders: 0 };
+        rec = { date: new Date(y, m - 1, dd), net: 0, revenue: 0, expenses: 0, miles: 0, minutes: 0, orders: 0 };
         map.set(key, rec);
       }
       // Sign-based so the daily invariant always holds: revenue = positive
@@ -4215,7 +4166,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
       if (e.type === 'EXPENSE') continue;
       const amt = Number(e.amount) || 0;
       if (amt <= 0) continue;
-      arr[parseServerDate(e.timestamp).getHours()] += amt;
+      arr[easternHourOfDay(parseServerDate(e.timestamp))] += amt;
     }
     return arr;
   }, [entries]);
@@ -4225,45 +4176,43 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   // Net profit by weekday (Sun..Sat) across the whole loaded period.
   const weekday = useMemo(() => {
     const arr = Array<number>(7).fill(0);
-    for (const e of entries) arr[parseServerDate(e.timestamp).getDay()] += Number(e.amount) || 0;
+    for (const e of entries) arr[easternWeekday(parseServerDate(e.timestamp))] += Number(e.amount) || 0;
     return arr;
   }, [entries]);
   const bestWeekday = useMemo(() => weekday.reduce((mi, v, i, a) => (v > a[mi] ? i : mi), 0), [weekday]);
 
   // Daily expense trend — continuous calendar days (gaps shown as zero) so the
   // shape reads as a real time series, capped at 31 bars for legibility.
-  const expenseTrend = useMemo(() => {
-    if (isSingleDay) return [];
-    let days = 7;
-    let endDate = new Date();
-    if (aPeriod === 'week') days = 7;
-    else if (aPeriod === 'month') days = endDate.getDate();
-    else if (aPeriod === 'custom' && aCustomRange) {
-      // Picked range: end at the picked `to` day and span the whole selection.
-      const [fy, fm, fd] = aCustomRange.from.split('-').map(Number);
-      const [ty, tm, td] = aCustomRange.to.split('-').map(Number);
-      const fromD = new Date(fy, fm - 1, fd);
-      endDate = new Date(ty, tm - 1, td);
-      days = Math.max(1, Math.round((endDate.getTime() - fromD.getTime()) / 86400000) + 1);
+  const expenseTrendData = useMemo(() => {
+    if (isSingleDay) return { values: [] as number[], labels: [] as string[] };
+    // Eastern-day span + Eastern-day bucketing (lib/chartBuckets.ts) so the
+    // trend lines up with the EST-based dayAgg/rollups above it.
+    let { days, endUTC } = dailySpan(aPeriod === 'week' ? 'week' : aPeriod === 'month' ? 'month' : aPeriod === 'custom' && aCustomRange ? 'custom' : 'lastMonth', aCustomRange);
+    if (aPeriod !== 'week' && aPeriod !== 'month' && !(aPeriod === 'custom' && aCustomRange)) {
+      // Fallback periods used to span 30 days ending today.
+      days = 30; endUTC = estTodayUTC();
     }
-    else days = 30;
     days = Math.min(days, 31);
-    const keyOf = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
     const idx = new Map<string, number>();
-    const arr = Array<number>(days).fill(0);
+    const values = Array<number>(days).fill(0);
+    // Labels come from the SAME day sequence as the buckets, so the axis
+    // always shows the Eastern day the money was actually bucketed into.
+    const labels = Array<string>(days).fill('');
     for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(endDate); d.setDate(endDate.getDate() - i);
-      idx.set(keyOf(d), days - 1 - i);
+      const d = new Date(endUTC); d.setUTCDate(endUTC.getUTCDate() - i);
+      idx.set(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`, days - 1 - i);
+      labels[days - 1 - i] = `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
     }
     for (const e of entries) {
       // All negative outflows (EXPENSE + CANCELLATION), matching dayAgg.
       const amt = Number(e.amount) || 0;
       if (amt >= 0) continue;
-      const j = idx.get(keyOf(parseServerDate(e.timestamp)));
-      if (j !== undefined) arr[j] += -amt;
+      const j = idx.get(easternDayKey(parseServerDate(e.timestamp)));
+      if (j !== undefined) values[j] += -amt;
     }
-    return arr;
+    return { values, labels };
   }, [entries, aPeriod, aCustomRange, isSingleDay]);
+  const expenseTrend = expenseTrendData.values;
   const hasExpenseTrend = expenseTrend.some(v => v > 0);
 
   // Business (tax-deductible) expense summary — magnitude + count of EXPENSE
@@ -4763,23 +4712,14 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                         positiveColor={RED}
                         negativeColor={RED}
                         height={80}
-                        labels={expenseTrend.map((_, i) => {
-                          const N = expenseTrend.length;
-                          const step = Math.max(1, Math.ceil(N / 5));
-                          if (i % step !== 0) return null;
-                          const d = new Date();
-                          d.setDate(d.getDate() - (N - 1 - i));
-                          return `${d.getMonth() + 1}/${d.getDate()}`;
+                        labels={expenseTrendData.labels.map((lab, i) => {
+                          const step = Math.max(1, Math.ceil(expenseTrendData.labels.length / 5));
+                          return i % step === 0 ? lab : null;
                         })}
                         masked={hidden || locked}
                         showGrid
                         showAverage
-                        tooltipLabels={expenseTrend.map((_, i) => {
-                          const N = expenseTrend.length;
-                          const d = new Date();
-                          d.setDate(d.getDate() - (N - 1 - i));
-                          return `${d.getMonth() + 1}/${d.getDate()}`;
-                        })}
+                        tooltipLabels={expenseTrendData.labels}
                         resetKey={aPeriod}
                       />
                     </View>
