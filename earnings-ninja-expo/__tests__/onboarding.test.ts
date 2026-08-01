@@ -36,8 +36,11 @@ describe('needsOnboarding', () => {
     expect(needsOnboarding({}, notDone)).toBe(false);
   });
 
-  it('never shows for demo accounts', () => {
-    expect(needsOnboarding({ is_demo: true, onboarding_completed: false }, notDone)).toBe(false);
+  it('follows the server flag for demo accounts (reviewer account can demo the funnel)', () => {
+    // Auto-created demo sessions get onboarding_completed=true server-side and skip.
+    expect(needsOnboarding({ is_demo: true, onboarding_completed: true }, notDone)).toBe(false);
+    // The App Store reviewer account's flag is reset to false to show the funnel.
+    expect(needsOnboarding({ is_demo: true, onboarding_completed: false }, notDone)).toBe(true);
   });
 
   it('never shows when there is no user', () => {
