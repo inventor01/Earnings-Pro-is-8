@@ -1,0 +1,5 @@
+import React,{useState} from "react";
+import { Shell,Heading,Primary } from "./_shared";
+const stops=[300,500,700,900,1200,1500];
+export function WeeklyGoal(){const [goal,setGoal]=useState(500); const idx=stops.indexOf(goal);return <Shell step={2}><Heading>What's your weekly income goal?</Heading><p>We'll track your progress toward it every week.</p><div className="mt-10 text-center"><div className="text-[52px] font-black tracking-[-1px] text-[#facc15]">${goal.toLocaleString()}</div><div className="mt-0.5 text-[14px] text-[#929292]">per week</div></div><div className="mt-9"><input aria-label="Weekly income goal" type="range" min="0" max="5" value={idx} onChange={e=>setGoal(stops[Number(e.target.value)])} className="w-full accent-[#facc15]"/><div className="mt-3 flex justify-between text-[12.5px] font-semibold text-[#929292]">{stops.map(x=><button key={x} onClick={()=>setGoal(x)} className={goal===x?"text-[#facc15]":""}>${x}</button>)}</div></div><div className="mt-9"><Primary>Continue</Primary></div></Shell>}
+export default WeeklyGoal;

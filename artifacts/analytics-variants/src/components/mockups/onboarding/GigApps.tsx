@@ -1,0 +1,5 @@
+import React,{useState} from "react";
+import { Check } from "lucide-react";
+import { Shell, Heading, Primary, apps } from "./_shared";
+export function GigApps(){const [selected,setSelected]=useState(["DoorDash","Uber Eats"]);return <Shell step={1}><Heading>Which apps do you drive for?</Heading><p>We'll set up your earnings tracker for each one. Pick all that apply.</p><div className="mt-[22px] flex flex-wrap gap-2.5">{apps.map((a,i)=><button key={a} onClick={()=>setSelected(s=>s.includes(a)?s.filter(x=>x!==a):[...s,a])} className={`flex items-center gap-2 rounded-full border-2 px-4 py-3 text-[15px] font-bold ${selected.includes(a)?"border-[#facc15] bg-[#facc15] text-[#101010]":"border-[#292929] bg-[#151515]"}`}><i className={`h-2.5 w-2.5 rounded-full ${["bg-[#ff314a]","bg-[#06c167]","bg-[#f59e0b]","bg-[#ff6b35]","bg-[#f04444]","bg-[#9ca3af]"][i]}`}/>{a}{selected.includes(a)&&<Check size={16}/>}</button>)}</div><div className="mt-8"><Primary>Continue</Primary></div></Shell>}
+export default GigApps;

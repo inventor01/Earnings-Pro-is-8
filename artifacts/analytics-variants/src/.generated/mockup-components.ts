@@ -3,5 +3,13 @@ type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/CockpitHUD.tsx": () => import("../components/mockups/CockpitHUD.tsx"),
   "./components/mockups/EditorialStory.tsx": () => import("../components/mockups/EditorialStory.tsx"),
-  "./components/mockups/NeonTerminal.tsx": () => import("../components/mockups/NeonTerminal.tsx")
+  "./components/mockups/NeonTerminal.tsx": () => import("../components/mockups/NeonTerminal.tsx"),
+  "./components/mockups/onboarding/BlurredPreview.tsx": () => import("../components/mockups/onboarding/BlurredPreview.tsx"),
+  "./components/mockups/onboarding/BuildingDashboard.tsx": () => import("../components/mockups/onboarding/BuildingDashboard.tsx"),
+  "./components/mockups/onboarding/Challenge.tsx": () => import("../components/mockups/onboarding/Challenge.tsx"),
+  "./components/mockups/onboarding/GigApps.tsx": () => import("../components/mockups/onboarding/GigApps.tsx"),
+  "./components/mockups/onboarding/Paywall.tsx": () => import("../components/mockups/onboarding/Paywall.tsx"),
+  "./components/mockups/onboarding/Solution.tsx": () => import("../components/mockups/onboarding/Solution.tsx"),
+  "./components/mockups/onboarding/WeeklyGoal.tsx": () => import("../components/mockups/onboarding/WeeklyGoal.tsx"),
+  "./components/mockups/onboarding/Welcome.tsx": () => import("../components/mockups/onboarding/Welcome.tsx")
 };

@@ -1,0 +1,6 @@
+import React,{useState} from "react";
+import { Calculator, ChevronRight, FileText, Folder, TrendingDown } from "lucide-react";
+import { Shell,Heading, challenges } from "./_shared";
+const icons=[TrendingDown,Calculator,Folder,FileText];
+export function Challenge(){const [choice,setChoice]=useState("Not making enough");return <Shell step={3}><Heading>What's your biggest challenge?</Heading><p>We'll tailor Earnings Ninja to what matters most to you.</p><div className="mt-[22px] space-y-3">{challenges.map(([label],i)=>{const I=icons[i];return <button key={label} onClick={()=>setChoice(label)} className={`flex w-full items-center gap-3.5 rounded-2xl border-2 p-4 text-left ${choice===label?"border-[#facc15]":"border-[#292929]"} bg-[#151515]`}><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#202020] text-[#facc15]"><I size={20}/></span><span className="flex-1 text-[16px] font-bold">{label}</span><ChevronRight size={18} className="text-[#777]"/></button>})}</div></Shell>}
+export default Challenge;
