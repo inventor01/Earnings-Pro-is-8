@@ -41,6 +41,8 @@ describe('needsOnboarding', () => {
     expect(needsOnboarding({ is_demo: true, onboarding_completed: true }, notDone)).toBe(false);
     // The App Store reviewer account's flag is reset to false to show the funnel.
     expect(needsOnboarding({ is_demo: true, onboarding_completed: false }, notDone)).toBe(true);
+    // Re-runs every login: a leftover local completion marker is ignored for demo.
+    expect(needsOnboarding({ is_demo: true, onboarding_completed: false }, { localDone: true })).toBe(true);
   });
 
   it('never shows when there is no user', () => {

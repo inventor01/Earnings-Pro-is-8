@@ -107,6 +107,9 @@ export function needsOnboarding(
 ): boolean {
   if (!user) return false;
   if (user.onboarding_completed !== false) return false;
+  // Demo (reviewer) accounts re-run the funnel every login: ignore any local
+  // completion marker left behind by an older build.
+  if (user.is_demo) return true;
   return !local.localDone;
 }
 
