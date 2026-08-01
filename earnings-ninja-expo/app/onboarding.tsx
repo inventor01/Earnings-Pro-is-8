@@ -629,7 +629,7 @@ function BlurredPreview({ weeklyGoal }: { weeklyGoal: number }) {
 
         {/* "Blurred" premium rows: skeleton amounts under a frosted overlay */}
         <View style={{ marginTop: 16, gap: 12 }}>
-          {['Real net profit', 'Best hours to drive', 'Tax estimate'].map((label) => (
+          {['Real net profit', 'Best hours to drive', 'AI earning suggestions'].map((label) => (
             <View key={label} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={{ color: t.MUTED, fontSize: 13.5, fontWeight: '600' }}>{label}</Text>
               <View style={{ width: 74, height: 18, borderRadius: 6, backgroundColor: t.CARD_BG, opacity: 0.9 }} />
