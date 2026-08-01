@@ -15,7 +15,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AccessibilityInfo, Dimensions, Pressable, Text, View, findNodeHandle,
+  AccessibilityInfo, Dimensions, Pressable, Text, View, findNodeHandle, useWindowDimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -160,7 +160,9 @@ type Phase = 'hidden' | 'welcome' | 'tour' | 'done';
 export function WalkthroughOverlay() {
   const { user } = useAuth();
   const t = useTheme();
-  const win = Dimensions.get('window');
+  // Reactive: re-renders (and re-measures, via the effect deps below) on
+  // rotation and iPad split-screen resizes so the spotlight can't go stale.
+  const win = useWindowDimensions();
 
   const [phase, setPhase] = useState<Phase>('hidden');
   const [stepIdx, setStepIdx] = useState(0);
@@ -220,13 +222,14 @@ export function WalkthroughOverlay() {
 
   const step = STEPS[stepIdx];
 
-  // (Re)measure the current step's anchor whenever the step changes.
+  // (Re)measure the current step's anchor whenever the step OR the window
+  // size (rotation / split-screen) changes.
   useEffect(() => {
     if (phase !== 'tour') return;
     let cancelled = false;
     measureTarget(step?.target).then(r => { if (!cancelled) setRect(r); });
     return () => { cancelled = true; };
-  }, [phase, stepIdx, step?.target]);
+  }, [phase, stepIdx, step?.target, win.width, win.height]);
 
   const goto = useCallback((idx: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -292,6 +295,8 @@ export function WalkthroughOverlay() {
       style={[{
         backgroundColor: t.SURFACE, borderRadius: 20, borderWidth: 1, borderColor: t.BORDER,
         padding: 20, gap: 10, marginHorizontal: 20,
+        // Tablets / landscape: keep the card a readable column, centered.
+        maxWidth: 440, alignSelf: 'center', width: win.width - 40,
         shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 16,
       }, style]}
     >
@@ -366,8 +371,12 @@ export function WalkthroughOverlay() {
         style={{
           position: 'absolute', left: 0, right: 0,
           ...(spot
-            ? cardBelow ? { top: Math.min(spot.y + spot.h + 16, win.height - 280) } : { bottom: win.height - spot.y + 16 }
-            : { top: win.height * 0.28 }),
+            // Clamps keep the card fully on-screen even on short devices
+            // (SE-class) or when the spotlight sits near a screen edge.
+            ? cardBelow
+              ? { top: Math.max(60, Math.min(spot.y + spot.h + 16, win.height - 300)) }
+              : { bottom: Math.max(24, Math.min(win.height - spot.y + 16, win.height - 90)) }
+            : { top: Math.max(60, win.height * 0.28) }),
         }}
       >
         {card(
