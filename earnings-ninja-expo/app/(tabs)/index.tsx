@@ -24,7 +24,7 @@ import { useAuth } from '@/lib/authContext';
 import * as Haptics from 'expo-haptics';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
-import { WalkthroughOverlay, registerWalkthroughTarget, requestWalkthroughStart } from '../../components/Walkthrough';
+import { WalkthroughOverlay, registerWalkthroughTarget, registerWalkthroughScroller, requestWalkthroughStart } from '../../components/Walkthrough';
 import { TransactionDetailModal } from '../../components/TransactionDetailModal';
 import { TwoFactorRow } from '../../components/TwoFactorRow';
 import { ShareCard, shareCardImage } from '../../components/ShareCard';
@@ -5187,9 +5187,12 @@ export default function DashboardScreen() {
   // useCallback stable). Assigned during render once the real values exist.
   const sortedLenRef = useRef(0);
   const showAllRef = useRef(false);
+  // Live scroll offset for the walkthrough's scroll-into-view (relative scroll).
+  const scrollYRef = useRef(0);
   const onHistoryScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
     const y = contentOffset.y;
+    scrollYRef.current = y;
     const next = y > 400;
     setShowScrollTop(prev => (prev === next ? prev : next));
     // Grow the rendered window as we approach the bottom of the expanded list.
@@ -5214,6 +5217,17 @@ export default function DashboardScreen() {
   const scrollToTop = useCallback(() => {
     hTap();
     scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  // Let the walkthrough scroll cut-off anchors (goals, analytics, KPIs) into
+  // view before spotlighting them.
+  useEffect(() => {
+    registerWalkthroughScroller((dy: number) => {
+      const y = Math.max(0, scrollYRef.current + dy);
+      scrollYRef.current = y; // scrollTo doesn't fire onScroll synchronously
+      scrollRef.current?.scrollTo({ y, animated: true });
+    });
+    return () => registerWalkthroughScroller(null);
   }, []);
 
   const [showAdd, setShowAdd] = useState(false);
