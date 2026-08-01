@@ -33,5 +33,6 @@
 - [Login-identifier change step-up](change-login-identifier-stepup.md) — change-email needs re-auth (password) and must block passwordless accounts; rotate the JWT since it embeds email.
 - [Nested-modal keyboard cutoff](nested-modal-keyboard-avoiding.md) — a parent KeyboardAvoidingView never reaches inside a nested RN Modal; every form-bearing Modal needs its own KAV.
 - [Onboarding funnel gating](onboarding-funnel-gating.md) — flow shows only on explicit server flag false; fail closed to dashboard, grandfather backfill inside add-column guard, paywall personalization via options only.
+- [EAS submit retry / upload cap](eas-submit-retry.md) — re-submit a FINISHED build by id with `--profile testflight` (required); Apple caps ~7 uploads/app/day (409 "wait 1 day"); real errors via submission logsUrl.
 - [Tour seen-flag at start](tour-seen-flag-at-start.md) — auto-show tours must persist "seen" when they START; finish-only writes re-trigger forever if the sheet is swiped away.
 - [Per-date daily goal keys](daily-goal-per-date-keys.md) — EST-midnight key rollover, inherited-default not mirrored under date keys, no mirror clear on transient errors.
