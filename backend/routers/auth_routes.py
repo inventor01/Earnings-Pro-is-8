@@ -1176,8 +1176,10 @@ async def create_demo_session(request: Request, body: DemoRequest = DemoRequest(
         is_demo=True,
         # Demo accounts are throwaway and never see the confirmation nudge.
         email_verified=True,
-        # Demo mode drops straight into the seeded dashboard — no onboarding.
-        onboarding_completed=True,
+        # Demo mode showcases the full experience: every demo session starts
+        # with the onboarding funnel (flag false + is_demo means completion is
+        # never persisted, so it re-runs on every new demo session).
+        onboarding_completed=False,
     )
     db.add(user)
     db.flush()
