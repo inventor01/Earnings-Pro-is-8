@@ -25,6 +25,11 @@ import * as Haptics from 'expo-haptics';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
 import { WalkthroughOverlay, registerWalkthroughTarget, registerWalkthroughScroller, requestWalkthroughStart } from '../../components/Walkthrough';
+import {
+  AddEntryWalkthroughOverlay, registerAddEntryTarget, registerAddEntryController,
+  registerAddEntryShowMore, registerAddEntryScroller, resetAddEntryWalkthrough,
+  queueAddEntryWalkthroughReplay,
+} from '../../components/AddEntryWalkthrough';
 import { TransactionDetailModal } from '../../components/TransactionDetailModal';
 import { TwoFactorRow } from '../../components/TwoFactorRow';
 import { ShareCard, shareCardImage } from '../../components/ShareCard';
@@ -1252,6 +1257,11 @@ function DetailsForm({
   // Date & Time, Notes) behind a "See more" toggle so the form stays short on
   // open — the common case is just amount + type/platform (+ miles).
   const [showMore, setShowMore] = useState(false);
+  // Let the guided walkthrough expand/collapse the optional fields.
+  useEffect(() => {
+    registerAddEntryShowMore(setShowMore);
+    return () => registerAddEntryShowMore(null);
+  }, []);
   return (
     <View style={{ gap: 14 }}>
       {/* Amount summary — tap to edit, mirrors blue→purple from CalcPad */}
@@ -1310,7 +1320,7 @@ function DetailsForm({
           style={{ padding: 18, gap: 16 }}
         >
           {/* Type — long-press a pill to rename it (per-user label) */}
-          <View>
+          <View ref={registerAddEntryTarget('type')} collapsable={false}>
             <FieldLabel>📝 Type</FieldLabel>
             <PillSelect
               options={typeOptions}
@@ -1322,7 +1332,7 @@ function DetailsForm({
 
           {/* Platform / App (hidden for EXPENSE — mirrors web) */}
           {entryType !== 'EXPENSE' && (
-            <View>
+            <View ref={registerAddEntryTarget('platform')} collapsable={false}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <FieldLabel>🚗 Platform</FieldLabel>
                 {appAutoFilled ? (
@@ -1367,7 +1377,7 @@ function DetailsForm({
 
           {/* Category (only for EXPENSE) */}
           {entryType === 'EXPENSE' && (
-            <View>
+            <View ref={registerAddEntryTarget('category')} collapsable={false}>
               <FieldLabel>🏷️ Category</FieldLabel>
               <PillSelect
                 options={EXPENSE_CATS.map(c => ({
@@ -1382,7 +1392,7 @@ function DetailsForm({
 
           {/* Miles & Minutes — hidden for EXPENSE entries */}
           {entryType !== 'EXPENSE' && (
-            <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View ref={registerAddEntryTarget('miles')} collapsable={false} style={{ flexDirection: 'row', gap: 12 }}>
               <View style={{ flex: 1 }}>
                 <FieldLabel>🛣️ Miles</FieldLabel>
                 <FormInput
@@ -1408,6 +1418,7 @@ function DetailsForm({
               form stays short. Tapping reveals Business Expense (EXPENSE only),
               Receipt (EXPENSE only), Date & Time, and Notes. */}
           <Pressable
+            ref={registerAddEntryTarget('more') as any}
             onPress={() => { hTap(); setShowMore(v => !v); }}
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -1428,7 +1439,7 @@ function DetailsForm({
                   tax-deductible. Stored as is_business_expense; surfaced with a
                   distinct briefcase/blue indicator in lists + an Analytics summary. */}
               {entryType === 'EXPENSE' && (
-                <View>
+                <View ref={registerAddEntryTarget('business')} collapsable={false}>
                   <FieldLabel>💼 Business Expense</FieldLabel>
                   <Pressable
                     onPress={() => { hTap(); setIsBusiness(!isBusiness); }}
@@ -1521,7 +1532,7 @@ function DetailsForm({
               {/* Date & Time — defaults to "now" on a fresh entry. Tap to pick a
                   custom date/time. The picker renders inline on iOS (spinner) and
                   as a system modal on Android. */}
-              <View>
+              <View ref={registerAddEntryTarget('date')} collapsable={false}>
                 <FieldLabel>📅 Date & Time</FieldLabel>
                 <Pressable
                   onPress={() => { hTap(); onToggleDatePicker(); }}
@@ -1567,7 +1578,7 @@ function DetailsForm({
               </View>
 
               {/* Notes */}
-              <View>
+              <View ref={registerAddEntryTarget('notes')} collapsable={false}>
                 <FieldLabel>📝 Notes (optional)</FieldLabel>
                 <FormInput
                   value={note}
@@ -1601,6 +1612,25 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const [step, setStep]           = useState<'calc' | 'details'>('calc');
+  // Guided walkthrough plumbing: the tour drives the form (calc/details step,
+  // entry type) and scrolls cut-off anchors into view.
+  const aeScrollRef = useRef<ScrollView>(null);
+  const aeScrollY = useRef(0);
+  useEffect(() => {
+    if (!visible) return;
+    aeScrollY.current = 0; // fresh open always starts at the top
+    registerAddEntryController({
+      goCalc: () => setStep('calc'),
+      goDetails: () => setStep('details'),
+      setEntryType: (t) => setEntryType(t),
+    });
+    registerAddEntryScroller((dy) => {
+      const y = Math.max(0, aeScrollY.current + dy);
+      aeScrollRef.current?.scrollTo({ y, animated: true });
+      aeScrollY.current = y; // scrollTo doesn't fire onScroll synchronously
+    });
+    return () => { registerAddEntryController(null); registerAddEntryScroller(null); };
+  }, [visible]);
   const [amount, setAmount]       = useState('0');
   const [mode, setMode]           = useState<'add' | 'subtract'>('add');
   const [entryType, setEntryType] = useState<EntryType>('ORDER');
@@ -2558,17 +2588,22 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
           </Pressable>
         </View>
         <ScrollView
+          ref={aeScrollRef}
           style={{ flex: 1 }}
           contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
           keyboardShouldPersistTaps="handled"
+          onScroll={(e) => { aeScrollY.current = e.nativeEvent.contentOffset.y; }}
+          scrollEventThrottle={16}
         >
           {step === 'calc' ? (
-            <CalcPad
-              amount={amount}
-              mode={mode}
-              onAmount={setAmount}
-              onMode={setMode}
-            />
+            <View ref={registerAddEntryTarget('amount')} collapsable={false}>
+              <CalcPad
+                amount={amount}
+                mode={mode}
+                onAmount={setAmount}
+                onMode={setMode}
+              />
+            </View>
           ) : (
             <DetailsForm
               isExp={isExp}
@@ -2620,6 +2655,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
           const safePad = insets.bottom > 0 ? insets.bottom : 12;
           return (
             <View
+              ref={registerAddEntryTarget('action')}
+              collapsable={false}
               style={{
                 backgroundColor: PRIMARY,
                 paddingTop: safePad,
@@ -2779,6 +2816,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
           </Pressable>
           </KeyboardAvoidingView>
         </Modal>
+
+        {/* ── Guided walkthrough overlay — new entries only, never edits ──── */}
+        <AddEntryWalkthroughOverlay active={visible && !editing} />
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -3670,6 +3710,28 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           <View style={{ flex: 1 }}>
             <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Replay App Walkthrough</Text>
             <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>Take the 60-second feature tour again</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={MUTED} />
+        </Pressable>
+
+        {/* Replay the Add Entry guided tutorial — queues the tour for the next
+            time the Add Entry sheet opens (never presented over this sheet,
+            per the iOS modal-stacking rule). */}
+        <Pressable
+          onPress={() => {
+            hTap();
+            if (user?.id) resetAddEntryWalkthrough(user.id);
+            queueAddEntryWalkthroughReplay();
+            onClose();
+          }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, marginTop: 10 }}
+        >
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="school-outline" size={18} color={PRIMARY_TXT} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Replay Add Entry Walkthrough</Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>Learn to log income & expenses — starts when you next open Add Entry</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={MUTED} />
         </Pressable>
