@@ -314,7 +314,9 @@ export default function OnboardingScreen() {
                     <Text style={{ color: on ? t.ON_PRIMARY : t.TEXT, fontSize: 15, fontWeight: '700' }}>
                       {opt.label}
                     </Text>
-                    {on && <Ionicons name="checkmark" size={16} color={t.ON_PRIMARY} />}
+                    {/* Always rendered (opacity 0 when unselected) so the chip
+                        width never changes on toggle — no reflow/jumping. */}
+                    <Ionicons name="checkmark" size={16} color={t.ON_PRIMARY} style={{ opacity: on ? 1 : 0 }} />
                   </Pressable>
                 );
               })}
