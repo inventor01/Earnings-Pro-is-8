@@ -150,20 +150,29 @@ export default function OnboardingScreen() {
     // Flush anything still pending, then mark done locally FIRST so a crash
     // right after the paywall can never re-run the whole funnel.
     const stillPending = await savePlatforms(state.apps, state.pendingPlatforms);
-    let serverSynced = false;
-    try {
-      await api.completeOnboarding();
-      serverSynced = true;
-    } catch {
-      // Offline / transient — localDone keeps the flow from re-showing; the
-      // server flag lands on a later sync (syncOnboardingCompletion below).
-    }
-    update({ localDone: true, serverSynced, pendingPlatforms: stillPending, step: 6 });
-    if (!userId) {
-      // No profile yet (auth/me still failing) → update() couldn't persist
-      // localDone under an account key. Record it device-scoped so the funnel
-      // can never re-run; adopted into the account state on a later launch.
-      markPendingDoneWithoutUser().catch(() => {});
+    if (user?.is_demo) {
+      // Demo/reviewer accounts re-run the funnel on EVERY launch: never mark
+      // completion (server or local) and reset the saved progress so the next
+      // session starts from the welcome screen. Normal demo sessions never get
+      // here (their server flag is true); only the reviewer account (flag
+      // manually reset to false) reaches this path.
+      if (userId) writeOnboardingState(userId, { ...DEFAULT_ONBOARDING_STATE }).catch(() => {});
+    } else {
+      let serverSynced = false;
+      try {
+        await api.completeOnboarding();
+        serverSynced = true;
+      } catch {
+        // Offline / transient — localDone keeps the flow from re-showing; the
+        // server flag lands on a later sync (syncOnboardingCompletion below).
+      }
+      update({ localDone: true, serverSynced, pendingPlatforms: stillPending, step: 6 });
+      if (!userId) {
+        // No profile yet (auth/me still failing) → update() couldn't persist
+        // localDone under an account key. Record it device-scoped so the funnel
+        // can never re-run; adopted into the account state on a later launch.
+        markPendingDoneWithoutUser().catch(() => {});
+      }
     }
     refreshUser().catch(() => {});
     clearFreshSignupFlag().catch(() => {});
@@ -178,7 +187,7 @@ export default function OnboardingScreen() {
       });
     } catch {}
     router.replace('/(tabs)');
-  }, [state, savePlatforms, update, refreshUser, presentPaywall]);
+  }, [state, user?.is_demo, userId, savePlatforms, update, refreshUser, presentPaywall]);
 
   // ── Building-step animation ──────────────────────────────────────────────
   const [builtCount, setBuiltCount] = useState(0);
