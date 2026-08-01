@@ -51,18 +51,22 @@ function neonGlow(color: string, radius = 6, opacity = 0.4): ViewStyle {
 }
 
 function PressScale({
-  children, onPress, style, scale = 0.94, disabled,
+  children, onPress, style, scale = 0.94, disabled, accessibilityRole, accessibilityLabel,
 }: {
   children: React.ReactNode;
   onPress?: () => void;
   style?: ViewStyle | ViewStyle[];
   scale?: number;
   disabled?: boolean;
+  accessibilityRole?: 'button';
+  accessibilityLabel?: string;
 }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [
         style as ViewStyle,
         pressed && !disabled ? { transform: [{ scale }] } : null,
@@ -583,8 +587,10 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
           }}>
             <PressScale
               onPress={prevMonth}
+              accessibilityRole="button"
+              accessibilityLabel="Previous month"
               style={{
-                width: 40, height: 40, borderRadius: 10,
+                width: 44, height: 44, borderRadius: 10,
                 backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER,
                 alignItems: 'center', justifyContent: 'center',
               }}
@@ -620,8 +626,10 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
 
             <PressScale
               onPress={nextMonth}
+              accessibilityRole="button"
+              accessibilityLabel="Next month"
               style={{
-                width: 40, height: 40, borderRadius: 10,
+                width: 44, height: 44, borderRadius: 10,
                 backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER,
                 alignItems: 'center', justifyContent: 'center',
               }}
@@ -1042,7 +1050,12 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                       : `${formatHumanDate(selectionBounds.from)} → ${formatHumanDate(selectionBounds.to)}`}
                   </Text>
                 </View>
-                <Pressable onPress={clearSelection} hitSlop={10}>
+                <Pressable
+                  onPress={clearSelection}
+                  hitSlop={14}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear date selection"
+                >
                   <Ionicons name="close" size={18} color={LABEL} />
                 </Pressable>
               </View>

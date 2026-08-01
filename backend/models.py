@@ -47,6 +47,10 @@ class AuthUser(Base):
     # Opt-in email two-factor auth. When mfa_enabled is true, /auth/login emails a
     # 6-digit code (hashed here with an ISO-string expiry + attempt counter) and
     # withholds the access token until /auth/mfa/verify exchanges the code for it.
+    # Security-event stamp (ISO8601 UTC). Set whenever the password is reset or
+    # the login email changes; get_current_user rejects any JWT whose iat is
+    # older, so a stolen token dies the moment the victim resets their password.
+    password_changed_at = Column(String, nullable=True)
     mfa_enabled = Column(Boolean, default=False, nullable=False)
     mfa_code_hash = Column(String, nullable=True)
     mfa_code_expires_at = Column(String, nullable=True)  # ISO8601 UTC

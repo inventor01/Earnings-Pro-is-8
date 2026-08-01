@@ -94,14 +94,18 @@ export function applyOptimisticCreateRollup(
   base: Date = estTodayUTC(),
 ): Array<[readonly unknown[], Rollup | undefined]> {
   const prevRollup = qc.getQueriesData<Rollup>({ queryKey: ['rollup'] });
-  const isExpense = vars.type === 'EXPENSE';
+  // Outflows are EXPENSE *and* CANCELLATION (the server normalizes both to
+  // negative amounts and counts both in rollup.expenses). Classifying only
+  // EXPENSE as outflow made a new cancellation optimistically INCREASE
+  // revenue/profit until the server refetch landed.
+  const isOutflow = vars.type === 'EXPENSE' || vars.type === 'CANCELLATION';
   const amt = Math.abs(vars.amount || 0);
   const addMiles = vars.distance_miles || 0;
   const addHours = (vars.duration_minutes || 0) / 60;
   for (const [key, old] of prevRollup) {
     if (!old || !keyWindowContainsDate(key as unknown[], estDate, base)) continue;
-    const revenue  = isExpense ? old.revenue  : old.revenue  + amt;
-    const expenses = isExpense ? old.expenses + amt : old.expenses;
+    const revenue  = isOutflow ? old.revenue  : old.revenue  + amt;
+    const expenses = isOutflow ? old.expenses + amt : old.expenses;
     const profit   = revenue - expenses;
     const miles    = old.miles + addMiles;
     const hours    = old.hours + addHours;

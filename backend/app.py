@@ -389,6 +389,25 @@ _migrate_auth_users_add_mfa()
 _migrate_auth_users_add_email_verification()
 _migrate_auth_users_add_onboarding()
 
+
+def _migrate_auth_users_add_password_changed_at() -> None:
+    """Security-event stamp used to revoke pre-existing JWTs on password reset /
+    email change. Nullable — existing rows keep NULL (no revocation) until their
+    first security event. Plain ADD COLUMN works on both Postgres and SQLite.
+    Safe to re-run."""
+    insp = inspect(engine)
+    if not insp.has_table("auth_users"):
+        return
+    cols = {c["name"] for c in insp.get_columns("auth_users")}
+    if "password_changed_at" in cols:
+        return
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE auth_users ADD COLUMN password_changed_at VARCHAR"))
+    logger.warning("Added auth_users.password_changed_at.")
+
+
+_migrate_auth_users_add_password_changed_at()
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Delivery Driver Earnings API", docs_url=None, redoc_url=None)

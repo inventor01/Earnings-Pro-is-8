@@ -27,15 +27,13 @@ export const API_BASE =
   (Constants.expoConfig?.extra?.apiBase as string | undefined) ||
   'https://earnings-pro-is-8-production.up.railway.app';
 
-// Public privacy policy URL. Apple requires a functional Privacy Policy link
-// in-app; it must live on the branded marketing domain (earningsninja.com),
-// which serves the same backend-rendered policy page as ${API_BASE}/privacy.
-export const PRIVACY_URL = 'https://earningsninja.com/privacy';
-
-// Our own Terms of Service (served by the backend at /terms on the branded
-// domain). Replaces Apple's standard EULA link in-app; the page itself still
-// references Apple's EULA for the app-license portion.
-export const TERMS_URL = 'https://earningsninja.com/terms';
+// Legal pages are rendered by the backend, so in-app links derive from
+// API_BASE — the one origin the app is already talking to. Hardcoding the
+// marketing domain here caused an Apple rejection when its routing broke
+// (earningsninja.app/privacy 404'd); deriving from API_BASE means the links
+// work exactly when the app itself works.
+export const PRIVACY_URL = `${API_BASE}/privacy`;
+export const TERMS_URL = `${API_BASE}/terms`;
 
 async function getAuthToken(): Promise<string | null> {
   return getToken();
@@ -64,8 +62,11 @@ async function trackedFetch(input: string, init?: RequestInit): Promise<Response
     const res = await globalThis.fetch(input, init);
     reportSuccess();
     return res;
-  } catch (err) {
-    reportFailure();
+  } catch (err: any) {
+    // Aborted requests (React Query cancelQueries / component unmount) are NOT
+    // network failures — flagging them offline made the sync indicator flicker
+    // and kicked off pointless connectivity probes.
+    if (err?.name !== 'AbortError') reportFailure();
     throw err;
   }
 }

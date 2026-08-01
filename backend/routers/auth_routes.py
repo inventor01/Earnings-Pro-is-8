@@ -10,6 +10,7 @@ from backend.models import (
     Friend, Achievement, Congratulation,
     ApiCredential, SyncedOrder,
 )
+import hashlib
 import re
 import secrets
 from backend.auth import get_current_user, verify_prelaunch_token
@@ -112,6 +113,13 @@ def verify_password(password: str, hash_value: str) -> bool:
         return bcrypt.checkpw(password.encode('utf-8'), hash_value.encode('utf-8'))
     except Exception:
         return False
+
+def _hash_reset_token(token: str) -> str:
+    """Reset tokens are stored ONLY as SHA-256 digests: a read-only DB leak must
+    never expose a live account-takeover secret. The raw token exists solely in
+    the emailed link; inbound tokens are hashed before lookup."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
 
 def create_access_token(user_id: str, email: str) -> str:
     """Create a signed JWT with an expiration claim. The `exp` claim is required
@@ -870,6 +878,9 @@ async def change_email(
         raise HTTPException(status_code=409, detail="That email is already in use.")
 
     current_user.email = email
+    # Login identifier changed — revoke all previously-issued tokens (the fresh
+    # one returned below is issued after this stamp, so it stays valid).
+    current_user.password_changed_at = datetime.utcnow().isoformat()
     # The new address is unconfirmed until the user enters the code we send it.
     current_user.email_verified = False
     current_user.email_verification_code_hash = None
@@ -925,7 +936,7 @@ async def _issue_reset_token_and_email(user_id: str, user_email: str, user_name:
         reset_token = secrets.token_urlsafe(32)
         token_record = PasswordResetToken(
             user_id=user_id,
-            token=reset_token,
+            token=_hash_reset_token(reset_token),
             expires_at=datetime.utcnow() + timedelta(hours=1)
         )
         db.add(token_record)
@@ -980,7 +991,7 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
     """Reset password using a valid reset token"""
     # Find the token
     token_record = db.query(PasswordResetToken).filter(
-        PasswordResetToken.token == request.token,
+        PasswordResetToken.token == _hash_reset_token(request.token),
         PasswordResetToken.used == False
     ).first()
     
@@ -1004,6 +1015,9 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
     
     # Update password
     user.password_hash = hash_password(request.new_password)
+    # Kill every previously-issued session token: a stolen JWT must not survive
+    # the victim resetting their password (see get_current_user iat check).
+    user.password_changed_at = datetime.utcnow().isoformat()
     
     # Mark token as used
     token_record.used = True
@@ -1016,7 +1030,7 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
 async def verify_reset_token(token: str, db: Session = Depends(get_db)):
     """Verify if a reset token is valid"""
     token_record = db.query(PasswordResetToken).filter(
-        PasswordResetToken.token == token,
+        PasswordResetToken.token == _hash_reset_token(token),
         PasswordResetToken.used == False
     ).first()
     
