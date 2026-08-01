@@ -6,6 +6,8 @@ from backend.models import Entry, EntryType, AppType, ExpenseCategory
 from datetime import datetime
 from decimal import Decimal
 
+TEST_USER_ID = "test-user-1"
+
 @pytest.fixture
 def db_session():
     test_engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
@@ -18,6 +20,7 @@ def db_session():
 
 def test_expense_stored_as_negative(db_session):
     expense = Entry(
+        user_id=TEST_USER_ID,
         timestamp=datetime.utcnow(),
         type=EntryType.EXPENSE,
         app=AppType.OTHER,
@@ -33,6 +36,7 @@ def test_expense_stored_as_negative(db_session):
 
 def test_cancellation_stored_as_negative(db_session):
     cancellation = Entry(
+        user_id=TEST_USER_ID,
         timestamp=datetime.utcnow(),
         type=EntryType.CANCELLATION,
         app=AppType.DOORDASH,
@@ -47,6 +51,7 @@ def test_cancellation_stored_as_negative(db_session):
 
 def test_order_stored_as_positive(db_session):
     order = Entry(
+        user_id=TEST_USER_ID,
         timestamp=datetime.utcnow(),
         type=EntryType.ORDER,
         app=AppType.UBEREATS,
@@ -63,6 +68,7 @@ def test_order_stored_as_positive(db_session):
 
 def test_bonus_stored_as_positive(db_session):
     bonus = Entry(
+        user_id=TEST_USER_ID,
         timestamp=datetime.utcnow(),
         type=EntryType.BONUS,
         app=AppType.DOORDASH,

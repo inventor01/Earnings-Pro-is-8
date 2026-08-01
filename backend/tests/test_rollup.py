@@ -4,8 +4,10 @@ from sqlalchemy.orm import sessionmaker
 from backend.db import Base
 from backend.models import Entry, Settings, EntryType, AppType, ExpenseCategory
 from backend.services.rollup_service import calculate_rollup
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
+
+TEST_USER_ID = "test-user-1"
 
 @pytest.fixture
 def db_session():
@@ -18,10 +20,11 @@ def db_session():
     Base.metadata.drop_all(bind=test_engine)
 
 def test_rollup_revenue_calculation(db_session):
-    settings = Settings(id=1, cost_per_mile=Decimal("0"))
+    settings = Settings(id=1, user_id=TEST_USER_ID, cost_per_mile=Decimal("0"))
     db_session.add(settings)
     
     entry1 = Entry(
+        user_id=TEST_USER_ID,
         timestamp=datetime.utcnow(),
         type=EntryType.ORDER,
         app=AppType.DOORDASH,
@@ -30,6 +33,7 @@ def test_rollup_revenue_calculation(db_session):
         duration_minutes=30
     )
     entry2 = Entry(
+        user_id=TEST_USER_ID,
         timestamp=datetime.utcnow(),
         type=EntryType.BONUS,
         app=AppType.UBEREATS,
@@ -47,10 +51,11 @@ def test_rollup_revenue_calculation(db_session):
     assert rollup["expenses"] == Decimal("0")
 
 def test_rollup_expense_calculation(db_session):
-    settings = Settings(id=1, cost_per_mile=Decimal("0"))
+    settings = Settings(id=1, user_id=TEST_USER_ID, cost_per_mile=Decimal("0"))
     db_session.add(settings)
     
     expense1 = Entry(
+        user_id=TEST_USER_ID,
         timestamp=datetime.utcnow(),
         type=EntryType.EXPENSE,
         app=AppType.OTHER,
@@ -67,10 +72,11 @@ def test_rollup_expense_calculation(db_session):
     assert rollup["expenses"] == Decimal("40.00")
 
 def test_rollup_profit_with_mileage(db_session):
-    settings = Settings(id=1, cost_per_mile=Decimal("0"))
+    settings = Settings(id=1, user_id=TEST_USER_ID, cost_per_mile=Decimal("0"))
     db_session.add(settings)
     
     entry = Entry(
+        user_id=TEST_USER_ID,
         timestamp=datetime.utcnow(),
         type=EntryType.ORDER,
         app=AppType.DOORDASH,
@@ -79,6 +85,7 @@ def test_rollup_profit_with_mileage(db_session):
         duration_minutes=60
     )
     expense = Entry(
+        user_id=TEST_USER_ID,
         timestamp=datetime.utcnow(),
         type=EntryType.EXPENSE,
         app=AppType.OTHER,
@@ -101,10 +108,11 @@ def test_rollup_profit_with_mileage(db_session):
     assert rollup["profit"] == expected_profit
 
 def test_rollup_dollars_per_mile(db_session):
-    settings = Settings(id=1, cost_per_mile=Decimal("0"))
+    settings = Settings(id=1, user_id=TEST_USER_ID, cost_per_mile=Decimal("0"))
     db_session.add(settings)
     
     entry = Entry(
+        user_id=TEST_USER_ID,
         timestamp=datetime.utcnow(),
         type=EntryType.ORDER,
         app=AppType.DOORDASH,
@@ -120,18 +128,32 @@ def test_rollup_dollars_per_mile(db_session):
     assert rollup["dollars_per_mile"] == Decimal("5.00")
 
 def test_rollup_dollars_per_hour(db_session):
-    settings = Settings(id=1, cost_per_mile=Decimal("0"))
+    settings = Settings(id=1, user_id=TEST_USER_ID, cost_per_mile=Decimal("0"))
     db_session.add(settings)
     
-    entry = Entry(
-        timestamp=datetime.utcnow(),
+    # dollars_per_hour is based on elapsed time between first and last entry,
+    # so create two entries 2 hours apart totaling $60 profit -> $30/hour.
+    base = datetime.utcnow()
+    entry1 = Entry(
+        user_id=TEST_USER_ID,
+        timestamp=base - timedelta(hours=2),
         type=EntryType.ORDER,
         app=AppType.DOORDASH,
-        amount=Decimal("60.00"),
+        amount=Decimal("40.00"),
         distance_miles=5.0,
-        duration_minutes=120
+        duration_minutes=60
     )
-    db_session.add(entry)
+    entry2 = Entry(
+        user_id=TEST_USER_ID,
+        timestamp=base,
+        type=EntryType.ORDER,
+        app=AppType.DOORDASH,
+        amount=Decimal("20.00"),
+        distance_miles=2.0,
+        duration_minutes=60
+    )
+    db_session.add(entry1)
+    db_session.add(entry2)
     db_session.commit()
     
     rollup = calculate_rollup(db_session)
