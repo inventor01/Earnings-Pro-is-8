@@ -50,8 +50,11 @@ export async function resetAddEntryWalkthrough(userId: number | string): Promise
 // Settings → Replay: queue a one-shot replay consumed the next time the Add
 // Entry sheet opens (the sheet may not be mounted while Settings is up, and
 // per the iOS modal-stacking rule we never present it from inside Settings).
-let replayQueued = false;
-export function queueAddEntryWalkthroughReplay() { replayQueued = true; }
+// User-scoped: the queued replay only fires for the account that requested it,
+// so an account switch between Settings and the next sheet open can't leak a
+// replay into another user's session.
+let replayQueuedFor: string | number | null = null;
+export function queueAddEntryWalkthroughReplay(userId: string | number) { replayQueuedFor = userId; }
 
 // ─── Target registry ──────────────────────────────────────────────────────────
 
@@ -212,7 +215,7 @@ export function AddEntryWalkthroughOverlay({ active }: {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     (async () => {
-      const replay = replayQueued;
+      const replay = replayQueuedFor === user.id;
       const done = replay || user.is_demo ? false : await readAddEntryWalkthroughDone(user.id);
       if (cancelled || done || startedThisOpen.current) return;
       startedThisOpen.current = true;
@@ -221,7 +224,7 @@ export function AddEntryWalkthroughOverlay({ active }: {
       // sheet closes during the delay the queue survives for the next open.
       timer = setTimeout(() => {
         if (cancelled) return;
-        replayQueued = false;
+        if (replayQueuedFor === user.id) replayQueuedFor = null;
         // Mark "seen" the moment the tour actually starts (production only).
         // Writing only in finish() meant swiping the sheet closed mid-tour
         // never persisted the flag → the tour auto-started on EVERY open.
@@ -327,8 +330,13 @@ export function AddEntryWalkthroughOverlay({ active }: {
   const DIM = 'rgba(0,0,0,0.78)';
   const PAD = 6;
   const spot = rect
-    ? { x: Math.max(0, rect.x - PAD), y: Math.max(0, rect.y - PAD),
-        w: Math.min(sheetW, rect.width + PAD * 2), h: rect.height + PAD * 2 }
+    ? (() => {
+        const x = Math.max(0, rect.x - PAD);
+        // Clamp width to the space remaining after x (see Walkthrough.tsx) so
+        // right-edge targets can't overflow the sheet bounds.
+        return { x, y: Math.max(0, rect.y - PAD),
+          w: Math.min(sheetW - x, rect.width + PAD * 2), h: rect.height + PAD * 2 };
+      })()
     : null;
 
   const btn = (label: string, onPress: () => void, primary?: boolean, a11y?: string) => (

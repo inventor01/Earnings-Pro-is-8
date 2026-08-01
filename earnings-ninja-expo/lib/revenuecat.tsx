@@ -822,8 +822,13 @@ function FallbackPaywall({
                   ? [
                       {
                         icon: 'notifications',
-                        title: `Day ${selTrialDays - 2} — Reminder`,
-                        sub: "We'll remind you before your trial ends. Cancel anytime.",
+                        title: `Day ${selTrialDays - 2} — Heads-up`,
+                        /* No promise of an app-sent reminder here — we don't
+                           schedule one, and Apple flags copy that claims
+                           behavior the app doesn't implement. Apple itself
+                           emails a trial-ending notice; our copy just points
+                           at the cancel window. */
+                        sub: 'Trial ending soon — cancel anytime in your App Store settings before billing starts.',
                       },
                     ]
                   : []),

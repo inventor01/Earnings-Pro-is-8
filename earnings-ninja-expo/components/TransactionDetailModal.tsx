@@ -114,7 +114,13 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
                       {entry.type}{entry.category ? ` · ${EXPENSE_EMOJIS[entry.category] || ''} ${entry.category}` : ''}
                     </Text>
                   </View>
-                  <Pressable onPress={onClose} hitSlop={10} style={{ padding: 4 }}>
+                  <Pressable
+                    onPress={onClose}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close transaction details"
+                    style={{ padding: 4 }}
+                  >
                     <Ionicons name="close" size={22} color={LABEL} />
                   </Pressable>
                 </View>

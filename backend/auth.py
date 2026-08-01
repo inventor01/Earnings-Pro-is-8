@@ -1,6 +1,6 @@
 import os
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
@@ -133,5 +133,25 @@ def get_current_user(
     if not user:
         # Token's user no longer exists (deleted account, etc). Do NOT auto-create.
         raise _unauthorized("User not found")
+
+    # Session revocation on security events: any token issued BEFORE the last
+    # password reset / login-email change is dead, even if unexpired. Tokens
+    # issued in the same second as the event (e.g. the fresh token returned by
+    # the event itself) remain valid (strict <).
+    changed_at = getattr(user, "password_changed_at", None)
+    if changed_at:
+        try:
+            changed_dt = datetime.fromisoformat(changed_at)
+            if changed_dt.tzinfo is None:
+                # Stored via datetime.utcnow().isoformat() — naive but UTC.
+                changed_dt = changed_dt.replace(tzinfo=timezone.utc)
+            changed_ts = changed_dt.timestamp()
+            iat = payload.get("iat")
+            if iat is not None and float(iat) < changed_ts:
+                raise _unauthorized("Token expired")
+        except HTTPException:
+            raise
+        except (ValueError, TypeError):
+            pass  # malformed stamp — never lock every session out
 
     return user

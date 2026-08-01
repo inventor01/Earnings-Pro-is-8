@@ -1721,6 +1721,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // we actually saved so the optimistic row matches the payload.
   const dateTouchedRef = useRef(false);
   const pendingInstantRef = useRef<Date | null>(null);
+  // Synchronous double-submit guard for Save (mutation.isPending lags a render).
+  const savingRef = useRef(false);
   // True while the platform was auto-filled from the last-used order platform
   // and the user hasn't manually overridden it. Drives the "Last used: …" hint.
   const [appAutoFilled, setAppAutoFilled] = useState(false);
@@ -2177,7 +2179,12 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         type: vars.type,
         app: vars.app,
         custom_app: vars.custom_app ?? null,
-        amount: vars.type === 'EXPENSE' ? -Math.abs(vars.amount || 0) : Math.abs(vars.amount || 0),
+        // EXPENSE and CANCELLATION are outflows — the server normalizes both to
+        // negative amounts, so the optimistic row must match or a cancellation
+        // briefly shows as positive revenue.
+        amount: (vars.type === 'EXPENSE' || vars.type === 'CANCELLATION')
+          ? -Math.abs(vars.amount || 0)
+          : Math.abs(vars.amount || 0),
         distance_miles: vars.distance_miles || 0,
         duration_minutes: vars.duration_minutes || 0,
         category: vars.category,
@@ -2483,6 +2490,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   });
 
   const handleSave = () => {
+    // Synchronous reentrancy guard: `mutation.isPending` only flips after the
+    // next render, so two rapid taps could both pass a pending-based check and
+    // create duplicate rows (each call mints its own idempotency key).
+    if (savingRef.current) return;
     const num = parseFloat(amount);
     if (!num || num <= 0) { Alert.alert('Invalid amount', 'Enter an amount > 0'); return; }
     // Resolve the instant to file the entry under. `entryDate` is seeded when the
@@ -2530,9 +2541,15 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         Alert.alert('Still saving', 'This entry hasn’t finished saving yet. Give it a moment, then try editing again.');
         return;
       }
-      updateMutation.mutate({ id: editing.id, patch: payload });
+      savingRef.current = true;
+      updateMutation.mutate({ id: editing.id, patch: payload }, {
+        onSettled: () => { savingRef.current = false; },
+      });
     } else {
-      mutation.mutate(payload as EntryCreate);
+      savingRef.current = true;
+      mutation.mutate(payload as EntryCreate, {
+        onSettled: () => { savingRef.current = false; },
+      });
     }
   };
   const isSaving = mutation.isPending || updateMutation.isPending;
@@ -3727,7 +3744,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           onPress={() => {
             hTap();
             if (user?.id) resetAddEntryWalkthrough(user.id);
-            queueAddEntryWalkthroughReplay();
+            if (user?.id != null) queueAddEntryWalkthroughReplay(user.id);
             onClose();
           }}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, marginTop: 10 }}
@@ -5860,13 +5877,16 @@ export default function DashboardScreen() {
   // date span (e.g. "Apr 21 – Apr 27"); the live window shows the chip label.
   const navActive = period !== 'custom';
   const dateLabelForOffset = (off: number) => {
-    const d = new Date();
-    d.setDate(d.getDate() + off);
-    const md = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    // Anchor to the EST calendar day (estTodayUTC = EST-today as UTC midnight),
+    // NOT the device clock — the data windows are US/Eastern, so a device in
+    // another timezone near midnight would otherwise label the wrong day.
+    const d = estTodayUTC();
+    d.setUTCDate(d.getUTCDate() + off);
+    const md = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
     if (off === 0)  return `Today • ${md}`;
     if (off === -1) return `Yesterday • ${md}`;
     if (off === 1)  return `Tomorrow • ${md}`;
-    const wd = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const wd = d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
     return `${wd}, ${md}`;
   };
   const periodLabel = period === 'custom'

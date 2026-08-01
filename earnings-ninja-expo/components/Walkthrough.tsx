@@ -193,7 +193,16 @@ export function WalkthroughOverlay() {
   }, []);
 
   // Auto-start: once per account for real users; every launch for demo.
+  // `autoStarted` is process-lifetime, so it MUST reset when the signed-in
+  // account changes — otherwise user B on the same device never gets their
+  // first-run tour after user A consumed the flag.
+  const autoStartUserRef = useRef<string | number | null>(null);
   useEffect(() => {
+    if (autoStartUserRef.current !== (user?.id ?? null)) {
+      autoStartUserRef.current = user?.id ?? null;
+      autoStarted.current = false;
+      if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = null; }
+    }
     if (!user?.id || autoStarted.current) return;
     let cancelled = false;
     (async () => {
@@ -271,8 +280,14 @@ export function WalkthroughOverlay() {
   const DIM = 'rgba(0,0,0,0.78)';
   const PAD = 6; // breathing room around the spotlighted element
   const spot = rect
-    ? { x: Math.max(0, rect.x - PAD), y: Math.max(0, rect.y - PAD),
-        w: Math.min(win.width, rect.width + PAD * 2), h: rect.height + PAD * 2 }
+    ? (() => {
+        const x = Math.max(0, rect.x - PAD);
+        // Clamp width to the space REMAINING after x, not the full screen —
+        // otherwise a right-edge target yields x + w > screen and the
+        // highlight ring/tap zones drift off the element.
+        return { x, y: Math.max(0, rect.y - PAD),
+          w: Math.min(win.width - x, rect.width + PAD * 2), h: rect.height + PAD * 2 };
+      })()
     : null;
 
   const btn = (label: string, onPress: () => void, primary?: boolean, a11y?: string) => (

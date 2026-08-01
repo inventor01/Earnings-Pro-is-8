@@ -47,11 +47,23 @@ def get_app_url() -> str:
         return f"https://{railway.rstrip('/')}"
     return "http://localhost:5000"
 
+def _is_local_dev() -> bool:
+    """True only outside production. Railway (prod) always injects
+    RAILWAY_PUBLIC_DOMAIN; any environment with it set must never log secrets."""
+    return not os.environ.get("RAILWAY_PUBLIC_DOMAIN", "").strip()
+
+
 async def send_password_reset_email(to_email: str, reset_token: str, user_name: Optional[str] = None) -> bool:
     reset_url = f"{get_app_url()}/reset-password?token={reset_token}"
     
     if not RESEND_API_KEY:
-        print(f"[Email Service] Resend API key not configured. Reset link: {reset_url}")
+        # SECURITY: the reset link embeds an account-takeover token. Only print
+        # it in local dev (no Railway domain => not production); in prod a
+        # missing key must fail without leaking the secret into logs.
+        if _is_local_dev():
+            print(f"[Email Service] (dev, no key) Reset link: {reset_url}")
+        else:
+            print(f"[Email Service] Resend API key not configured; reset email to {to_email} NOT sent (link redacted).")
         return False
     
     greeting = f"Hi {user_name}," if user_name else "Hi,"
@@ -153,7 +165,11 @@ async def send_mfa_code_email(to_email: str, code: str, user_name: Optional[str]
     accepted it. When the key is missing (dev), the code is logged so the flow
     is still testable without a real inbox."""
     if not RESEND_API_KEY:
-        print(f"[Email Service] Resend API key not configured. MFA code for {to_email}: {code}")
+        # SECURITY: never log a live 2FA code outside local dev.
+        if _is_local_dev():
+            print(f"[Email Service] (dev, no key) MFA code for {to_email}: {code}")
+        else:
+            print(f"[Email Service] Resend API key not configured; MFA email to {to_email} NOT sent (code redacted).")
         return False
 
     greeting = f"Hi {user_name}," if user_name else "Hi,"
@@ -236,7 +252,11 @@ async def send_email_verification_email(to_email: str, code: str, user_name: Opt
     Returns True if Resend accepted it. When the key is missing (dev), the code
     is logged so the flow stays testable without a real inbox."""
     if not RESEND_API_KEY:
-        print(f"[Email Service] Resend API key not configured. Email-verify code for {to_email}: {code}")
+        # SECURITY: never log a live verification code outside local dev.
+        if _is_local_dev():
+            print(f"[Email Service] (dev, no key) Email-verify code for {to_email}: {code}")
+        else:
+            print(f"[Email Service] Resend API key not configured; verify email to {to_email} NOT sent (code redacted).")
         return False
 
     greeting = f"Hi {user_name}," if user_name else "Hi,"
