@@ -23,7 +23,7 @@
 // redesign (extra keys persist independently).
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, Modal, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -141,6 +141,58 @@ function ConfettiBurst({ big, onDone }: { big: boolean; onDone: () => void }) {
   );
 }
 
+// ─── Full-screen confetti (finale only) ───────────────────────────────────────
+// A transparent overFullScreen modal raining confetti across the whole screen
+// for ~2s when the third goal completes. Auto-dismisses; no interaction.
+
+function ScreenConfettiPiece({ index, screenW, screenH }: { index: number; screenW: number; screenH: number }) {
+  const prog = useSharedValue(0);
+  const seed = (index * 9301 + 49297) % 233280 / 233280;
+  const seed2 = (index * 233 + 887) % 1000 / 1000;
+  const x0 = seed * screenW;
+  const sway = (seed2 - 0.5) * 120;
+  const rot = (seed - 0.5) * 900;
+  const dur = 1500 + seed2 * 700;
+  useEffect(() => {
+    prog.value = withDelay(seed2 * 350, withTiming(1, { duration: dur, easing: Easing.in(Easing.quad) }));
+  }, []);
+  const style = useAnimatedStyle(() => ({
+    opacity: prog.value < 0.85 ? 1 : (1 - prog.value) / 0.15,
+    transform: [
+      { translateX: x0 + sway * prog.value },
+      { translateY: -30 + (screenH + 60) * prog.value },
+      { rotate: `${rot * prog.value}deg` },
+    ],
+  }));
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[{
+        position: 'absolute', top: 0, left: 0,
+        width: index % 3 === 0 ? 10 : 7, height: index % 2 === 0 ? 12 : 8,
+        borderRadius: 2, backgroundColor: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
+      }, style]}
+    />
+  );
+}
+
+function ScreenConfetti({ onDone }: { onDone: () => void }) {
+  const { width, height } = useWindowDimensions();
+  useEffect(() => {
+    const t = setTimeout(onDone, 2600); // longest piece: 350 delay + 2200 fall
+    return () => clearTimeout(t);
+  }, [onDone]);
+  return (
+    <Modal transparent animationType="none" presentationStyle="overFullScreen" onRequestClose={onDone}>
+      <View pointerEvents="none" style={{ flex: 1 }}>
+        {Array.from({ length: 44 }, (_, i) => (
+          <ScreenConfettiPiece key={i} index={i} screenW={width} screenH={height} />
+        ))}
+      </View>
+    </Modal>
+  );
+}
+
 // ─── Animated check row ───────────────────────────────────────────────────────
 
 function CheckRow({ emoji, title, desc, done, justCompleted, reduceMotion, colors }: {
@@ -208,6 +260,7 @@ export function GettingStartedCard({ seedSignals }: {
   const [confetti, setConfetti] = useState<{ big: boolean; id: number } | null>(null);
   const [justKey, setJustKey] = useState<MilestoneKey | null>(null);
   const [showFinale, setShowFinale] = useState(false);
+  const [screenBurst, setScreenBurst] = useState(false);
   // Celebration queue — one at a time, never overlapping.
   const celebrationBusy = useRef(false);
   const queue = useRef<MilestoneKey[]>([]);
@@ -229,7 +282,7 @@ export function GettingStartedCard({ seedSignals }: {
     stateRef.current = null;
     queue.current = [];
     celebrationBusy.current = false;
-    setToast(null); setConfetti(null); setJustKey(null); setShowFinale(false);
+    setToast(null); setConfetti(null); setJustKey(null); setShowFinale(false); setScreenBurst(false);
     if (toastTimer.current) { clearTimeout(toastTimer.current); toastTimer.current = null; }
     if (!userId) return;
     let cancelled = false;
@@ -281,7 +334,12 @@ export function GettingStartedCard({ seedSignals }: {
     toastTimer.current = setTimeout(() => {
       setToast(null);
       setJustKey(null);
-      if (all) setShowFinale(true);
+      if (all) {
+        setShowFinale(true);
+        // Whole-screen confetti rain for the big finish (skipped w/ Reduce Motion).
+        if (!reduceMotion) setScreenBurst(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      }
       celebrationBusy.current = false;
       const next = queue.current.shift();
       if (next) runCelebration(next);
@@ -319,7 +377,7 @@ export function GettingStartedCard({ seedSignals }: {
           padding: 20, alignItems: 'center', gap: 8, overflow: 'hidden',
           shadowColor: t.PRIMARY, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6,
         }}>
-          {!reduceMotion && confetti && <ConfettiBurst big onDone={() => setConfetti(null)} />}
+          {screenBurst && <ScreenConfetti onDone={() => setScreenBurst(false)} />}
           <Text style={{ fontSize: 36 }}>🎉</Text>
           <Text accessibilityRole="header" style={{ color: t.TEXT, fontSize: 20, fontWeight: '900', textAlign: 'center' }}>
             You're All Set!
