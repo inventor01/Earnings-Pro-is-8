@@ -56,6 +56,11 @@ class AuthUser(Base):
     # grandfathered to verified. The 6-digit code is hashed here with an ISO
     # expiry + attempt counter, mirroring the MFA columns above.
     email_verified = Column(Boolean, default=False, nullable=False)
+    # Conversion onboarding funnel: new signups walk through it once, then this
+    # flips true (synced server-side so a reinstall never re-onboards an
+    # existing account). Existing rows are grandfathered true by the boot
+    # migration; demo accounts are created with it true.
+    onboarding_completed = Column(Boolean, default=False, nullable=False)
     email_verification_code_hash = Column(String, nullable=True)
     email_verification_expires_at = Column(String, nullable=True)  # ISO8601 UTC
     email_verification_attempts = Column(Integer, default=0, nullable=False)

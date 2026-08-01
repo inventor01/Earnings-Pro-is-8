@@ -31,6 +31,7 @@ import { initConnectivity } from '@/lib/connectivity';
 import { setSyncing, subscribeSync, getSyncState } from '@/lib/syncStatus';
 import { refreshPendingCount } from '@/lib/pendingCount';
 import { registerDrainHandler } from '@/lib/syncTrigger';
+import { needsOnboarding, readOnboardingState, hasFreshSignupFlag, clearFreshSignupFlag, writeOnboardingState, adoptPendingDone } from '@/lib/onboarding';
 import * as Notifications from 'expo-notifications';
 
 SplashScreen.preventAutoHideAsync();
@@ -61,7 +62,7 @@ const queryClient = new QueryClient({
 });
 
 function RootNav() {
-  const { token, isLoading } = useAuth();
+  const { token, isLoading, user, refreshUser } = useAuth();
   const { hidden } = useHiddenMode();
   const { BG, isDark } = useTheme();
   const { refresh: refreshSubscription } = useSubscription();
@@ -70,14 +71,58 @@ function RootNav() {
   const prevToken = useRef<string | null>(token);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (token) {
-        router.replace('/(tabs)');
-      } else {
-        router.replace('/login');
-      }
+    if (isLoading) return;
+    if (!token) {
+      router.replace('/login');
+      return;
     }
-  }, [token, isLoading]);
+    // Route fresh signups into the one-time onboarding funnel. Fail CLOSED
+    // toward the dashboard: only an explicit server onboarding_completed=false
+    // (or the just-signed-up flag while /auth/me is still resolving) shows it;
+    // demo accounts and existing users always go straight to the dashboard.
+    let cancelled = false;
+    (async () => {
+      let need = false;
+      try {
+        if (user) {
+          // A completion recorded before the profile ever resolved (auth/me
+          // failing right after signup) lands in a device-scoped flag; fold
+          // it into this account's state BEFORE deciding, so the funnel can
+          // never re-run.
+          await adoptPendingDone(user.id);
+          const local = await readOnboardingState(user.id);
+          need = needsOnboarding(user, local);
+          if (!need) {
+            // Profile resolved and no onboarding due — drop any leftover
+            // just-signed-up flag so it can't misroute a later account.
+            clearFreshSignupFlag().catch(() => {});
+          }
+          // Completion finished offline earlier? Push the server flag now so a
+          // reinstall on another device never re-onboards this account.
+          if (local.localDone && !local.serverSynced) {
+            api.completeOnboarding()
+              .then(() => writeOnboardingState(user.id, { ...local, serverSynced: true }))
+              .catch(() => {});
+          }
+        } else {
+          // Profile not loaded yet — only a brand-new signup from THIS device
+          // (flag set before login()) goes to onboarding without waiting.
+          need = await hasFreshSignupFlag();
+          // login() swallows a failed /auth/me and never retries on its own —
+          // kick a best-effort refetch so `user` (and the authoritative
+          // onboarding flag) still lands if that first fetch hiccuped. The
+          // effect re-runs when it resolves; the onboarding screen itself
+          // renders fine without a profile, so nothing blocks meanwhile.
+          refreshUser().catch(() => {});
+        }
+      } catch {
+        need = false;
+      }
+      if (cancelled) return;
+      router.replace(need ? '/onboarding' : '/(tabs)');
+    })();
+    return () => { cancelled = true; };
+  }, [token, isLoading, user?.id, user?.onboarding_completed, user?.is_demo]);
 
   // On logout (token cleared), wipe the IN-MEMORY query cache too. authContext
   // already clears the persisted on-disk copies; clearing the live cache here
@@ -392,6 +437,7 @@ function RootNav() {
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: BG } }}>
         <Stack.Screen name="login" />
+        <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="index" />
       </Stack>

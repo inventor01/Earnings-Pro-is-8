@@ -353,6 +353,31 @@ def _migrate_auth_users_add_email_verification() -> None:
     logger.warning("Ensured auth_users email-verification columns exist.")
 
 
+def _migrate_auth_users_add_onboarding() -> None:
+    """Add `onboarding_completed` to `auth_users` for the conversion onboarding
+    funnel. CRITICAL: the one-time backfill that grandfathers existing rows as
+    completed runs ONLY when the column is first created — re-running it on
+    every boot would silently skip onboarding for legitimately-new signups.
+    Safe to re-run."""
+    insp = inspect(engine)
+    if not insp.has_table("auth_users"):
+        return
+    cols = {c["name"] for c in insp.get_columns("auth_users")}
+    if "onboarding_completed" in cols:
+        return
+    is_pg = engine.dialect.name == "postgresql"
+    false_default = "FALSE" if is_pg else "0"
+    true_value = "TRUE" if is_pg else "1"
+    with engine.begin() as conn:
+        conn.execute(text(
+            f"ALTER TABLE auth_users ADD COLUMN onboarding_completed BOOLEAN NOT NULL DEFAULT {false_default}"
+        ))
+        # Grandfather every pre-existing account (incl. demo) so ONLY accounts
+        # created after this feature ever see the onboarding flow.
+        conn.execute(text(f"UPDATE auth_users SET onboarding_completed = {true_value}"))
+    logger.warning("Added auth_users.onboarding_completed (grandfathered existing rows).")
+
+
 _migrate_api_credentials_for_multi_user()
 _migrate_synced_orders_for_multi_user()
 _migrate_entries_add_idempotency_key()
@@ -362,6 +387,7 @@ _migrate_points_for_multi_user()
 _migrate_auth_users_add_referral_code()
 _migrate_auth_users_add_mfa()
 _migrate_auth_users_add_email_verification()
+_migrate_auth_users_add_onboarding()
 
 Base.metadata.create_all(bind=engine)
 
