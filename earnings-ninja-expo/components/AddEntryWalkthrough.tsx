@@ -222,6 +222,10 @@ export function AddEntryWalkthroughOverlay({ active }: {
       timer = setTimeout(() => {
         if (cancelled) return;
         replayQueued = false;
+        // Mark "seen" the moment the tour actually starts (production only).
+        // Writing only in finish() meant swiping the sheet closed mid-tour
+        // never persisted the flag → the tour auto-started on EVERY open.
+        if (!user.is_demo) writeAddEntryWalkthroughDone(user.id);
         setStepIdx(0);
         setPhase('welcome');
       }, 650);
