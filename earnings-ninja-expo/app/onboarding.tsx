@@ -207,6 +207,7 @@ export default function OnboardingScreen() {
         backgroundColor: t.PRIMARY,
         borderRadius: 999,
         paddingVertical: 17,
+        paddingHorizontal: 20,
         alignItems: 'center',
         opacity: disabled || finishing ? 0.5 : 1,
         shadowColor: t.PRIMARY,
@@ -215,7 +216,12 @@ export default function OnboardingScreen() {
         shadowOffset: { width: 0, height: 4 },
       }}
     >
-      <Text style={{ color: t.ON_PRIMARY, fontSize: 17, fontWeight: '900', letterSpacing: 0.2 }}>
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
+        style={{ color: t.ON_PRIMARY, fontSize: 17, fontWeight: '900', letterSpacing: 0.2, textAlign: 'center' }}
+      >
         {label}
       </Text>
     </Pressable>
