@@ -1,0 +1,5 @@
+import React from "react";
+import { ShieldCheck } from "lucide-react";
+import { Shell, Primary } from "./_shared";
+export function Welcome(){return <Shell chrome={false}><div className="flex h-full min-h-[760px] flex-col justify-center"><div className="mb-4 flex justify-center"><div className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-[#facc15] text-[#101010] shadow-[0_10px_45px_rgba(250,204,21,.2)]"><ShieldCheck size={45} strokeWidth={2.5}/></div></div><h1 className="text-center text-[34px] font-black leading-[1.18] tracking-[-.7px]">Track every dollar<br/>you earn.</h1><p className="mt-3 text-center text-[16px] leading-[23px] text-[#929292]">Earnings Ninja turns your gig driving into a business you can actually see — profit, goals, and taxes included.</p><div className="mt-9"><Primary>Get Started</Primary></div></div></Shell>}
+export default Welcome;
