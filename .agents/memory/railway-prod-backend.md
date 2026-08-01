@@ -29,3 +29,5 @@ ideal for testing day-filtering). For data restoration / persistence fixes, the
 user must act on Railway (ensure a persistent `DATABASE_URL`, restore from a
 Railway backup, or migrate hosting). Harden `backend/db.py` to fail loudly when
 `DATABASE_URL` is missing rather than silently using ephemeral SQLite.
+
+**Merge ≠ deployed:** task-agent merges land only in the workspace repo; the live Railway backend only updates after a `gitPush` to GitHub. Symptom of forgetting: new client features that depend on a server field (e.g. onboarding flag) flash then fail closed on real devices. Always check `git status -sb` for "ahead" and verify the field on the live URL after merges.
