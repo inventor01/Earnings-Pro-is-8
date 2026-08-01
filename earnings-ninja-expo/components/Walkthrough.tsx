@@ -1,0 +1,359 @@
+// ─── Interactive App Walkthrough ──────────────────────────────────────────────
+// Premium spotlight-style guided tour shown once after onboarding (every launch
+// for demo accounts). Highlights real UI with a dimmed backdrop + floating
+// cards. Self-contained: screens register anchor views in a module-level
+// registry; the overlay measures them with measureInWindow, so no context
+// threading through the (very large) dashboard file is needed.
+//
+// Display rules:
+//  • Production users: auto-shows once after onboarding; a persistent
+//    per-account flag (AsyncStorage) prevents it from ever auto-showing again.
+//  • Demo accounts: the flag is ignored and never written — the tour runs on
+//    every launch (onboarding → walkthrough → home).
+//  • Replayable any time from Settings → Help → Replay App Walkthrough.
+//  • Reduce Motion: pulses/springs are replaced with plain fades.
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AccessibilityInfo, Dimensions, Pressable, Text, View, findNodeHandle,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
+import Animated, {
+  Easing, FadeIn, FadeOut, cancelAnimation, useAnimatedStyle, useSharedValue,
+  withRepeat, withSequence, withTiming,
+} from 'react-native-reanimated';
+import { useAuth } from '@/lib/authContext';
+import { useTheme } from '@/lib/theme';
+
+// ─── Persistence ──────────────────────────────────────────────────────────────
+
+const doneKey = (userId: number | string) => `walkthrough_done:${userId}`;
+
+export async function readWalkthroughDone(userId: number | string): Promise<boolean> {
+  try { return (await AsyncStorage.getItem(doneKey(userId))) === '1'; } catch { return false; }
+}
+async function writeWalkthroughDone(userId: number | string): Promise<void> {
+  try { await AsyncStorage.setItem(doneKey(userId), '1'); } catch {}
+}
+export async function resetWalkthrough(userId: number | string): Promise<void> {
+  try { await AsyncStorage.removeItem(doneKey(userId)); } catch {}
+}
+
+// ─── Target registry ──────────────────────────────────────────────────────────
+// Screens attach anchor views via ref callbacks: ref={registerWalkthroughTarget('hero')}
+
+export type WalkthroughTargetId =
+  | 'hero' | 'addEntry' | 'calendar' | 'analytics' | 'goals' | 'kpis' | 'settings';
+
+const targets = new Map<WalkthroughTargetId, View | null>();
+
+export function registerWalkthroughTarget(id: WalkthroughTargetId) {
+  return (node: View | null) => { targets.set(id, node); };
+}
+
+type Rect = { x: number; y: number; width: number; height: number };
+
+function measureTarget(id?: WalkthroughTargetId): Promise<Rect | null> {
+  return new Promise(resolve => {
+    const node = id ? targets.get(id) : null;
+    if (!node || !findNodeHandle(node)) return resolve(null);
+    try {
+      node.measureInWindow((x, y, width, height) => {
+        if (!width || !height) return resolve(null);
+        // Off-screen (scrolled away / behind the sticky bar) → no spotlight;
+        // the step falls back to a centered floating card instead.
+        const win = Dimensions.get('window');
+        if (y + height < 0 || y > win.height || x + width < 0 || x > win.width) return resolve(null);
+        resolve({ x, y, width, height });
+      });
+    } catch { resolve(null); }
+  });
+}
+
+// ─── Start requests (module-level, no context) ───────────────────────────────
+
+type StartListener = (opts: { replay: boolean }) => void;
+let startListener: StartListener | null = null;
+
+/** Ask the mounted overlay to begin the tour (used by Settings → Replay). */
+export function requestWalkthroughStart(opts: { replay?: boolean } = {}) {
+  startListener?.({ replay: !!opts.replay });
+}
+
+// ─── Steps ────────────────────────────────────────────────────────────────────
+
+type Step = {
+  key: string;
+  target?: WalkthroughTargetId;
+  emoji: string;
+  title: string;
+  body: string;
+};
+
+const STEPS: Step[] = [
+  { key: 'dashboard', target: 'hero', emoji: '📊', title: 'Your live dashboard',
+    body: "Track today's income, hours, and progress toward your goal at a glance — every number updates the moment you log an entry." },
+  { key: 'add', target: 'addEntry', emoji: '➕', title: 'Log every order',
+    body: 'Every delivery or ride you complete gets logged here. The more you track, the more accurate your analytics — and your true hourly pay — become.' },
+  { key: 'calendar', target: 'calendar', emoji: '📅', title: 'Your earnings history',
+    body: 'Review earnings by day, week, or month. Tap any day to see exactly how it went.' },
+  { key: 'analytics', target: 'analytics', emoji: '📈', title: 'Know your real numbers',
+    body: 'See your real hourly pay, trends, profit, and expenses. Advanced business insights unlock with Premium.' },
+  { key: 'goals', target: 'goals', emoji: '🎯', title: 'Set income goals',
+    body: "Set daily, weekly, and monthly goals — we'll keep you motivated and on track." },
+  { key: 'expenses', target: 'kpis', emoji: '💸', title: 'Mileage & expenses',
+    body: 'Log gas, maintenance, and miles to see your true profit — and never miss a deductible mile at tax time.' },
+  { key: 'reminders', emoji: '🔔', title: 'Helpful nudges, not spam',
+    body: "We'll send gentle reminders and a daily recap to keep you on track. You control all of it in Settings." },
+  { key: 'widgets', emoji: '📱', title: 'Home screen widget',
+    body: "Monitor today's earnings right from your home screen and quick-add orders without opening the app." },
+  { key: 'premium', emoji: '⭐', title: 'Go further with Premium',
+    body: 'Premium unlocks advanced analytics, AI insights, profit forecasts, unlimited tracking, and more powerful reports — whenever you\'re ready.' },
+];
+
+// ─── Overlay ──────────────────────────────────────────────────────────────────
+
+type Phase = 'hidden' | 'welcome' | 'tour' | 'done';
+
+export function WalkthroughOverlay() {
+  const { user } = useAuth();
+  const t = useTheme();
+  const win = Dimensions.get('window');
+
+  const [phase, setPhase] = useState<Phase>('hidden');
+  const [stepIdx, setStepIdx] = useState(0);
+  const [rect, setRect] = useState<Rect | null>(null);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const autoStarted = useRef(false);
+  // Pending auto-start timer — must be cleared if a manual start (Settings
+  // replay) wins the race, or the late timer would yank an in-progress tour
+  // back to the welcome screen.
+  const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => sub?.remove();
+  }, []);
+
+  // Settings → Replay. A manual start cancels any pending auto-start and
+  // marks auto-start as consumed so only one start path can ever win.
+  useEffect(() => {
+    startListener = () => {
+      if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = null; }
+      autoStarted.current = true;
+      setStepIdx(0);
+      setPhase('welcome');
+    };
+    return () => { startListener = null; };
+  }, []);
+
+  // Auto-start: once per account for real users; every launch for demo.
+  useEffect(() => {
+    if (!user?.id || autoStarted.current) return;
+    let cancelled = false;
+    (async () => {
+      const done = user.is_demo ? false : await readWalkthroughDone(user.id);
+      if (cancelled || done || autoStarted.current) return;
+      autoStarted.current = true;
+      // Let the dashboard settle (skeleton → content) before dimming it.
+      autoTimer.current = setTimeout(() => {
+        autoTimer.current = null;
+        if (!cancelled) { setStepIdx(0); setPhase('welcome'); }
+      }, 900);
+    })();
+    return () => {
+      cancelled = true;
+      if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = null; }
+    };
+  }, [user?.id, user?.is_demo]);
+
+  const finish = useCallback((completed: boolean) => {
+    setPhase('hidden');
+    setRect(null);
+    // Demo accounts never persist — the tour must run on every launch.
+    if (user?.id && !user.is_demo) writeWalkthroughDone(user.id);
+    if (completed) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+  }, [user?.id, user?.is_demo]);
+
+  const step = STEPS[stepIdx];
+
+  // (Re)measure the current step's anchor whenever the step changes.
+  useEffect(() => {
+    if (phase !== 'tour') return;
+    let cancelled = false;
+    measureTarget(step?.target).then(r => { if (!cancelled) setRect(r); });
+    return () => { cancelled = true; };
+  }, [phase, stepIdx, step?.target]);
+
+  const goto = useCallback((idx: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (idx < 0) return;
+    if (idx >= STEPS.length) { setPhase('done'); return; }
+    setRect(null);
+    setStepIdx(idx);
+  }, []);
+
+  // Spotlight pulse (disabled under Reduce Motion).
+  const pulse = useSharedValue(0);
+  useEffect(() => {
+    if (phase === 'tour' && rect && !reduceMotion) {
+      pulse.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 900, easing: Easing.inOut(Easing.quad) }),
+          withTiming(0, { duration: 900, easing: Easing.inOut(Easing.quad) }),
+        ), -1, false);
+    } else {
+      cancelAnimation(pulse);
+      pulse.value = 0;
+    }
+  }, [phase, rect, reduceMotion, pulse]);
+  const pulseStyle = useAnimatedStyle(() => ({
+    shadowOpacity: 0.5 + pulse.value * 0.45,
+    shadowRadius: 10 + pulse.value * 8,
+  }));
+
+  const fade = reduceMotion ? { entering: FadeIn.duration(150), exiting: FadeOut.duration(120) }
+                            : { entering: FadeIn.duration(260), exiting: FadeOut.duration(180) };
+
+  if (phase === 'hidden') return null;
+
+  const DIM = 'rgba(0,0,0,0.78)';
+  const PAD = 6; // breathing room around the spotlighted element
+  const spot = rect
+    ? { x: Math.max(0, rect.x - PAD), y: Math.max(0, rect.y - PAD),
+        w: Math.min(win.width, rect.width + PAD * 2), h: rect.height + PAD * 2 }
+    : null;
+
+  const btn = (label: string, onPress: () => void, primary?: boolean, a11y?: string) => (
+    <Pressable
+      key={label}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={a11y || label}
+      hitSlop={8}
+      style={({ pressed }) => ({
+        minHeight: 44, minWidth: 44, paddingHorizontal: 18, borderRadius: 12,
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: primary ? t.PRIMARY : 'transparent',
+        borderWidth: primary ? 0 : 1, borderColor: t.BORDER,
+        opacity: pressed ? 0.8 : 1,
+      })}
+    >
+      <Text style={{ color: primary ? t.ON_PRIMARY : t.MUTED, fontWeight: '800', fontSize: 15 }}>{label}</Text>
+    </Pressable>
+  );
+
+  const card = (children: React.ReactNode, style?: object) => (
+    <Animated.View
+      {...fade}
+      style={[{
+        backgroundColor: t.SURFACE, borderRadius: 20, borderWidth: 1, borderColor: t.BORDER,
+        padding: 20, gap: 10, marginHorizontal: 20,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 16,
+      }, style]}
+    >
+      {children}
+    </Animated.View>
+  );
+
+  // ── Welcome / Done full-screen overlays ─────────────────────────────────────
+  if (phase === 'welcome' || phase === 'done') {
+    const isWelcome = phase === 'welcome';
+    return (
+      <Animated.View {...fade} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: DIM, zIndex: 2000, alignItems: 'center', justifyContent: 'center' }}>
+        {card(
+          <>
+            <Text accessibilityRole="header" style={{ fontSize: 40, textAlign: 'center' }}>{isWelcome ? '👋' : '🎉'}</Text>
+            <Text style={{ color: t.TEXT, fontSize: 22, fontWeight: '900', textAlign: 'center' }}>
+              {isWelcome ? 'Welcome to Earnings Ninja!' : "You're Ready!"}
+            </Text>
+            <Text style={{ color: t.MUTED, fontSize: 15, lineHeight: 22, textAlign: 'center' }}>
+              {isWelcome
+                ? "Let's take 60 seconds to tour the features that will help you earn more and stay organized."
+                : "You're all set to track your gig business like a professional. Let's build your earnings history."}
+            </Text>
+            <View style={{ gap: 10, marginTop: 8 }}>
+              {isWelcome
+                ? <>
+                    {btn('Start Tour', () => { setStepIdx(0); setPhase('tour'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); }, true)}
+                    {btn('Skip', () => finish(false), false, 'Skip the walkthrough')}
+                  </>
+                : btn('Start Tracking', () => finish(true), true)}
+            </View>
+          </>,
+          { width: Math.min(360, win.width - 40) },
+        )}
+      </Animated.View>
+    );
+  }
+
+  // ── Tour step ────────────────────────────────────────────────────────────────
+  // Place the info card in the larger free region above/below the spotlight.
+  const spaceAbove = spot ? spot.y : win.height / 2;
+  const spaceBelow = spot ? win.height - (spot.y + spot.h) : win.height / 2;
+  const cardBelow = spaceBelow >= spaceAbove;
+
+  return (
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000 }} accessibilityViewIsModal>
+      {/* Dimmed backdrop — 4 rects around the spotlight keep the real UI visible
+          through the hole. Tapping the dim area advances (never traps). */}
+      {spot ? (
+        <>
+          <Pressable onPress={() => goto(stepIdx + 1)} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: spot.y, backgroundColor: DIM }} />
+          <Pressable onPress={() => goto(stepIdx + 1)} style={{ position: 'absolute', top: spot.y + spot.h, left: 0, right: 0, bottom: 0, backgroundColor: DIM }} />
+          <Pressable onPress={() => goto(stepIdx + 1)} style={{ position: 'absolute', top: spot.y, left: 0, width: spot.x, height: spot.h, backgroundColor: DIM }} />
+          <Pressable onPress={() => goto(stepIdx + 1)} style={{ position: 'absolute', top: spot.y, left: spot.x + spot.w, right: 0, height: spot.h, backgroundColor: DIM }} />
+          {/* Glowing highlight ring */}
+          <Animated.View
+            pointerEvents="none"
+            style={[{
+              position: 'absolute', top: spot.y, left: spot.x, width: spot.w, height: spot.h,
+              borderRadius: 16, borderWidth: 2.5, borderColor: t.PRIMARY,
+              shadowColor: t.PRIMARY, shadowOffset: { width: 0, height: 0 }, elevation: 12,
+            }, reduceMotion ? { shadowOpacity: 0.7, shadowRadius: 12 } : pulseStyle]}
+          />
+        </>
+      ) : (
+        <Pressable onPress={() => goto(stepIdx + 1)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: DIM }} />
+      )}
+
+      {/* Floating info card */}
+      <View
+        pointerEvents="box-none"
+        style={{
+          position: 'absolute', left: 0, right: 0,
+          ...(spot
+            ? cardBelow ? { top: Math.min(spot.y + spot.h + 16, win.height - 280) } : { bottom: win.height - spot.y + 16 }
+            : { top: win.height * 0.28 }),
+        }}
+      >
+        {card(
+          <>
+            <Text style={{ color: t.PRIMARY_TXT, fontSize: 11, fontWeight: '800', letterSpacing: 1 }}>
+              {`STEP ${stepIdx + 1} OF ${STEPS.length}`}
+            </Text>
+            <Text accessibilityRole="header" style={{ color: t.TEXT, fontSize: 19, fontWeight: '900' }}>
+              {step.emoji}  {step.title}
+            </Text>
+            <Text style={{ color: t.MUTED, fontSize: 14.5, lineHeight: 21 }}>{step.body}</Text>
+            {/* Progress dots */}
+            <View style={{ flexDirection: 'row', gap: 5, marginTop: 2 }}>
+              {STEPS.map((s, i) => (
+                <View key={s.key} style={{ width: i === stepIdx ? 16 : 6, height: 6, borderRadius: 3, backgroundColor: i === stepIdx ? t.PRIMARY : t.BORDER }} />
+              ))}
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+              {btn('Skip', () => finish(false), false, 'Skip the walkthrough')}
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {stepIdx > 0 && btn('Back', () => goto(stepIdx - 1))}
+                {btn(stepIdx === STEPS.length - 1 ? 'Finish' : 'Next', () => goto(stepIdx + 1), true)}
+              </View>
+            </View>
+          </>,
+        )}
+      </View>
+    </View>
+  );
+}
