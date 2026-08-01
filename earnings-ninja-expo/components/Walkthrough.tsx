@@ -54,9 +54,11 @@ export function registerWalkthroughTarget(id: WalkthroughTargetId) {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-// Targets that live OUTSIDE the dashboard ScrollView (header icons, the sticky
-// bottom bar) — scrolling can't move them, so never try.
-const FIXED_TARGETS = new Set<WalkthroughTargetId>(['calendar', 'addEntry', 'settings']);
+// Targets that live OUTSIDE the dashboard ScrollView — scrolling can't move
+// them, so never try. NOTE: the header (incl. the calendar icon) scrolls WITH
+// the content, so 'calendar' is NOT fixed — going back to it from further down
+// must scroll the screen back up.
+const FIXED_TARGETS = new Set<WalkthroughTargetId>(['addEntry', 'settings']);
 
 function measureRaw(id?: WalkthroughTargetId): Promise<Rect | null> {
   return new Promise(resolve => {
@@ -87,17 +89,23 @@ async function measureTarget(id?: WalkthroughTargetId): Promise<Rect | null> {
   let r = await measureRaw(id);
   if (!r || !id) return null;
   const win = Dimensions.get('window');
-  const topSafe = 90;                 // below the header/status bar
+  const topSafe = 70;                  // below the status bar
   const bottomSafe = win.height - 150; // above the sticky Add Entry bar
-  const cut = r.y < topSafe || r.y + r.height > bottomSafe;
-  if (cut && scrollBy && !FIXED_TARGETS.has(id)) {
-    const dy = r.y + r.height > bottomSafe
-      ? r.y + r.height - bottomSafe + 12 // scroll down so the bottom clears the bar
-      : r.y - topSafe - 12;              // scroll up so the top clears the header
+  // Up to two adjust-and-remeasure passes: the first scroll can land short
+  // (animated scroll still settling, or clamped at the top/bottom edge).
+  for (let pass = 0; pass < 2; pass++) {
+    const cut = r.y < topSafe || r.y + r.height > bottomSafe;
+    if (!cut || !scrollBy || FIXED_TARGETS.has(id)) break;
+    const dy = r.y < topSafe
+      ? r.y - topSafe - 12               // scroll up so the top clears the status bar
+      : r.y + r.height - bottomSafe + 12; // scroll down so the bottom clears the bar
     scrollBy(dy);
-    await sleep(420); // let the animated scroll settle
-    r = await measureRaw(id);
-    if (!r) return null;
+    await sleep(430); // let the animated scroll settle
+    const next = await measureRaw(id);
+    if (!next) return null;
+    // No movement (already clamped at an edge) → accept what we have.
+    if (Math.abs(next.y - r.y) < 2) { r = next; break; }
+    r = next;
   }
   // Still (or fixed and) fully off-screen → centered card fallback, no spotlight.
   if (r.y + r.height < 0 || r.y > win.height || r.x + r.width < 0 || r.x > win.width) return null;
