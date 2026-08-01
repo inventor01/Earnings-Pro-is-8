@@ -95,16 +95,17 @@ export async function adoptPendingDone(userId: string): Promise<void> {
 }
 
 // Pure decision: should this user go through onboarding right now?
-// FAIL CLOSED toward the dashboard: only an explicit server `false` (fresh
-// signup) with no local completion shows the flow. Demo accounts, existing
-// users (flag true), old cached profiles / older servers (flag undefined),
-// and a missing user all skip it.
+// FAIL CLOSED toward the dashboard: only an explicit server `false` with no
+// local completion shows the flow. Existing users (flag true), old cached
+// profiles / older servers (flag undefined), and a missing user all skip it.
+// The server flag is authoritative even for demo accounts: normal demo
+// accounts are created with the flag true (so they skip), but the App Store
+// reviewer account's flag can be reset to false to demo the funnel.
 export function needsOnboarding(
   user: Pick<User, 'is_demo' | 'onboarding_completed'> | null | undefined,
   local: Pick<OnboardingState, 'localDone'>,
 ): boolean {
   if (!user) return false;
-  if (user.is_demo) return false;
   if (user.onboarding_completed !== false) return false;
   return !local.localDone;
 }
