@@ -29,7 +29,7 @@ export function BlurredCard() {
  const bars=[.45,.7,.55,.9,.65,1,.8];
  return <div className="relative mt-5 overflow-hidden rounded-[20px] border border-[#242424] bg-[#111]">
   <div className="p-4"><div className="text-[12px] font-bold tracking-[1px] text-[#929292]">WEEKLY GOAL</div><div className="mt-0.5 text-[28px] font-black">$500</div>
-  <div className="mt-4 space-y-3">{["Real net profit","Best hours to drive","Tax estimate"].map(x=><div className="flex justify-between text-[13.5px] font-semibold text-[#929292]" key={x}><span>{x}</span><span className="h-[18px] w-[74px] rounded-md bg-[#252525]"/></div>)}</div>
+  <div className="mt-4 space-y-3">{["Real net profit","Best hours to drive","AI earning suggestions"].map(x=><div className="flex justify-between text-[13.5px] font-semibold text-[#929292]" key={x}><span>{x}</span><span className="h-[18px] w-[74px] rounded-md bg-[#252525]"/></div>)}</div>
   <div className="mt-5 flex h-[90px] items-end gap-2">{bars.map((h,i)=><div key={i} className="flex-1 rounded-t-md bg-[#facc15] opacity-25" style={{height:`${h*100}%`}}/>)}</div></div>
   <div className="absolute inset-x-0 bottom-0 top-[92px] flex items-center justify-center bg-[#0a0a0a]/60 backdrop-blur-[5px]"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#facc15] text-[#111]"><LockKeyhole size={20}/></div></div>
  </div>
