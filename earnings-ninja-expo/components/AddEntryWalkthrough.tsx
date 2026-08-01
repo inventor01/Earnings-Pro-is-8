@@ -128,7 +128,7 @@ const STEPS: Step[] = [
     body: 'Choose Order for money you earned from deliveries or rides, and Bonus for promos and incentives. Expense is for money you spent — we\'ll cover that next.',
     prep: { form: 'details', entryType: 'ORDER' } },
   { key: 'platform', target: 'platform', emoji: '🚗', title: 'Choose your platform',
-    body: 'Pick which app this income came from so Earnings Ninja can break down your earnings by platform. Tap ＋ Add to track any platform we missed.',
+    body: 'Pick which app this income came from so Earnings Ninja can break down your earnings by platform. Tap ＋ Add to add your own, or press and hold any platform to edit it.',
     prep: { form: 'details', entryType: 'ORDER' } },
   { key: 'miles', target: 'miles', emoji: '🛣️', title: 'Miles & minutes',
     body: 'Logging miles and time reveals your TRUE hourly pay and captures deductible miles for tax season. Optional — but powerful.',
