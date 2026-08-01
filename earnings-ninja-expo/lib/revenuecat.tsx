@@ -69,6 +69,22 @@ function isEntitled(info: CustomerInfo | null): boolean {
  *                    NOT the same as "nothing to restore".
  * - `unavailable`  — purchases aren't supported on this build/platform.
  */
+/**
+ * Optional presentation overrides for the custom paywall. Used by the
+ * onboarding funnel to show an outcome-focused, goal-personalized headline and
+ * a social-proof block above pricing. All pricing/trial/legal elements are
+ * unaffected — the billed price stays the most prominent price element
+ * (App Review 3.1.2(c)).
+ */
+export interface PaywallPresentationOptions {
+  /** Replaces the default hero headline (supports \n line breaks). */
+  headline?: string;
+  /** Replaces the default hero subheadline. */
+  subheadline?: string;
+  /** Show a neutral social-proof block above the pricing cards. */
+  showSocialProof?: boolean;
+}
+
 export type RestoreStatus = 'restored' | 'expired' | 'no_purchases' | 'error' | 'unavailable';
 export interface RestoreResult {
   status: RestoreStatus;
@@ -167,8 +183,10 @@ interface SubscriptionContextValue {
    * whether the user became Pro.
    */
   requirePro: () => Promise<boolean>;
-  /** Present the paywall regardless of entitlement. Resolves to isPro after. */
-  presentPaywall: () => Promise<boolean>;
+  /** Present the paywall regardless of entitlement. Resolves to isPro after.
+   * Optional presentation overrides personalize the headline / social proof
+   * (used by onboarding); pricing & legal elements are never affected. */
+  presentPaywall: (options?: PaywallPresentationOptions) => Promise<boolean>;
   /** Present the RevenueCat Customer Center (manage / cancel subscription). */
   presentCustomerCenter: () => Promise<void>;
   /** Restore previous purchases. Resolves to a typed outcome (restored /
@@ -208,6 +226,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   // ── Custom fallback paywall (used when no dashboard paywall is published) ──
   const [fallbackVisible, setFallbackVisible] = useState(false);
+  const [fallbackOptions, setFallbackOptions] = useState<PaywallPresentationOptions | null>(null);
   const fallbackResolver = useRef<((becamePro: boolean) => void) | null>(null);
 
   const refresh = useCallback(async () => {
@@ -304,7 +323,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     })();
   }, [available, user?.id]);
 
-  const openFallback = useCallback((): Promise<boolean> => {
+  const openFallback = useCallback((options?: PaywallPresentationOptions): Promise<boolean> => {
     return new Promise<boolean>((resolve) => {
       const present = (off: PurchasesOffering | null) => {
         if (!off || off.availablePackages.length === 0) {
@@ -317,6 +336,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           return;
         }
         fallbackResolver.current = resolve;
+        setFallbackOptions(options ?? null);
         setFallbackVisible(true);
       };
 
@@ -375,14 +395,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     r?.(fallbackResult.current);
   }, []);
 
-  const presentPaywall = useCallback(async (): Promise<boolean> => {
+  const presentPaywall = useCallback(async (options?: PaywallPresentationOptions): Promise<boolean> => {
     if (!availableRef.current) return true; // gating disabled on this build
     // Always present our custom redesigned upgrade page. We intentionally do NOT
     // call RevenueCatUI.presentPaywall() here: whenever a paywall is published in
     // the RevenueCat dashboard for the offering it would take over and hide our
     // custom page. openFallback() reads live prices from the offering, so the
     // custom page stays accurate without the dashboard paywall.
-    return await openFallback();
+    return await openFallback(options);
   }, [openFallback]);
 
   const requirePro = useCallback(async (): Promise<boolean> => {
@@ -474,6 +494,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       {children}
       <FallbackPaywall
         visible={fallbackVisible}
+        options={fallbackOptions}
         offering={offerings}
         onClose={() => closeFallback(false)}
         onDismissed={onFallbackDismissed}
@@ -643,12 +664,14 @@ function annualSavingsPct(
 
 function FallbackPaywall({
   visible,
+  options,
   offering,
   onClose,
   onDismissed,
   onPurchase,
 }: {
   visible: boolean;
+  options: PaywallPresentationOptions | null;
   offering: PurchasesOffering | null;
   onClose: () => void;
   onDismissed: () => void;
@@ -765,9 +788,10 @@ function FallbackPaywall({
                 lineHeight: 36,
               }}
             >
-              {selTrialDays
-                ? `Start your ${selTrialDays}-day\nfree trial to continue.`
-                : 'See your real\ntake-home pay.'}
+              {options?.headline ??
+                (selTrialDays
+                  ? `Start your ${selTrialDays}-day\nfree trial to continue.`
+                  : 'See your real\ntake-home pay.')}
             </Text>
             <Text
               style={{
@@ -778,7 +802,7 @@ function FallbackPaywall({
                 lineHeight: 21,
               }}
             >
-              Know what is really left after gas and miles.
+              {options?.subheadline ?? 'Know what is really left after gas and miles.'}
             </Text>
           </Animated.View>
 
@@ -887,6 +911,35 @@ function FallbackPaywall({
             ))}
           </Animated.View>
           )}
+
+          {/* ── Social proof (above pricing; neutral, no fabricated numbers) ── */}
+          {options?.showSocialProof ? (
+            <Animated.View
+              entering={FadeInDown.delay(100).springify().damping(18)}
+              style={{
+                marginTop: 24,
+                backgroundColor: t.SURFACE,
+                borderWidth: 1,
+                borderColor: t.isDark ? 'rgba(255,255,255,0.18)' : t.BORDER,
+                borderRadius: 16,
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                alignItems: 'center',
+              }}
+            >
+              <View style={{ flexDirection: 'row', gap: 3, marginBottom: 6 }}>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <Ionicons key={i} name="star" size={16} color="#facc15" />
+                ))}
+              </View>
+              <Text style={{ color: t.TEXT, fontSize: 14, fontWeight: '800', textAlign: 'center' }}>
+                Built for delivery & rideshare drivers
+              </Text>
+              <Text style={{ color: t.MUTED, fontSize: 12.5, textAlign: 'center', marginTop: 3 }}>
+                Made for DoorDash, Uber Eats, Instacart, GrubHub, Shipt and more.
+              </Text>
+            </Animated.View>
+          ) : null}
 
           {/* ── Plans ────────────────────────────────────────────────────── */}
           {packages.length > 0 && (

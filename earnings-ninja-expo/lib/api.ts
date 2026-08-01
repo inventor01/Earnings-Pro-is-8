@@ -215,6 +215,11 @@ export interface User {
   first_name?: string;
   last_name?: string;
   email_verified?: boolean;
+  is_demo?: boolean;
+  // Server-synced one-time onboarding flag. `false` = fresh signup that still
+  // needs the funnel; undefined (old cached profile / older server) is treated
+  // as completed so existing users NEVER see onboarding (fail open).
+  onboarding_completed?: boolean;
 }
 
 export interface ReferralInfo {
@@ -457,6 +462,19 @@ export const api = {
       // "the network is flaky" (500/0 → keep token, retry later).
       throw new Error(`getMe failed: ${res.status}`);
     }
+    return res.json();
+  },
+
+  // Mark the one-time conversion onboarding funnel done for this account.
+  // Server-synced so a reinstall never re-onboards an existing user.
+  // Idempotent; throws on failure so the caller can queue a retry.
+  async completeOnboarding(): Promise<{ onboarding_completed: boolean }> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/auth/onboarding/complete`, {
+      method: 'POST',
+      headers,
+    });
+    if (!res.ok) throw new Error('Failed to save onboarding status');
     return res.json();
   },
 

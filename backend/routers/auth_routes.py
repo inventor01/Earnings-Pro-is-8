@@ -658,7 +658,22 @@ async def get_current_user_info(current_user: AuthUser = Depends(get_current_use
         "last_name": current_user.last_name,
         "profile_image_url": current_user.profile_image_url,
         "email_verified": bool(current_user.email_verified),
+        "is_demo": bool(current_user.is_demo),
+        "onboarding_completed": bool(current_user.onboarding_completed),
     }
+
+
+@router.post("/auth/onboarding/complete")
+async def complete_onboarding(
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Dict:
+    """Mark the one-time onboarding funnel done for this account. Idempotent —
+    synced server-side so a reinstall never re-onboards an existing user."""
+    if not current_user.onboarding_completed:
+        current_user.onboarding_completed = True
+        db.commit()
+    return {"onboarding_completed": True}
 
 
 def _email_verification_needed(user: AuthUser) -> bool:
@@ -1154,6 +1169,8 @@ async def create_demo_session(request: Request, body: DemoRequest = DemoRequest(
         is_demo=True,
         # Demo accounts are throwaway and never see the confirmation nudge.
         email_verified=True,
+        # Demo mode drops straight into the seeded dashboard — no onboarding.
+        onboarding_completed=True,
     )
     db.add(user)
     db.flush()

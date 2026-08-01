@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/authContext';
 import { api } from '@/lib/api';
 import { useTheme } from '@/lib/theme';
 import { getPendingReferral, clearPendingReferral } from '@/lib/pendingReferral';
+import { setFreshSignupFlag } from '@/lib/onboarding';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
 export default function LoginScreen() {
@@ -105,6 +106,9 @@ export default function LoginScreen() {
       if (mode === 'signup') {
         const res = await api.signup(credential, password, username, referralCode);
         await clearPendingReferral();
+        // Route this brand-new account into onboarding immediately (before
+        // /auth/me resolves with onboarding_completed=false).
+        await setFreshSignupFlag();
         login(res.access_token);
         return;
       }
