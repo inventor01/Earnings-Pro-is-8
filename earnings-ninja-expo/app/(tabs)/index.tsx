@@ -24,6 +24,7 @@ import { useAuth } from '@/lib/authContext';
 import * as Haptics from 'expo-haptics';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { CalendarModal } from '../../components/CalendarModal';
+import { WalkthroughOverlay, registerWalkthroughTarget, requestWalkthroughStart } from '../../components/Walkthrough';
 import { TransactionDetailModal } from '../../components/TransactionDetailModal';
 import { TwoFactorRow } from '../../components/TwoFactorRow';
 import { ShareCard, shareCardImage } from '../../components/ShareCard';
@@ -3645,6 +3646,34 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           </>
         )}
 
+        {/* ── Help ──────────────────────────────────────────────────────── */}
+        <View style={{ height: 28 }} />
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+          ❓  Help
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Replay the app walkthrough"
+          onPress={() => {
+            hTap();
+            // Close Settings first — the walkthrough overlay lives on the
+            // dashboard, underneath this sheet. Small delay lets the sheet
+            // dismiss before the tour dims the screen.
+            onClose();
+            setTimeout(() => requestWalkthroughStart({ replay: true }), 450);
+          }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14 }}
+        >
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="play-circle-outline" size={18} color={PRIMARY_TXT} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Replay App Walkthrough</Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>Take the 60-second feature tour again</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={MUTED} />
+        </Pressable>
+
         {/* ── Refer a Driver ────────────────────────────────────────────── */}
         <View style={{ height: 28 }} />
         <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
@@ -5879,6 +5908,7 @@ export default function DashboardScreen() {
                 color={showSearchBar ? ON_PRIMARY : MUTED}
               />
             </PressScale>
+            <View ref={registerWalkthroughTarget('calendar')} collapsable={false}>
             <PressScale
               hitSlop={8}
               accessibilityLabel="Open calendar"
@@ -5887,6 +5917,7 @@ export default function DashboardScreen() {
             >
               <Ionicons name="calendar-outline" size={17} color={MUTED} />
             </PressScale>
+            </View>
             <PressScale
               hitSlop={8}
               accessibilityLabel={hidden ? 'Show amounts' : 'Hide amounts'}
@@ -6089,6 +6120,8 @@ export default function DashboardScreen() {
             <>
               {/* ── Main Hero Card with neon glow (toggle Profit↔Revenue) ──── */}
               {/* Horizontal swipe on this card steps the nav offset (± day/week/month). */}
+              {/* collapsable={false} keeps the wrapper measurable for the walkthrough spotlight */}
+              <View ref={registerWalkthroughTarget('hero')} collapsable={false}>
               <GestureDetector gesture={swipeGesture}>
               <Animated.View style={[
                 {
@@ -6193,7 +6226,7 @@ export default function DashboardScreen() {
                 />
 
                 {/* Three stats with count-up */}
-                <View style={{ flexDirection: 'row' }}>
+                <View ref={registerWalkthroughTarget('kpis')} collapsable={false} style={{ flexDirection: 'row' }}>
                   {[
                     { label: 'EXPENSES',  numeric: Math.abs(expenses), format: (n: number) => `$${Math.round(n)}`, hideable: true, expanded: expensesExpanded, onPress: () => { hTap(); setExpensesExpanded(v => !v); } },
                     { label: 'ORDERS',    numeric: orderCount,         format: (n: number) => `${Math.round(n)}`,  hideable: false },
@@ -6236,6 +6269,7 @@ export default function DashboardScreen() {
 
               </Animated.View>
               </GestureDetector>
+              </View>
 
               {/* ── Inline expandable EXPENSES drill-down ───────────────────────
                   Tap the EXPENSES KPI above to expand/collapse an itemized list
@@ -6328,6 +6362,7 @@ export default function DashboardScreen() {
                   stack leaves the dashboard ScrollView unresponsive on iOS. With
                   the gate here, a free user only ever sees ONE modal (the
                   paywall) and Analytics opens exclusively for entitled users. */}
+              <View ref={registerWalkthroughTarget('analytics')} collapsable={false}>
               <PressScale
                 onPress={async () => {
                   hTap();
@@ -6364,10 +6399,11 @@ export default function DashboardScreen() {
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={PRIMARY_TXT} />
               </PressScale>
+              </View>
 
               {/* ── Goals Section (hidden in custom-range mode — goals are tied to fixed timeframes) ──── */}
               {period !== 'custom' && (
-              <View>
+              <View ref={registerWalkthroughTarget('goals')} collapsable={false}>
                 <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>
                   GOALS
                 </Text>
@@ -6764,6 +6800,7 @@ export default function DashboardScreen() {
 
       {/* ── Sticky "Add Entry" bar (heavy neon yellow halo) ─────────────────── */}
       <View
+        ref={registerWalkthroughTarget('addEntry')}
         pointerEvents="box-none"
         style={{
           position: 'absolute',
@@ -6827,6 +6864,11 @@ export default function DashboardScreen() {
 
       <AnalyticsModal visible={showAnalytics} onClose={() => setShowAnalytics(false)} initialPeriod={dashboardToAnalyticsPeriod(period)} />
       <ExpensesModal visible={showExpenses} onClose={() => setShowExpenses(false)} />
+      {/* ── First-time interactive walkthrough (spotlight tour) ─────────────
+          Auto-shows once per account after onboarding (every launch for demo);
+          replayable from Settings → Help. Must render ABOVE the sticky Add
+          Entry bar (zIndex 999) — the overlay uses zIndex 2000. */}
+      <WalkthroughOverlay />
       {/* ── Sort Menu (Dark Neon bottom sheet) ────────────────────────────── */}
       <Modal visible={showSortMenu} transparent animationType="fade" onRequestClose={() => setShowSortMenu(false)}>
         <Pressable
