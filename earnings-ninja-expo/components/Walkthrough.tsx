@@ -54,21 +54,54 @@ export function registerWalkthroughTarget(id: WalkthroughTargetId) {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-function measureTarget(id?: WalkthroughTargetId): Promise<Rect | null> {
+// Targets that live OUTSIDE the dashboard ScrollView (header icons, the sticky
+// bottom bar) — scrolling can't move them, so never try.
+const FIXED_TARGETS = new Set<WalkthroughTargetId>(['calendar', 'addEntry', 'settings']);
+
+function measureRaw(id?: WalkthroughTargetId): Promise<Rect | null> {
   return new Promise(resolve => {
     const node = id ? targets.get(id) : null;
     if (!node || !findNodeHandle(node)) return resolve(null);
     try {
       node.measureInWindow((x, y, width, height) => {
         if (!width || !height) return resolve(null);
-        // Off-screen (scrolled away / behind the sticky bar) → no spotlight;
-        // the step falls back to a centered floating card instead.
-        const win = Dimensions.get('window');
-        if (y + height < 0 || y > win.height || x + width < 0 || x > win.width) return resolve(null);
         resolve({ x, y, width, height });
       });
     } catch { resolve(null); }
   });
+}
+
+const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+
+// The dashboard registers a relative scroller so the tour can bring
+// scrolled-away anchors (goals, analytics, KPIs) into view instead of
+// spotlighting a half-cut element.
+let scrollBy: ((dy: number) => void) | null = null;
+export function registerWalkthroughScroller(fn: ((dy: number) => void) | null) {
+  scrollBy = fn;
+}
+
+// Measure a step's anchor; if it's cut off by the header or the sticky Add
+// Entry bar, scroll it into the safe band and re-measure.
+async function measureTarget(id?: WalkthroughTargetId): Promise<Rect | null> {
+  let r = await measureRaw(id);
+  if (!r || !id) return null;
+  const win = Dimensions.get('window');
+  const topSafe = 90;                 // below the header/status bar
+  const bottomSafe = win.height - 150; // above the sticky Add Entry bar
+  const cut = r.y < topSafe || r.y + r.height > bottomSafe;
+  if (cut && scrollBy && !FIXED_TARGETS.has(id)) {
+    const dy = r.y + r.height > bottomSafe
+      ? r.y + r.height - bottomSafe + 12 // scroll down so the bottom clears the bar
+      : r.y - topSafe - 12;              // scroll up so the top clears the header
+    scrollBy(dy);
+    await sleep(420); // let the animated scroll settle
+    r = await measureRaw(id);
+    if (!r) return null;
+  }
+  // Still (or fixed and) fully off-screen → centered card fallback, no spotlight.
+  if (r.y + r.height < 0 || r.y > win.height || r.x + r.width < 0 || r.x > win.width) return null;
+  return r;
 }
 
 // ─── Start requests (module-level, no context) ───────────────────────────────
