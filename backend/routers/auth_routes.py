@@ -669,7 +669,14 @@ async def complete_onboarding(
     db: Session = Depends(get_db),
 ) -> Dict:
     """Mark the one-time onboarding funnel done for this account. Idempotent —
-    synced server-side so a reinstall never re-onboards an existing user."""
+    synced server-side so a reinstall never re-onboards an existing user.
+
+    Demo accounts are a no-op: the App Store reviewer account must re-run the
+    funnel on every login, so its flag can never be flipped to true — not even
+    by older app builds that still call this endpoint for demo users. We still
+    report success so those old clients don't retry forever."""
+    if current_user.is_demo:
+        return {"onboarding_completed": True}
     if not current_user.onboarding_completed:
         current_user.onboarding_completed = True
         db.commit()
