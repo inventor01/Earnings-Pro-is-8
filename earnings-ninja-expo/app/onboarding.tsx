@@ -142,7 +142,9 @@ export default function OnboardingScreen() {
   );
 
   // ── Completion: paywall handoff then dashboard (soft paywall) ────────────
-  const finish = useCallback(async () => {
+  // showPaywall: the primary CTA pitches Pro; the quiet "Continue to
+  // dashboard" link skips the paywall and lands directly on the dashboard.
+  const finish = useCallback(async (showPaywall: boolean) => {
     if (finishRan.current || !state) return;
     finishRan.current = true;
     setFinishing(true);
@@ -179,13 +181,15 @@ export default function OnboardingScreen() {
 
     // Outcome-focused, goal-personalized paywall. Declining still lands on
     // the dashboard — feature gating elsewhere is unchanged.
-    try {
-      await presentPaywall({
-        headline: paywallHeadlineForGoal(state.weeklyGoal),
-        subheadline: 'Your personalized dashboard is ready.',
-        showSocialProof: true,
-      });
-    } catch {}
+    if (showPaywall) {
+      try {
+        await presentPaywall({
+          headline: paywallHeadlineForGoal(state.weeklyGoal),
+          subheadline: 'Your personalized dashboard is ready.',
+          showSocialProof: true,
+        });
+      } catch {}
+    }
     router.replace('/(tabs)');
   }, [state, user?.is_demo, userId, savePlatforms, update, refreshUser, presentPaywall]);
 
@@ -502,9 +506,9 @@ export default function OnboardingScreen() {
             </Text>
             <BlurredPreview weeklyGoal={state.weeklyGoal} />
             <View style={{ marginTop: 24 }}>
-              {primary('Unlock My Personalized Dashboard', finish)}
+              {primary('Unlock My Personalized Dashboard', () => finish(true))}
             </View>
-            <Pressable onPress={finish} disabled={finishing} hitSlop={12} style={{ paddingVertical: 14, alignItems: 'center' }}>
+            <Pressable onPress={() => finish(false)} disabled={finishing} hitSlop={12} style={{ paddingVertical: 14, alignItems: 'center' }}>
               <Text style={{ color: t.MUTED, fontSize: 13.5, fontWeight: '600' }}>Continue to dashboard</Text>
             </Pressable>
           </Animated.View>
