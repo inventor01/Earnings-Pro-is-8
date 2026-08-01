@@ -203,7 +203,12 @@ export function WalkthroughOverlay() {
       // Let the dashboard settle (skeleton → content) before dimming it.
       autoTimer.current = setTimeout(() => {
         autoTimer.current = null;
-        if (!cancelled) { setStepIdx(0); setPhase('welcome'); }
+        if (cancelled) return;
+        // Persist "seen" as soon as the tour starts (production only) so
+        // killing the app mid-tour can't make it auto-show again forever.
+        if (!user.is_demo) writeWalkthroughDone(user.id);
+        setStepIdx(0);
+        setPhase('welcome');
       }, 900);
     })();
     return () => {
