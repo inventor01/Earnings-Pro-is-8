@@ -105,9 +105,11 @@ const STORAGE_KEY = 'theme_name';
 
 // Map any persisted value (incl. legacy 3-theme names) to a current ThemeName.
 function normalizeThemeName(v: string | null | undefined): ThemeName {
-  if (v === 'light' || v === 'simpleLight') return 'light';
-  // 'dark', 'darkNeon', 'bwNeon', null, or anything unknown -> dark (default)
-  return 'dark';
+  // Users who explicitly picked a dark look keep it.
+  if (v === 'dark' || v === 'darkNeon' || v === 'bwNeon') return 'dark';
+  // Everything else — 'light', legacy 'simpleLight', null (fresh install),
+  // or unknown — starts on the white/light theme (the default).
+  return 'light';
 }
 
 interface ThemeContextValue {
@@ -117,13 +119,15 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: dark,
-  themeName: 'dark',
+  theme: light,
+  themeName: 'light',
   setThemeName: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [themeName, setThemeNameState] = useState<ThemeName>('dark');
+  // Light is the launch default; the stored preference (if any) loads in the
+  // effect below before the first frame settles.
+  const [themeName, setThemeNameState] = useState<ThemeName>('light');
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
