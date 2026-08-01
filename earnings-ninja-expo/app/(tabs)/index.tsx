@@ -30,6 +30,7 @@ import {
   registerAddEntryShowMore, registerAddEntryScroller, resetAddEntryWalkthrough,
   queueAddEntryWalkthroughReplay,
 } from '../../components/AddEntryWalkthrough';
+import { GettingStartedCard, markGettingStartedMilestone, restoreGettingStarted } from '../../components/GettingStarted';
 import { TransactionDetailModal } from '../../components/TransactionDetailModal';
 import { TwoFactorRow } from '../../components/TwoFactorRow';
 import { ShareCard, shareCardImage } from '../../components/ShareCard';
@@ -2231,6 +2232,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       return { prev: prevRollup, prevEntries, syntheticId: syntheticEntry.id };
     },
     onSuccess: (_data, vars, ctx) => {
+      // Getting Started milestones — the entry saved (or queued offline, which
+      // still lands), so first-order / first-expense checks off.
+      if (vars.type === 'EXPENSE') markGettingStartedMilestone('expense');
+      else if (vars.type === 'ORDER' || vars.type === 'BONUS') markGettingStartedMilestone('revenue');
       // `createEntry` returns a synthetic, NEGATIVE-id Entry when the POST
       // failed (flaky network while driving) and the entry was only QUEUED
       // offline — the server does NOT have the row yet. Invalidating in that
@@ -3276,6 +3281,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
       queryClient.invalidateQueries({ queryKey: ['goal'] });
       setEditingGoal(null);
       hNotifyOk();
+      markGettingStartedMilestone('goal');
       // A new/changed goal target alters "remaining to goal" in the recap.
       notifyEarningsChanged();
     },
@@ -3732,6 +3738,26 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           <View style={{ flex: 1 }}>
             <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Replay Add Entry Walkthrough</Text>
             <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>Learn to log income & expenses — starts when you next open Add Entry</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={MUTED} />
+        </Pressable>
+
+        {/* Restore the Getting Started checklist if it was hidden with ✕.
+            (No-op once all three goals are complete — it retires forever.) */}
+        <Pressable
+          onPress={() => {
+            hTap();
+            if (user?.id) restoreGettingStarted(user.id);
+            onClose();
+          }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, marginTop: 10 }}
+        >
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="star-outline" size={18} color={PRIMARY_TXT} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Show Getting Started Checklist</Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginTop: 1 }}>Bring back the new-user checklist on your dashboard</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={MUTED} />
         </Pressable>
@@ -5681,6 +5707,7 @@ export default function DashboardScreen() {
       refetchGoal();
       setEditingGoal(false);
       hNotifyOk();
+      markGettingStartedMilestone('goal');
       // Transient "✓ Goal saved" confirmation on the goal card.
       setGoalSaved(true);
       if (goalSavedTimer.current) clearTimeout(goalSavedTimer.current);
@@ -6476,6 +6503,16 @@ export default function DashboardScreen() {
                 <Ionicons name="chevron-forward" size={20} color={PRIMARY_TXT} />
               </PressScale>
               </View>
+
+              {/* ── Getting Started checklist — new-user activation card. Seeds
+                  from data already in view so long-time accounts self-retire. */}
+              <GettingStartedCard
+                seedSignals={{
+                  revenue: entries.some(e => (e.type === 'ORDER' || e.type === 'BONUS') && Number(e.amount) > 0),
+                  expense: entries.some(e => e.type === 'EXPENSE'),
+                  goal: !!rollup?.goal?.target_profit,
+                }}
+              />
 
               {/* ── Goals Section (hidden in custom-range mode — goals are tied to fixed timeframes) ──── */}
               {period !== 'custom' && (
