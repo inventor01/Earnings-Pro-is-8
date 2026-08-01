@@ -79,7 +79,9 @@ function RootNav() {
     // Route fresh signups into the one-time onboarding funnel. Fail CLOSED
     // toward the dashboard: only an explicit server onboarding_completed=false
     // (or the just-signed-up flag while /auth/me is still resolving) shows it;
-    // demo accounts and existing users always go straight to the dashboard.
+    // existing users go straight to the dashboard. The server flag is
+    // authoritative even for demo accounts (auto demo sessions are created
+    // with flag=true; the reviewer account's flag can be reset to false).
     let cancelled = false;
     (async () => {
       let need = false;
