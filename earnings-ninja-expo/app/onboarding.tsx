@@ -310,13 +310,17 @@ export default function OnboardingScreen() {
                       backgroundColor: on ? t.PRIMARY : t.SURFACE,
                     }}
                   >
-                    <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: opt.color }} />
+                    {/* Fixed 16px slot: dot when unselected, checkmark when
+                        selected — chip width never changes, so the grid keeps
+                        its original compact formation and nothing moves. */}
+                    <View style={{ width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
+                      {on
+                        ? <Ionicons name="checkmark" size={16} color={t.ON_PRIMARY} />
+                        : <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: opt.color }} />}
+                    </View>
                     <Text style={{ color: on ? t.ON_PRIMARY : t.TEXT, fontSize: 15, fontWeight: '700' }}>
                       {opt.label}
                     </Text>
-                    {/* Always rendered (opacity 0 when unselected) so the chip
-                        width never changes on toggle — no reflow/jumping. */}
-                    <Ionicons name="checkmark" size={16} color={t.ON_PRIMARY} style={{ opacity: on ? 1 : 0 }} />
                   </Pressable>
                 );
               })}
