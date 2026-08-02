@@ -1,11 +1,15 @@
-import { createContext, useContext, useEffect, useState, useCallback, createElement } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, createElement } from 'react';
 import type { ReactNode } from 'react';
+import { Appearance, Animated, StyleSheet, AccessibilityInfo } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { widgetSync } from './widgetSync';
 
-// Two themes only: 'dark' (default, the neon Car-Dashboard look) and 'light'
+// Two rendered themes: 'dark' (the neon Car-Dashboard look) and 'light'
 // (clean white background that keeps the exact brand neon accents + glows).
 export type ThemeName = 'dark' | 'light';
+// What the user PICKS in Settings. 'system' follows the device appearance
+// live (no restart) via the native Appearance API.
+export type ThemePreference = ThemeName | 'system';
 
 export interface Theme {
   name: ThemeName;
@@ -103,8 +107,9 @@ export const THEMES: Record<ThemeName, Theme> = {
 
 const STORAGE_KEY = 'theme_name';
 
-// Map any persisted value (incl. legacy 3-theme names) to a current ThemeName.
-function normalizeThemeName(v: string | null | undefined): ThemeName {
+// Map any persisted value (incl. legacy 3-theme names) to a ThemePreference.
+function normalizePreference(v: string | null | undefined): ThemePreference {
+  if (v === 'system') return 'system';
   // Users who explicitly picked a dark look keep it.
   if (v === 'dark' || v === 'darkNeon' || v === 'bwNeon') return 'dark';
   // Everything else — 'light', legacy 'simpleLight', null (fresh install),
@@ -112,28 +117,82 @@ function normalizeThemeName(v: string | null | undefined): ThemeName {
   return 'light';
 }
 
+function resolve(pref: ThemePreference, system: ThemeName): ThemeName {
+  return pref === 'system' ? system : pref;
+}
+
 interface ThemeContextValue {
   theme: Theme;
+  /** The RESOLVED theme actually rendered ('light' | 'dark'). */
   themeName: ThemeName;
-  setThemeName: (name: ThemeName) => void;
+  /** The user's saved choice ('light' | 'dark' | 'system'). */
+  themePreference: ThemePreference;
+  /** Persist a new preference. */
+  setThemeName: (name: ThemePreference) => void;
+  /** Temporary, non-persisted override (walkthrough demo). null = clear. */
+  setThemeOverride: (name: ThemeName | null) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: light,
   themeName: 'light',
+  themePreference: 'light',
   setThemeName: () => {},
+  setThemeOverride: () => {},
 });
+
+/** Full-screen fade that softens theme switches: the OLD background color
+ * fades out over the new theme (~350ms). Skipped under Reduce Motion. */
+function ThemeFade({ resolved }: { resolved: ThemeName }) {
+  const prevRef = useRef(resolved);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const [fadeColor, setFadeColor] = useState<string | null>(null);
+  const reduceMotionRef = useRef(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((v) => { reduceMotionRef.current = v; }).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (v) => {
+      reduceMotionRef.current = v;
+    });
+    return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
+    if (prevRef.current === resolved) return;
+    const oldBg = THEMES[prevRef.current].BG;
+    prevRef.current = resolved;
+    if (reduceMotionRef.current) return; // instant switch, no interpolation
+    setFadeColor(oldBg);
+    opacity.setValue(1);
+    Animated.timing(opacity, {
+      toValue: 0, duration: 350, useNativeDriver: true,
+    }).start(() => setFadeColor(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolved]);
+
+  if (!fadeColor) return null;
+  return createElement(Animated.View, {
+    pointerEvents: 'none',
+    style: [StyleSheet.absoluteFillObject, { backgroundColor: fadeColor, opacity, zIndex: 99999 }],
+  });
+}
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   // Light is the launch default; the stored preference (if any) loads in the
   // effect below before the first frame settles.
-  const [themeName, setThemeNameState] = useState<ThemeName>('light');
+  const [preference, setPreferenceState] = useState<ThemePreference>('light');
+  const [systemScheme, setSystemScheme] = useState<ThemeName>(
+    Appearance.getColorScheme() === 'dark' ? 'dark' : 'light',
+  );
+  // Walkthrough demo override — never persisted, never survives a restart.
+  const [override, setOverride] = useState<ThemeName | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((v) => {
-        const normalized = normalizeThemeName(v);
-        setThemeNameState(normalized);
+        const normalized = normalizePreference(v);
+        setPreferenceState(normalized);
         // Rewrite legacy / unknown values so storage stays canonical.
         if (v !== normalized) {
           AsyncStorage.setItem(STORAGE_KEY, normalized).catch(() => {});
@@ -142,20 +201,45 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
+  // Follow the DEVICE appearance live. Cheap to keep always-subscribed; it
+  // only re-renders when the OS scheme actually flips, and it makes
+  // switching preference→'system' reflect the current device state instantly.
+  useEffect(() => {
+    const sub = Appearance.addChangeListener(({ colorScheme }) => {
+      setSystemScheme(colorScheme === 'dark' ? 'dark' : 'light');
+    });
+    return () => sub.remove();
+  }, []);
+
+  const resolved: ThemeName = override ?? resolve(preference, systemScheme);
+
   // Keep the iOS Home Screen widget's appearance in sync with the app theme.
   useEffect(() => {
-    widgetSync.pushTheme(themeName);
-  }, [themeName]);
+    widgetSync.pushTheme(resolved);
+  }, [resolved]);
 
-  const setThemeName = useCallback((name: ThemeName) => {
-    setThemeNameState(name);
+  const setThemeName = useCallback((name: ThemePreference) => {
+    setPreferenceState(name);
     AsyncStorage.setItem(STORAGE_KEY, name).catch(() => {});
+  }, []);
+
+  const setThemeOverride = useCallback((name: ThemeName | null) => {
+    setOverride(name);
   }, []);
 
   return createElement(
     ThemeContext.Provider,
-    { value: { theme: THEMES[themeName], themeName, setThemeName } },
+    {
+      value: {
+        theme: THEMES[resolved],
+        themeName: resolved,
+        themePreference: preference,
+        setThemeName,
+        setThemeOverride,
+      },
+    },
     children,
+    createElement(ThemeFade, { key: 'theme-fade', resolved }),
   );
 }
 
@@ -163,7 +247,12 @@ export function useTheme(): Theme {
   return useContext(ThemeContext).theme;
 }
 
-export function useThemeControls(): { themeName: ThemeName; setThemeName: (n: ThemeName) => void } {
-  const { themeName, setThemeName } = useContext(ThemeContext);
-  return { themeName, setThemeName };
+export function useThemeControls(): {
+  themeName: ThemeName;
+  themePreference: ThemePreference;
+  setThemeName: (n: ThemePreference) => void;
+  setThemeOverride: (n: ThemeName | null) => void;
+} {
+  const { themeName, themePreference, setThemeName, setThemeOverride } = useContext(ThemeContext);
+  return { themeName, themePreference, setThemeName, setThemeOverride };
 }
