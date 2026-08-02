@@ -542,8 +542,10 @@ export default function LoginScreen() {
             borderRadius: 18,
             borderWidth: 1,
             borderColor: BORDER,
-            padding: 22,
+            maxHeight: '100%',
+            overflow: 'hidden',
           }}>
+            <ScrollView keyboardShouldPersistTaps="handled" bounces={false} contentContainerStyle={{ padding: 22 }}>
             <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginBottom: 6 }}>
               Reset your password
             </Text>
@@ -623,6 +625,7 @@ export default function LoginScreen() {
                 </Pressable>
               )}
             </View>
+            </ScrollView>
           </View>
         </Pressable>
         </KeyboardAvoidingView>
@@ -646,8 +649,10 @@ export default function LoginScreen() {
             borderRadius: 18,
             borderWidth: 1,
             borderColor: BORDER,
-            padding: 22,
+            maxHeight: '100%',
+            overflow: 'hidden',
           }}>
+            <ScrollView keyboardShouldPersistTaps="handled" bounces={false} contentContainerStyle={{ padding: 22 }}>
             <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginBottom: 6 }}>
               Enter your code
             </Text>
@@ -737,6 +742,7 @@ export default function LoginScreen() {
                 }
               </Pressable>
             </View>
+            </ScrollView>
           </View>
         </Pressable>
         </KeyboardAvoidingView>

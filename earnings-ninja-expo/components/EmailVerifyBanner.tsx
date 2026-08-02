@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, Pressable, TextInput, Modal, ActivityIndicator,
-  Keyboard, KeyboardAvoidingView, Platform,
+  Keyboard, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -125,9 +125,10 @@ export function EmailVerifyBanner() {
           accessible={false}
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}
         >
-          <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 22 }}
+          <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1, borderColor: BORDER, maxHeight: '100%', overflow: 'hidden' }}
             onStartShouldSetResponder={() => true}
           >
+            <ScrollView keyboardShouldPersistTaps="handled" bounces={false} contentContainerStyle={{ padding: 22 }}>
             <Text style={{ color: TEXT, fontSize: 18, fontWeight: '800', marginBottom: 6 }}>Confirm your email</Text>
             <Text style={{ color: MUTED, fontSize: 13, marginBottom: 16, lineHeight: 18 }}>
               We emailed a 6-digit code{email ? ` to ${email}` : ''}. Enter it to confirm your account.
@@ -170,6 +171,7 @@ export function EmailVerifyBanner() {
                 {codeBusy ? <ActivityIndicator color={ON_PRIMARY} /> : <Text style={{ color: ON_PRIMARY, fontWeight: '900', fontSize: 15 }}>Confirm</Text>}
               </Pressable>
             </View>
+            </ScrollView>
           </View>
         </Pressable>
         </KeyboardAvoidingView>
