@@ -202,6 +202,25 @@ def _migrate_user_platforms_ci_unique() -> None:
         ))
 
 
+def _migrate_user_platforms_add_color_icon() -> None:
+    """Add nullable `color` (hex '#rrggbb') and `icon` (short emoji) columns to
+    `user_platforms` so users can pick an identifying color/icon for a custom
+    earnings type. NULL means "auto" (client derives a stable color from the
+    name). Plain ADD COLUMN works on both Postgres and SQLite; safe to
+    re-run — no-ops once the columns exist."""
+    insp = inspect(engine)
+    if not insp.has_table("user_platforms"):
+        return
+    cols = {c["name"] for c in insp.get_columns("user_platforms")}
+    with engine.begin() as conn:
+        if "color" not in cols:
+            conn.execute(text("ALTER TABLE user_platforms ADD COLUMN color VARCHAR"))
+        if "icon" not in cols:
+            conn.execute(text("ALTER TABLE user_platforms ADD COLUMN icon VARCHAR"))
+    if "color" not in cols or "icon" not in cols:
+        logger.warning("Added user_platforms.color/icon for custom platform styling.")
+
+
 def _migrate_points_for_multi_user() -> None:
     """Scope the gamification tables to authenticated users.
 
@@ -383,6 +402,7 @@ _migrate_synced_orders_for_multi_user()
 _migrate_entries_add_idempotency_key()
 _migrate_entries_add_custom_app()
 _migrate_user_platforms_ci_unique()
+_migrate_user_platforms_add_color_icon()
 _migrate_points_for_multi_user()
 _migrate_auth_users_add_referral_code()
 _migrate_auth_users_add_mfa()

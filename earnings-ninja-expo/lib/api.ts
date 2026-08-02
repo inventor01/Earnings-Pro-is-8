@@ -174,9 +174,13 @@ export interface EntryCreate {
 }
 
 // A user-created delivery platform (server-persisted, per account).
+// `color` (hex '#rrggbb') and `icon` (short emoji) are optional user-chosen
+// identity; null/absent means "auto" (stable hash color, no icon).
 export interface UserPlatform {
   id: number;
   name: string;
+  color?: string | null;
+  icon?: string | null;
 }
 
 // A per-user cosmetic rename of a BUILT-IN Platform or Type pill label.
@@ -723,12 +727,12 @@ export const api = {
     return res.json();
   },
 
-  async addPlatform(name: string): Promise<UserPlatform> {
+  async addPlatform(name: string, color?: string | null, icon?: string | null): Promise<UserPlatform> {
     const headers = await getAuthHeaders();
     const res = await trackedFetch(`${API_BASE}/api/platforms`, {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, color: color ?? null, icon: icon ?? null }),
     });
     if (!res.ok) {
       let msg = 'Failed to add platform';
@@ -769,12 +773,14 @@ export const api = {
 
   // Rename a user-created platform. The server also carries existing entries
   // logged under the old name over to the new one (409 = duplicate name).
-  async renamePlatform(id: number, name: string): Promise<UserPlatform> {
+  // `color`/`icon` are the FULL desired state (null = reset to auto) — the
+  // server overwrites both on every update.
+  async renamePlatform(id: number, name: string, color?: string | null, icon?: string | null): Promise<UserPlatform> {
     const headers = await getAuthHeaders();
     const res = await trackedFetch(`${API_BASE}/api/platforms/${id}`, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, color: color ?? null, icon: icon ?? null }),
     });
     if (!res.ok) {
       let msg = 'Failed to rename platform';

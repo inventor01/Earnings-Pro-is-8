@@ -71,7 +71,7 @@ async def create_platform(
     if count >= MAX_PLATFORMS_PER_USER:
         raise HTTPException(status_code=400, detail=f"Platform limit reached ({MAX_PLATFORMS_PER_USER}).")
 
-    row = UserPlatform(user_id=current_user.id, name=name)
+    row = UserPlatform(user_id=current_user.id, name=name, color=payload.color, icon=payload.icon)
     db.add(row)
     try:
         db.commit()
@@ -114,8 +114,26 @@ async def rename_platform(
     if not name:
         raise HTTPException(status_code=422, detail="Platform name is required.")
 
+    # PATCH semantics for style: only overwrite color/icon when the field was
+    # explicitly present in the payload (explicit null = reset to auto). A
+    # legacy caller sending just {name} must never wipe stored styling.
+    sent = payload.model_fields_set
+    def _apply_style() -> bool:
+        changed = False
+        if "color" in sent and row.color != payload.color:
+            row.color = payload.color
+            changed = True
+        if "icon" in sent and row.icon != payload.icon:
+            row.icon = payload.icon
+            changed = True
+        return changed
+
     old_name = row.name
     if name == old_name:
+        # Name unchanged — but color/icon may still be updated.
+        if _apply_style():
+            db.commit()
+            db.refresh(row)
         return row
 
     if name.lower() in BUILTIN_PLATFORM_NAMES:
@@ -135,6 +153,7 @@ async def rename_platform(
             raise HTTPException(status_code=409, detail="You already added that platform.")
 
     row.name = name
+    _apply_style()
     # Carry the user's existing entries over to the new name so their history
     # follows the rename (entries store the platform as a plain string).
     db.query(Entry).filter(

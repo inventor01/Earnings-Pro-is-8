@@ -48,7 +48,7 @@ import { syncNotifState, enableMotivation, disableMotivation, notifyEarningsChan
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
 import {
   customKey, isCustomKey, customNameFromKey, keyForEntry,
-  entryAppLabel, entryAppColor, colorForCustomName,
+  entryAppLabel, entryAppColor, colorForCustomName, applyPlatformStyles, CUSTOM_COLORS,
   readPlatformsMirror, writePlatformsMirror, findDuplicatePlatform, MAX_PLATFORM_NAME_LEN,
   applyLabelOverrides, platformLabel, typeLabel, readLabelsMirror, writeLabelsMirror,
 } from '@/lib/platforms';
@@ -502,6 +502,10 @@ function dayOffsetToChip(offset: number): Period {
   ) return 'month';
   return 'month';
 }
+
+// Curated icon choices for custom platforms — covers the common gig verticals
+// (driving, packages, groceries, food, cash, pets, tools, catch-all).
+const PLATFORM_ICONS = ['🚗', '📦', '🛒', '🍔', '💵', '🐾', '🛠️', '⭐'];
 
 const APPS: { key: AppType; label: string; color: string }[] = [
   { key: 'DOORDASH',  label: 'DoorDash',  color: '#FF3008' },
@@ -1663,6 +1667,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     return () => { cancelled = true; };
   }, []);
   const customPlatforms = platformsQuery.data ?? mirrorPlatforms;
+  // Feed the module-level style registry so colorForCustomName/iconForCustomName
+  // return the user's chosen color/icon everywhere (charts, calendar, rows).
+  useEffect(() => { applyPlatformStyles(customPlatforms); }, [customPlatforms]);
   // Per-user label overrides for the BUILT-IN Platform/Type pills. Same
   // pattern as platforms: server list via React Query + AsyncStorage mirror
   // for cold start / offline. `applyLabelOverrides` feeds the module-level
@@ -1686,7 +1693,13 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   useEffect(() => { applyLabelOverrides(labelOverrides); }, [labelOverrides]);
   const platformOptions = useMemo(() => ([
     ...APPS.map(a => ({ key: a.key as string, label: platformLabel(a.key), color: a.color })),
-    ...customPlatforms.map(p => ({ key: customKey(p.name), label: p.name, color: colorForCustomName(p.name) })),
+    ...customPlatforms.map(p => ({
+      key: customKey(p.name),
+      label: p.icon ? `${p.icon} ${p.name}` : p.name,
+      // Read the chosen color from the row directly (not the registry) so the
+      // memo recomputes deterministically from its own deps.
+      color: p.color || colorForCustomName(p.name),
+    })),
   ]), [customPlatforms, labelOverrides]);
   const typeOptions = useMemo(() => ([
     { key: 'ORDER' as EntryType,        label: typeLabel('ORDER', 'Order') },
@@ -1698,6 +1711,11 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // modal is in RENAME mode for that user-created platform; otherwise ADD.
   const [addPlatformVisible, setAddPlatformVisible] = useState(false);
   const [newPlatformName, setNewPlatformName] = useState('');
+  // Optional identity for custom platforms: null = "Auto" (stable hash color,
+  // no icon). Only shown in ADD / RENAME mode — built-in label edits keep
+  // their brand colors.
+  const [newPlatformColor, setNewPlatformColor] = useState<string | null>(null);
+  const [newPlatformIcon, setNewPlatformIcon] = useState<string | null>(null);
   const [addPlatformBusy, setAddPlatformBusy] = useState(false);
   const [addPlatformError, setAddPlatformError] = useState<string | null>(null);
   const [renamingPlatform, setRenamingPlatform] = useState<UserPlatform | null>(null);
@@ -1766,7 +1784,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     setAddPlatformBusy(true);
     setAddPlatformError(null);
     try {
-      const created = await api.addPlatform(name);
+      const created = await api.addPlatform(name, newPlatformColor, newPlatformIcon);
       queryClient.setQueryData<UserPlatform[]>(['platforms'], (old) => {
         const list = Array.isArray(old) ? old : customPlatforms;
         if (list.some(p => p.name.trim().toLowerCase() === created.name.trim().toLowerCase())) return list;
@@ -1780,6 +1798,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       handleAppChange(customKey(created.name));
       setAddPlatformVisible(false);
       setNewPlatformName('');
+      setNewPlatformColor(null);
+      setNewPlatformIcon(null);
       hTap();
     } catch (e: any) {
       setAddPlatformError(e?.message || 'Failed to add platform. Check your connection and try again.');
@@ -1806,6 +1826,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     setRenamingPlatform(row);
     setEditingLabel(null);
     setNewPlatformName(row.name);
+    setNewPlatformColor(row.color ?? null);
+    setNewPlatformIcon(row.icon ?? null);
     setAddPlatformError(null);
     setAddPlatformVisible(true);
   };
@@ -1855,7 +1877,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     if (!renamingPlatform || addPlatformBusy) return;
     const name = newPlatformName.trim();
     if (!name) return;
-    if (name === renamingPlatform.name) { setAddPlatformVisible(false); setRenamingPlatform(null); return; }
+    const styleChanged =
+      (renamingPlatform.color ?? null) !== newPlatformColor ||
+      (renamingPlatform.icon ?? null) !== newPlatformIcon;
+    if (name === renamingPlatform.name && !styleChanged) { setAddPlatformVisible(false); setRenamingPlatform(null); return; }
     const others = customPlatforms.filter(p => p.id !== renamingPlatform.id);
     const dup = findDuplicatePlatform(name, others);
     if (dup && name.toLowerCase() !== renamingPlatform.name.toLowerCase()) {
@@ -1865,7 +1890,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     setAddPlatformBusy(true);
     setAddPlatformError(null);
     try {
-      const updated = await api.renamePlatform(renamingPlatform.id, name);
+      const updated = await api.renamePlatform(renamingPlatform.id, name, newPlatformColor, newPlatformIcon);
       const oldKey = customKey(renamingPlatform.name);
       const patch = (list: UserPlatform[]) => list.map(p => (p.id === updated.id ? updated : p));
       queryClient.setQueryData<UserPlatform[]>(['platforms'], (old) => {
@@ -1888,6 +1913,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       setAddPlatformVisible(false);
       setRenamingPlatform(null);
       setNewPlatformName('');
+      setNewPlatformColor(null);
+      setNewPlatformIcon(null);
       hTap();
     } catch (e: any) {
       setAddPlatformError(e?.message || 'Failed to rename platform. Check your connection and try again.');
@@ -2642,7 +2669,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               app={app}
               setApp={handleAppChange}
               platformOptions={platformOptions}
-              onAddPlatform={() => { setRenamingPlatform(null); setEditingLabel(null); setNewPlatformName(''); setAddPlatformError(null); setAddPlatformVisible(true); }}
+              onAddPlatform={() => { setRenamingPlatform(null); setEditingLabel(null); setNewPlatformName(''); setNewPlatformColor(null); setNewPlatformIcon(null); setAddPlatformError(null); setAddPlatformVisible(true); }}
               onEditPlatform={handleEditPlatform}
               typeOptions={typeOptions}
               onEditType={handleEditType}
@@ -2789,6 +2816,77 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   color: '#0f172a', fontSize: 16, fontWeight: '600',
                 }}
               />
+              {/* Icon + color pickers — custom platforms only (built-in label
+                  edits keep their brand identity). */}
+              {!editingLabel && (
+                <>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#6b7280', marginTop: 2 }}>
+                    Icon (optional)
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {PLATFORM_ICONS.map((ic) => {
+                      const active = newPlatformIcon === ic;
+                      return (
+                        <Pressable
+                          key={ic}
+                          onPress={() => { hTap(); setNewPlatformIcon(active ? null : ic); }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Icon ${ic}`}
+                          accessibilityState={{ selected: active }}
+                          style={{
+                            width: 40, height: 40, borderRadius: 10,
+                            alignItems: 'center', justifyContent: 'center',
+                            borderWidth: 2,
+                            borderColor: active ? '#facc15' : '#e5e7eb',
+                            backgroundColor: active ? '#fef9c3' : '#f9fafb',
+                          }}
+                        >
+                          <Text style={{ fontSize: 18 }}>{ic}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#6b7280', marginTop: 2 }}>
+                    Color (optional — used in charts &amp; calendar)
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                    {CUSTOM_COLORS.map((c) => {
+                      const active = newPlatformColor === c;
+                      return (
+                        <Pressable
+                          key={c}
+                          onPress={() => { hTap(); setNewPlatformColor(active ? null : c); }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Color ${c}`}
+                          accessibilityState={{ selected: active }}
+                          style={{
+                            width: 32, height: 32, borderRadius: 16,
+                            backgroundColor: c,
+                            borderWidth: 3,
+                            borderColor: active ? '#0f172a' : 'transparent',
+                          }}
+                        >
+                          {active ? (
+                            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                              <Ionicons name="checkmark" size={16} color="#ffffff" />
+                            </View>
+                          ) : null}
+                        </Pressable>
+                      );
+                    })}
+                    {(newPlatformColor || newPlatformIcon) ? (
+                      <Pressable
+                        onPress={() => { hTap(); setNewPlatformColor(null); setNewPlatformIcon(null); }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Reset icon and color to automatic"
+                        style={{ paddingHorizontal: 8, paddingVertical: 6 }}
+                      >
+                        <Text style={{ color: '#6b7280', fontWeight: '700', fontSize: 12 }}>Auto</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                </>
+              )}
               {addPlatformError ? (
                 <Text style={{ color: '#ef4444', fontSize: 13, fontWeight: '600' }}>{addPlatformError}</Text>
               ) : null}
