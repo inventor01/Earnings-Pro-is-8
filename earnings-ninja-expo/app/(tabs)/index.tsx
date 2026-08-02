@@ -3021,23 +3021,30 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
-          <Pressable
-            onPress={() => { if (!addPlatformBusy) { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); setRenamingEntryType(null); setAddingEntryType(false); } }}
-            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 }}
+          {/* Whole-page scroll pattern: the ScrollView IS the backdrop, and the
+              card sits inside its content. Inner "scroll within a capped card"
+              proved unreliable in a Modal nested inside the pageSheet on iOS —
+              gestures were swallowed and the form froze. Here the entire popup
+              page scrolls, so every field is always reachable no matter the
+              content height, keyboard state, or screen aspect ratio. */}
+          <ScrollView
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Pressable onPress={() => {}} style={{
-              backgroundColor: '#ffffff', borderRadius: 16,
-              // Cap the card so it always fits between the keyboard and the top
-              // of the screen (the KAV shrinks this flex container); the inner
-              // ScrollView takes over when content is taller than the cap.
-              maxHeight: '100%', overflow: 'hidden',
-            }}>
-              <ScrollView
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator
-                bounces={false}
-                contentContainerStyle={{ padding: 20, gap: 12 }}
-              >
+            {/* Backdrop tap-to-dismiss: absolute layer behind the card. */}
+            <Pressable
+              onPress={() => { if (!addPlatformBusy) { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); setRenamingEntryType(null); setAddingEntryType(false); } }}
+              accessible={false}
+              style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}
+            />
+            <View
+              onStartShouldSetResponder={() => true}
+              style={{
+                backgroundColor: '#ffffff', borderRadius: 16, padding: 20, gap: 12,
+              }}
+            >
               <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>
                 {editingLabel
                   ? `Rename \u201C${editingLabel.defaultLabel}\u201D`
@@ -3245,9 +3252,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   </Text>
                 </Pressable>
               ) : null}
-              </ScrollView>
-            </Pressable>
-          </Pressable>
+            </View>
+          </ScrollView>
           </KeyboardAvoidingView>
         </Modal>
 
