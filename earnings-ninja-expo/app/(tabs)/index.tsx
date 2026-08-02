@@ -1129,6 +1129,13 @@ function PillSelect<T extends string>({
             onPress={() => { hTap(); onChange(o.key); }}
             onLongPress={onLongPressOption ? () => { hTap(); onLongPressOption(o.key); } : undefined}
             delayLongPress={350}
+            accessibilityRole="button"
+            accessibilityLabel={o.label}
+            accessibilityState={{ selected }}
+            // Long press can't be the only path to management for screen-reader
+            // users: expose an explicit VoiceOver/TalkBack action too.
+            accessibilityActions={onLongPressOption ? [{ name: 'longpress' as const, label: 'Edit earnings type' }] : undefined}
+            onAccessibilityAction={onLongPressOption ? (e) => { if (e.nativeEvent.actionName === 'longpress') onLongPressOption(o.key); } : undefined}
             style={({ pressed }) => ({
               flexDirection: 'row',
               alignItems: 'center',
