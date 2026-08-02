@@ -812,6 +812,56 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries,
             })}
           </View>
 
+          {/* ── Show on Dashboard (page-level control, pinned above the grid) ─ */}
+          <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+            <Pressable
+              onPress={() => {
+                if (!selectionBounds || !onApplyRange) return;
+                hTap();
+                onApplyRange(selectionBounds.from, selectionBounds.to);
+                onClose();
+              }}
+              disabled={!onApplyRange || !selectionBounds}
+              accessibilityRole="button"
+              accessibilityLabel="Show on Dashboard"
+              accessibilityHint={selectionBounds
+                ? 'Shows the selected date range on the dashboard'
+                : 'Select days on the calendar first'}
+              accessibilityState={{ disabled: !onApplyRange || !selectionBounds }}
+              style={{
+                minHeight: 48,
+                paddingVertical: 10, paddingHorizontal: 14,
+                borderRadius: 12,
+                backgroundColor: selectionBounds ? PRIMARY : SURFACE,
+                borderWidth: 1.5,
+                borderColor: selectionBounds ? PRIMARY : BORDER,
+                alignItems: 'center', justifyContent: 'center',
+                ...(selectionBounds ? neonGlow(PRIMARY, 12, 0.7) : {}),
+                opacity: onApplyRange ? 1 : 0.5,
+              }}
+            >
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={{
+                  color: selectionBounds ? '#000' : TEXT,
+                  fontWeight: '900', fontSize: 14,
+                }}
+              >
+                {selectionBounds
+                  ? (selectionBounds.from === selectionBounds.to
+                      ? `📌 Show ${formatHumanDate(selectionBounds.from)} on Dashboard`
+                      : `📌 Show ${formatHumanDate(selectionBounds.from)} → ${formatHumanDate(selectionBounds.to)} on Dashboard`)
+                  : '📌 Show on Dashboard'}
+              </Text>
+              {!selectionBounds && (
+                <Text style={{ color: MUTED, fontSize: 10, fontWeight: '600', marginTop: 2 }}>
+                  Select days below to show them on the dashboard
+                </Text>
+              )}
+            </Pressable>
+          </View>
+
           {/* ── Month Totals Strip ──────────────────────────────────────────── */}
           <View style={{
             flexDirection: 'row',
@@ -1306,35 +1356,9 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries,
                 <DayStat label="Net"      value={hidden ? MASK : `$${selectionTotals.profit.toFixed(2)}`}     color={selectionTotals.profit >= 0 ? GREEN : RED} last />
               </View>
 
-              {/* Apply to Dashboard */}
-              <View style={{
-                flexDirection: 'row', gap: 10,
-                paddingHorizontal: 14, paddingTop: 12,
-              }}>
-                <Pressable
-                  onPress={() => {
-                    if (!selectionBounds || !onApplyRange) return;
-                    hTap();
-                    onApplyRange(selectionBounds.from, selectionBounds.to);
-                    onClose();
-                  }}
-                  disabled={!onApplyRange}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 12, borderRadius: 10,
-                    backgroundColor: PRIMARY,
-                    alignItems: 'center', justifyContent: 'center',
-                    ...neonGlow(PRIMARY, 12, 0.7),
-                    opacity: onApplyRange ? 1 : 0.5,
-                  }}
-                >
-                  <Text style={{ color: '#000', fontWeight: '900', fontSize: 14 }}>
-                    Apply Range to Dashboard
-                  </Text>
-                </Pressable>
-              </View>
-
               {/* Erase Selected Days — destructive */}
+              {/* ("Show on Dashboard" moved to the top of the page, below the
+                  metric tabs, so it's reachable without scrolling.) */}
               <View style={{ paddingHorizontal: 14, paddingTop: 10, paddingBottom: 14 }}>
                 <Pressable
                   onPress={confirmErase}
