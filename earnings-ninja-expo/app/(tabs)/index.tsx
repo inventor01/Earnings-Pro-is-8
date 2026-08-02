@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup, Goal,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
-  ReferralInfo, API_BASE, PRIVACY_URL, TERMS_URL, UserPlatform, LabelOverride,
+  ReferralInfo, API_BASE, PRIVACY_URL, TERMS_URL, UserPlatform, UserEntryType, LabelOverride,
 } from '@/lib/api';
 import { applyOptimisticGoal, rollbackOptimisticGoal } from '@/lib/goalOptimistic';
 import { useAuth } from '@/lib/authContext';
@@ -51,6 +51,8 @@ import {
   entryAppLabel, entryAppColor, colorForCustomName, applyPlatformStyles, CUSTOM_COLORS,
   readPlatformsMirror, writePlatformsMirror, findDuplicatePlatform, MAX_PLATFORM_NAME_LEN,
   applyLabelOverrides, platformLabel, typeLabel, readLabelsMirror, writeLabelsMirror,
+  customTypeKey, isCustomTypeKey, customTypeNameFromKey, typeKeyForEntry, entryTypeLabel,
+  applyEntryTypeStyles, readEntryTypesMirror, writeEntryTypesMirror, findDuplicateEntryType,
 } from '@/lib/platforms';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
@@ -802,7 +804,7 @@ function EntryRow({
       <View style={{ flex: 1 }}>
         <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
           {entryAppLabel(entry)}
-          <Text style={{ color: LABEL, fontWeight: '400', fontSize: 12 }}> · {entry.type}</Text>
+          <Text style={{ color: LABEL, fontWeight: '400', fontSize: 12 }}> · {entryTypeLabel(entry, entry.type)}</Text>
           {isBusiness ? (
             <Text style={{ color: BIZ, fontWeight: '700', fontSize: 12 }}> · 💼 Business</Text>
           ) : null}
@@ -1223,8 +1225,8 @@ function FormInput({
 }
 
 function DetailsForm({
-  isExp, amount, entryType, setEntryType, app, setApp, appAutoFilled, lastAppLabel, category, setCategory,
-  platformOptions, onAddPlatform, onEditPlatform, typeOptions, onEditType,
+  isExp, amount, entryType, setEntryType, expenseUi, app, setApp, appAutoFilled, lastAppLabel, category, setCategory,
+  platformOptions, onAddPlatform, onEditPlatform, typeOptions, onAddType, onEditType,
   isBusiness, setIsBusiness,
   miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
   receiptUri, onPickReceipt, onRemoveReceipt,
@@ -1232,8 +1234,14 @@ function DetailsForm({
 }: {
   isExp: boolean;
   amount: string;
-  entryType: EntryType;
-  setEntryType: (t: EntryType) => void;
+  // Selection key: an EntryType for built-ins, or 'CUSTOMTYPE:<name>' for a
+  // user-created earnings type (see lib/platforms.ts).
+  entryType: string;
+  setEntryType: (t: string) => void;
+  // True when the selected type behaves like an EXPENSE (built-in EXPENSE or a
+  // custom type with kind='expense') — drives category/receipt/platform
+  // visibility. Computed by the parent, which knows the custom types' kinds.
+  expenseUi: boolean;
   app: string;
   setApp: (a: string) => void;
   appAutoFilled: boolean;
@@ -1245,9 +1253,11 @@ function DetailsForm({
   // Long-press on a platform pill — rename prompt for user-created platforms,
   // label-override editor for built-ins.
   onEditPlatform: (key: string) => void;
-  // Type pill options (labels honor per-user overrides) + long-press editor.
-  typeOptions: { key: EntryType; label: string }[];
-  onEditType: (key: EntryType) => void;
+  // Type pill options (built-ins with per-user label overrides + user-created
+  // types) + add prompt + long-press editor.
+  typeOptions: { key: string; label: string; color?: string }[];
+  onAddType: () => void;
+  onEditType: (key: string) => void;
   category: ExpenseCategory;
   setCategory: (c: ExpenseCategory) => void;
   isBusiness: boolean;
@@ -1337,15 +1347,27 @@ function DetailsForm({
           <View ref={registerAddEntryTarget('type')} collapsable={false}>
             <FieldLabel>📝 Type</FieldLabel>
             <PillSelect
-              options={typeOptions}
+              scroll
+              options={[
+                ...typeOptions,
+                // Trailing "+" pill — opens the add-type prompt instead of
+                // selecting; intercepted in onChange below.
+                { key: '__ADD_TYPE__', label: '＋ Add', color: '#6b7280' },
+              ]}
               value={entryType}
-              onChange={setEntryType}
-              onLongPressOption={onEditType}
+              onChange={(k) => {
+                if (k === '__ADD_TYPE__') { onAddType(); return; }
+                setEntryType(k);
+              }}
+              onLongPressOption={(k) => {
+                if (k === '__ADD_TYPE__') { onAddType(); return; }
+                onEditType(k);
+              }}
             />
           </View>
 
           {/* Platform / App (hidden for EXPENSE — mirrors web) */}
-          {entryType !== 'EXPENSE' && (
+          {!expenseUi && (
             <View ref={registerAddEntryTarget('platform')} collapsable={false}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <FieldLabel>🚗 Platform</FieldLabel>
@@ -1390,7 +1412,7 @@ function DetailsForm({
           )}
 
           {/* Category (only for EXPENSE) */}
-          {entryType === 'EXPENSE' && (
+          {expenseUi && (
             <View ref={registerAddEntryTarget('category')} collapsable={false}>
               <FieldLabel>🏷️ Category</FieldLabel>
               <PillSelect
@@ -1405,7 +1427,7 @@ function DetailsForm({
           )}
 
           {/* Miles & Minutes — hidden for EXPENSE entries */}
-          {entryType !== 'EXPENSE' && (
+          {!expenseUi && (
             <View ref={registerAddEntryTarget('miles')} collapsable={false} style={{ flexDirection: 'row', gap: 12 }}>
               <View style={{ flex: 1 }}>
                 <FieldLabel>🛣️ Miles</FieldLabel>
@@ -1452,7 +1474,7 @@ function DetailsForm({
               {/* Business expense toggle (only for EXPENSE) — flags the expense as
                   tax-deductible. Stored as is_business_expense; surfaced with a
                   distinct briefcase/blue indicator in lists + an Analytics summary. */}
-              {entryType === 'EXPENSE' && (
+              {expenseUi && (
                 <View ref={registerAddEntryTarget('business')} collapsable={false}>
                   <FieldLabel>💼 Business Expense</FieldLabel>
                   <Pressable
@@ -1489,7 +1511,7 @@ function DetailsForm({
 
               {/* Receipt photo (only for EXPENSE) — uses CALC palette since this
                   modal stays on the white "Add Entry" sheet regardless of theme. */}
-              {entryType === 'EXPENSE' && (
+              {expenseUi && (
                 <View>
                   <FieldLabel>🧾 Receipt (optional)</FieldLabel>
                   {receiptUri ? (
@@ -1652,7 +1674,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   }, [visible]);
   const [amount, setAmount]       = useState('0');
   const [mode, setMode]           = useState<'add' | 'subtract'>('add');
-  const [entryType, setEntryType] = useState<EntryType>('ORDER');
+  // Selection key: an EntryType for built-ins, or 'CUSTOMTYPE:<name>' for a
+  // user-created earnings type (see lib/platforms.ts).
+  const [entryType, setEntryType] = useState<string>('ORDER');
   // Selection key: an AppType for built-ins, or 'CUSTOM:<name>' for a
   // user-created platform (see lib/platforms.ts).
   const [app, setApp]             = useState<string>('DOORDASH');
@@ -1677,6 +1701,37 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // Feed the module-level style registry so colorForCustomName/iconForCustomName
   // return the user's chosen color/icon everywhere (charts, calendar, rows).
   useEffect(() => { applyPlatformStyles(customPlatforms); }, [customPlatforms]);
+  // User-created earnings types — same query + AsyncStorage-mirror pattern.
+  const entryTypesQuery = useQuery({
+    queryKey: ['entryTypes'],
+    queryFn: async () => {
+      const list = await api.getEntryTypes();
+      writeEntryTypesMirror(list).catch(() => {});
+      return list;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const [mirrorEntryTypes, setMirrorEntryTypes] = useState<UserEntryType[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    readEntryTypesMirror().then(list => { if (!cancelled) setMirrorEntryTypes(list); });
+    return () => { cancelled = true; };
+  }, []);
+  const customEntryTypes = entryTypesQuery.data ?? mirrorEntryTypes;
+  useEffect(() => { applyEntryTypeStyles(customEntryTypes); }, [customEntryTypes]);
+  // The BASE EntryType behind the current selection. Custom income types
+  // behave like BONUS; custom expense types like EXPENSE. Falls back to the
+  // edited row's stored base type when the custom type was deleted meanwhile.
+  const effectiveEntryType: EntryType = useMemo(() => {
+    if (!isCustomTypeKey(entryType)) return entryType as EntryType;
+    const name = customTypeNameFromKey(entryType).trim().toLowerCase();
+    const row = customEntryTypes.find(t => t.name.trim().toLowerCase() === name);
+    if (row) return row.kind === 'expense' ? 'EXPENSE' : 'BONUS';
+    if (editing?.custom_type && customTypeKey(editing.custom_type) === entryType) {
+      return editing.type;
+    }
+    return 'BONUS';
+  }, [entryType, customEntryTypes, editing]);
   // Per-user label overrides for the BUILT-IN Platform/Type pills. Same
   // pattern as platforms: server list via React Query + AsyncStorage mirror
   // for cold start / offline. `applyLabelOverrides` feeds the module-level
@@ -1709,11 +1764,15 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     })),
   ]), [customPlatforms, labelOverrides]);
   const typeOptions = useMemo(() => ([
-    { key: 'ORDER' as EntryType,        label: typeLabel('ORDER', 'Order') },
-    { key: 'BONUS' as EntryType,        label: typeLabel('BONUS', 'Bonus') },
-    { key: 'EXPENSE' as EntryType,      label: typeLabel('EXPENSE', 'Expense') },
-    { key: 'CANCELLATION' as EntryType, label: typeLabel('CANCELLATION', 'Cancellation') },
-  ]), [labelOverrides]);
+    { key: 'ORDER' as string,        label: typeLabel('ORDER', 'Order') },
+    { key: 'BONUS' as string,        label: typeLabel('BONUS', 'Bonus') },
+    { key: 'EXPENSE' as string,      label: typeLabel('EXPENSE', 'Expense') },
+    { key: 'CANCELLATION' as string, label: typeLabel('CANCELLATION', 'Cancellation') },
+    ...customEntryTypes.map(t => ({
+      key: customTypeKey(t.name),
+      label: t.icon ? `${t.icon} ${t.name}` : t.name,
+    })),
+  ]), [labelOverrides, customEntryTypes]);
   // Add/rename-platform prompt state. When `renamingPlatform` is set the
   // modal is in RENAME mode for that user-created platform; otherwise ADD.
   const [addPlatformVisible, setAddPlatformVisible] = useState(false);
@@ -1726,6 +1785,12 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const [addPlatformBusy, setAddPlatformBusy] = useState(false);
   const [addPlatformError, setAddPlatformError] = useState<string | null>(null);
   const [renamingPlatform, setRenamingPlatform] = useState<UserPlatform | null>(null);
+  // Custom earnings-type editor modes for the same shared prompt modal:
+  // `addingEntryType` = ADD a new type; `renamingEntryType` = rename/restyle
+  // an existing one. `newTypeKind` only applies to ADD (kind is fixed after).
+  const [addingEntryType, setAddingEntryType] = useState(false);
+  const [renamingEntryType, setRenamingEntryType] = useState<UserEntryType | null>(null);
+  const [newTypeKind, setNewTypeKind] = useState<'income' | 'expense'>('income');
   // When set, the modal edits a BUILT-IN pill label (cosmetic per-user
   // override; the underlying key stored on entries never changes).
   const [editingLabel, setEditingLabel] = useState<{ kind: 'platform' | 'type'; key: string; defaultLabel: string } | null>(null);
@@ -1762,7 +1827,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // platform or switched the entry type. These refs let the late callback bail
   // out instead of clobbering a manual choice or an EXPENSE→Other nudge.
   const appTouchedRef = useRef(false);
-  const entryTypeRef  = useRef<EntryType>(entryType);
+  const entryTypeRef  = useRef<string>(entryType);
   useEffect(() => { entryTypeRef.current = entryType; }, [entryType]);
 
   const reset = () => {
@@ -1839,14 +1904,170 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     setAddPlatformVisible(true);
   };
 
-  // Long-press on a Type pill → edit its per-user label override.
-  const handleEditType = (key: EntryType) => {
+  // Long-press on a Type pill: user-created types open the rename/restyle
+  // prompt; built-ins open the label-override editor (cosmetic, per-user).
+  const handleEditType = (key: string) => {
+    if (isCustomTypeKey(key)) {
+      const name = customTypeNameFromKey(key);
+      const row = customEntryTypes.find(t => t.name === name);
+      if (!row) return;
+      setRenamingEntryType(row);
+      setAddingEntryType(false);
+      setRenamingPlatform(null);
+      setEditingLabel(null);
+      setNewPlatformName(row.name);
+      setNewPlatformColor(row.color ?? null);
+      setNewPlatformIcon(row.icon ?? null);
+      setAddPlatformError(null);
+      setAddPlatformVisible(true);
+      return;
+    }
     const defaults: Record<EntryType, string> = { ORDER: 'Order', BONUS: 'Bonus', EXPENSE: 'Expense', CANCELLATION: 'Cancellation' };
-    setEditingLabel({ kind: 'type', key, defaultLabel: defaults[key] });
+    const k = key as EntryType;
+    setEditingLabel({ kind: 'type', key: k, defaultLabel: defaults[k] });
     setRenamingPlatform(null);
-    setNewPlatformName(typeLabel(key, defaults[key]));
+    setRenamingEntryType(null);
+    setAddingEntryType(false);
+    setNewPlatformName(typeLabel(k, defaults[k]));
     setAddPlatformError(null);
     setAddPlatformVisible(true);
+  };
+
+  // "+ Add" pill on the Type row → open the shared prompt in add-type mode.
+  const handleAddType = () => {
+    setAddingEntryType(true);
+    setRenamingEntryType(null);
+    setRenamingPlatform(null);
+    setEditingLabel(null);
+    setNewPlatformName('');
+    setNewPlatformColor(null);
+    setNewPlatformIcon(null);
+    setNewTypeKind('income');
+    setAddPlatformError(null);
+    setAddPlatformVisible(true);
+  };
+
+  // Create a new custom earnings type — mirrors submitNewPlatform: instant
+  // local dup check, POST, merge into the ['entryTypes'] cache + mirror, and
+  // select the new type without leaving the form.
+  const submitNewEntryType = async () => {
+    const name = newPlatformName.trim();
+    if (!name || addPlatformBusy) return;
+    const dup = findDuplicateEntryType(name, customEntryTypes);
+    if (dup) {
+      setAddPlatformError(dup === 'builtin' ? 'That type is already built in.' : 'You already added that type.');
+      return;
+    }
+    setAddPlatformBusy(true);
+    setAddPlatformError(null);
+    try {
+      const created = await api.addEntryType(name, newTypeKind, newPlatformColor, newPlatformIcon);
+      queryClient.setQueryData<UserEntryType[]>(['entryTypes'], (old) => {
+        const list = Array.isArray(old) ? old : customEntryTypes;
+        if (list.some(t => t.name.trim().toLowerCase() === created.name.trim().toLowerCase())) return list;
+        const next = [...list, created];
+        writeEntryTypesMirror(next).catch(() => {});
+        return next;
+      });
+      setMirrorEntryTypes(prev => prev.some(t => t.name.trim().toLowerCase() === created.name.trim().toLowerCase()) ? prev : [...prev, created]);
+      setEntryType(customTypeKey(created.name));
+      setAddPlatformVisible(false);
+      setAddingEntryType(false);
+      setNewPlatformName('');
+      setNewPlatformColor(null);
+      setNewPlatformIcon(null);
+      hTap();
+    } catch (e: any) {
+      setAddPlatformError(e?.message || 'Failed to add type. Check your connection and try again.');
+    } finally {
+      setAddPlatformBusy(false);
+    }
+  };
+
+  // Rename/restyle a custom earnings type. The server carries existing
+  // entries over to the new name; we patch caches and refetch entry lists.
+  const submitRenameEntryType = async () => {
+    if (!renamingEntryType || addPlatformBusy) return;
+    const name = newPlatformName.trim();
+    if (!name) return;
+    const styleChanged =
+      (renamingEntryType.color ?? null) !== newPlatformColor ||
+      (renamingEntryType.icon ?? null) !== newPlatformIcon;
+    if (name === renamingEntryType.name && !styleChanged) { setAddPlatformVisible(false); setRenamingEntryType(null); return; }
+    const others = customEntryTypes.filter(t => t.id !== renamingEntryType.id);
+    const dup = findDuplicateEntryType(name, others);
+    if (dup && name.toLowerCase() !== renamingEntryType.name.toLowerCase()) {
+      setAddPlatformError(dup === 'builtin' ? 'That type is already built in.' : 'You already added that type.');
+      return;
+    }
+    setAddPlatformBusy(true);
+    setAddPlatformError(null);
+    try {
+      const updated = await api.renameEntryType(renamingEntryType.id, name, newPlatformColor, newPlatformIcon);
+      const oldKey = customTypeKey(renamingEntryType.name);
+      const patch = (list: UserEntryType[]) => list.map(t => (t.id === updated.id ? updated : t));
+      queryClient.setQueryData<UserEntryType[]>(['entryTypes'], (old) => {
+        const next = patch(Array.isArray(old) ? old : customEntryTypes);
+        writeEntryTypesMirror(next).catch(() => {});
+        return next;
+      });
+      setMirrorEntryTypes(prev => patch(prev));
+      if (entryType === oldKey) setEntryType(customTypeKey(updated.name));
+      // Entry rows store the old name — refetch so history follows.
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      setAddPlatformVisible(false);
+      setRenamingEntryType(null);
+      setNewPlatformName('');
+      setNewPlatformColor(null);
+      setNewPlatformIcon(null);
+      hTap();
+    } catch (e: any) {
+      setAddPlatformError(e?.message || 'Failed to rename type. Check your connection and try again.');
+    } finally {
+      setAddPlatformBusy(false);
+    }
+  };
+
+  // Delete a custom earnings type (confirmed via Alert). Entries logged under
+  // it are kept — they store a safe base type — only the pill goes away.
+  const submitDeleteEntryType = () => {
+    if (!renamingEntryType || addPlatformBusy) return;
+    const row = renamingEntryType;
+    Alert.alert(
+      `Delete \u201C${row.name}\u201D?`,
+      'The type is removed from your selector. Entries you already logged under it stay in your history and stats.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setAddPlatformBusy(true);
+            setAddPlatformError(null);
+            try {
+              await api.deleteEntryType(row.id);
+              const drop = (list: UserEntryType[]) => list.filter(t => t.id !== row.id);
+              queryClient.setQueryData<UserEntryType[]>(['entryTypes'], (old) => {
+                const next = drop(Array.isArray(old) ? old : customEntryTypes);
+                writeEntryTypesMirror(next).catch(() => {});
+                return next;
+              });
+              setMirrorEntryTypes(prev => drop(prev));
+              if (entryType === customTypeKey(row.name)) setEntryType('ORDER');
+              setAddPlatformVisible(false);
+              setRenamingEntryType(null);
+              setNewPlatformName('');
+              hTap();
+            } catch (e: any) {
+              setAddPlatformError(e?.message || 'Failed to delete type. Check your connection and try again.');
+            } finally {
+              setAddPlatformBusy(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   // Save (or reset, when label === null) a built-in pill label override.
@@ -2057,7 +2278,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     const amt = Math.abs(Number(editing.amount));
     setAmount(amt.toString());
     setMode(editing.amount < 0 ? 'subtract' : 'add');
-    setEntryType(editing.type);
+    setEntryType(typeKeyForEntry(editing));
     setApp(keyForEntry(editing));
     setCategory((editing.category as ExpenseCategory) || 'GAS');
     setMiles(editing.distance_miles ? String(editing.distance_miles) : '');
@@ -2076,12 +2297,12 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // way back to revenue — if the user picked OTHER on purpose we'd erase that
   // choice. `reset()` restores DOORDASH when the modal closes & re-opens.
   useEffect(() => {
-    if (entryType === 'EXPENSE' && (app === 'DOORDASH' || appAutoFilled)) {
+    if (effectiveEntryType === 'EXPENSE' && (app === 'DOORDASH' || appAutoFilled)) {
       setApp('OTHER');
       setAppAutoFilled(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entryType]);
+  }, [entryType, effectiveEntryType]);
 
   // Image-picker helpers — request permissions, then offer Camera vs Library
   // via Alert (matches iOS conventions). We store the local `uri` for the
@@ -2220,6 +2441,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         type: vars.type,
         app: vars.app,
         custom_app: vars.custom_app ?? null,
+        custom_type: vars.custom_type ?? null,
         // EXPENSE and CANCELLATION are outflows — the server normalizes both to
         // negative amounts, so the optimistic row must match or a cancellation
         // briefly shows as positive revenue.
@@ -2472,6 +2694,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
           type: patch.type ?? e.type,
           app: patch.app ?? e.app,
           custom_app: patch.custom_app !== undefined ? patch.custom_app : e.custom_app,
+          custom_type: patch.custom_type !== undefined ? patch.custom_type : e.custom_type,
           amount: newSigned,
           distance_miles: newMiles,
           duration_minutes: newMin,
@@ -2558,17 +2781,24 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     // name carried in custom_app. On edit, send custom_app: null explicitly
     // when switching back to a built-in so the server clears the old name.
     const isCustom = isCustomKey(app);
+    // A custom TYPE selection ('CUSTOMTYPE:<name>') maps to its safe BASE type
+    // (BONUS for income customs, EXPENSE for expense customs — that's exactly
+    // effectiveEntryType) with the name carried in custom_type. On edit, send
+    // custom_type: null explicitly when switching back to a built-in type so
+    // the server clears the old name.
+    const isCustomType = isCustomTypeKey(entryType);
     const payload: Partial<EntryCreate> = {
-      type: entryType,
+      type: (isCustomType ? effectiveEntryType : entryType) as EntryType,
+      custom_type: isCustomType ? customTypeNameFromKey(entryType) : (editing ? null : undefined),
       app: (isCustom ? 'OTHER' : app) as AppType,
       custom_app: isCustom ? customNameFromKey(app) : (editing ? null : undefined),
       amount: mode === 'subtract' ? -num : num,
       distance_miles: miles ? parseFloat(miles) : undefined,
       duration_minutes: minutes ? parseInt(minutes) : undefined,
-      category: entryType === 'EXPENSE' ? category : undefined,
+      category: effectiveEntryType === 'EXPENSE' ? category : undefined,
       note: note || undefined,
-      receipt_url: entryType === 'EXPENSE' && receiptDataUri ? receiptDataUri : undefined,
-      is_business_expense: entryType === 'EXPENSE' ? isBusiness : false,
+      receipt_url: effectiveEntryType === 'EXPENSE' && receiptDataUri ? receiptDataUri : undefined,
+      is_business_expense: effectiveEntryType === 'EXPENSE' ? isBusiness : false,
       date: dateStr,
       time: timeStr,
     };
@@ -2679,8 +2909,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               onAddPlatform={() => { setRenamingPlatform(null); setEditingLabel(null); setNewPlatformName(''); setNewPlatformColor(null); setNewPlatformIcon(null); setAddPlatformError(null); setAddPlatformVisible(true); }}
               onEditPlatform={handleEditPlatform}
               typeOptions={typeOptions}
+              onAddType={handleAddType}
               onEditType={handleEditType}
-              appAutoFilled={appAutoFilled && entryType !== 'EXPENSE'}
+              expenseUi={effectiveEntryType === 'EXPENSE'}
+              appAutoFilled={appAutoFilled && effectiveEntryType !== 'EXPENSE'}
               lastAppLabel={isCustomKey(app) ? customNameFromKey(app) : platformLabel(app)}
               category={category}
               setCategory={setCategory}
@@ -2781,7 +3013,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         {/* ── Add-platform prompt — opened by the trailing "＋ Add" pill in the
             Platform selector. Validates locally (dup vs built-ins + existing
             customs) for instant feedback; the server enforces the same rules. */}
-        <Modal visible={addPlatformVisible} transparent animationType="fade" onRequestClose={() => { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); }}>
+        <Modal visible={addPlatformVisible} transparent animationType="fade" onRequestClose={() => { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); setRenamingEntryType(null); setAddingEntryType(false); }}>
           {/* This nested native Modal renders OUTSIDE the AddEntryModal's
               KeyboardAvoidingView, so it needs its own — without it the form
               bottom is cut off by the keyboard on small screens. */}
@@ -2790,32 +3022,41 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
           <Pressable
-            onPress={() => { if (!addPlatformBusy) { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); } }}
+            onPress={() => { if (!addPlatformBusy) { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); setRenamingEntryType(null); setAddingEntryType(false); } }}
             style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 }}
           >
             <Pressable onPress={() => {}} style={{
               backgroundColor: '#ffffff', borderRadius: 16, padding: 20, gap: 12,
             }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>
-                {editingLabel ? `Rename \u201C${editingLabel.defaultLabel}\u201D` : renamingPlatform ? 'Rename platform' : 'Add a platform'}
+                {editingLabel
+                  ? `Rename \u201C${editingLabel.defaultLabel}\u201D`
+                  : renamingPlatform ? 'Rename platform'
+                  : renamingEntryType ? 'Rename type'
+                  : addingEntryType ? 'Add a type'
+                  : 'Add a platform'}
               </Text>
               <Text style={{ fontSize: 13, color: '#6b7280' }}>
                 {editingLabel
                   ? 'This only changes how the tab is shown on your account. Your entries and stats are unaffected.'
                   : renamingPlatform
                   ? `New name for \u201C${renamingPlatform.name}\u201D. Your existing entries move to the new name.`
+                  : renamingEntryType
+                  ? `New name for \u201C${renamingEntryType.name}\u201D. Your existing entries move to the new name.`
+                  : addingEntryType
+                  ? 'Name the earnings type you want to track (e.g. Tips, Referral, Quest).'
                   : 'Name the delivery app or gig platform you want to track (e.g. Roadie, Amazon Flex).'}
               </Text>
               <TextInput
                 value={newPlatformName}
                 onChangeText={(t) => { setNewPlatformName(t); if (addPlatformError) setAddPlatformError(null); }}
-                placeholder="Platform name"
+                placeholder={(addingEntryType || renamingEntryType) ? 'Type name' : 'Platform name'}
                 placeholderTextColor="#9ca3af"
                 autoFocus
                 maxLength={MAX_PLATFORM_NAME_LEN}
                 autoCapitalize="words"
                 returnKeyType="done"
-                onSubmitEditing={() => (editingLabel ? submitLabelOverride() : renamingPlatform ? submitRenamePlatform() : submitNewPlatform())}
+                onSubmitEditing={() => (editingLabel ? submitLabelOverride() : renamingPlatform ? submitRenamePlatform() : renamingEntryType ? submitRenameEntryType() : addingEntryType ? submitNewEntryType() : submitNewPlatform())}
                 style={{
                   backgroundColor: '#ffffff', borderWidth: 2,
                   borderColor: addPlatformError ? '#ef4444' : '#d1d5db',
@@ -2825,6 +3066,41 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               />
               {/* Icon + color pickers — custom platforms only (built-in label
                   edits keep their brand identity). */}
+              {/* Income/Expense choice — ADD-type mode only. Fixed after
+                  creation: flipping it later would silently change what
+                  historical entries mean. */}
+              {addingEntryType && (
+                <>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#6b7280', marginTop: 2 }}>
+                    What kind of type is this?
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {([['income', '💵 Income'], ['expense', '🧾 Expense']] as const).map(([k, lbl]) => {
+                      const active = newTypeKind === k;
+                      return (
+                        <Pressable
+                          key={k}
+                          onPress={() => { hTap(); setNewTypeKind(k); }}
+                          accessibilityRole="button"
+                          accessibilityLabel={lbl}
+                          accessibilityState={{ selected: active }}
+                          style={{
+                            flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center',
+                            borderWidth: 2,
+                            borderColor: active ? '#facc15' : '#e5e7eb',
+                            backgroundColor: active ? '#fef9c3' : '#f9fafb',
+                          }}
+                        >
+                          <Text style={{ color: '#0f172a', fontWeight: '700', fontSize: 13 }}>{lbl}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  <Text style={{ fontSize: 11, color: '#9ca3af' }}>
+                    Income counts toward your earnings; Expense subtracts from profit. This can’t be changed later.
+                  </Text>
+                </>
+              )}
               {!editingLabel && (
                 <>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: '#6b7280', marginTop: 2 }}>
@@ -2899,7 +3175,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               ) : null}
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                 <Pressable
-                  onPress={() => { hTap(); setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); }}
+                  onPress={() => { hTap(); setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); setRenamingEntryType(null); setAddingEntryType(false); }}
                   disabled={addPlatformBusy}
                   style={({ pressed }) => ({
                     flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
@@ -2909,7 +3185,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   <Text style={{ color: '#374151', fontWeight: '700', fontSize: 15 }}>Cancel</Text>
                 </Pressable>
                 <Pressable
-                  onPress={() => (editingLabel ? submitLabelOverride() : renamingPlatform ? submitRenamePlatform() : submitNewPlatform())}
+                  onPress={() => (editingLabel ? submitLabelOverride() : renamingPlatform ? submitRenamePlatform() : renamingEntryType ? submitRenameEntryType() : addingEntryType ? submitNewEntryType() : submitNewPlatform())}
                   disabled={addPlatformBusy || !newPlatformName.trim()}
                   style={({ pressed }) => ({
                     flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
@@ -2919,7 +3195,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                 >
                   {addPlatformBusy
                     ? <ActivityIndicator color="#0f172a" />
-                    : <Text style={{ color: '#0f172a', fontWeight: '800', fontSize: 15 }}>{(editingLabel || renamingPlatform) ? 'Save' : 'Add'}</Text>}
+                    : <Text style={{ color: '#0f172a', fontWeight: '800', fontSize: 15 }}>{(editingLabel || renamingPlatform || renamingEntryType) ? 'Save' : 'Add'}</Text>}
                 </Pressable>
               </View>
               {editingLabel && labelOverrides.some(o => o.kind === editingLabel.kind && o.key === editingLabel.key) ? (
@@ -2943,6 +3219,19 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                 >
                   <Text style={{ color: '#ef4444', fontWeight: '700', fontSize: 13 }}>
                     Delete this platform
+                  </Text>
+                </Pressable>
+              ) : null}
+              {renamingEntryType ? (
+                <Pressable
+                  onPress={submitDeleteEntryType}
+                  disabled={addPlatformBusy}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete type ${renamingEntryType.name}`}
+                  style={({ pressed }) => ({ alignItems: 'center', paddingVertical: 8, opacity: pressed ? 0.7 : 1 })}
+                >
+                  <Text style={{ color: '#ef4444', fontWeight: '700', fontSize: 13 }}>
+                    Delete this type
                   </Text>
                 </Pressable>
               ) : null}

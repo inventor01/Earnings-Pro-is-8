@@ -141,6 +141,9 @@ export interface Entry {
   // Display name for entries logged against a user-created platform. When set,
   // `app` is always 'OTHER' — this carries the real identity for display.
   custom_app?: string | null;
+  // Display name for entries logged against a user-created earnings type.
+  // When set, `type` holds the safe BASE type (BONUS or EXPENSE).
+  custom_type?: string | null;
 }
 
 // Generates a stable, highly-unique client key for idempotent creates. Only
@@ -171,6 +174,9 @@ export interface EntryCreate {
   idempotency_key?: string;
   // User-created platform name; sent with app='OTHER' (see Entry.custom_app).
   custom_app?: string | null;
+  // User-created earnings type name; sent with a BASE type of BONUS (income
+  // customs) or EXPENSE (expense customs) — see Entry.custom_type.
+  custom_type?: string | null;
 }
 
 // A user-created delivery platform (server-persisted, per account).
@@ -179,6 +185,18 @@ export interface EntryCreate {
 export interface UserPlatform {
   id: number;
   name: string;
+  color?: string | null;
+  icon?: string | null;
+}
+
+// A user-created earnings type (server-persisted, per account). Entries logged
+// against one carry a BASE enum type (BONUS for kind='income', EXPENSE for
+// kind='expense') plus custom_type=<name>, so totals and older clients keep
+// working. `kind` is fixed at creation.
+export interface UserEntryType {
+  id: number;
+  name: string;
+  kind: 'income' | 'expense';
   color?: string | null;
   icon?: string | null;
 }
@@ -802,6 +820,66 @@ export const api = {
     });
     if (!res.ok && res.status !== 404) {
       let msg = 'Failed to delete platform';
+      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
+      const e: any = new Error(msg);
+      e.status = res.status;
+      throw e;
+    }
+  },
+
+  // User-created earnings types (server-persisted per account). Same contract
+  // shape as platforms: GET list; POST add (409 = duplicate, incl. built-ins);
+  // PUT rename/restyle (kind is fixed at creation — server ignores changes);
+  // DELETE keeps entries logged under the type.
+  async getEntryTypes(): Promise<UserEntryType[]> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/entry-types`, { headers });
+    if (!res.ok) throw new Error('Failed to fetch entry types');
+    return res.json();
+  },
+
+  async addEntryType(name: string, kind: 'income' | 'expense', color?: string | null, icon?: string | null): Promise<UserEntryType> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/entry-types`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, kind, color: color ?? null, icon: icon ?? null }),
+    });
+    if (!res.ok) {
+      let msg = 'Failed to add type';
+      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
+      const e: any = new Error(msg);
+      e.status = res.status;
+      throw e;
+    }
+    return res.json();
+  },
+
+  async renameEntryType(id: number, name: string, color?: string | null, icon?: string | null): Promise<UserEntryType> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/entry-types/${id}`, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, color: color ?? null, icon: icon ?? null }),
+    });
+    if (!res.ok) {
+      let msg = 'Failed to rename type';
+      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
+      const e: any = new Error(msg);
+      e.status = res.status;
+      throw e;
+    }
+    return res.json();
+  },
+
+  async deleteEntryType(id: number): Promise<void> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/entry-types/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    if (!res.ok && res.status !== 404) {
+      let msg = 'Failed to delete type';
       try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
       const e: any = new Error(msg);
       e.status = res.status;

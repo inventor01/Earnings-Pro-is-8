@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppType, APP_LABELS, APP_COLORS, Entry, UserPlatform, LabelOverride } from './api';
+import { AppType, APP_LABELS, APP_COLORS, Entry, UserPlatform, UserEntryType, LabelOverride } from './api';
 
 // ---------------------------------------------------------------------------
 // Built-in label overrides (per-user cosmetic renames of built-in pills)
@@ -161,6 +161,96 @@ export async function writePlatformsMirror(platforms: UserPlatform[]): Promise<v
 
 export async function clearPlatformsMirror(): Promise<void> {
   try { await AsyncStorage.removeItem(MIRROR_KEY); } catch {}
+}
+
+// ---------------------------------------------------------------------------
+// Custom EARNINGS TYPES (the Type row) — mirrors the custom-platform design.
+// Selector keys are 'CUSTOMTYPE:<name>'; on submit a custom selection maps to
+// a BASE enum type (BONUS for income, EXPENSE for expense) + custom_type name,
+// so all sign rules, rollups, and older clients keep working.
+// ---------------------------------------------------------------------------
+
+export const CUSTOM_TYPE_PREFIX = 'CUSTOMTYPE:';
+
+export function customTypeKey(name: string): string {
+  return `${CUSTOM_TYPE_PREFIX}${name}`;
+}
+
+export function isCustomTypeKey(key: string): boolean {
+  return key.startsWith(CUSTOM_TYPE_PREFIX);
+}
+
+export function customTypeNameFromKey(key: string): string {
+  return isCustomTypeKey(key) ? key.slice(CUSTOM_TYPE_PREFIX.length) : key;
+}
+
+// Selection key for an existing entry (edit prefill).
+export function typeKeyForEntry(e: Pick<Entry, 'type' | 'custom_type'>): string {
+  return e.custom_type ? customTypeKey(e.custom_type) : e.type;
+}
+
+// Display name for an entry's type (custom name wins over the enum label).
+export function entryTypeLabel(e: Pick<Entry, 'type' | 'custom_type'>, fallback: string): string {
+  if (e.custom_type) return e.custom_type;
+  return typeLabel(e.type, fallback);
+}
+
+// Style registry for custom types (color/icon), separate from platforms so a
+// type named like a platform can't inherit its styling by accident.
+let ENTRY_TYPE_STYLES: Record<string, { color?: string | null; icon?: string | null }> = {};
+
+export function applyEntryTypeStyles(list: UserEntryType[]): void {
+  const next: typeof ENTRY_TYPE_STYLES = {};
+  for (const t of list) {
+    if (!t || typeof t.name !== 'string') continue;
+    if (t.color || t.icon) next[t.name.trim().toLowerCase()] = { color: t.color, icon: t.icon };
+  }
+  ENTRY_TYPE_STYLES = next;
+}
+
+export function colorForCustomTypeName(name: string): string {
+  const chosen = ENTRY_TYPE_STYLES[name.trim().toLowerCase()]?.color;
+  if (chosen) return chosen;
+  let h = 0;
+  const s = name.toLowerCase();
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return CUSTOM_COLORS[h % CUSTOM_COLORS.length];
+}
+
+const TYPES_MIRROR_KEY = 'customEntryTypesMirror.v1';
+
+export async function readEntryTypesMirror(): Promise<UserEntryType[]> {
+  try {
+    const raw = await AsyncStorage.getItem(TYPES_MIRROR_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (t: any) => t && typeof t.id === 'number' && typeof t.name === 'string' && t.name.length > 0,
+    );
+  } catch {
+    return [];
+  }
+}
+
+export async function writeEntryTypesMirror(types: UserEntryType[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(TYPES_MIRROR_KEY, JSON.stringify(types));
+  } catch {}
+}
+
+export async function clearEntryTypesMirror(): Promise<void> {
+  try { await AsyncStorage.removeItem(TYPES_MIRROR_KEY); } catch {}
+}
+
+const BUILTIN_TYPE_NAMES = new Set<string>(['order', 'bonus', 'expense', 'cancellation', 'tip', 'tips']);
+
+export function findDuplicateEntryType(name: string, existing: UserEntryType[]): 'builtin' | 'custom' | null {
+  const n = name.trim().toLowerCase();
+  if (!n) return null;
+  if (BUILTIN_TYPE_NAMES.has(n)) return 'builtin';
+  if (existing.some(t => t.name.trim().toLowerCase() === n)) return 'custom';
+  return null;
 }
 
 // ---------------------------------------------------------------------------

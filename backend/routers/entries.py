@@ -83,6 +83,7 @@ async def create_entry(entry: EntryCreate, db: Session = Depends(get_db), curren
         during_business_hours=entry.during_business_hours or False,
         idempotency_key=entry.idempotency_key,
         custom_app=entry.custom_app,
+        custom_type=entry.custom_type,
     )
     db.add(db_entry)
     try:
@@ -220,6 +221,11 @@ async def update_entry(entry_id: int, entry_update: EntryUpdate, db: Session = D
     # against the FINAL entry state here.
     if db_entry.custom_app and db_entry.app != AppType.OTHER:
         db_entry.custom_app = None
+
+    # Same for custom types: only BONUS/EXPENSE base types may carry one, so a
+    # partial update that flips the type to ORDER/CANCELLATION clears the name.
+    if db_entry.custom_type and db_entry.type not in (EntryType.BONUS, EntryType.EXPENSE):
+        db_entry.custom_type = None
 
     setattr(db_entry, 'updated_at', datetime.utcnow())
     db.commit()

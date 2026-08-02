@@ -97,6 +97,11 @@ class Entry(Base):
     # The enum `app` stays OTHER for these rows so existing rollups/analytics
     # keep working; this column carries the display identity.
     custom_app = Column(String, nullable=True)
+    # Custom entry-type name for entries logged against a user-created type.
+    # The enum `type` stays a safe BASE type (BONUS for income customs,
+    # EXPENSE for expense customs) so sign rules, rollups, and older clients
+    # keep working; this column carries the display identity.
+    custom_type = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -134,6 +139,30 @@ class UserPlatform(Base):
 
     __table_args__ = (
         Index("uq_user_platforms_user_name", "user_id", "name", unique=True),
+    )
+
+class UserEntryType(Base):
+    """A user-created earnings type (beyond the built-in EntryType enum).
+
+    Entries logged against one of these carry a BASE enum type (BONUS for
+    kind='income', EXPENSE for kind='expense') + custom_type=<name>, so all
+    sign rules, rollups, and legacy clients keep working. `kind` is fixed at
+    creation — flipping it would silently change the meaning of history.
+    Same CI-uniqueness scheme as UserPlatform (functional index added in
+    `_migrate_user_entry_types_ci_unique()`).
+    """
+    __tablename__ = "user_entry_types"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    kind = Column(String, nullable=False, default="income")  # 'income' | 'expense'
+    color = Column(String, nullable=True)
+    icon = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_user_entry_types_user_name", "user_id", "name", unique=True),
     )
 
 class UserLabelOverride(Base):
