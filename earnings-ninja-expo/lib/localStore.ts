@@ -131,6 +131,7 @@ function applyPatch(e: Entry, patch: Partial<EntryCreate>): Entry {
   if (patch.type !== undefined) next.type = patch.type;
   if (patch.app !== undefined) next.app = patch.app;
   if (patch.custom_app !== undefined) next.custom_app = patch.custom_app;
+  if (patch.custom_type !== undefined) next.custom_type = patch.custom_type;
   if (patch.distance_miles !== undefined) next.distance_miles = patch.distance_miles;
   if (patch.duration_minutes !== undefined) next.duration_minutes = patch.duration_minutes;
   if (patch.category !== undefined) next.category = patch.category;
@@ -163,6 +164,7 @@ function synthFromCreate(payload: EntryCreate, queuedAt: number): Entry {
     type: payload.type,
     app: payload.app,
     custom_app: payload.custom_app ?? null,
+    custom_type: payload.custom_type ?? null,
     amount: payload.amount,
     distance_miles: payload.distance_miles ?? 0,
     duration_minutes: payload.duration_minutes ?? 0,

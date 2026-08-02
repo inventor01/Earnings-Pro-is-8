@@ -56,7 +56,12 @@ class EntryCreate(BaseModel):
     during_business_hours: Optional[bool] = False
     idempotency_key: Optional[str] = None
     custom_app: Optional[str] = None
+    custom_type: Optional[str] = None
 
+    # NOTE: the custom_type line must precede the custom_app one — once the
+    # class attribute `_validate_custom_app` is assigned, the bare name inside
+    # this class body refers to the wrapped proxy, not the module function.
+    _validate_custom_type = field_validator("custom_type")(_validate_custom_app)
     _validate_receipt = field_validator("receipt_url")(_validate_receipt)
     _validate_custom_app = field_validator("custom_app")(_validate_custom_app)
 
@@ -68,6 +73,11 @@ class EntryCreate(BaseModel):
             self.app = AppType.OTHER
         elif self.app is not None and self.app != AppType.OTHER:
             self.custom_app = None
+        # Invariant: a custom type name only ever rides on a BASE enum type of
+        # BONUS (income) or EXPENSE — never ORDER/CANCELLATION, which carry
+        # their own analytics semantics (order counts, cancellation lists).
+        if self.custom_type and self.type not in (EntryType.BONUS, EntryType.EXPENSE):
+            self.custom_type = None
         return self
 
 
@@ -87,7 +97,10 @@ class EntryUpdate(BaseModel):
     is_business_expense: Optional[bool] = None
     during_business_hours: Optional[bool] = None
     custom_app: Optional[str] = None
+    custom_type: Optional[str] = None
 
+    # custom_type first — see ordering note on EntryCreate.
+    _validate_custom_type = field_validator("custom_type")(_validate_custom_app)
     _validate_custom_app = field_validator("custom_app")(_validate_custom_app)
 
     _validate_receipt = field_validator("receipt_url")(_validate_receipt)
@@ -100,6 +113,10 @@ class EntryUpdate(BaseModel):
             self.app = AppType.OTHER
         elif self.app is not None and self.app != AppType.OTHER:
             self.custom_app = None
+        # Custom type rides only on BONUS/EXPENSE base types (see EntryCreate).
+        # On partial updates the route re-checks against the row's final type.
+        if self.custom_type and self.type is not None and self.type not in (EntryType.BONUS, EntryType.EXPENSE):
+            self.custom_type = None
         return self
 
 
@@ -124,6 +141,7 @@ class EntryResponse(BaseModel):
     # replay) and suppress the transient duplicate until the queue drains.
     idempotency_key: Optional[str] = None
     custom_app: Optional[str] = None
+    custom_type: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -168,6 +186,39 @@ class PlatformCreate(BaseModel):
 class PlatformResponse(BaseModel):
     id: int
     name: str
+    color: Optional[str] = None
+    icon: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class EntryTypeCreate(BaseModel):
+    name: str
+    # 'income' customs ride on base type BONUS, 'expense' customs on EXPENSE.
+    # Fixed at creation (updates ignore it) — flipping would silently change
+    # the meaning of historical entries.
+    kind: str = "income"
+    color: Optional[str] = None
+    icon: Optional[str] = None
+
+    _validate_name = field_validator("name")(_validate_custom_app)
+    _validate_color = field_validator("color")(_validate_platform_color)
+    _validate_icon = field_validator("icon")(_validate_platform_icon)
+
+    @field_validator("kind")
+    @classmethod
+    def _validate_kind(cls, v):
+        v = (v or "income").strip().lower()
+        if v not in ("income", "expense"):
+            raise ValueError("kind must be 'income' or 'expense'")
+        return v
+
+
+class EntryTypeResponse(BaseModel):
+    id: int
+    name: str
+    kind: str
     color: Optional[str] = None
     icon: Optional[str] = None
 
