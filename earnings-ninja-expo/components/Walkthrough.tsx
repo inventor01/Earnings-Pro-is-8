@@ -24,7 +24,7 @@ import Animated, {
   withRepeat, withSequence, withTiming,
 } from 'react-native-reanimated';
 import { useAuth } from '@/lib/authContext';
-import { useTheme } from '@/lib/theme';
+import { useTheme, useThemeControls } from '@/lib/theme';
 
 // ─── Persistence ──────────────────────────────────────────────────────────────
 
@@ -149,6 +149,8 @@ const STEPS: Step[] = [
     body: "We'll send gentle reminders and a daily recap to keep you on track. You control all of it in Settings." },
   { key: 'widgets', emoji: '📱', title: 'Home screen widget',
     body: "Monitor today's earnings right from your home screen and quick-add orders without opening the app." },
+  { key: 'theme', emoji: '🌙', title: 'Dark Mode',
+    body: "Earnings Ninja supports Light, Dark, and System themes — watch the app switch right now! Choose what's most comfortable for you, day or night. You can change this anytime in Settings." },
   { key: 'premium', emoji: '⭐', title: 'Go further with Premium',
     body: 'Premium unlocks advanced analytics, AI insights, profit forecasts, unlimited tracking, and more powerful reports — whenever you\'re ready.' },
 ];
@@ -160,6 +162,7 @@ type Phase = 'hidden' | 'welcome' | 'tour' | 'done';
 export function WalkthroughOverlay() {
   const { user } = useAuth();
   const t = useTheme();
+  const { themeName, setThemeOverride } = useThemeControls();
   // Reactive: re-renders (and re-measures, via the effect deps below) on
   // rotation and iPad split-screen resizes so the spotlight can't go stale.
   const win = useWindowDimensions();
@@ -235,6 +238,27 @@ export function WalkthroughOverlay() {
   }, [user?.id, user?.is_demo]);
 
   const step = STEPS[stepIdx];
+
+  // ── Live theme demo on the 'theme' step ────────────────────────────────────
+  // Temporarily override to the OPPOSITE theme so the user actually sees the
+  // switch, then bounce back after a few seconds. The override is never
+  // persisted, and it's cleared the moment the step/tour is left — the user's
+  // saved preference (light/dark/system) always wins afterwards.
+  const demoActive = phase === 'tour' && step?.key === 'theme';
+  useEffect(() => {
+    if (!demoActive) return;
+    const demoTheme: 'dark' | 'light' = themeName === 'dark' ? 'light' : 'dark';
+    const showTimer = setTimeout(() => setThemeOverride(demoTheme), 600);
+    const revertTimer = setTimeout(() => setThemeOverride(null), 3800);
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(revertTimer);
+      setThemeOverride(null); // leaving the step early always restores
+    };
+    // themeName intentionally omitted: it changes WHEN the override applies,
+    // and re-running would flip the demo back and forth.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoActive, setThemeOverride]);
 
   // (Re)measure the current step's anchor whenever the step OR the window
   // size (rotation / split-screen) changes.

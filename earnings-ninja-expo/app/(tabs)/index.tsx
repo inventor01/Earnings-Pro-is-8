@@ -3221,6 +3221,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
     }
   };
   const [editingGoal, setEditingGoal] = useState<TimeframeType | null>(null);
+  const { themePreference } = useThemeControls();
   const [showReport, setShowReport] = useState(false);
   const [goalInput, setGoalInput] = useState('');
   // In-flight guard + spinner for Restore Purchases (prevents double taps and
@@ -3651,13 +3652,19 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         }}>
           🎨 Appearance
         </Text>
-        {(Object.keys(THEMES) as ThemeName[]).map((name) => {
-          const th = THEMES[name];
-          const active = themeName === name;
+        {([
+          { pref: 'light' as const, label: '☀️ Light', desc: 'Clean white with neon accents', swatch: THEMES.light },
+          { pref: 'dark' as const, label: '🌙 Dark', desc: 'True-black with neon glow', swatch: THEMES.dark },
+          { pref: 'system' as const, label: '📱 System (Recommended)', desc: "Automatically matches your device's appearance settings", swatch: null },
+        ]).map(({ pref, label, desc, swatch }) => {
+          const active = themePreference === pref;
           return (
             <Pressable
-              key={name}
-              onPress={() => { hTap(); setThemeName(name); }}
+              key={pref}
+              onPress={() => { hTap(); setThemeName(pref); }}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={`${label} theme`}
               style={{
                 backgroundColor: SURFACE,
                 borderRadius: 14,
@@ -3668,21 +3675,27 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 12,
+                minHeight: 44,
               }}
             >
-              {/* Color swatch row showing the theme's surface + accent + green/red */}
-              <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: BORDER }}>
-                <View style={{ width: 18, height: 36, backgroundColor: th.BG }} />
-                <View style={{ width: 18, height: 36, backgroundColor: th.SURFACE }} />
-                <View style={{ width: 18, height: 36, backgroundColor: th.PRIMARY }} />
-                <View style={{ width: 18, height: 36, backgroundColor: th.GREEN }} />
-              </View>
+              {swatch ? (
+                /* Color swatch row showing the theme's surface + accent + green */
+                <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: BORDER }}>
+                  <View style={{ width: 18, height: 36, backgroundColor: swatch.BG }} />
+                  <View style={{ width: 18, height: 36, backgroundColor: swatch.SURFACE }} />
+                  <View style={{ width: 18, height: 36, backgroundColor: swatch.PRIMARY }} />
+                  <View style={{ width: 18, height: 36, backgroundColor: swatch.GREEN }} />
+                </View>
+              ) : (
+                /* System: half light / half dark swatch */
+                <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: BORDER }}>
+                  <View style={{ width: 36, height: 36, backgroundColor: THEMES.light.BG }} />
+                  <View style={{ width: 36, height: 36, backgroundColor: THEMES.dark.BG }} />
+                </View>
+              )}
               <View style={{ flex: 1 }}>
-                <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>{th.label}</Text>
-                <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>
-                  {name === 'dark' ? 'True-black with neon glow' :
-                   'Clean white with neon accents'}
-                </Text>
+                <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>{label}</Text>
+                <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>{desc}</Text>
               </View>
               {active && (
                 <Ionicons name="checkmark-circle" size={22} color={PRIMARY_TXT} />
