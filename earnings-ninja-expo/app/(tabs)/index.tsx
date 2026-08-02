@@ -120,7 +120,7 @@ function ChartGrid({ rowH, amp, sign, maxAbs, masked }: {
             {!masked && (
               <Text style={{
                 position: 'absolute', right: 0, top: sign > 0 ? 1 : -12,
-                color: LABEL, fontSize: 8, fontWeight: '700', opacity: 0.9,
+                color: LABEL, fontSize: 10, fontWeight: '700', opacity: 0.95,
               }}>
                 {fmtMoneyShort(v)}
               </Text>
@@ -1545,7 +1545,12 @@ function DetailsForm({
                     opacity: pressed ? 0.85 : 1,
                   })}
                 >
-                  <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
+                  <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                    style={{ flex: 1, marginRight: 8, color: '#111827', fontSize: 14, fontWeight: '700' }}
+                  >
                     {/* Show the US/Eastern wall-clock the entry will actually file
                         under (Today/Yesterday are EST), so the label matches the
                         saved day even for non-EST users. */}
@@ -6215,7 +6220,9 @@ export default function DashboardScreen() {
               {searchQuery.length > 0 && (
                 <PressScale
                   onPress={() => { hTap(); setSearchQuery(''); }}
-                  style={{ padding: 2 }}
+                  style={{ padding: 8 }}
+                  hitSlop={10}
+                  accessibilityLabel="Clear search"
                 >
                   <Ionicons name="close-circle" size={18} color={MUTED} />
                 </PressScale>

@@ -550,8 +550,10 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
         }}>
           <PressScale
             onPress={() => { hTap(); onClose(); }}
-            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingRight: 12 }}
+            style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44, minWidth: 44, paddingRight: 12 }}
             scale={0.92}
+            accessibilityRole="button"
+            accessibilityLabel="Close calendar"
           >
             <Ionicons name="chevron-back" size={22} color={PRIMARY_TXT} />
             <Text style={{ color: PRIMARY_TXT, fontSize: 16, fontWeight: '800' }}>Back</Text>
@@ -566,10 +568,13 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
               borderRadius: 10,
               borderWidth: 1.5,
               borderColor: PRIMARY,
-              paddingVertical: 6, paddingHorizontal: 12,
+              minHeight: 44, paddingHorizontal: 14,
+              alignItems: 'center', justifyContent: 'center',
               ...neonGlow(PRIMARY, 6, 0.35),
             }}
             scale={0.94}
+            accessibilityRole="button"
+            accessibilityLabel="Jump to today"
           >
             <Text style={{ color: PRIMARY_TXT, fontWeight: '900', fontSize: 12 }}>Today</Text>
           </PressScale>
@@ -670,9 +675,10 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     style={{
-                      color: active ? PRIMARY : LABEL,
+                      color: active ? PRIMARY : TEXT,
                       fontWeight: active ? '900' : '700',
-                      fontSize: 10,
+                      fontSize: 11,
+                      opacity: active ? 1 : 0.75,
                     }}
                   >
                     {m.label}
