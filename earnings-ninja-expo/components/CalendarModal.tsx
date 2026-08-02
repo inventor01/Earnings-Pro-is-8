@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, Pressable, Modal, ScrollView, ActivityIndicator,
   ViewStyle, Platform, useWindowDimensions, Alert,
+  Animated, Easing, AccessibilityInfo,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -120,9 +121,57 @@ interface CalendarModalProps {
   onApplyRange?: (fromDateStr: string, toDateStr: string) => void;
   /** Bulk-delete entry IDs from the parent (which owns the mutation + cache invalidation). */
   onDeleteEntries?: (ids: number[]) => Promise<void> | void;
+  /** Open the Add Entry flow prefilled to the given YYYY-MM-DD EST date (empty-day CTA). */
+  onAddEntry?: (dateIso: string) => void;
 }
 
-export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries }: CalendarModalProps) {
+/**
+ * Count-up money text: animates between values on change (premium feel),
+ * snapping instantly under Reduce Motion or hidden mode.
+ */
+function AnimatedMoney({
+  value, hidden, color, fontSize, signed = false, reduceMotion,
+}: {
+  value: number; hidden: boolean; color: string; fontSize: number;
+  /** Show a leading − for negative values (profit). */
+  signed?: boolean; reduceMotion: boolean;
+}) {
+  const [display, setDisplay] = useState(value);
+  const animRef = useRef(new Animated.Value(value)).current;
+  const prevRef = useRef(value);
+  useEffect(() => {
+    if (prevRef.current === value) return;
+    prevRef.current = value;
+    if (reduceMotion || hidden) {
+      animRef.stopAnimation();
+      animRef.setValue(value);
+      setDisplay(value);
+      return;
+    }
+    Animated.timing(animRef, {
+      toValue: value, duration: 350,
+      easing: Easing.out(Easing.cubic),
+      // JS driver on purpose: we need the listener to re-render the text.
+      useNativeDriver: false,
+    }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, reduceMotion, hidden]);
+  useEffect(() => {
+    const id = animRef.addListener(({ value: v }) => setDisplay(v));
+    return () => animRef.removeListener(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const text = hidden
+    ? MASK
+    : `${signed && display < 0 ? '−' : ''}$${Math.abs(display).toFixed(2)}`;
+  return (
+    <Text numberOfLines={1} adjustsFontSizeToFit style={{ color, fontSize, fontWeight: '900' }}>
+      {text}
+    </Text>
+  );
+}
+
+export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries, onAddEntry }: CalendarModalProps) {
   const { BG, SURFACE, CARD, BORDER, DIVIDER, TEXT, LABEL, MUTED, PRIMARY, PRIMARY_TXT, GREEN, RED, ON_PRIMARY } = useTheme();
   const { hidden } = useHiddenMode();
   const insets = useSafeAreaInsets();
@@ -134,6 +183,11 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
   // range from the earliest already-selected day (or just selects that day if
   // none yet). Set of YYYY-MM-DD EST strings.
   const [selectedDays, setSelectedDays] = useState<Set<string>>(() => new Set());
+  // Single source of truth for the day snapshot above the grid: the most
+  // recently tapped/painted day; defaults to EST-today. Every metric in the
+  // snapshot derives from this one value.
+  const [focusDay, setFocusDay] = useState<string>(() => estDateString(new Date()));
+  const [reduceMotion, setReduceMotion] = useState(false);
   const [erasing, setErasing] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   // Year being browsed inside the picker (separate from `year` so user can scrub years
@@ -181,15 +235,20 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
 
   // Aggregate by day.
   const dailyData = useMemo(() => {
-    const map: Record<string, { profit: number; revenue: number; expenses: number; count: number }> = {};
+    const map: Record<string, {
+      profit: number; revenue: number; expenses: number; count: number;
+      orders: number; miles: number; minutes: number;
+    }> = {};
     for (const e of entries) {
       const dStr = entryDateStr(e);
       if (!dStr) continue;
       const amt = Number(e.amount) || 0;
-      if (!map[dStr]) map[dStr] = { profit: 0, revenue: 0, expenses: 0, count: 0 };
+      if (!map[dStr]) map[dStr] = { profit: 0, revenue: 0, expenses: 0, count: 0, orders: 0, miles: 0, minutes: 0 };
       map[dStr].profit += amt;
-      if (amt > 0) map[dStr].revenue += amt;
+      if (amt > 0) { map[dStr].revenue += amt; map[dStr].orders += 1; }
       else if (amt < 0) map[dStr].expenses += Math.abs(amt);
+      map[dStr].miles   += Number((e as any).distance_miles) || 0;
+      map[dStr].minutes += Number((e as any).duration_minutes) || 0;
       map[dStr].count += 1;
     }
     // Round to 2 decimals.
@@ -285,6 +344,33 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
     if (!visible) endDrag();
   }, [visible]);
 
+  // Re-anchor the snapshot to EST-today on every open — otherwise a modal
+  // reopened the next day (or later) would present a stale day as the
+  // initial context. The announcement skip ref is reset alongside so the
+  // re-anchor itself is never announced.
+  useEffect(() => {
+    if (visible) {
+      announcedRef.current = null;
+      setFocusDay(estDateString(new Date()));
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => sub.remove();
+  }, []);
+
+  // Screen-reader announcement when the snapshot context changes.
+  const announcedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!visible) { announcedRef.current = null; return; }
+    if (announcedRef.current === null) { announcedRef.current = focusDay; return; } // skip initial
+    if (announcedRef.current === focusDay) return;
+    announcedRef.current = focusDay;
+    AccessibilityInfo.announceForAccessibility(`Showing results for ${formatHumanDate(focusDay)}`);
+  }, [focusDay, visible]);
+
   // Entries that fall on any selected day (sorted newest first).
   const selectedEntries = useMemo(() => {
     if (selectedDays.size === 0) return [];
@@ -315,6 +401,39 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
       dayCount: selectedDays.size,
     };
   }, [selectedDays, dailyData, selectedEntries]);
+
+  // ── Day snapshot (derived entirely from focusDay — one source of truth) ──
+  const focusStats = useMemo(() => {
+    const d = dailyData[focusDay];
+    const revenue = d?.revenue ?? 0;
+    const expenses = d?.expenses ?? 0;
+    const profit = d?.profit ?? 0;
+    const orders = d?.orders ?? 0;
+    const miles = d?.miles ?? 0;
+    const hours = (d?.minutes ?? 0) / 60;
+    return {
+      revenue, expenses, profit, orders, miles, hours,
+      perHour: hours > 0 ? revenue / hours : null,
+      hasData: (d?.count ?? 0) > 0,
+    };
+  }, [dailyData, focusDay]);
+
+  const focusDayLabel = useMemo(() => {
+    const todayStr = estDateString(new Date());
+    // Pure calendar math in UTC (no wall-clock) so DST can't shift the labels.
+    const shift = (ymd: string, days: number) => {
+      const [yy, mm, dd2] = ymd.split('-').map(n => parseInt(n, 10));
+      const dt = new Date(Date.UTC(yy, mm - 1, dd2 + days));
+      return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`;
+    };
+    if (focusDay === todayStr) return 'Today';
+    if (focusDay === shift(todayStr, -1)) return 'Yesterday';
+    if (focusDay === shift(todayStr, 1)) return 'Tomorrow';
+    const [y, m, dd] = focusDay.split('-').map(n => parseInt(n, 10));
+    return new Date(y, m - 1, dd).toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric',
+    });
+  }, [focusDay]);
 
   // All days in the visible month that have at least one entry.
   const daysWithData = useMemo(
@@ -396,6 +515,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
       draggingRef.current = true;
       dragAnchorRef.current = cell.dateStr;
       lastDragDateRef.current = cell.dateStr;
+      setFocusDay(cell.dateStr);
       setDragging(true);
       const base = new Set(selectedDays);
       base.add(cell.dateStr);
@@ -430,6 +550,9 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
     // toggle the endpoint we just painted.
     if (draggingRef.current || Date.now() - dragEndAtRef.current < 400) return;
     hTap();
+    // Tapped day becomes the snapshot context (even when deselecting — the
+    // user just interacted with that day).
+    setFocusDay(dateStr);
     const willAdd = !selectedDays.has(dateStr);
     setSelectedDays(prev => {
       const next = new Set(prev);
@@ -446,6 +569,7 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
   function handleDayLongPress(dateStr: string) {
     if (draggingRef.current) return;
     longPressFiredRef.current = true;
+    setFocusDay(dateStr);
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setSelectedDays(prev => {
       const next = new Set(prev);
@@ -749,6 +873,110 @@ export function CalendarModal({ visible, onClose, onApplyRange, onDeleteEntries 
                 {monthTotals.days}
               </Text>
             </View>
+          </View>
+
+          {/* ── Day Snapshot (driven by focusDay — updates on every day tap) ── */}
+          <View
+            accessible
+            accessibilityLabel={
+              // Hidden mode must mask VoiceOver output too — announcing raw
+              // amounts would defeat the on-screen masking.
+              !focusStats.hasData
+                ? `${focusDayLabel}: no entries recorded`
+                : hidden
+                  ? `${focusDayLabel}: amounts hidden`
+                  : `${focusDayLabel}: revenue $${focusStats.revenue.toFixed(2)}, expenses $${focusStats.expenses.toFixed(2)}, profit $${focusStats.profit.toFixed(2)}`
+            }
+            style={{
+              marginHorizontal: 16, marginBottom: 14,
+              backgroundColor: SURFACE, borderRadius: 14,
+              borderWidth: 1, borderColor: BORDER,
+              paddingVertical: 12, paddingHorizontal: 14,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+              <Text style={{ color: PRIMARY_TXT, fontSize: 15, fontWeight: '900' }}>
+                {focusDayLabel}
+              </Text>
+              {focusDayLabel !== formatHumanDate(focusDay) && (
+                <Text style={{ color: MUTED, fontSize: 11, fontWeight: '600' }}>
+                  {formatHumanDate(focusDay)}
+                </Text>
+              )}
+            </View>
+
+            <View style={{ flexDirection: 'row', marginTop: 10 }}>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={{ color: LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                  Revenue
+                </Text>
+                <AnimatedMoney value={focusStats.revenue} hidden={hidden} color={GREEN} fontSize={16} reduceMotion={reduceMotion} />
+              </View>
+              <View style={{ width: 1, backgroundColor: BORDER, marginVertical: 2 }} />
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={{ color: LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                  Expenses
+                </Text>
+                <AnimatedMoney value={focusStats.expenses} hidden={hidden} color={RED} fontSize={16} reduceMotion={reduceMotion} />
+              </View>
+              <View style={{ width: 1, backgroundColor: BORDER, marginVertical: 2 }} />
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={{ color: LABEL, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                  Profit
+                </Text>
+                <AnimatedMoney value={focusStats.profit} hidden={hidden} color={focusStats.profit >= 0 ? GREEN : RED} fontSize={16} signed reduceMotion={reduceMotion} />
+              </View>
+            </View>
+
+            {focusStats.hasData ? (
+              <View style={{
+                flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap',
+                gap: 12, marginTop: 10, paddingTop: 10,
+                borderTopWidth: 1, borderTopColor: DIVIDER,
+              }}>
+                <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700' }}>
+                  {focusStats.orders} order{focusStats.orders === 1 ? '' : 's'}
+                </Text>
+                {focusStats.hours > 0 && (
+                  <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700' }}>
+                    {focusStats.hours.toFixed(1)} hr{focusStats.hours === 1 ? '' : 's'}
+                  </Text>
+                )}
+                {focusStats.miles > 0 && (
+                  <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700' }}>
+                    {focusStats.miles.toFixed(1)} mi
+                  </Text>
+                )}
+                {focusStats.perHour !== null && (
+                  <Text style={{ color: PRIMARY_TXT, fontSize: 11, fontWeight: '800' }}>
+                    {hidden ? MASK : `$${focusStats.perHour.toFixed(2)}/hr`}
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <View style={{
+                alignItems: 'center', marginTop: 10, paddingTop: 10,
+                borderTopWidth: 1, borderTopColor: DIVIDER, gap: 8,
+              }}>
+                <Text style={{ color: MUTED, fontSize: 12 }}>
+                  No entries recorded for this day yet.
+                </Text>
+                {onAddEntry && (
+                  <Pressable
+                    onPress={() => { hTap(); onAddEntry(focusDay); onClose(); }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add entry for ${focusDayLabel}`}
+                    style={{
+                      minHeight: 44, paddingHorizontal: 18, borderRadius: 10,
+                      backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center',
+                      ...neonGlow(PRIMARY, 8, 0.5),
+                    }}
+                  >
+                    <Text style={{ color: ON_PRIMARY, fontWeight: '900', fontSize: 13 }}>+ Add Entry</Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
           </View>
 
           {/* ── Day-of-week Header (flush with grid) ────────────────────────── */}

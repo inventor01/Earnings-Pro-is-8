@@ -5434,6 +5434,9 @@ export default function DashboardScreen() {
   // (Naive `now + offset*86_400_000` drifts a day near EST midnight on DST
   // transition days, e.g. the 23h spring-forward day.) Today (0) or aggregate
   // periods => undefined (use live now).
+  // Set when the user taps "+ Add Entry" on an empty calendar day — overrides
+  // the offset-derived default below for that one open, cleared on close.
+  const [calendarAddDate, setCalendarAddDate] = useState<Date | undefined>(undefined);
   const addEntryDefaultDate = useMemo(() => {
     if (!(isDayPeriod && effectiveDayOffset < 0)) return undefined;
     const { date } = easternDateTime(new Date());
@@ -6934,8 +6937,8 @@ export default function DashboardScreen() {
         visible={showAdd}
         prefill={addPrefill}
         editing={editingEntry}
-        defaultDate={addEntryDefaultDate}
-        onClose={() => { setShowAdd(false); setAddPrefill(undefined); setEditingEntry(undefined); }}
+        defaultDate={calendarAddDate ?? addEntryDefaultDate}
+        onClose={() => { setShowAdd(false); setAddPrefill(undefined); setEditingEntry(undefined); setCalendarAddDate(undefined); }}
       />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
       {/* Focus-mode goal editor: transparent Modal freezes the dashboard behind
@@ -7023,6 +7026,13 @@ export default function DashboardScreen() {
       <CalendarModal
         visible={showCalendar}
         onClose={() => setShowCalendar(false)}
+        onAddEntry={(ymd) => {
+          // Empty-day CTA: open Add Entry prefilled to that EST day (noon EST
+          // = 16:00 UTC, safely inside the day for any US timezone).
+          const [y, m, d] = ymd.split('-').map(Number);
+          setCalendarAddDate(new Date(Date.UTC(y, m - 1, d, 16, 0, 0)));
+          setShowAdd(true);
+        }}
         onApplyRange={(from, to) => {
           setCustomRange({ from, to });
           setPeriod('custom');
