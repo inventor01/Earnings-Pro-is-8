@@ -24,7 +24,7 @@ import { api, API_BASE } from '@/lib/api';
 import { drainQueue, getQueueDepth } from '@/lib/offlineQueue';
 import { drainMutationQueue, getOpQueueDepth } from '@/lib/mutationQueue';
 import { invalidateEntryData } from '@/lib/queryInvalidation';
-import { refreshMotivationSchedule, MOTIVATION_IDS } from '@/lib/notifications';
+import { refreshMotivationSchedule, isMotivationId } from '@/lib/notifications';
 import { playKaching } from '@/lib/sound';
 import { hydrateQueryClient, startPersisting } from '@/lib/queryPersist';
 import { initConnectivity } from '@/lib/connectivity';
@@ -361,7 +361,7 @@ function RootNav() {
   useEffect(() => {
     const sub = Notifications.addNotificationReceivedListener((n) => {
       const id = n.request?.identifier;
-      if (id && MOTIVATION_IDS.includes(id)) {
+      if (isMotivationId(id)) {
         playKaching().catch(() => {});
       }
     });

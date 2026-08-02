@@ -1,17 +1,20 @@
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from './api';
 import { HIDDEN_MODE_KEY, MASK } from './hiddenMode';
-import { nextOccurrence, morningBody, eveningBody } from './notificationContent';
+import {
+  nextOccurrence, occurrenceAt, morningBody, eveningBody,
+  futureMorningBody, futureEveningBody,
+} from './notificationContent';
 
 // ─── Motivation Notifications ────────────────────────────────────────────────
 // Two local notifications per day: a morning motivation (9:00) and an evening
-// recap (20:00). Both are scheduled as next-occurrence one-shots and re-armed
-// on every app foreground (see app/_layout.tsx). One-shots (rather than DAILY
-// repeats) keep the "today" framing honest: the recap always reflects the data
-// from the last time the app was open, never a stale yesterday number baked into
-// a forever-repeating trigger. The tradeoff is that a driver who never opens the
-// app on a given day only receives the already-queued next occurrence.
+// recap (20:00), queued as a rolling 7-day window of one-shots re-armed on
+// every app foreground and earnings mutation (see app/_layout.tsx). Day 0
+// carries fresh sameDay-aware figures; days 1..6 carry number-safe rotating
+// copy, so a driver who never opens the app still hears from us all week —
+// without ever baking a stale volatile number into a future delivery.
 //
 // All content respects Hidden Mode: when the user has masked their numbers we
 // never put a dollar figure in a notification (it could show on a lock screen
@@ -22,14 +25,31 @@ const NOTIF_ENABLED_KEY = 'notifications_enabled';
 const MORNING_HOUR = 9;
 const EVENING_HOUR = 20;
 
-// Identifiers so we only ever touch our own scheduled notifications.
-const MORNING_ID = 'motivation-morning';
-const EVENING_ID = 'motivation-evening';
+// Identifiers so we only ever touch our own scheduled notifications. Day 0 is
+// the next occurrence (fresh, sameDay-aware content); days 1..N-1 carry
+// number-safe rotating copy so nudges keep arriving even if the app is never
+// opened again this week.
+const MOTIVATION_PREFIX = 'motivation-';
+const MORNING_ID = 'motivation-morning'; // day 0
+const EVENING_ID = 'motivation-evening'; // day 0
+const DAYS_AHEAD = 7;
 
-// The full set of motivation-notification identifiers. Exported so the root
-// notification listener can tell our motivation nudges apart from any other
-// (future) local notification before playing the ka-ching sound effect.
-export const MOTIVATION_IDS: string[] = [MORNING_ID, EVENING_ID];
+// Tells the root notification listener whether a delivered notification is one
+// of our motivation nudges (vs any other future local notification) before
+// playing the ka-ching sound effect.
+export function isMotivationId(id: string | null | undefined): boolean {
+  return !!id && id.startsWith(MOTIVATION_PREFIX);
+}
+
+// Android requires a channel; importance DEFAULT shows a banner without
+// bypassing DND. iOS ignores this. Fire-and-forget at module load — scheduling
+// below references the channel by id.
+const channelReady: Promise<unknown> = Platform.OS === 'android'
+  ? Notifications.setNotificationChannelAsync('motivation', {
+      name: 'Daily Motivation',
+      importance: Notifications.AndroidImportance.DEFAULT,
+    }).catch(() => {})
+  : Promise.resolve();
 
 // Foreground display behaviour. Without a handler iOS suppresses banners while
 // the app is in the foreground; we want the driver to see the nudge regardless.
@@ -83,10 +103,14 @@ export async function ensureNotifPermission(): Promise<boolean> {
 
 export async function cancelMotivation(): Promise<void> {
   try {
-    await Promise.all([
-      Notifications.cancelScheduledNotificationAsync(MORNING_ID),
-      Notifications.cancelScheduledNotificationAsync(EVENING_ID),
-    ]);
+    // Cancel by prefix so every queued day (and any legacy id) is cleared —
+    // fixed-id cancellation would strand future-day notifications.
+    const all = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(
+      all
+        .filter((n) => isMotivationId(n.identifier))
+        .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+    );
   } catch {
     // No-op: cancelling a non-existent identifier is harmless.
   }
@@ -183,9 +207,17 @@ async function doReschedule(hiddenOverride?: boolean): Promise<void> {
     // Leave defaults; content falls back to generic encouragement.
   }
 
+  await channelReady;
   await cancelMotivation();
 
+  const trigger = (date: Date): Notifications.NotificationTriggerInput => ({
+    type: Notifications.SchedulableTriggerInputTypes.DATE,
+    date,
+    ...(Platform.OS === 'android' ? { channelId: 'motivation' } : null),
+  });
+
   try {
+    // Day 0: fresh, sameDay-aware content (live profit / goal figures).
     const morning = nextOccurrence(MORNING_HOUR);
     const evening = nextOccurrence(EVENING_HOUR);
     await Notifications.scheduleNotificationAsync({
@@ -194,10 +226,7 @@ async function doReschedule(hiddenOverride?: boolean): Promise<void> {
         title: 'Good morning, Ninja 🥷',
         body: morningBody(hidden, todayGoal, weekProfit, morning.sameDay),
       },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: morning.date,
-      },
+      trigger: trigger(morning.date),
     });
     await Notifications.scheduleNotificationAsync({
       identifier: EVENING_ID,
@@ -205,11 +234,32 @@ async function doReschedule(hiddenOverride?: boolean): Promise<void> {
         title: 'Evening recap 🌙',
         body: eveningBody(hidden, todayProfit, todayGoal, goalProgress, evening.sameDay, MASK),
       },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: evening.date,
-      },
+      trigger: trigger(evening.date),
     });
+
+    // Days 1..N-1: number-safe rotating copy so the driver keeps hearing from
+    // us for a full week even if the app is never opened. Every app open /
+    // save re-arms the whole window, so day 0 is always the freshest.
+    for (let d = 1; d < DAYS_AHEAD; d++) {
+      const mDate = occurrenceAt(MORNING_HOUR, d);
+      const eDate = occurrenceAt(EVENING_HOUR, d);
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${MOTIVATION_PREFIX}morning-d${d}`,
+        content: {
+          title: 'Good morning, Ninja 🥷',
+          body: futureMorningBody(hidden, todayGoal, mDate),
+        },
+        trigger: trigger(mDate),
+      });
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${MOTIVATION_PREFIX}evening-d${d}`,
+        content: {
+          title: 'Evening recap 🌙',
+          body: futureEveningBody(eDate),
+        },
+        trigger: trigger(eDate),
+      });
+    }
   } catch {
     // Scheduling can throw if permission was revoked out from under us; the
     // Settings toggle re-checks permission on next enable.
