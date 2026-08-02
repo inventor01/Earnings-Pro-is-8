@@ -17,7 +17,61 @@ export function nextOccurrence(hour: number, now: Date = new Date()): { date: Da
   return { date: d, sameDay };
 }
 
+// Occurrence of `hour` exactly `dayOffset` days after the nextOccurrence base
+// day. Used to queue a rolling week of nudges so a driver who doesn't open the
+// app still hears from us every day (previously only the NEXT pair was queued,
+// so notifications went silent after ~24h without an app open).
+export function occurrenceAt(hour: number, dayOffset: number, now: Date = new Date()): Date {
+  const base = nextOccurrence(hour, now).date;
+  const d = new Date(base);
+  d.setDate(d.getDate() + dayOffset);
+  return d;
+}
+
 export const usd = (n: number) => `$${Math.round(n)}`;
+
+// ── Rotating copy for FUTURE days (armed today, delivered 1+ days out) ───────
+// These never contain volatile numbers — only the persistent daily goal target
+// or number-free encouragement — so they stay accurate no matter when they
+// land. Variety is deterministic per delivery DATE (not per re-arm) so bursts
+// of reschedules don't shuffle a given day's message.
+const FUTURE_MORNING: string[] = [
+  'Ready to crush today\u2019s earnings goal? 💪',
+  'Every order gets you closer to your goal. Let\u2019s get started! 🚗',
+  'Your future self will thank you for today\u2019s hustle 🎯',
+  'Consistency builds success. Let\u2019s earn today 🔥',
+  'New day, fresh miles. Let\u2019s stack some orders 🥷',
+  'A few good hours today could make your whole week 💰',
+  'Show up, log it, watch the numbers grow 📈',
+];
+
+const FUTURE_EVENING: string[] = [
+  'Day\u2019s done 🌙 Open the app to see today\u2019s total 🥷',
+  'How\u2019d today go? Your recap is waiting in the app 📊',
+  'Wrap it up, Ninja 🌙 Check today\u2019s numbers before you rest.',
+  'Another day logged is another day closer to your goals 💪',
+  'Done driving? Take 10 seconds to review today\u2019s earnings 📈',
+];
+
+function pick(pool: string[], deliveryDate: Date): string {
+  // Stable per calendar day: year*366+dayIndex keeps rotation across weeks.
+  const idx = (deliveryDate.getFullYear() * 366 + deliveryDate.getMonth() * 31 + deliveryDate.getDate()) % pool.length;
+  return pool[idx];
+}
+
+export function futureMorningBody(hidden: boolean, todayGoal: number, deliveryDate: Date): string {
+  // The daily goal target is persistent, so it's safe to include (unless
+  // Hidden Mode says no dollar figures on the lock screen, ever).
+  if (!hidden && todayGoal > 0) {
+    return `${pick(FUTURE_MORNING, deliveryDate)} Today\u2019s goal: ${usd(todayGoal)} 🎯`;
+  }
+  return pick(FUTURE_MORNING, deliveryDate);
+}
+
+export function futureEveningBody(deliveryDate: Date): string {
+  // Always number-free: future-day profit is unknowable at arm time.
+  return pick(FUTURE_EVENING, deliveryDate);
+}
 
 export function morningBody(
   hidden: boolean,
