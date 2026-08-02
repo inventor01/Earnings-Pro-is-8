@@ -50,7 +50,11 @@ publish fits in the tool timeout. (Same two env vars are needed for
 
 **Fingerprint-safe:** JS-only changes under `lib/`/`app/` don't change the native
 fingerprint, so the runtime version is unchanged and the installed build still gets
-the OTA.
+the OTA. **BUT `app.json` edits (even just `buildNumber`) DO change the fingerprint**
+— publish the OTA BEFORE bumping buildNumber, or the update targets a runtime no
+installed build has and silently never arrives (root cause of "OTA doesn't work",
+Aug 2 2026). Always compare `eas update` output's Runtime version against
+`eas build:list` runtimeVersion of the build users actually have.
 
 ## 3. `eas update` deduplicates identical bundles
 If the bundle+assets are byte-identical to a prior publish, eas reuses the existing
