@@ -3536,11 +3536,29 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         {goalRows.map((row, i) => {
           const goal   = goalQueries[i].data;
           const target = Number(goal?.target_profit ?? 0) || 0;
+          // Opens the focus-mode editor for this row (long-press on the card,
+          // tap on the button, or screen-reader action).
+          const openEditor = () => {
+            if (editingGoal !== null) return; // one editor at a time
+            setGoalInput(target > 0 ? target.toString() : '');
+            setEditingGoal(row.tf);
+          };
           return (
-            <View key={row.tf} style={{
-              backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 10,
-              shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
-            }}>
+            <Pressable
+              key={row.tf}
+              onLongPress={() => { hTapMed(); openEditor(); }}
+              delayLongPress={450}
+              accessibilityActions={[{ name: 'activate', label: 'Edit Goal' }]}
+              onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'activate') openEditor(); }}
+              accessibilityHint="Press and hold to edit this goal"
+              android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
+              style={({ pressed }) => ({
+                backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1,
+                borderColor: pressed ? PRIMARY + '66' : BORDER, padding: 14, marginBottom: 10,
+                shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+              })}
+            >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={{ fontSize: 18 }}>{row.emoji}</Text>
@@ -3552,7 +3570,11 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
               </View>
               {/* Editing happens in the GoalEditorSheet focus-mode modal below. */}
               <Pressable
-                onPress={() => { hTap(); setGoalInput(target > 0 ? target.toString() : ''); setEditingGoal(row.tf); }}
+                onPress={() => { hTap(); openEditor(); }}
+                // Holds that start on the button must behave like holds on the
+                // card (child Pressable claims the responder from the parent).
+                onLongPress={() => { hTapMed(); openEditor(); }}
+                delayLongPress={450}
                 accessibilityRole="button"
                 accessibilityLabel={target > 0 ? `Edit ${row.label}` : `Set ${row.label}`}
                 style={{
@@ -3565,7 +3587,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                   {target > 0 ? '✏️ Edit Goal' : '+ Set Goal'}
                 </Text>
               </Pressable>
-            </View>
+            </Pressable>
           );
         })}
 
@@ -6542,12 +6564,36 @@ export default function DashboardScreen() {
                   GOALS
                 </Text>
                 {/* Goal editing happens in the GoalEditorSheet focus-mode modal
-                    (rendered at the screen root) — the card itself stays static. */}
+                    (rendered at the screen root). Press & hold anywhere on the
+                    card to edit (iOS Home-Screen style); the Edit link stays as
+                    the tap/screen-reader path. delayLongPress keeps scroll
+                    gestures from ever triggering it (RN cancels the press as
+                    soon as the ScrollView claims the responder). */}
                 {(
-                  <View style={{
-                    backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 16,
-                    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
-                  }}>
+                  <Pressable
+                    onLongPress={() => {
+                      if (editingGoal) return; // one editor at a time
+                      hTapMed();
+                      setGoalInput(goalTarget ? goalTarget.toString() : '');
+                      setEditingGoal(true);
+                    }}
+                    delayLongPress={450}
+                    accessibilityActions={[{ name: 'activate', label: 'Edit Goal' }]}
+                    onAccessibilityAction={(e) => {
+                      if (e.nativeEvent.actionName === 'activate') {
+                        setGoalInput(goalTarget ? goalTarget.toString() : '');
+                        setEditingGoal(true);
+                      }
+                    }}
+                    accessibilityHint="Press and hold to edit this goal"
+                    android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
+                    style={({ pressed }) => ({
+                      backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1,
+                      borderColor: pressed ? PRIMARY + '66' : BORDER, padding: 16,
+                      shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
+                      transform: [{ scale: pressed ? 0.97 : 1 }],
+                    })}
+                  >
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                       <View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -6582,6 +6628,18 @@ export default function DashboardScreen() {
                         )}
                         <Pressable
                           onPress={() => { setGoalInput(goalTarget ? goalTarget.toString() : ''); setEditingGoal(true); }}
+                          // A hold that starts on this link should still open the
+                          // editor — the child claims the responder, so mirror
+                          // the card's long-press here (same delay + haptic).
+                          onLongPress={() => {
+                            if (editingGoal) return;
+                            hTapMed();
+                            setGoalInput(goalTarget ? goalTarget.toString() : '');
+                            setEditingGoal(true);
+                          }}
+                          delayLongPress={450}
+                          accessibilityRole="button"
+                          accessibilityLabel={safeGoal > 0 ? 'Edit goal' : 'Set goal'}
                           style={{ marginTop: 4 }}
                         >
                           <Text style={{ color: PRIMARY_TXT, fontSize: 12, fontWeight: '600' }}>
@@ -6611,7 +6669,7 @@ export default function DashboardScreen() {
                         🎉 Goal Reached!
                       </Text>
                     )}
-                  </View>
+                  </Pressable>
                 )}
               </View>
               )}
