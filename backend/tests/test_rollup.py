@@ -160,3 +160,87 @@ def test_rollup_dollars_per_hour(db_session):
     
     assert rollup["hours"] == 2.0
     assert rollup["dollars_per_hour"] == Decimal("30.00")
+
+USER_A = "user-a"
+USER_B = "user-b"
+
+def _seed_two_users(db_session):
+    db_session.add(Settings(id=1, user_id=USER_A, cost_per_mile=Decimal("0")))
+    db_session.add(Settings(id=2, user_id=USER_B, cost_per_mile=Decimal("0.50")))
+    now = datetime.utcnow()
+    db_session.add(Entry(
+        user_id=USER_A, timestamp=now, type=EntryType.ORDER,
+        app=AppType.DOORDASH, amount=Decimal("30.00"),
+        distance_miles=6.0, duration_minutes=30
+    ))
+    db_session.add(Entry(
+        user_id=USER_A, timestamp=now, type=EntryType.EXPENSE,
+        app=AppType.OTHER, amount=-Decimal("5.00"),
+        distance_miles=0, duration_minutes=0, category=ExpenseCategory.GAS
+    ))
+    db_session.add(Entry(
+        user_id=USER_B, timestamp=now, type=EntryType.ORDER,
+        app=AppType.UBEREATS, amount=Decimal("100.00"),
+        distance_miles=20.0, duration_minutes=120
+    ))
+    db_session.add(Entry(
+        user_id=USER_B, timestamp=now, type=EntryType.BONUS,
+        app=AppType.UBEREATS, amount=Decimal("15.00"),
+        distance_miles=0, duration_minutes=0
+    ))
+    db_session.commit()
+
+def test_rollup_user_isolation_user_a(db_session):
+    _seed_two_users(db_session)
+
+    rollup = calculate_rollup(db_session, user_id=USER_A)
+
+    # Only user A's entries: $30 order, $5 expense, 6 miles, 0.5 hours
+    assert rollup["revenue"] == 30.0
+    assert rollup["expenses"] == 5.0
+    assert rollup["profit"] == 25.0
+    assert rollup["miles"] == 6.0
+    assert rollup["hours"] == 0.5
+    # None of user B's amounts leak into breakdowns
+    assert rollup["by_app"][AppType.UBEREATS.value] == 0.0
+    assert rollup["by_app"][AppType.DOORDASH.value] == 30.0
+    assert rollup["by_type"][EntryType.BONUS.value] == 0.0
+
+def test_rollup_user_isolation_user_b(db_session):
+    _seed_two_users(db_session)
+
+    rollup = calculate_rollup(db_session, user_id=USER_B)
+
+    # Only user B's entries: $100 order + $15 bonus, no expenses, 20 miles
+    assert rollup["revenue"] == 115.0
+    assert rollup["expenses"] == 0.0
+    assert rollup["profit"] == 115.0
+    assert rollup["miles"] == 20.0
+    assert rollup["hours"] == 2.0
+    assert rollup["by_app"][AppType.DOORDASH.value] == 0.0
+    assert rollup["by_app"][AppType.UBEREATS.value] == 115.0
+    assert rollup["by_type"][EntryType.EXPENSE.value] == 0.0
+
+def test_rollup_user_isolation_settings(db_session):
+    """Each user's rollup must use that user's own settings row."""
+    _seed_two_users(db_session)
+
+    # calculate_rollup with user_id must pick that user's Settings
+    # (user A cost_per_mile=0, user B cost_per_mile=0.50), not just
+    # the first Settings row in the table.
+    rollup_b = calculate_rollup(db_session, user_id=USER_B)
+    rollup_a = calculate_rollup(db_session, user_id=USER_A)
+
+    assert rollup_a["revenue"] == 30.0
+    assert rollup_b["revenue"] == 115.0
+
+def test_rollup_user_with_no_entries(db_session):
+    _seed_two_users(db_session)
+
+    rollup = calculate_rollup(db_session, user_id="user-with-no-data")
+
+    assert rollup["revenue"] == 0.0
+    assert rollup["expenses"] == 0.0
+    assert rollup["profit"] == 0.0
+    assert rollup["miles"] == 0.0
+    assert rollup["hours"] == 0.0
