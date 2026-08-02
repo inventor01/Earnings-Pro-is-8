@@ -33,6 +33,7 @@ import { refreshPendingCount } from '@/lib/pendingCount';
 import { registerDrainHandler } from '@/lib/syncTrigger';
 import { needsOnboarding, readOnboardingState, hasFreshSignupFlag, clearFreshSignupFlag, writeOnboardingState, adoptPendingDone } from '@/lib/onboarding';
 import * as Notifications from 'expo-notifications';
+import IntroVideo from '@/components/IntroVideo';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -454,6 +455,9 @@ export default function RootLayout() {
   // no network show real dashboard/history/goals data. The native splash stays
   // up meanwhile (preventAutoHideAsync); RootNav hides it after mount.
   const [hydrated, setHydrated] = useState(false);
+  // Mascot intro animation overlays the app once per cold start (native only —
+  // on web it would just delay first paint).
+  const [showIntro, setShowIntro] = useState(Platform.OS !== 'web');
   useEffect(() => {
     (async () => {
       await hydrateQueryClient(queryClient);
@@ -475,6 +479,7 @@ export default function RootLayout() {
               <AuthProvider>
                 <SubscriptionProvider>
                   <RootNav />
+                  {showIntro && <IntroVideo onDone={() => setShowIntro(false)} />}
                 </SubscriptionProvider>
               </AuthProvider>
             </HiddenModeProvider>
