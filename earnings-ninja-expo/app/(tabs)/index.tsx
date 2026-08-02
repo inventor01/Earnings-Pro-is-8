@@ -33,6 +33,7 @@ import {
 import { GettingStartedCard, markGettingStartedMilestone, restoreGettingStarted } from '../../components/GettingStarted';
 import { TransactionDetailModal } from '../../components/TransactionDetailModal';
 import GoalEditorSheet from '../../components/GoalEditorSheet';
+import ReportProblemModal from '../../components/ReportProblemModal';
 import { TwoFactorRow } from '../../components/TwoFactorRow';
 import { ShareCard, shareCardImage } from '../../components/ShareCard';
 import { EmailVerifyBanner } from '../../components/EmailVerifyBanner';
@@ -3220,6 +3221,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
     }
   };
   const [editingGoal, setEditingGoal] = useState<TimeframeType | null>(null);
+  const [showReport, setShowReport] = useState(false);
   const [goalInput, setGoalInput] = useState('');
   // In-flight guard + spinner for Restore Purchases (prevents double taps and
   // gives visible feedback while the store call runs).
@@ -3364,6 +3366,34 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             <Text style={{ color: RED, fontWeight: '700', fontSize: 13 }}>Sign Out</Text>
           </Pressable>
         </View>
+
+        {/* Support */}
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+          🛟 Support
+        </Text>
+        <Pressable
+          onPress={() => { hTap(); setShowReport(true); }}
+          accessibilityRole="button"
+          accessibilityLabel="Report a Problem"
+          style={({ pressed }) => ({
+            flexDirection: 'row', alignItems: 'center', gap: 12,
+            backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1,
+            borderColor: pressed ? PRIMARY : BORDER, padding: 14, marginBottom: 24,
+            minHeight: 44,
+          })}
+        >
+          <View style={{
+            width: 36, height: 36, borderRadius: 18,
+            backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Ionicons name="bug-outline" size={18} color={PRIMARY_TXT} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Report a Problem</Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>Found a bug or have a feature idea? Let us know.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={MUTED} />
+        </Pressable>
 
         {/* Build / version — always visible (NOT gated by RevenueCat) so the
             running build is identifiable during testing. If this doesn't read
@@ -3604,6 +3634,14 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           saving={upsertGoal.isPending}
           onSave={(val) => { if (editingGoal) upsertGoal.mutate({ tf: editingGoal, target: val }); }}
           onCancel={() => setEditingGoal(null)}
+        />
+
+        {/* Report a Problem (nested Modal — presents above this sheet) */}
+        <ReportProblemModal
+          visible={showReport}
+          onClose={() => setShowReport(false)}
+          defaultEmail={user?.email || undefined}
+          themeName={themeName}
         />
 
         {/* Theme switcher */}
