@@ -22,7 +22,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.earningsninja.app",
-      "buildNumber": "85",
+      "buildNumber": "86",
       "appleTeamId": "77827G7735",
       "infoPlist": {
         "NSCameraUsageDescription": "Earnings Ninja needs camera access to photograph receipts for expense tracking.",
@@ -117,7 +117,8 @@
           "recordAudioAndroid": false
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true
