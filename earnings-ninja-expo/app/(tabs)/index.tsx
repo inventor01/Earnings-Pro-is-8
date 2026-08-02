@@ -32,6 +32,7 @@ import {
 } from '../../components/AddEntryWalkthrough';
 import { GettingStartedCard, markGettingStartedMilestone, restoreGettingStarted } from '../../components/GettingStarted';
 import { TransactionDetailModal } from '../../components/TransactionDetailModal';
+import GoalEditorSheet from '../../components/GoalEditorSheet';
 import { TwoFactorRow } from '../../components/TwoFactorRow';
 import { ShareCard, shareCardImage } from '../../components/ShareCard';
 import { EmailVerifyBanner } from '../../components/EmailVerifyBanner';
@@ -3549,54 +3550,39 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                   {target > 0 ? (hidden ? MASK : `$${target.toFixed(0)}`) : 'Not set'}
                 </Text>
               </View>
-              {editingGoal === row.tf ? (
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                  <TextInput
-                    value={goalInput}
-                    onChangeText={setGoalInput}
-                    placeholder="Enter amount..."
-                    placeholderTextColor={LABEL}
-                    keyboardType="decimal-pad"
-                    autoFocus
-                    style={{
-                      flex: 1, backgroundColor: BG, borderWidth: 1.5, borderColor: PRIMARY,
-                      borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: TEXT, fontSize: 16, fontWeight: '700',
-                    }}
-                  />
-                  <Pressable
-                    onPress={() => {
-                      const val = parseFloat(goalInput);
-                      if (!val || val <= 0) { Alert.alert('Invalid', 'Enter a valid amount.'); return; }
-                      upsertGoal.mutate({ tf: row.tf, target: val });
-                    }}
-                    style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Text style={{ color: ON_PRIMARY, fontWeight: '800' }}>Save</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => setEditingGoal(null)}
-                    style={{ backgroundColor: BG, borderRadius: 10, borderWidth: 1, borderColor: BORDER, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Text style={{ color: MUTED }}>✕</Text>
-                  </Pressable>
-                </View>
-              ) : (
-                <Pressable
-                  onPress={() => { setGoalInput(target > 0 ? target.toString() : ''); setEditingGoal(row.tf); }}
-                  style={{
-                    marginTop: 10, borderWidth: 1, borderColor: PRIMARY + '44', borderRadius: 10,
-                    paddingVertical: 8, paddingHorizontal: 12, alignItems: 'center',
-                    backgroundColor: PRI_LITE,
-                  }}
-                >
-                  <Text style={{ color: PRIMARY_TXT, fontSize: 13, fontWeight: '700' }}>
-                    {target > 0 ? '✏️ Edit Goal' : '+ Set Goal'}
-                  </Text>
-                </Pressable>
-              )}
+              {/* Editing happens in the GoalEditorSheet focus-mode modal below. */}
+              <Pressable
+                onPress={() => { hTap(); setGoalInput(target > 0 ? target.toString() : ''); setEditingGoal(row.tf); }}
+                accessibilityRole="button"
+                accessibilityLabel={target > 0 ? `Edit ${row.label}` : `Set ${row.label}`}
+                style={{
+                  marginTop: 10, borderWidth: 1, borderColor: PRIMARY + '44', borderRadius: 10,
+                  minHeight: 44, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: PRI_LITE,
+                }}
+              >
+                <Text style={{ color: PRIMARY_TXT, fontSize: 13, fontWeight: '700' }}>
+                  {target > 0 ? '✏️ Edit Goal' : '+ Set Goal'}
+                </Text>
+              </Pressable>
             </View>
           );
         })}
+
+        {/* Focus-mode goal editor (nested Modal — presents above this sheet and
+            locks all interaction with the settings list beneath). */}
+        <GoalEditorSheet
+          visible={editingGoal !== null}
+          title={editingGoal
+            ? `${goalRows.find((r) => r.tf === editingGoal)?.label ?? 'Goal'}`
+            : 'Goal'}
+          subtitle="Profit target for this timeframe"
+          initialValue={goalInput}
+          placeholder="Enter amount..."
+          saving={upsertGoal.isPending}
+          onSave={(val) => { if (editingGoal) upsertGoal.mutate({ tf: editingGoal, target: val }); }}
+          onCancel={() => setEditingGoal(null)}
+        />
 
         {/* Theme switcher */}
         <Text style={{
@@ -5971,6 +5957,11 @@ export default function DashboardScreen() {
         ref={scrollRef}
         onScroll={onHistoryScroll}
         scrollEventThrottle={16}
+        // Focus mode: while the goal editor is open, the transparent Modal
+        // already blocks new touches — this also kills any in-flight momentum
+        // scroll so the background truly freezes. State-driven, so it can
+        // never stick disabled after the editor closes.
+        scrollEnabled={!editingGoal}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
         contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
@@ -6547,49 +6538,9 @@ export default function DashboardScreen() {
                 <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>
                   GOALS
                 </Text>
-                {editingGoal ? (
-                  <View style={{
-                    backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER,
-                    padding: 14, flexDirection: 'row', gap: 8,
-                    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
-                  }}>
-                    <TextInput
-                      value={goalInput}
-                      onChangeText={setGoalInput}
-                      placeholder={`${periodLabel} Goal ($)`}
-                      placeholderTextColor={LABEL}
-                      keyboardType="decimal-pad"
-                      autoFocus
-                      style={{
-                        flex: 1, backgroundColor: BG, borderWidth: 1.5, borderColor: PRIMARY,
-                        borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, color: TEXT, fontSize: 16, fontWeight: '700',
-                      }}
-                    />
-                    <Pressable
-                      onPress={() => {
-                        // Accept comma decimals ("12,50") from EU-style keypads.
-                        const val = parseFloat(goalInput.replace(',', '.'));
-                        if (!val || val <= 0) {
-                          Alert.alert('Enter a goal', 'Type a dollar amount greater than 0, then tap Save.');
-                          return;
-                        }
-                        upsertGoalMutation.mutate({ target: val });
-                      }}
-                      disabled={upsertGoalMutation.isPending}
-                      style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center', opacity: upsertGoalMutation.isPending ? 0.7 : 1 }}
-                    >
-                      {upsertGoalMutation.isPending
-                        ? <ActivityIndicator color={ON_PRIMARY} />
-                        : <Text style={{ color: ON_PRIMARY, fontWeight: '800' }}>Save</Text>}
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setEditingGoal(false)}
-                      style={{ backgroundColor: BG, borderRadius: 10, borderWidth: 1, borderColor: BORDER, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <Text style={{ color: MUTED }}>✕</Text>
-                    </Pressable>
-                  </View>
-                ) : (
+                {/* Goal editing happens in the GoalEditorSheet focus-mode modal
+                    (rendered at the screen root) — the card itself stays static. */}
+                {(
                   <View style={{
                     backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 16,
                     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
@@ -6987,6 +6938,18 @@ export default function DashboardScreen() {
         onClose={() => { setShowAdd(false); setAddPrefill(undefined); setEditingEntry(undefined); }}
       />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
+      {/* Focus-mode goal editor: transparent Modal freezes the dashboard behind
+          it (no scroll, no taps, position preserved) until save/cancel. */}
+      <GoalEditorSheet
+        visible={editingGoal}
+        title={`${periodLabel} Goal`}
+        subtitle="Profit target for this period"
+        initialValue={goalInput}
+        placeholder={`${periodLabel} Goal ($)`}
+        saving={upsertGoalMutation.isPending}
+        onSave={(val) => upsertGoalMutation.mutate({ target: val })}
+        onCancel={() => setEditingGoal(false)}
+      />
       {/* Off-screen branded share card (captured on Share tap; never visible) */}
       <View style={{ position: 'absolute', left: -1000, top: 0 }} pointerEvents="none">
         <ShareCard
