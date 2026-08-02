@@ -75,6 +75,7 @@ export default function GoalEditorSheet({
       setValue(initialValue);
       setError(null);
       setMounted(true);
+      AccessibilityInfo.announceForAccessibility('Editing goal.');
       const instant = reduceMotionRef.current;
       Animated.parallel([
         Animated.timing(backdrop, {
