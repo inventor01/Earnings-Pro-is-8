@@ -3026,8 +3026,18 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
             style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 }}
           >
             <Pressable onPress={() => {}} style={{
-              backgroundColor: '#ffffff', borderRadius: 16, padding: 20, gap: 12,
+              backgroundColor: '#ffffff', borderRadius: 16,
+              // Cap the card so it always fits between the keyboard and the top
+              // of the screen (the KAV shrinks this flex container); the inner
+              // ScrollView takes over when content is taller than the cap.
+              maxHeight: '100%', overflow: 'hidden',
             }}>
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator
+                bounces={false}
+                contentContainerStyle={{ padding: 20, gap: 12 }}
+              >
               <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>
                 {editingLabel
                   ? `Rename \u201C${editingLabel.defaultLabel}\u201D`
@@ -3235,6 +3245,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   </Text>
                 </Pressable>
               ) : null}
+              </ScrollView>
             </Pressable>
           </Pressable>
           </KeyboardAvoidingView>
