@@ -1069,6 +1069,34 @@ export const api = {
 
 // Best-effort synthetic Entry returned by the offline `updateEntry` path. The
 // caller's mutation onSuccess only invalidates (which fails & is retained
+// ─── Report a Problem ────────────────────────────────────────────────────────
+export interface ProblemReportPayload {
+  report_type: string;
+  description: string;
+  steps?: string;
+  contact_email: string;
+  diagnostics?: Record<string, string>;
+  screenshots?: string[]; // data:image/... URLs, client-compressed
+}
+
+export async function submitProblemReport(payload: ProblemReportPayload): Promise<{ ok: boolean; id: number }> {
+  const headers = await getAuthHeaders();
+  const res = await trackedFetch(`${API_BASE}/api/feedback/report`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    let detail = 'Could not send your report.';
+    try {
+      const j = await res.json();
+      if (typeof j?.detail === 'string') detail = j.detail;
+    } catch {}
+    throw new Error(detail);
+  }
+  return res.json();
+}
+
 // offline), so the optimistic onMutate patch is what the user actually sees —
 // this return value is not rendered directly, it just satisfies the Promise<Entry>.
 function synthEntryFromPatch(id: number, patch: Partial<EntryCreate>): Entry {

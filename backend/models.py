@@ -330,6 +330,23 @@ class Referral(Base):
     referee_reward_granted = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
+class ProblemReport(Base):
+    """A user-submitted bug report / feature request from the in-app
+    "Report a Problem" flow. Screenshots are stored inline (compressed
+    client-side, hard-capped server-side) so no object storage is needed."""
+    __tablename__ = "problem_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    report_type = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    steps = Column(Text, nullable=True)
+    contact_email = Column(String, nullable=False)
+    diagnostics = Column(Text, nullable=True)   # JSON blob (device info), user-consented
+    screenshots = Column(Text, nullable=True)   # JSON array of data-URLs
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
     
