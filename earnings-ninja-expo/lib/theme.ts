@@ -108,7 +108,7 @@ export const THEMES: Record<ThemeName, Theme> = {
 const STORAGE_KEY = 'theme_name';
 
 // Map any persisted value (incl. legacy 3-theme names) to a ThemePreference.
-function normalizePreference(v: string | null | undefined): ThemePreference {
+export function normalizePreference(v: string | null | undefined): ThemePreference {
   if (v === 'system') return 'system';
   // Users who explicitly picked a dark look keep it.
   if (v === 'dark' || v === 'darkNeon' || v === 'bwNeon') return 'dark';
@@ -117,7 +117,7 @@ function normalizePreference(v: string | null | undefined): ThemePreference {
   return 'light';
 }
 
-function resolve(pref: ThemePreference, system: ThemeName): ThemeName {
+export function resolveTheme(pref: ThemePreference, system: ThemeName): ThemeName {
   return pref === 'system' ? system : pref;
 }
 
@@ -211,7 +211,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => sub.remove();
   }, []);
 
-  const resolved: ThemeName = override ?? resolve(preference, systemScheme);
+  const resolved: ThemeName = override ?? resolveTheme(preference, systemScheme);
 
   // Keep the iOS Home Screen widget's appearance in sync with the app theme.
   useEffect(() => {
