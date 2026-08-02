@@ -92,12 +92,35 @@ export function entryAppLabel(e: Pick<Entry, 'app' | 'custom_app'>): string {
 
 // Distinct, readable palette for custom platform dots/avatars. Picked by a
 // stable hash of the name so a platform keeps its color everywhere, forever.
-const CUSTOM_COLORS = [
+// Also doubles as the preset swatch row in the platform editor.
+export const CUSTOM_COLORS = [
   '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#3b82f6',
   '#84cc16', '#e11d48', '#0ea5e9', '#a855f7', '#f59e0b',
 ];
 
+// User-chosen styles (color/icon) keyed by lowercased platform name. Module-
+// level (like the label overrides above) so display helpers used across the
+// app — charts, calendar, entry rows — pick the chosen color up without
+// threading the platform list through every call site. Refreshed whenever the
+// ['platforms'] query (or its AsyncStorage mirror) resolves.
+let PLATFORM_STYLES: Record<string, { color?: string | null; icon?: string | null }> = {};
+
+export function applyPlatformStyles(list: UserPlatform[]): void {
+  const next: typeof PLATFORM_STYLES = {};
+  for (const p of list) {
+    if (!p || typeof p.name !== 'string') continue;
+    if (p.color || p.icon) next[p.name.trim().toLowerCase()] = { color: p.color, icon: p.icon };
+  }
+  PLATFORM_STYLES = next;
+}
+
+export function iconForCustomName(name: string): string | null {
+  return PLATFORM_STYLES[name.trim().toLowerCase()]?.icon ?? null;
+}
+
 export function colorForCustomName(name: string): string {
+  const chosen = PLATFORM_STYLES[name.trim().toLowerCase()]?.color;
+  if (chosen) return chosen;
   let h = 0;
   const s = name.toLowerCase();
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;

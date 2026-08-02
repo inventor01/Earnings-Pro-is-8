@@ -125,6 +125,11 @@ class UserPlatform(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
     name = Column(String, nullable=False)
+    # Optional user-chosen identity: a hex color ('#rrggbb') used for chart/
+    # calendar/pill dots, and a short emoji icon shown on the selector pill.
+    # NULL means "auto" — the client derives a stable color from the name.
+    color = Column(String, nullable=True)
+    icon = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     __table_args__ = (

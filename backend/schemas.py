@@ -128,15 +128,48 @@ class EntryResponse(BaseModel):
     class Config:
         from_attributes = True
 
+def _validate_platform_color(v):
+    if v is None:
+        return None
+    v = str(v).strip()
+    if v == "":
+        return None
+    import re
+    if not re.fullmatch(r"#[0-9a-fA-F]{6}", v):
+        raise ValueError("color must be a hex value like #8b5cf6")
+    return v.lower()
+
+
+def _validate_platform_icon(v):
+    if v is None:
+        return None
+    v = str(v).strip()
+    if v == "":
+        return None
+    # Emoji can span several code points (ZWJ sequences); 16 is generous while
+    # still preventing arbitrary text from being stored.
+    if len(v) > 16:
+        raise ValueError("icon is too long")
+    return v
+
+
 class PlatformCreate(BaseModel):
     name: str
+    # Optional identity: hex color for charts/dots, short emoji icon for the
+    # selector pill. Omitted/empty → NULL ("auto" styling on the client).
+    color: Optional[str] = None
+    icon: Optional[str] = None
 
     _validate_name = field_validator("name")(_validate_custom_app)
+    _validate_color = field_validator("color")(_validate_platform_color)
+    _validate_icon = field_validator("icon")(_validate_platform_icon)
 
 
 class PlatformResponse(BaseModel):
     id: int
     name: str
+    color: Optional[str] = None
+    icon: Optional[str] = None
 
     class Config:
         from_attributes = True
