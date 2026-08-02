@@ -145,9 +145,13 @@ def get_current_user(
             if changed_dt.tzinfo is None:
                 # Stored via datetime.utcnow().isoformat() — naive but UTC.
                 changed_dt = changed_dt.replace(tzinfo=timezone.utc)
-            changed_ts = changed_dt.timestamp()
+            # PyJWT encodes iat at integer-second granularity, while the stored
+            # stamp has microseconds. Floor BOTH to whole seconds or a token
+            # issued later within the same second (e.g. the fresh token
+            # /auth/change-email returns) would compare as older and be killed.
+            changed_ts = int(changed_dt.timestamp())
             iat = payload.get("iat")
-            if iat is not None and float(iat) < changed_ts:
+            if iat is not None and int(float(iat)) < changed_ts:
                 raise _unauthorized("Token expired")
         except HTTPException:
             raise
