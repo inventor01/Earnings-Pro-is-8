@@ -3639,6 +3639,8 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   // In-flight guard + spinner for Restore Purchases (prevents double taps and
   // gives visible feedback while the store call runs).
   const [restoring, setRestoring] = useState(false);
+  // Delete-account confirmation sheet (type DELETE to confirm).
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Daily motivation notifications toggle. Hydrated from the persisted flag on
   // open so it reflects the real OS/AsyncStorage state.
@@ -4337,40 +4339,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           ⚠️  Danger Zone
         </Text>
         <Pressable
-          onPress={() => {
-            Alert.alert(
-              'Delete Account',
-              'This permanently deletes your account and ALL of your earnings, expenses, goals and settings. This cannot be undone.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Delete Forever',
-                  style: 'destructive',
-                  onPress: () => {
-                    Alert.alert(
-                      'Are you absolutely sure?',
-                      'Tap "Yes, delete everything" to permanently erase your account.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Yes, delete everything',
-                          style: 'destructive',
-                          onPress: async () => {
-                            try {
-                              await api.deleteAccount();
-                              await logout();
-                            } catch (e: any) {
-                              Alert.alert('Could not delete account', e?.message || 'Please try again.');
-                            }
-                          },
-                        },
-                      ],
-                    );
-                  },
-                },
-              ],
-            );
-          }}
+          onPress={() => setShowDeleteConfirm(true)}
           style={{
             backgroundColor: RED_LT,
             borderWidth: 1,
@@ -4384,6 +4353,126 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           <Text style={{ color: MUTED, fontSize: 11, marginTop: 4 }}>Permanently erase all of your data</Text>
         </Pressable>
       </ScrollView>
+      <DeleteAccountConfirmModal
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        logout={logout}
+      />
+    </Modal>
+  );
+}
+
+// ─── Delete Account Confirmation ──────────────────────────────────────────────
+// Deliberate, Apple 5.1.1(v)-friendly delete flow: the user must type DELETE to
+// enable the button, and we surface that Apple-managed subscriptions are NOT
+// cancelled by account deletion (with a working Manage Subscription link).
+// Nested inside the Settings Modal, so it needs its own KeyboardAvoidingView —
+// a parent KAV never reaches inside a nested RN Modal.
+const APPLE_SUBSCRIPTIONS_URL = 'https://apps.apple.com/account/subscriptions';
+
+function DeleteAccountConfirmModal({
+  visible, onClose, logout,
+}: { visible: boolean; onClose: () => void; logout: () => Promise<void> }) {
+  const { SURFACE, BORDER, TEXT, MUTED, RED, RED_LT, PRIMARY_TXT } = useTheme();
+  const [confirmText, setConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  // Ref guard in addition to state: blocks a second tap that lands before the
+  // state update re-renders the disabled button.
+  const inFlight = useRef(false);
+
+  // Reset the typed confirmation every time the sheet opens so a previous
+  // "DELETE" never pre-arms the button.
+  useEffect(() => {
+    if (visible) {
+      setConfirmText('');
+      setDeleting(false);
+      inFlight.current = false;
+    }
+  }, [visible]);
+
+  const armed = confirmText.trim().toUpperCase() === 'DELETE';
+
+  const onDelete = async () => {
+    if (!armed || deleting || inFlight.current) return;
+    inFlight.current = true;
+    setDeleting(true);
+    try {
+      await api.deleteAccount();
+      // Success: sign out — clears the JWT (SecureStore), AsyncStorage-backed
+      // local stores/queues/mirrors, and the persisted React Query cache, then
+      // drops the user back to the welcome screen via auth state.
+      await logout();
+    } catch (e: any) {
+      inFlight.current = false;
+      setDeleting(false);
+      Alert.alert('Could not delete account', e?.message || 'Please try again.');
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={() => { if (!deleting) onClose(); }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 20 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 20 }}>
+          <Text style={{ color: RED, fontSize: 18, fontWeight: '800', marginBottom: 10 }}>Delete Account</Text>
+          <Text style={{ color: TEXT, fontSize: 13, lineHeight: 19, marginBottom: 10 }}>
+            Deleting your Earnings Ninja account permanently removes your account and app data.
+            This cannot be undone.
+          </Text>
+          <Text style={{ color: MUTED, fontSize: 13, lineHeight: 19, marginBottom: 12 }}>
+            It does not automatically cancel subscriptions managed through Apple. To avoid future
+            charges, cancel your subscription in your Apple ID settings.
+          </Text>
+          <Pressable
+            onPress={() => Linking.openURL(APPLE_SUBSCRIPTIONS_URL)}
+            disabled={deleting}
+            style={{ borderWidth: 1, borderColor: BORDER, borderRadius: 12, padding: 12, alignItems: 'center', marginBottom: 16 }}
+          >
+            <Text style={{ color: PRIMARY_TXT, fontWeight: '700', fontSize: 13 }}>Manage Subscription</Text>
+          </Pressable>
+
+          <Text style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>
+            Type <Text style={{ color: RED, fontWeight: '800' }}>DELETE</Text> to confirm:
+          </Text>
+          <TextInput
+            value={confirmText}
+            onChangeText={setConfirmText}
+            editable={!deleting}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            placeholder="DELETE"
+            placeholderTextColor={MUTED}
+            style={{
+              borderWidth: 1, borderColor: armed ? RED : BORDER, borderRadius: 12,
+              padding: 12, color: TEXT, fontSize: 15, fontWeight: '700', letterSpacing: 2,
+              marginBottom: 16,
+            }}
+          />
+
+          <Pressable
+            onPress={onDelete}
+            disabled={!armed || deleting}
+            style={{
+              backgroundColor: RED_LT,
+              borderWidth: 1,
+              borderColor: RED + (armed ? 'AA' : '33'),
+              borderRadius: 14,
+              padding: 15,
+              alignItems: 'center',
+              opacity: armed || deleting ? 1 : 0.5,
+            }}
+          >
+            {deleting
+              ? <ActivityIndicator color={RED} />
+              : <Text style={{ color: RED, fontWeight: '800', fontSize: 14 }}>Delete My Account Forever</Text>}
+          </Pressable>
+          <Pressable onPress={onClose} disabled={deleting} style={{ padding: 12, alignItems: 'center', marginTop: 4 }}>
+            <Text style={{ color: MUTED, fontWeight: '700', fontSize: 13 }}>Cancel</Text>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
