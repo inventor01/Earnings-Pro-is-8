@@ -134,6 +134,7 @@ const EXTRA_APPS: { name: string; color: string }[] = [
   { name: 'Uber', color: '#111111' },
   { name: 'Lyft', color: '#ea0b8c' },
   { name: 'Roadie', color: '#f97316' },
+  { name: 'Other', color: '#9ca3af' },
 ];
 
 export const GIG_APP_OPTIONS: GigAppOption[] = [
