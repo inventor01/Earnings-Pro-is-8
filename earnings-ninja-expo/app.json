@@ -12,17 +12,17 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#ffffff",
+    "backgroundColor": "#101418",
     "scheme": "earningsninja",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-blank.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#101418"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.earningsninja.app",
-      "buildNumber": "86",
+      "buildNumber": "87",
       "appleTeamId": "77827G7735",
       "infoPlist": {
         "NSCameraUsageDescription": "Earnings Ninja needs camera access to photograph receipts for expense tracking.",

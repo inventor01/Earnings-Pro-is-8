@@ -51,7 +51,7 @@ export default function IntroVideo({ onDone }: { onDone: () => void }) {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#101418', // matches the intro video's own background
     zIndex: 9999,
   },
 });
