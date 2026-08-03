@@ -163,6 +163,9 @@ const STEPS: Step[] = [
   { key: 'expSave', target: 'action', emoji: '✅', title: 'Save the expense',
     body: 'Same Save button — expenses subtract from your earnings so your profit numbers reflect reality.',
     prep: { form: 'details', entryType: 'EXPENSE', showMore: false } },
+  { key: 'editLater', emoji: '✏️', title: 'View & edit entries anytime',
+    body: 'Made a typo or something changed? Find any entry on the dashboard or calendar, tap it to view the details, and edit or delete it — every number updates instantly.',
+    prep: { form: 'details', entryType: 'EXPENSE', showMore: false } },
 ];
 
 function applyPrep(p: Prep) {
