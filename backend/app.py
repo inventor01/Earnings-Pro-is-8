@@ -621,6 +621,16 @@ async def terms_of_service():
         media_type="text/html",
     )
 
+@app.get("/delete-account", include_in_schema=False)
+@app.get("/delete-account.html", include_in_schema=False)
+async def delete_account_page():
+    # Required by Google Play's account-deletion policy (linked from the
+    # Play store listing / Data Safety form).
+    return FileResponse(
+        os.path.join(_LEGAL_DIR, "delete-account.html"),
+        media_type="text/html",
+    )
+
 @app.get("/support", include_in_schema=False)
 @app.get("/support.html", include_in_schema=False)
 async def support_page():
