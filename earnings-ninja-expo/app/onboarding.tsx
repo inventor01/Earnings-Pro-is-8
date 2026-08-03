@@ -59,49 +59,30 @@ const BUILD_ITEMS = [
 ];
 
 // One-shot neon glow that plays when the welcome step appears: a halo ring
-// behind the CTA pulses a few times (~3s total) then fades out completely.
-// Implemented as an absolutely-positioned overlay animating only opacity and
-// scale (iOS shadow props animate poorly), so there is zero layout shift and
+// behind the CTA glows in, holds for about a second, then fades away.
+// Implemented as an absolutely-positioned overlay animating only opacity
+// (iOS shadow props animate poorly), so there is zero layout shift and
 // the button underneath stays fully tappable (pointerEvents="none").
 function NeonGlowPulse({ color }: { color: string }) {
   const opacity = useSharedValue(0);
-  const scale = useSharedValue(1);
 
   useEffect(() => {
-    const pulseIn = { duration: 480, easing: Easing.out(Easing.quad) };
-    const pulseOut = { duration: 480, easing: Easing.in(Easing.quad) };
     opacity.value = withDelay(
       350,
       withSequence(
-        withTiming(0.95, pulseIn),
-        withTiming(0.35, pulseOut),
-        withTiming(0.95, pulseIn),
-        withTiming(0.35, pulseOut),
-        withTiming(0.95, pulseIn),
-        withTiming(0, { duration: 700, easing: Easing.in(Easing.quad) }),
-      ),
-    );
-    scale.value = withDelay(
-      350,
-      withSequence(
-        withTiming(1.05, pulseIn),
-        withTiming(1.0, pulseOut),
-        withTiming(1.05, pulseIn),
-        withTiming(1.0, pulseOut),
-        withTiming(1.05, pulseIn),
-        withTiming(1.0, { duration: 700, easing: Easing.in(Easing.quad) }),
+        withTiming(0.95, { duration: 350, easing: Easing.out(Easing.quad) }),
+        withTiming(0.95, { duration: 1000 }), // hold the glow ~1s
+        withTiming(0, { duration: 500, easing: Easing.in(Easing.quad) }),
       ),
     );
     return () => {
       cancelAnimation(opacity);
-      cancelAnimation(scale);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const style = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [{ scale: scale.value }],
   }));
 
   return (
