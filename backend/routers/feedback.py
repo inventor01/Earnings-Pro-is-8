@@ -63,8 +63,10 @@ class ProblemReportIn(BaseModel):
     @classmethod
     def _desc_ok(cls, v: str) -> str:
         v = v.strip()
-        if len(v) < 20:
-            raise ValueError("Description must be at least 20 characters")
+        # Keep in sync with MIN_DESC in the mobile ReportProblemModal (3 chars):
+        # short reports like "Crashed" are valid — diagnostics fill in the rest.
+        if len(v) < 3:
+            raise ValueError("Description must be at least 3 characters")
         if len(v) > MAX_TEXT_LEN:
             raise ValueError("Description too long")
         return v
