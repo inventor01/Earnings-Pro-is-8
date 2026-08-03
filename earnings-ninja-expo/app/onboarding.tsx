@@ -360,7 +360,8 @@ export default function OnboardingScreen() {
               Earnings Ninja turns your gig driving into a business you can actually see — profit, goals, and progress at a glance.
             </Text>
             <View style={{ marginTop: 36 }}>
-              <NeonGlowPulse color={t.PRIMARY} />
+              {/* Neon green (not the yellow brand PRIMARY) per user request. */}
+              <NeonGlowPulse color="#39FF14" />
               {primary('Get Started', goNext)}
             </View>
           </Animated.View>
