@@ -44,7 +44,7 @@ export async function resetWalkthrough(userId: number | string): Promise<void> {
 // Screens attach anchor views via ref callbacks: ref={registerWalkthroughTarget('hero')}
 
 export type WalkthroughTargetId =
-  | 'hero' | 'addEntry' | 'calendar' | 'analytics' | 'goals' | 'kpis' | 'settings';
+  | 'hero' | 'addEntry' | 'calendar' | 'analytics' | 'goals' | 'kpis' | 'settings' | 'entryRow';
 
 const targets = new Map<WalkthroughTargetId, View | null>();
 
@@ -139,8 +139,8 @@ const STEPS: Step[] = [
     body: 'Every delivery or ride you complete gets logged here. The more you track, the more accurate your analytics — and your true hourly pay — become.' },
   { key: 'calendar', target: 'calendar', emoji: '📅', title: 'Your earnings history',
     body: 'Review earnings by day, week, or month. Tap any day to see exactly how it went.' },
-  { key: 'editEntries', target: 'calendar', emoji: '✏️', title: 'View & edit any entry',
-    body: 'Tap any day in your history to see its entries, then tap an entry to view the full details — where you can edit or delete it if something changed.' },
+  { key: 'editEntries', target: 'entryRow', emoji: '✏️', title: 'View & edit any entry',
+    body: 'Tap and hold any entry to view its full details — where you can edit or delete it if something changed.' },
   { key: 'analytics', target: 'analytics', emoji: '📈', title: 'Know your real numbers',
     body: 'See your real hourly pay, trends, profit, and expenses. Advanced business insights unlock with Premium.' },
   { key: 'goals', target: 'goals', emoji: '🎯', title: 'Set income goals',

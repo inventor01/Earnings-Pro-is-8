@@ -7365,9 +7365,16 @@ export default function DashboardScreen() {
                       </Text>
                     </View>
                   ) : (
-                    displayedEntries.map(e => (
-                      <EntryRow
+                    displayedEntries.map((e, i) => (
+                      <View
                         key={e.id}
+                        // The walkthrough's "View & edit any entry" step spotlights
+                        // the FIRST entry row (falls back to a centered card when
+                        // the list is empty).
+                        ref={i === 0 ? registerWalkthroughTarget('entryRow') : undefined}
+                        collapsable={false}
+                      >
+                      <EntryRow
                         entry={e}
                         onDelete={(id) => {
                           Alert.alert('Delete Entry', 'Remove this entry?', [
@@ -7388,6 +7395,7 @@ export default function DashboardScreen() {
                         selected={selectedIds.has(e.id)}
                         onToggleSelect={toggleSelect}
                       />
+                      </View>
                     ))
                   )}
                   {filteredEntries.length > 8 && (
