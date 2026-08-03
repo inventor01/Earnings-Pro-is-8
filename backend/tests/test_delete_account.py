@@ -22,9 +22,9 @@ from backend.db import Base, get_db
 from backend.auth import get_current_user
 from backend.models import (
     Achievement, AuthUser, Congratulation, DailyGoal, DailyUsage, Entry,
-    EntryType, AppType, Friend, Goal, PasswordResetToken, ProblemReport,
-    Referral, Settings, TimeframeType, User, UserEntryType, UserLabelOverride,
-    UserPlatform,
+    EntryType, AppType, ApiCredential, Friend, Goal, PasswordResetToken,
+    PlatformIntegration, ProblemReport, Referral, Settings, SyncedOrder,
+    TimeframeType, User, UserEntryType, UserLabelOverride, UserPlatform,
 )
 from backend.routers import auth_routes
 
@@ -91,6 +91,9 @@ def seed_all_user_data(session, uid, other):
         Congratulation(from_user_id=uid, to_user_id=other),
         Congratulation(from_user_id=other, to_user_id=uid),
         Referral(referrer_id=other, referee_id=uid),
+        Referral(referrer_id=uid, referee_id=other),  # deleting user as referrer too
+        ApiCredential(user_id=uid, platform=PlatformIntegration.UBER, access_token="tok"),
+        SyncedOrder(user_id=uid, platform=PlatformIntegration.UBER, platform_order_id="o1"),
         ProblemReport(
             user_id=uid, report_type="Bug Report", description="Crashed",
             contact_email=f"{uid}@example.com",
