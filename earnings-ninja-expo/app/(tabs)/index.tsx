@@ -5583,8 +5583,13 @@ function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => 
           contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Period filter */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
+          {/* Period filter — single inline row, horizontally slidable */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginHorizontal: -20, marginBottom: 18 }}
+            contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 20 }}
+          >
             {ANALYTICS_PERIODS.map(p => {
               const active = ePeriod === p.key;
               return (
@@ -5607,7 +5612,7 @@ function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 </PressScale>
               );
             })}
-          </View>
+          </ScrollView>
 
           {loading ? (
             <View style={{ paddingVertical: 80, alignItems: 'center' }}>
@@ -6944,12 +6949,12 @@ export default function DashboardScreen() {
                     scale={0.97}
                     style={{
                       flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
-                      marginTop: 4, paddingVertical: 8, borderRadius: 10, backgroundColor: BG,
-                      borderWidth: 1, borderColor: BORDER,
+                      marginTop: 4, paddingVertical: 8, borderRadius: 10, backgroundColor: PRIMARY,
+                      borderWidth: 1, borderColor: PRIMARY,
                     }}
                   >
-                    <Text style={{ color: PRIMARY_TXT, fontSize: 12, fontWeight: '800' }}>Filter & view by period</Text>
-                    <Ionicons name="open-outline" size={13} color={PRIMARY_TXT} />
+                    <Text style={{ color: ON_PRIMARY, fontSize: 12, fontWeight: '800' }}>Filter & view by period</Text>
+                    <Ionicons name="open-outline" size={13} color={ON_PRIMARY} />
                   </PressScale>
                 </Animated.View>
               )}

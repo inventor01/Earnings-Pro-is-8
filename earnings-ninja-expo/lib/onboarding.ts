@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User } from './api';
 import { APP_LABELS, APP_COLORS, type AppType } from './api';
+import { customKey } from './platforms';
 
 // ---------------------------------------------------------------------------
 // Conversion onboarding funnel — pure state/helpers (unit-testable).
@@ -139,6 +140,26 @@ export const GIG_APP_OPTIONS: GigAppOption[] = [
   ...BUILTIN_ORDER.map((k) => ({ key: k, label: APP_LABELS[k], color: APP_COLORS[k], builtin: true })),
   ...EXTRA_APPS.map((e) => ({ key: e.name, label: e.name, color: e.color, builtin: false })),
 ];
+
+// Pre-fill the Add Entry form's default platform from the onboarding
+// selection. Writes the same AsyncStorage key the entry form reads for its
+// "last used platform" auto-fill — seeded ONLY when empty, so a real last-used
+// platform (written on every successful ORDER save) always wins over the seed.
+const LAST_ORDER_APP_KEY = 'last_order_app'; // must match app/(tabs)/index.tsx
+
+export async function seedDefaultPlatformFromOnboarding(apps: string[]): Promise<void> {
+  try {
+    const first = apps[0];
+    if (!first) return;
+    const existing = await AsyncStorage.getItem(LAST_ORDER_APP_KEY);
+    if (existing) return;
+    const builtinSet = new Set<string>(BUILTIN_ORDER);
+    const key = builtinSet.has(first) ? first : customKey(first);
+    await AsyncStorage.setItem(LAST_ORDER_APP_KEY, key);
+  } catch {
+    // Best-effort personalization — never block onboarding on it.
+  }
+}
 
 // Split a selection into built-ins (already in the entry form) and custom
 // platform names that must be created via the platforms API.
