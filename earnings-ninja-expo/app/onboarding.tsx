@@ -13,13 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   FadeInDown,
   FadeIn,
-  useSharedValue,
-  useAnimatedStyle,
-  withSequence,
-  withTiming,
-  withDelay,
-  Easing,
-  cancelAnimation,
 } from 'react-native-reanimated';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/authContext';
@@ -57,58 +50,6 @@ const BUILD_ITEMS = [
   'Goal tracking',
   'Tax-ready records',
 ];
-
-// One-shot neon glow that plays when the welcome step appears: a halo ring
-// behind the CTA glows in, holds for about a second, then fades away.
-// Implemented as an absolutely-positioned overlay animating only opacity
-// (iOS shadow props animate poorly), so there is zero layout shift and
-// the button underneath stays fully tappable (pointerEvents="none").
-function NeonGlowPulse({ color }: { color: string }) {
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    opacity.value = withDelay(
-      350,
-      withSequence(
-        withTiming(0.95, { duration: 350, easing: Easing.out(Easing.quad) }),
-        withTiming(0.95, { duration: 1000 }), // hold the glow ~1s
-        withTiming(0, { duration: 500, easing: Easing.in(Easing.quad) }),
-      ),
-    );
-    return () => {
-      cancelAnimation(opacity);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const style = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        {
-          position: 'absolute',
-          top: -5,
-          bottom: -5,
-          left: -5,
-          right: -5,
-          borderRadius: 999,
-          borderWidth: 2.5,
-          borderColor: color,
-          shadowColor: color,
-          shadowOpacity: 0.9,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 0 },
-          elevation: 12,
-        },
-        style,
-      ]}
-    />
-  );
-}
 
 export default function OnboardingScreen() {
   const t = useTheme();
@@ -341,8 +282,6 @@ export default function OnboardingScreen() {
               Earnings Ninja turns your gig driving into a business you can actually see — profit, goals, and progress at a glance.
             </Text>
             <View style={{ marginTop: 36 }}>
-              {/* Neon green (not the yellow brand PRIMARY) per user request. */}
-              <NeonGlowPulse color="#39FF14" />
               {primary('Get Started', goNext)}
             </View>
           </Animated.View>
