@@ -46,6 +46,7 @@ import { useSubscription, offeringTrialDays, restoreAlertCopy } from '@/lib/reve
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
 import { syncNotifState, enableMotivation, disableMotivation, notifyEarningsChanged } from '@/lib/notifications';
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
+import { getIntroEnabled, setIntroEnabled } from '@/lib/introPref';
 import {
   customKey, isCustomKey, customNameFromKey, keyForEntry,
   entryAppLabel, entryAppColor, colorForCustomName, applyPlatformStyles, CUSTOM_COLORS,
@@ -3645,6 +3646,9 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   const [notifBusy, setNotifBusy] = useState(false);
   // Ka-Ching sound effect toggle (defaults ON; persisted in AsyncStorage).
   const [soundOn, setSoundOn] = useState(true);
+  // Cold-start intro animation toggle (defaults ON; persisted in AsyncStorage,
+  // read by the root layout before the overlay ever mounts).
+  const [introOn, setIntroOn] = useState(true);
   // Re-check on every open (not just first mount): reconciles the persisted flag
   // against live OS permission, so the toggle self-heals if the user revoked
   // notifications in the iOS Settings app while ours was left on.
@@ -3653,6 +3657,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
     let alive = true;
     syncNotifState().then((v) => { if (alive) setNotifOn(v); });
     getSoundEnabled().then((v) => { if (alive) setSoundOn(v); });
+    getIntroEnabled().then((v) => { if (alive) setIntroOn(v); });
     return () => { alive = false; };
   }, [visible]);
 
@@ -3664,6 +3669,17 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
       const next = !prev;
       setSoundEnabled(next);
       if (next) playKaching();
+      return next;
+    });
+  };
+
+  // Toggle the cold-start mascot intro animation. Takes effect on the next
+  // cold start (the overlay for THIS launch has already played or been skipped).
+  const onToggleIntro = () => {
+    hTap();
+    setIntroOn((prev) => {
+      const next = !prev;
+      setIntroEnabled(next);
       return next;
     });
   };
@@ -3968,6 +3984,45 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             alignItems: soundOn ? 'flex-end' : 'flex-start', justifyContent: 'center',
           }}>
             <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: soundOn ? ON_PRIMARY : SURFACE }} />
+          </View>
+        </Pressable>
+
+        {/* Intro animation */}
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+          🎬 Startup
+        </Text>
+        <Pressable
+          onPress={onToggleIntro}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: introOn }}
+          accessibilityLabel="Show intro animation"
+          style={[
+            {
+              flexDirection: 'row', alignItems: 'center', gap: 12,
+              backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1,
+              borderColor: introOn ? PRIMARY : BORDER,
+              padding: 14, marginBottom: 24,
+            },
+            introOn ? neonGlow(PRIMARY, 10, 0.25) : undefined,
+          ].filter(Boolean) as ViewStyle[]}
+        >
+          <View style={{
+            width: 36, height: 36, borderRadius: 18,
+            backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Ionicons name={introOn ? 'play-circle' : 'play-circle-outline'} size={18} color={PRIMARY_TXT} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Show intro animation</Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>Play the ninja intro when the app starts</Text>
+          </View>
+          {/* Pill-style toggle (no native Switch — keeps Dark Neon look) */}
+          <View style={{
+            width: 48, height: 28, borderRadius: 14, padding: 3,
+            backgroundColor: introOn ? PRIMARY : BORDER,
+            alignItems: introOn ? 'flex-end' : 'flex-start', justifyContent: 'center',
+          }}>
+            <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: introOn ? ON_PRIMARY : SURFACE }} />
           </View>
         </Pressable>
 

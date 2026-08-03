@@ -34,6 +34,7 @@ import { registerDrainHandler } from '@/lib/syncTrigger';
 import { needsOnboarding, readOnboardingState, hasFreshSignupFlag, clearFreshSignupFlag, writeOnboardingState, adoptPendingDone } from '@/lib/onboarding';
 import * as Notifications from 'expo-notifications';
 import IntroVideo from '@/components/IntroVideo';
+import { getIntroEnabled } from '@/lib/introPref';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -456,10 +457,15 @@ export default function RootLayout() {
   // up meanwhile (preventAutoHideAsync); RootNav hides it after mount.
   const [hydrated, setHydrated] = useState(false);
   // Mascot intro animation overlays the app once per cold start (native only —
-  // on web it would just delay first paint).
-  const [showIntro, setShowIntro] = useState(Platform.OS !== 'web');
+  // on web it would just delay first paint). Starts false and is decided during
+  // hydration (below) from the persisted Settings preference, so when the user
+  // has turned it off the overlay never mounts — and when it's on, the decision
+  // lands before the first render (the native splash is still up), so there's
+  // no flash either way.
+  const [showIntro, setShowIntro] = useState(false);
   useEffect(() => {
     (async () => {
+      if (Platform.OS !== 'web' && (await getIntroEnabled())) setShowIntro(true);
       await hydrateQueryClient(queryClient);
       startPersisting(queryClient);
       initConnectivity(`${API_BASE}/api/health`);
