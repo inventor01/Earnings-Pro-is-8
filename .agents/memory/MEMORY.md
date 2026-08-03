@@ -3,7 +3,7 @@
 - [Optimistic create window-scoping](optimistic-create-window-scoping.md) — Add-Entry optimistic insert must target only windows whose date range contains the entry.
 - [Random data-wipe root cause](random-data-wipe-root-cause.md) — old Railway code silently fell back to ephemeral SQLite; every redeploy wiped ALL data; guard fixed locally, live only after push+DATABASE_URL.
 - [Railway prod backend](railway-prod-backend.md) — live backend is on Railway, not Replit; Replit Postgres is a stale backup. Verify via the live Railway URL + demo account.
-- [Web domain routing](web-domain-routing.md) — earningsninja.app 301-redirects to Railway (not Replit); mobile hardcodes the Railway URL so the domain can be repointed safely; landing needs a vm deploy (legal pages come from backend, not landing/dist).
+- [Web domain routing](web-domain-routing.md) — earningsninja.com apex = THIS repl's Replit vm deployment (NOT Railway); shipping landing changes needs gitPush AND a Replit republish; gitPush doesn't commit dirty files; apex waitlist rows land in Replit prod DB.
 - [EAS kickoff silent death](eas-kickoff-silent-death.md) — `eas build` can die after upload WITHOUT registering; verify via build:list, recover with a DEBUG wrapper-script re-run.
 - [eas update long-running](eas-update-long-running.md) — `eas update` exceeds the tool limit; run foreground, confirm with `eas update:list`. Main agent publishes via `GIT_CEILING_DIRECTORIES=… EAS_NO_VCS=1`.
 - [Offline queue synthetic-id identity](offline-queue-synthetic-id-identity.md) — queued entries need stable client identity, serialized AsyncStorage RMW, single-drain guard, per-item delete re-check.
