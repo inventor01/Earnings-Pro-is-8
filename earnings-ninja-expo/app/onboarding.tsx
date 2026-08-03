@@ -30,6 +30,7 @@ import {
   paywallHeadlineForGoal,
   readOnboardingState,
   writeOnboardingState,
+  seedDefaultPlatformFromOnboarding,
   clearFreshSignupFlag,
   type OnboardingState,
   type ChallengeKey,
@@ -150,6 +151,9 @@ export default function OnboardingScreen() {
     // Flush anything still pending, then mark done locally FIRST so a crash
     // right after the paywall can never re-run the whole funnel.
     const stillPending = await savePlatforms(state.apps, state.pendingPlatforms);
+    // Pre-fill the Add Entry default platform from the first onboarding pick
+    // (no-op if a real "last used platform" already exists).
+    await seedDefaultPlatformFromOnboarding(state.apps);
     if (user?.is_demo) {
       // Demo/reviewer accounts re-run the funnel on EVERY launch: never mark
       // completion (server or local) and reset the saved progress so the next
@@ -272,7 +276,7 @@ export default function OnboardingScreen() {
               Track every dollar{'\n'}you earn.
             </Text>
             <Text style={{ color: t.MUTED, fontSize: 16, textAlign: 'center', marginTop: 12, lineHeight: 23 }}>
-              Earnings Ninja turns your gig driving into a business you can actually see — profit, goals, and taxes included.
+              Earnings Ninja turns your gig driving into a business you can actually see — profit, goals, and progress at a glance.
             </Text>
             <View style={{ marginTop: 36 }}>{primary('Get Started', goNext)}</View>
           </Animated.View>
