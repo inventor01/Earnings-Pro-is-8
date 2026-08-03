@@ -20,6 +20,12 @@ RESEND_REPLY_TO = os.environ.get("RESEND_REPLY_TO", "earningsninjaapp@gmail.com"
 
 resend.api_key = RESEND_API_KEY
 
+# Legal pages on the branded production domain — the single source of truth
+# for legal links in outgoing emails. (Never earningsninja.APP — its /privacy
+# 404s; the .com pages are verified live.)
+PRIVACY_URL = "https://earningsninja.com/privacy"
+TERMS_URL = "https://earningsninja.com/terms"
+
 def get_app_url() -> str:
     # Prefer an explicit public URL so links work on hosts that don't set the
     # Replit env vars (e.g. Railway in production). Without this, reset/welcome
@@ -378,6 +384,7 @@ async def send_welcome_email(to_email: str, user_name: Optional[str] = None) -> 
             </div>
             <div class="footer">
                 <p>&copy; {APP_NAME}. Drive smart, earn more.</p>
+                <p><a href="{PRIVACY_URL}" style="color:#666;">Privacy Policy</a> · <a href="{TERMS_URL}" style="color:#666;">Terms of Service</a></p>
             </div>
         </div>
     </body>
@@ -399,6 +406,9 @@ What you can do right now:
 - See which platforms and hours pay you best
 
 Drive smart, earn more. We're glad you're here.
+
+Privacy Policy: {PRIVACY_URL}
+Terms of Service: {TERMS_URL}
 
 - The {APP_NAME} Team
 """
