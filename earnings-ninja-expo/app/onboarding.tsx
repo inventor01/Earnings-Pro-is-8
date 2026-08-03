@@ -10,7 +10,17 @@ import {
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
+  withDelay,
+  Easing,
+  cancelAnimation,
+} from 'react-native-reanimated';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/authContext';
 import { useTheme } from '@/lib/theme';
@@ -47,6 +57,77 @@ const BUILD_ITEMS = [
   'Goal tracking',
   'Tax-ready records',
 ];
+
+// One-shot neon glow that plays when the welcome step appears: a halo ring
+// behind the CTA pulses a few times (~3s total) then fades out completely.
+// Implemented as an absolutely-positioned overlay animating only opacity and
+// scale (iOS shadow props animate poorly), so there is zero layout shift and
+// the button underneath stays fully tappable (pointerEvents="none").
+function NeonGlowPulse({ color }: { color: string }) {
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    const pulseIn = { duration: 480, easing: Easing.out(Easing.quad) };
+    const pulseOut = { duration: 480, easing: Easing.in(Easing.quad) };
+    opacity.value = withDelay(
+      350,
+      withSequence(
+        withTiming(0.95, pulseIn),
+        withTiming(0.35, pulseOut),
+        withTiming(0.95, pulseIn),
+        withTiming(0.35, pulseOut),
+        withTiming(0.95, pulseIn),
+        withTiming(0, { duration: 700, easing: Easing.in(Easing.quad) }),
+      ),
+    );
+    scale.value = withDelay(
+      350,
+      withSequence(
+        withTiming(1.05, pulseIn),
+        withTiming(1.0, pulseOut),
+        withTiming(1.05, pulseIn),
+        withTiming(1.0, pulseOut),
+        withTiming(1.05, pulseIn),
+        withTiming(1.0, { duration: 700, easing: Easing.in(Easing.quad) }),
+      ),
+    );
+    return () => {
+      cancelAnimation(opacity);
+      cancelAnimation(scale);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        {
+          position: 'absolute',
+          top: -5,
+          bottom: -5,
+          left: -5,
+          right: -5,
+          borderRadius: 999,
+          borderWidth: 2.5,
+          borderColor: color,
+          shadowColor: color,
+          shadowOpacity: 0.9,
+          shadowRadius: 16,
+          shadowOffset: { width: 0, height: 0 },
+          elevation: 12,
+        },
+        style,
+      ]}
+    />
+  );
+}
 
 export default function OnboardingScreen() {
   const t = useTheme();
@@ -278,7 +359,10 @@ export default function OnboardingScreen() {
             <Text style={{ color: t.MUTED, fontSize: 16, textAlign: 'center', marginTop: 12, lineHeight: 23 }}>
               Earnings Ninja turns your gig driving into a business you can actually see — profit, goals, and progress at a glance.
             </Text>
-            <View style={{ marginTop: 36 }}>{primary('Get Started', goNext)}</View>
+            <View style={{ marginTop: 36 }}>
+              <NeonGlowPulse color={t.PRIMARY} />
+              {primary('Get Started', goNext)}
+            </View>
           </Animated.View>
         )}
 
