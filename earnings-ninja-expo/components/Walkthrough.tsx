@@ -28,6 +28,8 @@ import { useTheme, useThemeControls } from '@/lib/theme';
 
 // ─── Persistence ──────────────────────────────────────────────────────────────
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 const doneKey = (userId: number | string) => `walkthrough_done:${userId}`;
 
 export async function readWalkthroughDone(userId: number | string): Promise<boolean> {
@@ -75,6 +77,21 @@ function measureRaw(id?: WalkthroughTargetId): Promise<Rect | null> {
 
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 
+// Poll the anchor until its window position stops moving (the native animated
+// scroll has settled) instead of guessing with a fixed delay — a fixed wait
+// either cuts the scroll short or adds a dead pause before the spotlight lands.
+async function waitForScrollSettle(id: WalkthroughTargetId): Promise<Rect | null> {
+  let prev = await measureRaw(id);
+  for (let i = 0; i < 14; i++) { // hard cap ~1s so a hung measure can't stall the tour
+    await sleep(70);
+    const cur = await measureRaw(id);
+    if (!cur) return prev;
+    if (prev && Math.abs(cur.y - prev.y) < 1) return cur;
+    prev = cur;
+  }
+  return prev;
+}
+
 // The dashboard registers a relative scroller so the tour can bring
 // scrolled-away anchors (goals, analytics, KPIs) into view instead of
 // spotlighting a half-cut element.
@@ -100,8 +117,7 @@ async function measureTarget(id?: WalkthroughTargetId): Promise<Rect | null> {
       ? r.y - topSafe - 12               // scroll up so the top clears the status bar
       : r.y + r.height - bottomSafe + 12; // scroll down so the bottom clears the bar
     scrollBy(dy);
-    await sleep(430); // let the animated scroll settle
-    const next = await measureRaw(id);
+    const next = await waitForScrollSettle(id);
     if (!next) return null;
     // No movement (already clamped at an edge) → accept what we have.
     if (Math.abs(next.y - r.y) < 2) { r = next; break; }
@@ -275,7 +291,8 @@ export function WalkthroughOverlay() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     if (idx < 0) return;
     if (idx >= STEPS.length) { setPhase('done'); return; }
-    setRect(null);
+    // Keep the previous rect while the next anchor is measured — the spotlight
+    // glides to its new position instead of blacking out and popping back in.
     setStepIdx(idx);
   }, []);
 
@@ -301,8 +318,6 @@ export function WalkthroughOverlay() {
   const fade = reduceMotion ? { entering: FadeIn.duration(150), exiting: FadeOut.duration(120) }
                             : { entering: FadeIn.duration(260), exiting: FadeOut.duration(180) };
 
-  if (phase === 'hidden') return null;
-
   const DIM = 'rgba(0,0,0,0.78)';
   const PAD = 6; // breathing room around the spotlighted element
   const spot = rect
@@ -315,6 +330,35 @@ export function WalkthroughOverlay() {
           w: Math.min(win.width - x, rect.width + PAD * 2), h: rect.height + PAD * 2 };
       })()
     : null;
+
+  // ── Spotlight glide ──────────────────────────────────────────────────────────
+  // Shared values drive the dim rects + ring so the hole animates smoothly
+  // between steps. Snaps (no glide) on the first spotlight after a full-dim
+  // step and under Reduce Motion.
+  const sx = useSharedValue(0), sy = useSharedValue(0);
+  const sw = useSharedValue(0), sh = useSharedValue(0);
+  const spotLive = useRef(false);
+  useEffect(() => {
+    if (!spot) { spotLive.current = false; return; }
+    if (!spotLive.current || reduceMotion) {
+      sx.value = spot.x; sy.value = spot.y; sw.value = spot.w; sh.value = spot.h;
+      spotLive.current = true;
+    } else {
+      const cfg = { duration: 320, easing: Easing.out(Easing.cubic) };
+      sx.value = withTiming(spot.x, cfg);
+      sy.value = withTiming(spot.y, cfg);
+      sw.value = withTiming(spot.w, cfg);
+      sh.value = withTiming(spot.h, cfg);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spot?.x, spot?.y, spot?.w, spot?.h, reduceMotion]);
+  const topDimStyle = useAnimatedStyle(() => ({ height: sy.value }));
+  const bottomDimStyle = useAnimatedStyle(() => ({ top: sy.value + sh.value }));
+  const leftDimStyle = useAnimatedStyle(() => ({ top: sy.value, width: sx.value, height: sh.value }));
+  const rightDimStyle = useAnimatedStyle(() => ({ top: sy.value, left: sx.value + sw.value, height: sh.value }));
+  const ringStyle = useAnimatedStyle(() => ({ top: sy.value, left: sx.value, width: sw.value, height: sh.value }));
+
+  if (phase === 'hidden') return null;
 
   const btn = (label: string, onPress: () => void, primary?: boolean, a11y?: string) => (
     <Pressable
@@ -393,26 +437,28 @@ export function WalkthroughOverlay() {
           through the hole. Tapping the dim area advances (never traps). */}
       {spot ? (
         <>
-          <Pressable onPress={() => goto(stepIdx + 1)} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: spot.y, backgroundColor: DIM }} />
-          <Pressable onPress={() => goto(stepIdx + 1)} style={{ position: 'absolute', top: spot.y + spot.h, left: 0, right: 0, bottom: 0, backgroundColor: DIM }} />
-          <Pressable onPress={() => goto(stepIdx + 1)} style={{ position: 'absolute', top: spot.y, left: 0, width: spot.x, height: spot.h, backgroundColor: DIM }} />
-          <Pressable onPress={() => goto(stepIdx + 1)} style={{ position: 'absolute', top: spot.y, left: spot.x + spot.w, right: 0, height: spot.h, backgroundColor: DIM }} />
+          <AnimatedPressable onPress={() => goto(stepIdx + 1)} style={[{ position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: DIM }, topDimStyle]} />
+          <AnimatedPressable onPress={() => goto(stepIdx + 1)} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: DIM }, bottomDimStyle]} />
+          <AnimatedPressable onPress={() => goto(stepIdx + 1)} style={[{ position: 'absolute', left: 0, backgroundColor: DIM }, leftDimStyle]} />
+          <AnimatedPressable onPress={() => goto(stepIdx + 1)} style={[{ position: 'absolute', right: 0, backgroundColor: DIM }, rightDimStyle]} />
           {/* Glowing highlight ring */}
           <Animated.View
             pointerEvents="none"
             style={[{
-              position: 'absolute', top: spot.y, left: spot.x, width: spot.w, height: spot.h,
+              position: 'absolute',
               borderRadius: 16, borderWidth: 2.5, borderColor: t.PRIMARY,
               shadowColor: t.PRIMARY, shadowOffset: { width: 0, height: 0 }, elevation: 12,
-            }, reduceMotion ? { shadowOpacity: 0.7, shadowRadius: 12 } : pulseStyle]}
+            }, ringStyle, reduceMotion ? { shadowOpacity: 0.7, shadowRadius: 12 } : pulseStyle]}
           />
         </>
       ) : (
         <Pressable onPress={() => goto(stepIdx + 1)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: DIM }} />
       )}
 
-      {/* Floating info card */}
+      {/* Floating info card — keyed by step so the fade replays per step now
+          that the rect is no longer nulled between steps. */}
       <View
+        key={stepIdx}
         pointerEvents="box-none"
         style={{
           position: 'absolute', left: 0, right: 0,
