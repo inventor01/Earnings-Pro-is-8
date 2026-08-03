@@ -4121,7 +4121,6 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         {([
           { pref: 'light' as const, label: '☀️ Light', desc: 'Clean white with neon accents', swatch: THEMES.light },
           { pref: 'dark' as const, label: '🌙 Dark', desc: 'True-black with neon glow', swatch: THEMES.dark },
-          { pref: 'system' as const, label: '📱 System (Recommended)', desc: "Automatically matches your device's appearance settings", swatch: null },
         ]).map(({ pref, label, desc, swatch }) => {
           const active = themePreference === pref;
           return (
@@ -4144,21 +4143,13 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
                 minHeight: 44,
               }}
             >
-              {swatch ? (
-                /* Color swatch row showing the theme's surface + accent + green */
-                <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: BORDER }}>
-                  <View style={{ width: 18, height: 36, backgroundColor: swatch.BG }} />
-                  <View style={{ width: 18, height: 36, backgroundColor: swatch.SURFACE }} />
-                  <View style={{ width: 18, height: 36, backgroundColor: swatch.PRIMARY }} />
-                  <View style={{ width: 18, height: 36, backgroundColor: swatch.GREEN }} />
-                </View>
-              ) : (
-                /* System: half light / half dark swatch */
-                <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: BORDER }}>
-                  <View style={{ width: 36, height: 36, backgroundColor: THEMES.light.BG }} />
-                  <View style={{ width: 36, height: 36, backgroundColor: THEMES.dark.BG }} />
-                </View>
-              )}
+              {/* Color swatch row showing the theme's surface + accent + green */}
+              <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: BORDER }}>
+                <View style={{ width: 18, height: 36, backgroundColor: swatch.BG }} />
+                <View style={{ width: 18, height: 36, backgroundColor: swatch.SURFACE }} />
+                <View style={{ width: 18, height: 36, backgroundColor: swatch.PRIMARY }} />
+                <View style={{ width: 18, height: 36, backgroundColor: swatch.GREEN }} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>{label}</Text>
                 <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>{desc}</Text>

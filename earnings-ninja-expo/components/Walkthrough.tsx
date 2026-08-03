@@ -151,8 +151,8 @@ const STEPS: Step[] = [
     body: "We'll send gentle reminders and a daily recap to keep you on track. You control all of it in Settings." },
   { key: 'widgets', emoji: '📱', title: 'Home screen widget',
     body: "Monitor today's earnings right from your home screen and quick-add orders without opening the app." },
-  { key: 'theme', emoji: '🌙', title: 'Light, Dark & System Themes',
-    body: "Earnings Ninja supports Light, Dark, and System themes — watch the app switch right now! Choose what's most comfortable for you, day or night. You can change this anytime in Settings." },
+  { key: 'theme', emoji: '🌙', title: 'Light & Dark Themes',
+    body: "Earnings Ninja supports Light and Dark themes — watch the app switch right now! Choose what's most comfortable for you, day or night. You can change this anytime in Settings." },
   { key: 'premium', emoji: '⭐', title: 'Go further with Premium',
     body: 'Premium unlocks advanced analytics, AI insights, profit forecasts, unlimited tracking, and more powerful reports — whenever you\'re ready.' },
 ];
