@@ -20,13 +20,34 @@ const REPORT_TYPES = [
 ] as const;
 
 const MAX_SCREENSHOTS = 5;
-const MIN_DESC = 20;
+// Keep the description gate tiny — just enough to reject an accidental tap.
+// A 20-char minimum made short-but-valid reports like "Crashed" look like a
+// broken Submit button.
+const MIN_DESC = 3;
 const DRAFT_KEY = 'problem-report-draft-v1';
 
 const hTap = () => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); };
 const hOk = () => { if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Why the Submit button is blocked, in user words — or null when submittable.
+// Exported for tests.
+export function submitBlockedReason(s: {
+  reportType: string | null;
+  description: string;
+  email: string;
+  isFeatureRequest?: boolean;
+}): string | null {
+  if (!s.reportType) return 'Please choose what kind of issue this is (the "What kind of issue?" dropdown at the top).';
+  if (s.description.trim().length < MIN_DESC) {
+    return s.isFeatureRequest
+      ? 'Please add a short description of your idea.'
+      : 'Please add a short description of what happened.';
+  }
+  if (!EMAIL_RE.test(s.email.trim())) return 'Please enter a valid contact email so we can follow up.';
+  return null;
+}
 
 interface Draft {
   reportType: string | null;
@@ -76,9 +97,16 @@ export default function ReportProblemModal({
     theme: themeName ?? 'unknown',
   }), [width, height, themeName]);
 
-  // Restore draft on open; reset transient state.
+  // On open: reset transient state, then restore a draft ONLY if one exists.
+  // Drafts are written solely on a failed send (see doSubmit's catch), so a
+  // normal close + reopen always shows a fresh form.
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      // Closing without a successful send: start fresh next time. Any
+      // failed-send draft lives in AsyncStorage and is restored on reopen.
+      resetForm();
+      return;
+    }
     setSent(false);
     setSubmitting(false);
     submittingRef.current = false;
@@ -113,6 +141,19 @@ export default function ReportProblemModal({
 
   const emailOk = EMAIL_RE.test(email.trim());
   const canSubmit = !!reportType && description.trim().length >= MIN_DESC && emailOk && !submitting;
+
+  // The Submit button stays tappable even when the form is incomplete — a tap
+  // then explains exactly what's missing instead of silently doing nothing.
+  const onSubmitPress = () => {
+    if (submitting) return;
+    const reason = submitBlockedReason({ reportType, description, email, isFeatureRequest });
+    if (reason) {
+      hTap();
+      Alert.alert('Almost there', reason);
+      return;
+    }
+    doSubmit();
+  };
 
   const pickScreenshots = async () => {
     hTap();
@@ -194,7 +235,7 @@ export default function ReportProblemModal({
         }}>
           <Text style={{ color: t.TEXT, fontSize: 17, fontWeight: '800' }}>Report a Problem</Text>
           <Pressable
-            onPress={() => { if (!sent && (description.trim() || steps.trim())) saveDraft(); onClose(); }}
+            onPress={onClose}
             hitSlop={10}
             accessibilityRole="button"
             accessibilityLabel="Close"
@@ -418,11 +459,15 @@ export default function ReportProblemModal({
 
               {/* Submit */}
               <Pressable
-                onPress={doSubmit}
-                disabled={!canSubmit}
+                onPress={onSubmitPress}
                 accessibilityRole="button"
                 accessibilityLabel="Submit report"
-                accessibilityState={{ disabled: !canSubmit }}
+                // Only truly non-actionable while a send is in flight. When the
+                // form is incomplete the button stays actionable — activating it
+                // announces exactly what's missing — so it must NOT be exposed
+                // as disabled to assistive tech.
+                accessibilityState={{ disabled: submitting, busy: submitting }}
+                accessibilityHint={canSubmit ? undefined : 'Activates to hear what information is still needed'}
                 style={({ pressed }) => ({
                   marginTop: 24, minHeight: 52, borderRadius: 14,
                   backgroundColor: canSubmit ? t.PRIMARY : t.BORDER,
