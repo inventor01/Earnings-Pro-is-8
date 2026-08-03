@@ -117,9 +117,18 @@ def test_rejects_non_image_data_url(client):
 
 
 def test_rejects_short_description(client):
+    # Server minimum matches the mobile client's MIN_DESC (3 chars).
     c, _ = client
-    r = c.post("/api/feedback/report", json=valid_payload(description="too short"))
+    r = c.post("/api/feedback/report", json=valid_payload(description="ab"))
     assert r.status_code == 422
+
+
+def test_accepts_short_but_valid_description(client):
+    # "Crashed" (7 chars) must be accepted — the old 20-char server minimum
+    # silently rejected reports the client considered valid.
+    c, _ = client
+    r = c.post("/api/feedback/report", json=valid_payload(description="Crashed"))
+    assert r.status_code == 200
 
 
 def test_rejects_unknown_report_type(client):
