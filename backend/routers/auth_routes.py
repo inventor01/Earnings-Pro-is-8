@@ -2,13 +2,13 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from backend.db import get_db
 from backend.models import (
     AuthUser, Settings, Entry, EntryType, AppType, ExpenseCategory, Goal,
     TimeframeType, PasswordResetToken,
     Friend, Achievement, Congratulation,
-    ApiCredential, SyncedOrder,
+    ApiCredential, SyncedOrder, Base,
 )
 import hashlib
 import re
@@ -1240,26 +1240,25 @@ async def delete_account(
     """
     user_id = current_user.id
 
-    # Delete all rows in tables that have a user_id FK to auth_users.id.
-    # SyncedOrder and ApiCredential must be removed before AuthUser to satisfy
-    # FK constraints and to ensure OAuth tokens and synced order data (including
-    # raw_data payloads) are fully purged on account deletion.
-    db.query(Congratulation).filter(
-        (Congratulation.from_user_id == user_id) | (Congratulation.to_user_id == user_id)
-    ).delete(synchronize_session=False)
-    db.query(Friend).filter(
-        (Friend.user_id == user_id) | (Friend.friend_id == user_id)
-    ).delete(synchronize_session=False)
-    db.query(Achievement).filter(Achievement.user_id == user_id).delete(synchronize_session=False)
-    db.query(Goal).filter(Goal.user_id == user_id).delete(synchronize_session=False)
-    db.query(Settings).filter(Settings.user_id == user_id).delete(synchronize_session=False)
-    db.query(Entry).filter(Entry.user_id == user_id).delete(synchronize_session=False)
-    db.query(PasswordResetToken).filter(PasswordResetToken.user_id == user_id).delete(synchronize_session=False)
-    # Purge OAuth credentials and synced order history so no third-party tokens
-    # or raw platform data outlive the account, and the hourly background sync
-    # cannot use retained credentials after deletion.
-    db.query(SyncedOrder).filter(SyncedOrder.user_id == user_id).delete(synchronize_session=False)
-    db.query(ApiCredential).filter(ApiCredential.user_id == user_id).delete(synchronize_session=False)
+    # Dynamically sweep EVERY table whose columns FK-reference auth_users.id.
+    # A hardcoded table list here broke in production: newer tables
+    # (daily_goals, user_platforms, user_entry_types, user_label_overrides,
+    # users, daily_usage, referrals, problem_reports, ...) weren't purged, so
+    # the final auth_users delete hit a foreign-key constraint → 500. Deriving
+    # the list from the ORM metadata means a future table with a user FK is
+    # covered automatically. reversed(sorted_tables) deletes dependents before
+    # their dependencies. Rows matching ANY user-FK column are removed (covers
+    # friends.friend_id, congratulations.from/to, referrals.referrer/referee).
+    for table in reversed(Base.metadata.sorted_tables):
+        if table.name == AuthUser.__tablename__:
+            continue
+        fk_cols = [
+            col for col in table.columns
+            if any(fk.column.table.name == AuthUser.__tablename__ for fk in col.foreign_keys)
+        ]
+        if not fk_cols:
+            continue
+        db.execute(table.delete().where(or_(*[col == user_id for col in fk_cols])))
     db.query(AuthUser).filter(AuthUser.id == user_id).delete(synchronize_session=False)
 
     db.commit()
