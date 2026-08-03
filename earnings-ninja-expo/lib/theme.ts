@@ -7,9 +7,10 @@ import { widgetSync } from './widgetSync';
 // Two rendered themes: 'dark' (the neon Car-Dashboard look) and 'light'
 // (clean white background that keeps the exact brand neon accents + glows).
 export type ThemeName = 'dark' | 'light';
-// What the user PICKS in Settings. 'system' follows the device appearance
-// live (no restart) via the native Appearance API.
-export type ThemePreference = ThemeName | 'system';
+// What the user PICKS in Settings — Light or Dark only. (The old 'system'
+// option was removed; stored 'system' values are migrated to the device's
+// current appearance on load.)
+export type ThemePreference = ThemeName;
 
 export interface Theme {
   name: ThemeName;
@@ -107,25 +108,26 @@ export const THEMES: Record<ThemeName, Theme> = {
 
 const STORAGE_KEY = 'theme_name';
 
-// Map any persisted value (incl. legacy 3-theme names) to a ThemePreference.
+// Map any persisted value (incl. legacy 3-theme names and the retired
+// 'system' option) to a ThemePreference.
 export function normalizePreference(v: string | null | undefined): ThemePreference {
-  if (v === 'system') return 'system';
   // Users who explicitly picked a dark look keep it.
   if (v === 'dark' || v === 'darkNeon' || v === 'bwNeon') return 'dark';
-  // Everything else — 'light', legacy 'simpleLight', null (fresh install),
-  // or unknown — starts on the white/light theme (the default).
-  return 'light';
+  if (v === 'light' || v === 'simpleLight') return 'light';
+  // 'system' (retired option), null (fresh install), or unknown — adopt the
+  // device's CURRENT appearance once; from then on it's a fixed choice.
+  return Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
 }
 
-export function resolveTheme(pref: ThemePreference, system: ThemeName): ThemeName {
-  return pref === 'system' ? system : pref;
+export function resolveTheme(pref: ThemePreference): ThemeName {
+  return pref;
 }
 
 interface ThemeContextValue {
   theme: Theme;
   /** The RESOLVED theme actually rendered ('light' | 'dark'). */
   themeName: ThemeName;
-  /** The user's saved choice ('light' | 'dark' | 'system'). */
+  /** The user's saved choice ('light' | 'dark'). */
   themePreference: ThemePreference;
   /** Persist a new preference. */
   setThemeName: (name: ThemePreference) => void;
@@ -179,10 +181,10 @@ function ThemeFade({ resolved }: { resolved: ThemeName }) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Light is the launch default; the stored preference (if any) loads in the
-  // effect below before the first frame settles.
-  const [preference, setPreferenceState] = useState<ThemePreference>('light');
-  const [systemScheme, setSystemScheme] = useState<ThemeName>(
+  // First launch defaults to the device's current appearance; the stored
+  // preference (if any) loads in the effect below before the first frame
+  // settles.
+  const [preference, setPreferenceState] = useState<ThemePreference>(
     Appearance.getColorScheme() === 'dark' ? 'dark' : 'light',
   );
   // Walkthrough demo override — never persisted, never survives a restart.
@@ -201,17 +203,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
-  // Follow the DEVICE appearance live. Cheap to keep always-subscribed; it
-  // only re-renders when the OS scheme actually flips, and it makes
-  // switching preference→'system' reflect the current device state instantly.
-  useEffect(() => {
-    const sub = Appearance.addChangeListener(({ colorScheme }) => {
-      setSystemScheme(colorScheme === 'dark' ? 'dark' : 'light');
-    });
-    return () => sub.remove();
-  }, []);
-
-  const resolved: ThemeName = override ?? resolveTheme(preference, systemScheme);
+  const resolved: ThemeName = override ?? resolveTheme(preference);
 
   // Keep the iOS Home Screen widget's appearance in sync with the app theme.
   useEffect(() => {
