@@ -3,6 +3,7 @@ import { Link } from './router'
 import {
   APP_STORE_URL,
   APP_DOWNLOAD_URL,
+  TRIAL_CTA_LABEL,
   PRIVACY_URL,
   TERMS_URL,
   SUPPORT_URL,
@@ -97,10 +98,73 @@ export function AppStoreBadge() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Waitlist ("Notify me at launch") email form                         */
+/* Posts to the live backend waitlist endpoint (same-origin /api).     */
+/* ------------------------------------------------------------------ */
+export function WaitlistForm({ source = 'landing', className = '' }: { source?: string; className?: string }) {
+  const [email, setEmail] = useState('')
+  const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (state === 'sending') return
+    setState('sending')
+    try {
+      const res = await fetch('/api/waitlist/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), referral_source: source }),
+      })
+      if (!res.ok) throw new Error(String(res.status))
+      setState('done')
+    } catch {
+      setState('error')
+    }
+  }
+
+  if (state === 'done') {
+    return (
+      <div className={`bg-card border border-primary/40 rounded-2xl px-5 py-4 text-sm ${className}`} role="status">
+        <span className="text-primary font-bold">You&rsquo;re on the list!</span>{' '}
+        <span className="text-muted">We&rsquo;ll email you the moment Earnings Ninja hits the App Store.</span>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={submit} className={`w-full max-w-md ${className}`}>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          aria-label="Email address"
+          className="flex-1 bg-card border border-border rounded-2xl px-5 py-3.5 text-base text-white placeholder:text-muted focus:outline-none focus:border-primary/60"
+        />
+        <button
+          type="submit"
+          disabled={state === 'sending'}
+          className="inline-flex items-center justify-center gap-2 bg-primary text-black font-bold px-6 py-3.5 rounded-2xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:hover:scale-100 whitespace-nowrap"
+        >
+          {state === 'sending' ? 'Joining…' : 'Notify me at launch'}
+        </button>
+      </div>
+      {state === 'error' && (
+        <p className="mt-2 text-sm text-red" role="alert">
+          Something went wrong — please try again, or email {SUPPORT_EMAIL}.
+        </p>
+      )}
+    </form>
+  )
+}
+
+/* ------------------------------------------------------------------ */
 /* Reusable CTA buttons                                                */
 /* ------------------------------------------------------------------ */
 export function UpgradeButton({
-  label = 'Try free for 7 days',
+  label = TRIAL_CTA_LABEL,
   className = '',
 }: {
   label?: string
@@ -161,7 +225,13 @@ export function Nav({ ctaTo = '/upgrade' }: { ctaTo?: string }) {
             to={ctaTo}
             className="hidden sm:inline-flex items-center gap-2 bg-primary text-black font-semibold px-4 py-2 rounded-xl text-sm hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            {ctaTo === '/upgrade' ? 'Try free' : APP_STORE_URL ? 'Download' : 'Coming soon'}
+            {ctaTo === '/#waitlist'
+              ? 'Get early access'
+              : ctaTo === '/upgrade'
+                ? 'Try free'
+                : APP_STORE_URL
+                  ? 'Download'
+                  : 'Coming soon'}
           </Link>
           <button
             aria-label="Toggle menu"
@@ -349,17 +419,16 @@ export function ExitIntent() {
         <img src={logoFull} alt="Earnings Ninja" className="h-24 w-auto mx-auto mb-4" />
         <h3 className="text-2xl font-black tracking-tight">Before you go…</h3>
         <p className="mt-3 text-muted">
-          You&rsquo;re probably leaving{' '}
-          <span className="text-primary font-semibold">$150–$400 a month</span> on the table without knowing
-          your real numbers. See them free.
+          The gig apps show revenue — not what you actually keep after gas and miles. Get your real
+          numbers the day we launch.
         </p>
         <div className="mt-6 flex flex-col gap-3">
           <Link
-            to="/upgrade"
+            to="/#waitlist"
             onClick={() => setOpen(false)}
             className="bg-primary text-black font-bold py-3.5 rounded-xl hover:shadow-neon-primary transition-all"
           >
-            Try free for 7 days →
+            Get early access →
           </Link>
           <button onClick={() => setOpen(false)} className="text-sm text-muted hover:text-white">
             No thanks, I like guessing

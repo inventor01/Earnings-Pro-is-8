@@ -8,6 +8,7 @@ import {
   Stat,
   StickyCta,
   ExitIntent,
+  WaitlistForm,
   useDocumentMeta,
 } from '../components/ui'
 import {
@@ -15,29 +16,28 @@ import {
   SCREENSHOTS,
 } from '../components/mockups'
 import logoFull from '../assets/logo-full.webp'
-import { LANDING_FEATURES, TESTIMONIALS, FAQS } from '../lib/content'
+import { LANDING_FEATURES, FAQS } from '../lib/content'
 
 export default function LandingPage() {
   useDocumentMeta(
-    'Earnings Ninja — Know Your Real Dollar Per Mile',
-    'Was that order worth it? Earnings Ninja shows delivery drivers their true net profit and dollar per mile after gas and wear and tear. DoorDash, Uber Eats, Instacart, GrubHub & Shipt.',
+    'Earnings Ninja | Earnings & Profit Tracker for Gig Workers',
+    'Track DoorDash, Uber Eats, Instacart, GrubHub, Shipt and other gig earnings in one place. Monitor expenses, real profit, analytics, and daily income goals.',
   )
   return (
     <div className="min-h-screen text-white">
-      <Nav ctaTo="/upgrade" />
+      <Nav ctaTo="/#waitlist" />
       <Hero />
       <TrustBar />
       <Problem />
       <HowItWorks />
       <Screenshots />
-      <SocialProof />
       <Features />
       <HonestMath />
       <PricingTeaser />
       <Faq />
       <FinalCta />
       <Footer />
-      <StickyCta label="Try free for 7 days" to="/upgrade" />
+      <StickyCta label="Get early access" to="/#waitlist" />
       <ExitIntent />
     </div>
   )
@@ -55,27 +55,34 @@ function Hero() {
               <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse-slow" />
               Built by a driver, for drivers — iPhone, iOS 17+
             </div>
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.02] text-balance">
-              Worth it? <span className="text-primary animate-glow">Now you&rsquo;ll know</span>.
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.05] text-balance">
+              Know what you actually earn — <span className="text-primary animate-glow">not just what the gig apps show you</span>.
             </h1>
             <p className="mt-6 text-lg md:text-xl text-muted max-w-xl text-balance">
-              The gig apps show you gross and call it a day. Earnings Ninja shows your{' '}
-              <span className="text-white font-semibold">real net profit and dollar per mile</span>{' '}
-              after gas and wear and tear — live, mid-shift, across every app you run.
+              Track earnings, expenses, daily goals, and{' '}
+              <span className="text-white font-semibold">real profit</span> across{' '}
+              <span className="text-white font-semibold">DoorDash, Uber Eats, Instacart, GrubHub, Shipt</span>{' '}
+              and more — all in one simple dashboard.
             </p>
-            <div data-cta className="mt-8 flex flex-wrap items-center gap-4">
-              <AppStoreBadge />
-              <Link
-                to="/upgrade"
-                className="inline-flex items-center gap-2 bg-primary text-black font-bold px-6 py-3.5 rounded-2xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                Try Pro free for 7 days
-                <span aria-hidden>→</span>
-              </Link>
+            <div data-cta id="waitlist" className="mt-8 scroll-smooth-anchor">
+              <WaitlistForm source="landing-hero" />
+              <div className="mt-4 flex flex-wrap items-center gap-4">
+                <AppStoreBadge />
+                <Link
+                  to="/#how"
+                  className="inline-flex items-center gap-2 border border-border bg-card text-white font-semibold px-6 py-3 rounded-2xl text-base hover:border-primary/40 transition-all"
+                >
+                  See how it works
+                  <span aria-hidden>↓</span>
+                </Link>
+              </div>
             </div>
-            <div className="mt-10 flex items-center gap-6 text-xs text-muted">
-              <Stat value="$2.99" label="Per month for Pro" />
-              <Stat value="5" label="Platforms supported" />
+            <p className="mt-6 text-xs text-muted uppercase tracking-wider">
+              Built for independent drivers · No complicated spreadsheets · Get started free
+            </p>
+            <div className="mt-8 flex items-center gap-6 text-xs text-muted">
+              <Stat value="Free" label="Core tracker forever" />
+              <Stat value="5+" label="Platforms supported" />
               <Stat value="0" label="Ads or trackers" />
             </div>
           </div>
@@ -98,11 +105,9 @@ function TrustBar() {
   return (
     <section className="border-y border-border bg-surface/40">
       <div className="max-w-6xl mx-auto px-5 py-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted">
-        <span className="flex items-center gap-2">
-          <span className="text-primary text-base">★★★★★</span> Built for cherry pickers & multi-appers
-        </span>
+        <span>🥷 Built by a driver, for drivers</span>
         <span className="hidden sm:inline text-border">|</span>
-        <span>DoorDash · Uber Eats · Instacart · GrubHub · Shipt</span>
+        <span>DoorDash · Uber Eats · Instacart · GrubHub · Shipt · your custom gigs</span>
         <span className="hidden sm:inline text-border">|</span>
         <span>🔒 No ads · No data sold</span>
       </div>
@@ -182,7 +187,7 @@ function HowItWorks() {
     },
   ]
   return (
-    <section className="py-20 md:py-28 border-t border-border bg-surface/40">
+    <section id="how" className="scroll-smooth-anchor py-20 md:py-28 border-t border-border bg-surface/40">
       <div className="max-w-6xl mx-auto px-5">
         <div className="text-center max-w-2xl mx-auto">
           <SectionLabel>How it works</SectionLabel>
@@ -237,36 +242,6 @@ function Screenshots() {
               <PhoneShot src={s.src} alt={s.label} className="w-[220px] sm:w-[250px]" />
               <div className="mt-4 text-sm font-semibold text-muted">{s.label}</div>
             </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ------------------------------------------------------------------ */
-function SocialProof() {
-  return (
-    <section className="py-20 md:py-28">
-      <div className="max-w-6xl mx-auto px-5">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <SectionLabel>What drivers say</SectionLabel>
-          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
-            Drivers keep <span className="text-primary">$150–$400+</span> more a month.
-          </h2>
-          <p className="mt-4 text-muted text-lg">
-            Not by grinding more hours — by cherry picking smarter and cutting the runs that were quietly losing money.
-          </p>
-        </div>
-        <div className="grid md:grid-cols-3 gap-4">
-          {TESTIMONIALS.map((t) => (
-            <figure key={t.name} className="bg-card border border-border rounded-2xl p-6 flex flex-col">
-              <div className="text-primary mb-3">★★★★★</div>
-              <blockquote className="text-sm text-white/90 leading-relaxed flex-1">“{t.quote}”</blockquote>
-              <figcaption className="mt-4 text-xs text-muted">
-                <span className="text-white font-semibold">{t.name}</span> — {t.meta}
-              </figcaption>
-            </figure>
           ))}
         </div>
       </div>
@@ -366,22 +341,21 @@ function PricingTeaser() {
       <div className="max-w-3xl mx-auto px-5 text-center">
         <SectionLabel>Simple pricing</SectionLabel>
         <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
-          Try Pro <span className="text-primary animate-glow">free for 7 days</span>.
+          Free to start. <span className="text-primary animate-glow">Pro when you&rsquo;re ready</span>.
         </h2>
         <p className="mt-4 text-muted text-lg">
-          The core tracker is free forever. Try every Pro feature — best days &amp; hours analytics,
-          tax-ready exports, AI suggestions, and automatic imports — free for 7 days. Then just{' '}
+          The core tracker — unlimited logging, live net profit, goals, and widgets — is{' '}
+          <span className="text-white font-semibold">free forever</span>. Pro adds best days &amp; hours
+          analytics, tax-ready exports, AI suggestions, and automatic imports for{' '}
           <span className="text-white font-semibold">$2.99/mo</span> or{' '}
-          <span className="text-white font-semibold">$29.99/yr</span>{' '}
-          <span className="text-green font-semibold">(Best Value — 2 months free)</span>. Cancel
-          anytime before day 7 and pay nothing.
+          <span className="text-white font-semibold">$29.99/yr</span>, with a 7-day free trial at launch.
         </p>
         <div data-cta className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
-            to="/upgrade"
+            to="/#waitlist"
             className="inline-flex items-center gap-2 bg-primary text-black font-bold px-8 py-4 rounded-2xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            Start your 7-day free trial
+            Get early access
             <span aria-hidden>→</span>
           </Link>
           <AppStoreBadge />
@@ -453,20 +427,14 @@ function FinalCta() {
       <div className="max-w-3xl mx-auto px-5 text-center relative">
         <img src={logoFull} alt="Earnings Ninja" className="h-28 w-auto mx-auto mb-6" />
         <h2 className="text-4xl md:text-6xl font-black tracking-tight text-balance">
-          Make every shift <span className="text-primary animate-glow">worth it</span>.
+          Stop guessing what you made. <span className="text-primary animate-glow">Start tracking your real profit</span>.
         </h2>
         <p className="mt-5 text-lg text-muted max-w-xl mx-auto">
-          Free to start. Pro is $2.99/mo and pays for itself the first time you decline a garbage order.
+          Free to start. Be first in line when Earnings Ninja hits the App Store.
         </p>
-        <div data-cta className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+        <div data-cta className="mt-8 flex flex-col items-center gap-4">
+          <WaitlistForm source="landing-footer" className="mx-auto" />
           <AppStoreBadge />
-          <Link
-            to="/upgrade"
-            className="inline-flex items-center gap-2 bg-primary text-black font-bold px-8 py-4 rounded-2xl text-base hover:shadow-neon-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            Try free for 7 days
-            <span aria-hidden>→</span>
-          </Link>
         </div>
       </div>
     </section>
