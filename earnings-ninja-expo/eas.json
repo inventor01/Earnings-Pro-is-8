@@ -27,7 +27,8 @@
         "resourceClass": "medium"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app"
+        "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_hsdwBCfpbMMbkaQrulzVYROiZiB"
       }
     },
     "play": {
@@ -38,7 +39,8 @@
         "resourceClass": "medium"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app"
+        "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_hsdwBCfpbMMbkaQrulzVYROiZiB"
       }
     },
     "testflight": {
@@ -63,7 +65,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app",
-        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_UIpaSRzFjpWmXpMrnzxauDDnbQH"
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_UIpaSRzFjpWmXpMrnzxauDDnbQH",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_hsdwBCfpbMMbkaQrulzVYROiZiB"
       }
     }
   },
