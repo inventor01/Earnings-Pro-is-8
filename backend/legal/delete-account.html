@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Delete Your Account — Earnings Ninja</title>
+  <meta name="description" content="How to delete your Earnings Ninja account and all associated data, either in the app or by email request." />
+  <style>
+    :root {
+      --bg: #0a0a0a; --surface: #141414; --text: #e5e5e5;
+      --muted: #9ca3af; --primary: #22c55e; --border: #262626;
+      --danger: #ef4444;
+    }
+    @media (prefers-color-scheme: light) {
+      :root { --bg: #fafafa; --surface: #fff; --text: #111; --muted: #555;
+              --primary: #16a34a; --border: #e5e5e5; --danger: #dc2626; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+                 font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .wrap { max-width: 780px; margin: 0 auto; padding: 32px 20px 80px; }
+    header { padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+    h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    h2 { font-size: 19px; margin: 32px 0 10px; color: var(--primary); letter-spacing: -0.01em; }
+    .meta { color: var(--muted); font-size: 13px; }
+    a { color: var(--primary); }
+    .nav { font-size: 14px; margin-top: 14px; }
+    .nav a { margin-right: 14px; }
+    .card { background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 18px 20px; margin: 16px 0; }
+    .cta { display: inline-block; background: var(--primary); color: #000;
+           text-decoration: none; font-weight: 700; padding: 12px 22px;
+           border-radius: 10px; margin-top: 8px; }
+    ol li, ul li { margin: 6px 0; }
+    .warn { border-left: 3px solid var(--danger); padding-left: 14px; color: var(--muted); }
+    footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border);
+             color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>🥷 Delete Your Earnings Ninja Account</h1>
+      <div class="meta">Applies to the Earnings Ninja app by Earnings Ninja (com.earningsninja.app)</div>
+      <nav class="nav"><a href="/support">Support</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>
+    </header>
+
+    <p>You can permanently delete your Earnings Ninja account and all associated data at any
+    time. There are two ways to do it:</p>
+
+    <h2>Option 1: Delete in the app (instant)</h2>
+    <div class="card">
+      <ol>
+        <li>Open the Earnings Ninja app and sign in.</li>
+        <li>Go to <strong>Settings</strong> (gear icon).</li>
+        <li>Scroll down and tap <strong>Delete My Account</strong>.</li>
+        <li>Confirm the deletion when prompted.</li>
+      </ol>
+      <p class="warn">Deletion is immediate and permanent. Your account and data cannot be recovered.</p>
+    </div>
+
+    <h2>Option 2: Request deletion by email</h2>
+    <div class="card">
+      <p>If you can't access the app, email us from the address associated with your account
+      and we'll delete it for you within <strong>7 days</strong>.</p>
+      <a class="cta" href="mailto:support@earningsninja.com?subject=Account%20Deletion%20Request">📧 Request Account Deletion</a>
+      <p class="meta" style="margin-top:12px;">We may ask you to verify ownership of the account before deleting it.</p>
+    </div>
+
+    <h2>What gets deleted</h2>
+    <p>When your account is deleted, we permanently remove <strong>all</strong> data associated
+    with it from our servers, including:</p>
+    <ul>
+      <li>Your account and login credentials (email, password hash)</li>
+      <li>All earnings entries, tips, expenses, and mileage records</li>
+      <li>Goals, streaks, and progress history</li>
+      <li>App preferences, custom platforms, and custom entry types</li>
+      <li>Referral records and support/bug reports tied to your account</li>
+    </ul>
+
+    <h2>What is not deleted</h2>
+    <ul>
+      <li><strong>Subscription billing records</strong> are held by Apple (App Store) or Google
+      (Google Play), not by us. Deleting your account does <strong>not</strong> cancel an active
+      subscription — cancel it in your App Store or Google Play subscription settings.</li>
+      <li>Minimal records we are legally required to retain (e.g., transaction records for tax
+      or accounting compliance), which are kept only as long as the law requires.</li>
+    </ul>
+
+    <h2>Retention period</h2>
+    <p>In-app deletion takes effect immediately. Email requests are completed within 7 days of
+    identity verification. We do not keep backups of deleted account data beyond our standard
+    rolling database backups, which expire automatically within 30 days.</p>
+
+    <footer>
+      Questions? Contact <a href="mailto:support@earningsninja.com">support@earningsninja.com</a>.
+      <br />Earnings Ninja — <a href="/">earningsninja.com</a>
+    </footer>
+  </div>
+</body>
+</html>
