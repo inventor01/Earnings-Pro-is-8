@@ -3831,8 +3831,9 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         </Text>
 
         {/* Legal links — Apple 3.1.2 requires functional Privacy Policy +
-            Terms of Use links inside the app. Both are served by the backend
-            on the branded domain (earningsninja.com/privacy and /terms). */}
+            Terms of Use links inside the app. Both point at the branded
+            production domain (earningsninja.com/privacy and /terms); the
+            single source of truth is PRIVACY_URL/TERMS_URL in lib/api.ts. */}
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 18, marginBottom: 24 }}>
           <Pressable onPress={() => Linking.openURL(PRIVACY_URL)} hitSlop={8}>
             <Text style={{ color: MUTED, fontSize: 11, fontWeight: '700', textDecorationLine: 'underline' }}>

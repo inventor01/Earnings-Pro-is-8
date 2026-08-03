@@ -27,13 +27,13 @@ export const API_BASE =
   (Constants.expoConfig?.extra?.apiBase as string | undefined) ||
   'https://earnings-pro-is-8-production.up.railway.app';
 
-// Legal pages are rendered by the backend, so in-app links derive from
-// API_BASE — the one origin the app is already talking to. Hardcoding the
-// marketing domain here caused an Apple rejection when its routing broke
-// (earningsninja.app/privacy 404'd); deriving from API_BASE means the links
-// work exactly when the app itself works.
-export const PRIVACY_URL = `${API_BASE}/privacy`;
-export const TERMS_URL = `${API_BASE}/terms`;
+// Legal links — the single source of truth for the whole app. They point at
+// the branded production domain (verified live / HTTP 200). NOTE: never use
+// earningsninja.APP here — that domain's /privacy 404s and caused an Apple
+// rejection. If the .com routing ever breaks, fall back to `${API_BASE}/privacy`
+// (the backend renders the same pages).
+export const PRIVACY_URL = 'https://earningsninja.com/privacy';
+export const TERMS_URL = 'https://earningsninja.com/terms';
 
 async function getAuthToken(): Promise<string | null> {
   return getToken();
