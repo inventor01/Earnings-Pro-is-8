@@ -1156,6 +1156,7 @@ export const api = {
 // ─── Report a Problem ────────────────────────────────────────────────────────
 export interface ProblemReportPayload {
   report_type: string;
+  title?: string;
   description: string;
   steps?: string;
   contact_email: string;

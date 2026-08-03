@@ -33,6 +33,7 @@ MAX_REPORTS_PER_HOUR = 5           # per-user throttle
 
 class ProblemReportIn(BaseModel):
     report_type: str
+    title: str | None = None
     description: str
     steps: str | None = None
     contact_email: EmailStr
@@ -44,6 +45,18 @@ class ProblemReportIn(BaseModel):
     def _type_ok(cls, v: str) -> str:
         if v not in REPORT_TYPES:
             raise ValueError("Unknown report type")
+        return v
+
+    @field_validator("title")
+    @classmethod
+    def _title_ok(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = v.strip()
+        if not v:
+            return None
+        if len(v) > 200:
+            raise ValueError("Title too long")
         return v
 
     @field_validator("description")
@@ -118,6 +131,7 @@ async def submit_problem_report(
     report = ProblemReport(
         user_id=current_user.id,
         report_type=body.report_type,
+        title=body.title,
         description=body.description,
         steps=body.steps or None,
         contact_email=str(body.contact_email),
@@ -132,19 +146,25 @@ async def submit_problem_report(
     # Notify the team. Email failure must never fail the submission — the
     # report is already persisted.
     try:
-        await _send_report_email(report, screenshot_count=len(body.screenshots))
+        await _send_report_email(report, screenshots=body.screenshots)
     except Exception:
         logger.exception("problem-report email failed (report %s saved)", report.id)
 
     return {"ok": True, "id": report.id}
 
 
-async def _send_report_email(report: ProblemReport, screenshot_count: int) -> None:
+async def _send_report_email(report: ProblemReport, screenshots: list[str]) -> None:
     import asyncio
+    import base64
     import resend
     from backend.services.email_service import RESEND_API_KEY, RESEND_FROM, RESEND_REPLY_TO
 
-    to_addr = os.environ.get("SUPPORT_EMAIL", "earningsninjaapp@gmail.com").strip()
+    # BUG_REPORT_EMAIL takes precedence; SUPPORT_EMAIL kept for back-compat.
+    to_addr = (
+        os.environ.get("BUG_REPORT_EMAIL")
+        or os.environ.get("SUPPORT_EMAIL")
+        or "earningsninjaapp@gmail.com"
+    ).strip()
     if not RESEND_API_KEY or not to_addr:
         return
 
@@ -165,18 +185,46 @@ async def _send_report_email(report: ProblemReport, screenshot_count: int) -> No
 
     html = f"""
     <h2>🥷 {esc(report.report_type)} — report #{report.id}</h2>
+    {f"<p><b>Title:</b> {esc(report.title)}</p>" if report.title else ""}
     <p><b>From:</b> {esc(report.contact_email)} (user {esc(report.user_id)})</p>
+    <p><b>Submitted:</b> {report.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC</p>
     <p><b>Description:</b><br>{esc(report.description).replace(chr(10), '<br>')}</p>
     {f"<p><b>Steps:</b><br>{esc(report.steps).replace(chr(10), '<br>')}</p>" if report.steps else ""}
-    <p><b>Screenshots:</b> {screenshot_count} attached (stored with the report in the DB)</p>
+    <p><b>Screenshots:</b> {len(screenshots)} attached (also stored with the report in the DB)</p>
     {f"<table>{diag}</table>" if diag else "<p>(no diagnostics shared)</p>"}
     """
+    # Attach the screenshots to the email itself so the support inbox has
+    # everything in one place. Data URLs were validated upstream; a malformed
+    # one is skipped rather than failing the whole notification.
+    attachments = []
+    total_bytes = 0
+    for i, s in enumerate(screenshots[:MAX_SCREENSHOTS], start=1):
+        try:
+            header, b64 = s.split(",", 1)
+            ext = "png" if "png" in header else "jpg"
+            raw = base64.b64decode(b64, validate=True)  # full decode — a bad tail must not kill the send
+            # Aggregate cap well under Resend's 40MB email limit; skip the
+            # rest rather than risking the whole notification.
+            if total_bytes + len(raw) > 20_000_000:
+                break
+            total_bytes += len(raw)
+            attachments.append({"filename": f"screenshot-{i}.{ext}", "content": b64})
+        except Exception:
+            continue
+
+    subject_title = report.title or report.report_type
     params = {
         "from": RESEND_FROM,
         "to": [to_addr],
-        "subject": f"[Earnings Ninja] {report.report_type} — report #{report.id}",
+        "subject": f"[Earnings Ninja Bug Report] {subject_title} — #{report.id}",
         "html": html,
     }
+    if attachments:
+        params["attachments"] = attachments
     if RESEND_REPLY_TO:
         params["reply_to"] = [report.contact_email]
-    await asyncio.to_thread(resend.Emails.send, params)
+    result = await asyncio.to_thread(resend.Emails.send, params)
+    logger.info(
+        "problem-report email sent for report %s to %s (resend id %s)",
+        report.id, to_addr, (result or {}).get("id"),
+    )

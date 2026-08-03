@@ -458,6 +458,24 @@ def _migrate_auth_users_add_password_changed_at() -> None:
 
 _migrate_auth_users_add_password_changed_at()
 
+
+def _migrate_problem_reports_add_title() -> None:
+    """Optional short issue title for bug reports (used in the notification
+    email subject). Nullable — legacy reports keep NULL. Plain ADD COLUMN
+    works on both Postgres and SQLite. Safe to re-run."""
+    insp = inspect(engine)
+    if not insp.has_table("problem_reports"):
+        return
+    cols = {c["name"] for c in insp.get_columns("problem_reports")}
+    if "title" in cols:
+        return
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE problem_reports ADD COLUMN title VARCHAR"))
+    logger.warning("Added problem_reports.title.")
+
+
+_migrate_problem_reports_add_title()
+
 Base.metadata.create_all(bind=engine)
 
 # The CI-unique functional index for user_entry_types must be (re)applied AFTER
