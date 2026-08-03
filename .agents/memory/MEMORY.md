@@ -39,4 +39,5 @@
 - [Custom entry types](custom-entry-types.md) — custom Type pills store BASE enum (BONUS/EXPENSE) + custom_type name; kind fixed at creation; thread custom_type through all optimistic/offline paths.
 - [Per-date daily goal keys](daily-goal-per-date-keys.md) — EST-midnight key rollover, inherited-default not mirrored under date keys, no mirror clear on transient errors.
 - [Account deletion FK sweep](account-deletion-fk-sweep.md) — delete-account must purge via ORM-metadata FK sweep, never a hardcoded table list; missed tables → FK 500 in prod.
+- [Android build setup](android-build-setup.md) — EAS android profiles work (preview=APK, play=aab), cloud keystore; RC billing off until Android key; user has Play account, no Android device.
 - [Client/server validation lockstep](client-server-validation-lockstep.md) — any client-side limit change (min lengths, caps) must change the backend validator too, or the server silently rejects what the app allows.
