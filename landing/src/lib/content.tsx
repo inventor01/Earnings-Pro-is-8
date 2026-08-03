@@ -9,8 +9,12 @@ export const APP_STORE_URL: string | null = null
 export const APP_DEEP_LINK = 'earningsninja://'
 
 // Where "Try free / get the app" CTAs send users: the App Store once
-// APP_STORE_URL is live, otherwise the homepage where the download badge lives.
-export const APP_DOWNLOAD_URL: string = APP_STORE_URL ?? '/'
+// APP_STORE_URL is live, otherwise the waitlist form on the homepage so every
+// conversion intent lands on a concrete action (not a dead loop back home).
+export const APP_DOWNLOAD_URL: string = APP_STORE_URL ?? '/#waitlist'
+
+// Prelaunch-safe CTA label: never promise a trial that can't start today.
+export const TRIAL_CTA_LABEL = APP_STORE_URL ? 'Try free for 7 days' : 'Get early access'
 
 export const PRIVACY_URL = '/privacy'
 export const TERMS_URL = '/terms'
@@ -114,32 +118,9 @@ export const COMPARISON: CompareRow[] = [
   { feature: 'Priority support', free: false, pro: true },
 ]
 
-export interface Testimonial {
-  quote: string
-  name: string
-  meta: string
-}
-
-export const TESTIMONIALS: Testimonial[] = [
-  {
-    quote:
-      'I dashed 11 hours thinking I crushed it. Earnings Ninja showed me I cleared $94 after gas. Brutal — but now I cherry pick and only take orders that actually pay.',
-    name: 'Marcus T.',
-    meta: 'DoorDash · Atlanta',
-  },
-  {
-    quote:
-      'Tax season used to wreck me. I exported one CSV and my accountant was done in 20 minutes. Worth the $30 by itself.',
-    name: 'Priya R.',
-    meta: 'Uber Eats · Chicago',
-  },
-  {
-    quote:
-      'The dollar-per-mile number changed how I drive. I stopped chasing $3 pings 8 miles out and my take-home jumped almost $300 a month.',
-    name: 'Devin K.',
-    meta: 'Instacart · Phoenix',
-  },
-]
+// Testimonials removed deliberately (Aug 2026): we have no real user quotes
+// yet, and fabricated ones destroy trust. Re-add a TESTIMONIALS export here
+// with REAL beta-tester quotes once we have them.
 
 export interface Faq {
   q: string

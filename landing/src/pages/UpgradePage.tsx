@@ -11,7 +11,7 @@ import {
 } from '../components/ui'
 import { PhoneShot, SCREENSHOTS } from '../components/mockups'
 import logoFull from '../assets/logo-full.webp'
-import { PLANS, COMPARISON, TESTIMONIALS, APP_DEEP_LINK, APP_DOWNLOAD_URL, APP_STORE_URL } from '../lib/content'
+import { PLANS, COMPARISON, APP_DEEP_LINK, APP_DOWNLOAD_URL, APP_STORE_URL, TRIAL_CTA_LABEL } from '../lib/content'
 
 export default function UpgradePage() {
   useDocumentMeta(
@@ -26,11 +26,10 @@ export default function UpgradePage() {
       <ProValue />
       <Pricing />
       <Comparison />
-      <Testimonials />
       <Guarantee />
       <FinalCta />
       <Footer />
-      <StickyCta label="Try free for 7 days" to={APP_DOWNLOAD_URL} external={!!APP_STORE_URL} />
+      <StickyCta label={TRIAL_CTA_LABEL} to={APP_DOWNLOAD_URL} external={!!APP_STORE_URL} />
     </div>
   )
 }
@@ -55,7 +54,7 @@ function Hero() {
               <span className="text-white font-semibold">free for 7 days</span> — you won&rsquo;t pay a cent until day 8.
             </p>
             <div data-cta className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <UpgradeButton label="Try free for 7 days" />
+              <UpgradeButton />
               <Link to="#pricing" className="text-sm text-muted hover:text-white inline-flex items-center gap-1.5">
                 See all plans <span aria-hidden>↓</span>
               </Link>
@@ -267,34 +266,7 @@ function Comparison() {
           ))}
         </div>
         <div data-cta className="mt-8 text-center">
-          <UpgradeButton label="Try free for 7 days" />
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ------------------------------------------------------------------ */
-function Testimonials() {
-  return (
-    <section className="py-20 md:py-28">
-      <div className="max-w-6xl mx-auto px-5">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <SectionLabel>Drivers on Pro</SectionLabel>
-          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-balance">
-            It pays for itself in one shift.
-          </h2>
-        </div>
-        <div className="grid md:grid-cols-3 gap-4">
-          {TESTIMONIALS.map((t) => (
-            <figure key={t.name} className="bg-card border border-border rounded-2xl p-6 flex flex-col">
-              <div className="text-primary mb-3">★★★★★</div>
-              <blockquote className="text-sm text-white/90 leading-relaxed flex-1">“{t.quote}”</blockquote>
-              <figcaption className="mt-4 text-xs text-muted">
-                <span className="text-white font-semibold">{t.name}</span> — {t.meta}
-              </figcaption>
-            </figure>
-          ))}
+          <UpgradeButton />
         </div>
       </div>
     </section>
@@ -345,7 +317,7 @@ function FinalCta() {
           7 days free, then $2.99/mo or $29.99/yr. The first money-losing order you skip pays for the whole year.
         </p>
         <div data-cta className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
-          <UpgradeButton label="Try free for 7 days" />
+          <UpgradeButton />
           <Link
             to="/#faq"
             className="inline-flex items-center gap-2 border border-border bg-card text-white font-semibold px-8 py-4 rounded-2xl text-base hover:border-primary/40 transition-all"
