@@ -182,7 +182,7 @@ async def test_email_escapes_diagnostics(monkeypatch):
         ),
         created_at=datetime.utcnow(),
     )
-    await feedback._send_report_email(report, screenshot_count=2)
+    await feedback._send_report_email(report, screenshots=[])
 
     html = captured["html"]
     assert "<script>" not in html
@@ -190,3 +190,107 @@ async def test_email_escapes_diagnostics(monkeypatch):
     assert "&lt;b&gt;key&lt;/b&gt;" in html
     assert "iOS &amp; stuff" in html
     assert "<img src=x" not in html
+
+
+@pytest.mark.asyncio
+async def test_email_subject_attachments_and_destination(monkeypatch):
+    import resend
+    from backend.services import email_service
+
+    captured = {}
+
+    def fake_send(params):
+        captured.update(params)
+        return {"id": "fake"}
+
+    monkeypatch.setattr(resend.Emails, "send", staticmethod(fake_send))
+    monkeypatch.setattr(email_service, "RESEND_API_KEY", "test-key")
+    monkeypatch.setenv("BUG_REPORT_EMAIL", "support@earningsninja.com")
+
+    report = ProblemReport(
+        id=456,
+        user_id=TEST_USER_ID,
+        report_type="Bug Report",
+        title="App crashes on save",
+        description="A sufficiently long description of the crash issue.",
+        contact_email="user@example.com",
+        created_at=datetime.utcnow(),
+    )
+    shots = [small_data_url(), "data:image/jpeg;base64," + "B" * 100]
+    await feedback._send_report_email(report, screenshots=shots)
+
+    assert captured["to"] == ["support@earningsninja.com"]
+    assert captured["subject"] == "[Earnings Ninja Bug Report] App crashes on save — #456"
+    atts = captured["attachments"]
+    assert len(atts) == 2
+    assert atts[0]["filename"] == "screenshot-1.png"
+    assert atts[1]["filename"] == "screenshot-2.jpg"
+    # Timestamp + title present in the body
+    assert "Submitted:" in captured["html"]
+    assert "App crashes on save" in captured["html"]
+
+
+@pytest.mark.asyncio
+async def test_email_subject_falls_back_to_report_type(monkeypatch):
+    import resend
+    from backend.services import email_service
+
+    captured = {}
+    monkeypatch.setattr(resend.Emails, "send", staticmethod(lambda p: captured.update(p) or {"id": "x"}))
+    monkeypatch.setattr(email_service, "RESEND_API_KEY", "test-key")
+    monkeypatch.delenv("BUG_REPORT_EMAIL", raising=False)
+
+    report = ProblemReport(
+        id=789,
+        user_id=TEST_USER_ID,
+        report_type="Performance Issue",
+        title=None,
+        description="A sufficiently long description of the slow screen.",
+        contact_email="user@example.com",
+        created_at=datetime.utcnow(),
+    )
+    await feedback._send_report_email(report, screenshots=[])
+    assert captured["subject"] == "[Earnings Ninja Bug Report] Performance Issue — #789"
+    assert "attachments" not in captured
+
+
+@pytest.mark.asyncio
+async def test_malformed_screenshot_skipped_email_still_sends(monkeypatch):
+    import resend
+    from backend.services import email_service
+
+    captured = {}
+    monkeypatch.setattr(resend.Emails, "send", staticmethod(lambda p: captured.update(p) or {"id": "x"}))
+    monkeypatch.setattr(email_service, "RESEND_API_KEY", "test-key")
+
+    report = ProblemReport(
+        id=999,
+        user_id=TEST_USER_ID,
+        report_type="Bug Report",
+        title="<script>bad</script> & title",
+        description="A sufficiently long description for the malformed test.",
+        contact_email="user@example.com",
+        created_at=datetime.utcnow(),
+    )
+    # First attachment has an invalid base64 tail; second is valid.
+    bad = "data:image/png;base64," + "A" * 96 + "!!!!"
+    good = small_data_url()
+    await feedback._send_report_email(report, screenshots=[bad, good])
+
+    atts = captured["attachments"]
+    assert len(atts) == 1
+    assert atts[0]["filename"] == "screenshot-2.png"
+    # Malicious title stays escaped in the HTML body.
+    assert "<script>" not in captured["html"]
+    assert "&amp; title" in captured["html"]
+
+
+def test_title_persisted_and_validated(client):
+    c, session = client
+    r = c.post("/api/feedback/report", json=valid_payload(title="  Save button broken  "))
+    assert r.status_code == 200
+    row = session.query(ProblemReport).order_by(ProblemReport.id.desc()).first()
+    assert row.title == "Save button broken"
+    # Too-long title rejected
+    r = c.post("/api/feedback/report", json=valid_payload(title="x" * 201))
+    assert r.status_code == 422

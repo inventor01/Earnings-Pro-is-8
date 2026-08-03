@@ -373,6 +373,7 @@ class ProblemReport(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
     report_type = Column(String, nullable=False)
+    title = Column(String, nullable=True)   # optional short issue title
     description = Column(Text, nullable=False)
     steps = Column(Text, nullable=True)
     contact_email = Column(String, nullable=False)

@@ -30,6 +30,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 interface Draft {
   reportType: string | null;
+  title?: string;
   description: string;
   steps: string;
   email: string;
@@ -49,6 +50,7 @@ export default function ReportProblemModal({
 
   const [reportType, setReportType] = useState<string | null>(null);
   const [typeOpen, setTypeOpen] = useState(false);
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [steps, setSteps] = useState('');
   const [email, setEmail] = useState(defaultEmail ?? '');
@@ -88,6 +90,7 @@ export default function ReportProblemModal({
         // Only restore if the user actually typed something and the form is empty.
         if (d.description || d.steps) {
           setReportType((cur) => cur ?? d.reportType);
+          if (d.title) setTitle((cur) => cur || d.title!);
           setDescription((cur) => cur || d.description);
           setSteps((cur) => cur || d.steps);
           if (d.email) setEmail((cur) => cur || d.email);
@@ -98,12 +101,12 @@ export default function ReportProblemModal({
   }, [visible]);
 
   const saveDraft = () => {
-    const d: Draft = { reportType, description, steps, email };
+    const d: Draft = { reportType, title, description, steps, email };
     AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(d)).catch(() => {});
   };
   const clearDraft = () => AsyncStorage.removeItem(DRAFT_KEY).catch(() => {});
   const resetForm = () => {
-    setReportType(null); setDescription(''); setSteps(''); setShots([]);
+    setReportType(null); setTitle(''); setDescription(''); setSteps(''); setShots([]);
     setIncludeDiag(true); setDiagOpen(false); setTypeOpen(false);
     setEmail(defaultEmail ?? '');
   };
@@ -144,6 +147,7 @@ export default function ReportProblemModal({
     try {
       await submitProblemReport({
         report_type: reportType,
+        title: title.trim().slice(0, 200) || undefined,
         description: description.trim(),
         steps: steps.trim() || undefined,
         contact_email: email.trim(),
@@ -272,6 +276,18 @@ export default function ReportProblemModal({
                   ))}
                 </View>
               )}
+
+              {/* Title (optional) — becomes the support-email subject */}
+              <Text style={S.label}>Title (optional)</Text>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                maxLength={200}
+                placeholder={isFeatureRequest ? 'One-line summary of your idea' : 'One-line summary of the issue'}
+                placeholderTextColor={t.MUTED}
+                style={[S.input, { marginBottom: 16 }]}
+                accessibilityLabel="Issue title"
+              />
 
               {/* Description */}
               <Text style={S.label}>{isFeatureRequest ? 'What would you like to see added?' : 'What happened?'}</Text>
