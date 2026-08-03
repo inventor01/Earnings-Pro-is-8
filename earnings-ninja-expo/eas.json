@@ -22,6 +22,21 @@
         "simulator": false,
         "resourceClass": "m-medium"
       },
+      "android": {
+        "buildType": "apk",
+        "resourceClass": "medium"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app"
+      }
+    },
+    "play": {
+      "distribution": "store",
+      "channel": "preview",
+      "android": {
+        "buildType": "app-bundle",
+        "resourceClass": "medium"
+      },
       "env": {
         "EXPO_PUBLIC_API_BASE": "https://earnings-pro-is-8-production.up.railway.app"
       }
