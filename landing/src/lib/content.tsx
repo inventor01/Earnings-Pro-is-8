@@ -3,7 +3,7 @@
 
 // Flip this to the real App Store URL at launch to turn every "Coming soon"
 // button into a live "Download" link automatically.
-export const APP_STORE_URL: string | null = null
+export const APP_STORE_URL: string | null = 'https://apps.apple.com/us/app/earnings-ninja/id6784464357'
 
 // Opens the installed app (existing free users land on Settings → Upgrade).
 export const APP_DEEP_LINK = 'earningsninja://'
