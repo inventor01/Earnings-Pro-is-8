@@ -198,7 +198,7 @@ export function GhostButton({ to, children }: { to: string; children: ReactNode 
 export function Nav({ ctaTo = '/upgrade' }: { ctaTo?: string }) {
   const [open, setOpen] = useState(false)
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-bg/70 border-b border-border">
+    <header className="site-nav sticky top-0 z-50 backdrop-blur-md bg-bg/90 border-b border-border">
       <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
           <img src={logoBadge} alt="Earnings Ninja logo" className="h-9 w-9 object-contain" />
