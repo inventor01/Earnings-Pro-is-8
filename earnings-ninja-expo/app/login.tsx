@@ -232,8 +232,8 @@ export default function LoginScreen() {
               marginBottom: 12,
               shadowColor: ACCENT,
               shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.6,
-              shadowRadius: 20,
+              shadowOpacity: 0.22,
+              shadowRadius: 30,
             }}
           />
           <Text style={{
