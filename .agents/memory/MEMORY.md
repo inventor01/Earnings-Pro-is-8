@@ -40,4 +40,5 @@
 - [Per-date daily goal keys](daily-goal-per-date-keys.md) — EST-midnight key rollover, inherited-default not mirrored under date keys, no mirror clear on transient errors.
 - [Account deletion FK sweep](account-deletion-fk-sweep.md) — delete-account must purge via ORM-metadata FK sweep, never a hardcoded table list; missed tables → FK 500 in prod.
 - [Android build setup](android-build-setup.md) — EAS android profiles work (preview=APK, play=aab), cloud keystore; RC billing off until Android key; user has Play account, no Android device.
+- [Theme override mount race](theme-override-mount-race.md) — clear temp theme overrides before mounting new UI; entering-animated surfaces freeze mount-time colors → mixed-theme (white-on-white) cards.
 - [Client/server validation lockstep](client-server-validation-lockstep.md) — any client-side limit change (min lengths, caps) must change the backend validator too, or the server silently rejects what the app allows.
