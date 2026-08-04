@@ -84,3 +84,19 @@ h1, h2, h3, .display { font-family: 'Barlow Condensed', sans-serif; }
   );
   pointer-events: none;
 }
+
+/* iOS Safari: sticky + backdrop-filter mis-renders and lets page content paint
+   above the bar. Force the header onto its own compositing layer and paint an
+   opaque strip that extends up into the status-bar / collapsed-toolbar area. */
+.site-nav {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+.site-nav::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 100%;
+  height: 120px;
+  background: hsl(var(--bg));
+  pointer-events: none;
+}
