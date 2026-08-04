@@ -290,11 +290,15 @@ export function WalkthroughOverlay() {
   const goto = useCallback((idx: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     if (idx < 0) return;
+    // Leaving the theme-demo step: restore the real theme BEFORE the next
+    // card mounts. Otherwise the new card can mount mid-flip and freeze the
+    // demo theme's background under real-theme text (white-on-white title).
+    if (STEPS[stepIdx]?.key === 'theme') setThemeOverride(null);
     if (idx >= STEPS.length) { setPhase('done'); return; }
     // Keep the previous rect while the next anchor is measured — the spotlight
     // glides to its new position instead of blacking out and popping back in.
     setStepIdx(idx);
-  }, []);
+  }, [stepIdx, setThemeOverride]);
 
   // Spotlight pulse (disabled under Reduce Motion).
   const pulse = useSharedValue(0);
@@ -458,7 +462,9 @@ export function WalkthroughOverlay() {
       {/* Floating info card — keyed by step so the fade replays per step now
           that the rect is no longer nulled between steps. */}
       <View
-        key={stepIdx}
+        // Keyed by theme too: if the theme flips while a card is mounted
+        // (theme-demo revert), remount so no frozen background survives.
+        key={`${stepIdx}-${t.name}`}
         pointerEvents="box-none"
         style={{
           position: 'absolute', left: 0, right: 0,
