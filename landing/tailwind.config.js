@@ -9,7 +9,7 @@ export default {
         card: '#1a1a1a',
         border: '#262626',
         muted: '#a3a3a3',
-        primary: '#a3e635',
+        primary: '#facc15',
         green: '#22c55e',
         gold: '#facc15',
         red: '#ef4444',
@@ -19,7 +19,7 @@ export default {
         mono: ['SF Mono', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       boxShadow: {
-        'neon-primary': '0 0 20px rgba(163, 230, 53, 0.4), 0 0 40px rgba(163, 230, 53, 0.2)',
+        'neon-primary': '0 0 20px rgba(250, 204, 21, 0.4), 0 0 40px rgba(250, 204, 21, 0.2)',
         'neon-gold': '0 0 20px rgba(250, 204, 21, 0.4), 0 0 40px rgba(250, 204, 21, 0.2)',
         'neon-green': '0 0 20px rgba(34, 197, 94, 0.4), 0 0 40px rgba(34, 197, 94, 0.2)',
         'neon-red': '0 0 16px rgba(239, 68, 68, 0.35)',
@@ -35,8 +35,8 @@ export default {
           '50%': { transform: 'translateY(-10px)' },
         },
         glow: {
-          '0%, 100%': { textShadow: '0 0 12px rgba(163, 230, 53, 0.5), 0 0 24px rgba(163, 230, 53, 0.3)' },
-          '50%': { textShadow: '0 0 20px rgba(163, 230, 53, 0.8), 0 0 40px rgba(163, 230, 53, 0.5)' },
+          '0%, 100%': { textShadow: '0 0 12px rgba(250, 204, 21, 0.5), 0 0 24px rgba(250, 204, 21, 0.3)' },
+          '50%': { textShadow: '0 0 20px rgba(250, 204, 21, 0.8), 0 0 40px rgba(250, 204, 21, 0.5)' },
         },
       },
     },
