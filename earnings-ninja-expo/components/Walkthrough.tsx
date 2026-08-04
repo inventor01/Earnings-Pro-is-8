@@ -227,16 +227,19 @@ export function WalkthroughOverlay() {
     if (!user?.id || autoStarted.current) return;
     let cancelled = false;
     (async () => {
-      const done = user.is_demo ? false : await readWalkthroughDone(user.id);
+      // Demo included: the tour shows once per device per account, then stays
+      // dismissed. (It used to replay every launch on demo, which made the
+      // paid-plan showcase feel broken.)
+      const done = await readWalkthroughDone(user.id);
       if (cancelled || done || autoStarted.current) return;
       autoStarted.current = true;
       // Let the dashboard settle (skeleton → content) before dimming it.
       autoTimer.current = setTimeout(() => {
         autoTimer.current = null;
         if (cancelled) return;
-        // Persist "seen" as soon as the tour starts (production only) so
-        // killing the app mid-tour can't make it auto-show again forever.
-        if (!user.is_demo) writeWalkthroughDone(user.id);
+        // Persist "seen" as soon as the tour starts so killing the app
+        // mid-tour can't make it auto-show again forever.
+        writeWalkthroughDone(user.id);
         setStepIdx(0);
         setPhase('welcome');
       }, 900);
@@ -245,15 +248,14 @@ export function WalkthroughOverlay() {
       cancelled = true;
       if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = null; }
     };
-  }, [user?.id, user?.is_demo]);
+  }, [user?.id]);
 
   const finish = useCallback((completed: boolean) => {
     setPhase('hidden');
     setRect(null);
-    // Demo accounts never persist — the tour must run on every launch.
-    if (user?.id && !user.is_demo) writeWalkthroughDone(user.id);
+    if (user?.id) writeWalkthroughDone(user.id);
     if (completed) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-  }, [user?.id, user?.is_demo]);
+  }, [user?.id]);
 
   const step = STEPS[stepIdx];
 
