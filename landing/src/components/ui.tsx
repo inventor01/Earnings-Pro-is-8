@@ -210,8 +210,8 @@ export function Nav({ ctaTo = '/upgrade' }: { ctaTo?: string }) {
           <Link to="/#features" className="hover:text-white transition-colors">
             Features
           </Link>
-          <Link to="/#showcase" className="hover:text-white transition-colors">
-            Screenshots
+          <Link to="/#calculator" className="hover:text-white transition-colors">
+            Calculator
           </Link>
           <Link to="/upgrade" className="hover:text-white transition-colors">
             Pricing
@@ -252,8 +252,8 @@ export function Nav({ ctaTo = '/upgrade' }: { ctaTo?: string }) {
             <Link to="/#features" onClick={() => setOpen(false)} className="text-muted hover:text-white">
               Features
             </Link>
-            <Link to="/#showcase" onClick={() => setOpen(false)} className="text-muted hover:text-white">
-              Screenshots
+            <Link to="/#calculator" onClick={() => setOpen(false)} className="text-muted hover:text-white">
+              Calculator
             </Link>
             <Link to="/upgrade" onClick={() => setOpen(false)} className="text-muted hover:text-white">
               Pricing
