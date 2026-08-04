@@ -27,7 +27,10 @@ MAX_SCREENSHOT_BYTES = 2_000_000   # ~2MB per data-URL (post-compression)
 MAX_TEXT_LEN = 10_000
 MAX_DIAG_ITEMS = 20                # diagnostics is a small flat facts dict
 MAX_DIAG_STR = 200
-MAX_TOTAL_SCREENSHOT_CHARS = 8_000_000  # aggregate cap across all screenshots
+# Aggregate cap across all screenshots. Must fit everything the client allows:
+# 5 shots × ~2.6M chars per data-URL (client per-shot cap) = 13M, plus margin.
+# Decoded that's ~10MB, still well under the 20MB email-attachment budget.
+MAX_TOTAL_SCREENSHOT_CHARS = 14_000_000
 MAX_REPORTS_PER_HOUR = 5           # per-user throttle
 
 

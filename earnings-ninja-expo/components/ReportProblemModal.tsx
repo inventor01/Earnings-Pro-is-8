@@ -169,10 +169,14 @@ export default function ReportProblemModal({
     if (res.canceled) return;
     const added: string[] = [];
     let oversized = 0;
+    // Keep in sync with the backend caps: ~2MB per shot, 14M chars aggregate.
+    const MAX_TOTAL_CHARS = 13_000_000;
+    let total = shots.reduce((n, s) => n + s.length, 0);
     for (const a of res.assets ?? []) {
       if (!a.base64) continue;
       const url = `data:image/jpeg;base64,${a.base64}`;
-      if (url.length > 2_600_000) { oversized += 1; continue; } // ~2MB server cap
+      if (url.length > 2_600_000 || total + url.length > MAX_TOTAL_CHARS) { oversized += 1; continue; }
+      total += url.length;
       added.push(url);
     }
     if (added.length) setShots((prev) => [...prev, ...added].slice(0, MAX_SCREENSHOTS));

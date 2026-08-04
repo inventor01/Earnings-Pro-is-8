@@ -1175,7 +1175,14 @@ export async function submitProblemReport(payload: ProblemReportPayload): Promis
     let detail = 'Could not send your report.';
     try {
       const j = await res.json();
-      if (typeof j?.detail === 'string') detail = j.detail;
+      if (typeof j?.detail === 'string') {
+        detail = j.detail;
+      } else if (Array.isArray(j?.detail) && j.detail.length) {
+        // FastAPI 422 validation errors arrive as a list — surface the first
+        // human-readable message instead of the generic fallback.
+        const msg = j.detail[0]?.msg;
+        if (typeof msg === 'string' && msg) detail = msg.replace(/^Value error,\s*/i, '');
+      }
     } catch {}
     throw new Error(detail);
   }
