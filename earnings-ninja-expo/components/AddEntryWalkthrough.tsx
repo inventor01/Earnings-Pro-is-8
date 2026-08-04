@@ -219,7 +219,9 @@ export function AddEntryWalkthroughOverlay({ active }: {
     let timer: ReturnType<typeof setTimeout> | null = null;
     (async () => {
       const replay = replayQueuedFor === user.id;
-      const done = replay || user.is_demo ? false : await readAddEntryWalkthroughDone(user.id);
+      // Demo included: shows once per device per account (explicit replay
+      // from Settings still works via the `replay` flag).
+      const done = replay ? false : await readAddEntryWalkthroughDone(user.id);
       if (cancelled || done || startedThisOpen.current) return;
       startedThisOpen.current = true;
       // Let the sheet slide-in animation finish before dimming it. The replay
@@ -231,22 +233,22 @@ export function AddEntryWalkthroughOverlay({ active }: {
         // Mark "seen" the moment the tour actually starts (production only).
         // Writing only in finish() meant swiping the sheet closed mid-tour
         // never persisted the flag → the tour auto-started on EVERY open.
-        if (!user.is_demo) writeAddEntryWalkthroughDone(user.id);
+        writeAddEntryWalkthroughDone(user.id);
         setStepIdx(0);
         setPhase('welcome');
       }, 650);
     })();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [active, user?.id, user?.is_demo]);
+  }, [active, user?.id]);
 
   const finish = useCallback((completed: boolean) => {
     setPhase('hidden');
     setRect(null);
     // Leave the form ready for a real first entry.
     applyPrep({ form: 'calc', entryType: 'ORDER', showMore: false });
-    if (user?.id && !user.is_demo) writeAddEntryWalkthroughDone(user.id);
+    if (user?.id) writeAddEntryWalkthroughDone(user.id);
     if (completed) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-  }, [user?.id, user?.is_demo]);
+  }, [user?.id]);
 
   const step = STEPS[stepIdx];
 
