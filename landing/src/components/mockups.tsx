@@ -26,7 +26,7 @@ export function PhoneMockup({
 }) {
   return (
     <div className={`relative ${className}`}>
-      <div className="relative aspect-[9/19.5] bg-black rounded-[44px] p-2 border border-white/10 shadow-[0_30px_80px_-15px_rgba(163,230,53,0.25),0_0_0_1px_rgba(255,255,255,0.06)]">
+      <div className="relative aspect-[9/19.5] bg-[#0c0d0b] rounded-[44px] p-2 border border-white/10 shadow-[0_30px_80px_-15px_rgba(204,255,51,0.22),0_0_0_1px_rgba(255,255,255,0.06)]">
         <div className="relative w-full h-full bg-bg rounded-[36px] overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[110px] h-[28px] bg-black rounded-b-[18px] z-20" />
           <div className="absolute inset-0 phone-glare z-30 rounded-[36px] pointer-events-none" />

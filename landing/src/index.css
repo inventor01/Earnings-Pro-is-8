@@ -1,15 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   color-scheme: dark;
+  --ink: 18 20% 7%;
+  --ink-soft: 20 16% 11%;
+  --paper: 42 24% 91%;
+  --lime: 76 88% 58%;
+  --orange: 19 93% 58%;
+  --muted: 38 10% 63%;
+  --line: 38 14% 22%;
+  --background: 18 20% 7%;
+  --foreground: 42 24% 91%;
+  --primary: 76 88% 58%;
+  --primary-foreground: 18 20% 7%;
+  --card: 20 16% 11%;
+  --card-foreground: 42 24% 91%;
+  --muted-foreground: 38 10% 63%;
+  --border: 38 14% 22%;
 }
 
 html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
-  background: #0a0a0a;
+  font-family: 'Manrope', sans-serif;
+  background: hsl(var(--ink));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -26,15 +42,18 @@ body {
 }
 
 body {
-  background-image: radial-gradient(
-      circle at 15% 0%,
-      rgba(163, 230, 53, 0.09) 0%,
-      transparent 45%
-    ),
-    radial-gradient(circle at 90% 10%, rgba(34, 197, 94, 0.06) 0%, transparent 40%),
-    radial-gradient(circle at 50% 100%, rgba(163, 230, 53, 0.05) 0%, transparent 50%);
+  background-image: radial-gradient(circle at 18% 0%, hsl(var(--orange) / .11), transparent 34%),
+    radial-gradient(circle at 86% 12%, hsl(var(--lime) / .08), transparent 32%);
   background-attachment: fixed;
 }
+
+h1, h2, h3, .display { font-family: 'Barlow Condensed', sans-serif; }
+.mono { font-family: 'DM Mono', monospace; }
+.tape { background: hsl(var(--lime)); color: hsl(var(--ink)); transform: rotate(-2deg); }
+.grain::after { content: ''; position: fixed; inset: 0; pointer-events: none; opacity: .035; z-index: 100; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E"); }
+.reveal { animation: rise .7s both; }
+.reveal-delay { animation: rise .7s .14s both; }
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
 @layer utilities {
   .text-balance {

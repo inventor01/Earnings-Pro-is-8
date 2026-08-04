@@ -21,7 +21,7 @@ export const TERMS_URL = '/terms'
 export const SUPPORT_URL = '/support'
 export const SUPPORT_EMAIL = 'support@earningsninja.com'
 
-export const PLATFORMS = ['DoorDash', 'Uber Eats', 'Instacart', 'GrubHub', 'Shipt']
+export const PLATFORMS = ['DoorDash', 'Uber Eats', 'Instacart', 'Spark', 'GrubHub', 'Shipt']
 
 export interface Plan {
   id: 'annual' | 'monthly' | 'lifetime'
@@ -65,34 +65,34 @@ export const PLANS: Plan[] = [
 // Benefit-first feature cards for the main landing page.
 export const LANDING_FEATURES = [
   {
-    icon: '⚡',
-    title: 'Log a drop-off in 3 seconds',
-    body: 'A calculator-style number pad — tap, tap, save. No keyboard, no clunky forms, no excuses between pings.',
+    icon: '01',
+    title: 'See what costs are taking from your pay.',
+    body: 'Gas, maintenance, tolls, and the quiet costs of driving stop hiding in the margins.',
   },
   {
-    icon: '📊',
-    title: 'Know your real dollar per mile',
-    body: 'Net profit, hourly average, $/mile — every number updates live the second you log an entry. Know if it\u2019s worth it before you accept the next one.',
+    icon: '02',
+    title: 'Know what you made across every app.',
+    body: 'One combined dashboard for DoorDash, Uber Eats, Instacart, Spark, and the rest of your hustle.',
   },
   {
-    icon: '🎯',
-    title: 'Hit your daily goal',
-    body: 'Set daily, weekly, and monthly profit targets. Watch the bar fill and the ninja glow when you make today worth it.',
+    icon: '03',
+    title: 'Know when you can go home.',
+    body: 'Set a target for rent, bills, or savings and see exactly how much further tonight has to go.',
   },
   {
-    icon: '📱',
-    title: 'Profit on your Lock Screen',
-    body: 'Home Screen and Lock Screen widgets show today\u2019s net profit at a glance — tap to jump straight into a new entry.',
+    icon: '04',
+    title: 'Find the shifts worth repeating.',
+    body: 'Spot the days, hours, and apps that pay you best without building another spreadsheet.',
   },
   {
-    icon: '🤖',
-    title: 'AI that finds you money',
-    body: 'Smart suggestions surface your best days, hours, and platforms — so you skip the dead zones and stop driving for scraps.',
+    icon: '05',
+    title: 'Keep cleaner records at tax time.',
+    body: 'Your earnings history and expenses stay together, ready when April stops being theoretical.',
   },
   {
-    icon: '🔒',
-    title: 'No ads. No trackers.',
-    body: 'We don\u2019t sell your data and we don\u2019t run analytics SDKs. Your earnings are nobody\u2019s business but yours.',
+    icon: '06',
+    title: 'Track your numbers, not somebody else’s.',
+    body: 'No ads. No data selling. Just the number you need before you accept the next order.',
   },
 ]
 
