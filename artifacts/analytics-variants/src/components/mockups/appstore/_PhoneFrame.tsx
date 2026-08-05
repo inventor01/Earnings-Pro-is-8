@@ -18,7 +18,7 @@ export function AppStoreFrame({
       <div className="w-full px-[8%] pt-[7%] pb-[3%] text-center">
         <h1
           className="text-black font-extrabold leading-tight tracking-tight"
-          style={{ fontSize: "clamp(14px, 5.8vw, 28px)" }}
+          style={{ fontSize: "clamp(14px, 5.8vw, 28px)", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
         >
           {headline}
         </h1>
