@@ -4,6 +4,7 @@ export const modules: ModuleMap = {
   "./components/mockups/CockpitHUD.tsx": () => import("../components/mockups/CockpitHUD.tsx"),
   "./components/mockups/EditorialStory.tsx": () => import("../components/mockups/EditorialStory.tsx"),
   "./components/mockups/NeonTerminal.tsx": () => import("../components/mockups/NeonTerminal.tsx"),
+  "./components/mockups/header/HeaderRedesign.tsx": () => import("../components/mockups/header/HeaderRedesign.tsx"),
   "./components/mockups/onboarding/BlurredPreview.tsx": () => import("../components/mockups/onboarding/BlurredPreview.tsx"),
   "./components/mockups/onboarding/BuildingDashboard.tsx": () => import("../components/mockups/onboarding/BuildingDashboard.tsx"),
   "./components/mockups/onboarding/Challenge.tsx": () => import("../components/mockups/onboarding/Challenge.tsx"),
