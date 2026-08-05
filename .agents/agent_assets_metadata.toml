@@ -156,3 +156,45 @@ id = "NHwCQHIm7_sg4RN0vgjoV"
 uri = "file://store-previews/out/8-free-trial.png"
 type = "image"
 title = "8 · Try Pro Free for 7 Days"
+
+[[outputs]]
+id = "etThyGp99SY4lgVFtnxy-"
+uri = "file://artifacts/analytics-variants/exports/screenshot-01.png"
+type = "image"
+title = "App Store screenshot 01 — Know your REAL PROFIT"
+description = "1284×2778 PNG, ready for App Store Connect (6.5\" display)"
+
+[[outputs]]
+id = "S_qiHc5lMWLc0tmNVnKjC"
+uri = "file://artifacts/analytics-variants/exports/screenshot-02.png"
+type = "image"
+title = "App Store screenshot 02 — Earn more EVERY HOUR"
+description = "1284×2778 PNG, ready for App Store Connect (6.5\" display)"
+
+[[outputs]]
+id = "u545A3wkDdo45BJWzu8lm"
+uri = "file://artifacts/analytics-variants/exports/screenshot-03.png"
+type = "image"
+title = "App Store screenshot 03 — Track every GIG APP"
+description = "1284×2778 PNG, ready for App Store Connect (6.5\" display)"
+
+[[outputs]]
+id = "0G5c4xhYgekrecpU9-FTz"
+uri = "file://artifacts/analytics-variants/exports/screenshot-04.png"
+type = "image"
+title = "App Store screenshot 04 — See where your MONEY GOES"
+description = "1284×2778 PNG, ready for App Store Connect (6.5\" display)"
+
+[[outputs]]
+id = "9h4cDAg2iTHuW7Qtwcite"
+uri = "file://artifacts/analytics-variants/exports/screenshot-05.png"
+type = "image"
+title = "App Store screenshot 05 — Own your data EXPORT ANYTIME"
+description = "1284×2778 PNG, ready for App Store Connect (6.5\" display)"
+
+[[outputs]]
+id = "zughHCRPej5CaVysKPG2s"
+uri = "file://artifacts/analytics-variants/exports/screenshot-06.png"
+type = "image"
+title = "App Store screenshot 06 — Hit your INCOME GOALS"
+description = "1284×2778 PNG, ready for App Store Connect (6.5\" display)"
