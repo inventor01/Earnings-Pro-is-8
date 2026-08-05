@@ -6610,28 +6610,29 @@ export default function DashboardScreen() {
           borderBottomWidth: 1,
           borderBottomColor: BORDER,
         }}>
-          {/* Left title block: shrinkable so it never pushes the right icons
-              off-screen on 320dp-class phones. minWidth:0 lets flex actually
-              shrink the inner Text; numberOfLines+adjustsFontSizeToFit caps it. */}
-          <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10, marginRight: 8 }}>
-            <Animated.View style={[{ borderRadius: 18 }, ninjaGlowStyle]}>
+          {/* Big centered app name on its own line. adjustsFontSizeToFit keeps
+              it on one line on 320dp-class phones. */}
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+            style={{ textAlign: 'center', fontSize: 28, fontWeight: '900', letterSpacing: 1.5, color: TEXT, marginBottom: 10 }}
+          >
+            EARNINGS{' '}
+            <Text style={{ color: PRIMARY_TXT }}>NINJA</Text>
+          </Text>
+          {/* Second row: logo inline with the (larger) menu icons. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flexShrink: 0, marginRight: 8 }}>
+            <Animated.View style={[{ borderRadius: 24 }, ninjaGlowStyle]}>
               <Image
                 source={require('../../assets/ninja-logo.png')}
-                style={{ width: 36, height: 36, resizeMode: 'contain' }}
+                style={{ width: 46, height: 46, resizeMode: 'contain' }}
               />
             </Animated.View>
-            <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-              style={{ flexShrink: 1, fontSize: 18, fontWeight: '900', letterSpacing: 0.3, color: TEXT }}
-            >
-              EARNINGS{' '}
-              <Text style={{ color: PRIMARY_TXT }}>NINJA</Text>
-            </Text>
           </View>
           {/* Right icon group: fixed-size, never shrinks, always visible. */}
-          <View style={{ flexDirection: 'row', gap: 8, flexShrink: 0 }}>
+          <View style={{ flexDirection: 'row', gap: 6, flexShrink: 0 }}>
             <PressScale
               hitSlop={8}
               accessibilityLabel={showSearchBar ? 'Close search' : 'Search entries'}
@@ -6643,7 +6644,7 @@ export default function DashboardScreen() {
                 setShowSearchBar(prev => !prev);
               }}
               style={{
-                width: 36, height: 36, borderRadius: 10,
+                width: 42, height: 42, borderRadius: 12,
                 backgroundColor: showSearchBar ? PRIMARY : BG,
                 borderWidth: 1, borderColor: showSearchBar ? PRIMARY : BORDER,
                 alignItems: 'center', justifyContent: 'center',
@@ -6651,7 +6652,7 @@ export default function DashboardScreen() {
             >
               <Ionicons
                 name={showSearchBar ? 'close' : 'search'}
-                size={17}
+                size={20}
                 color={showSearchBar ? ON_PRIMARY : MUTED}
               />
             </PressScale>
@@ -6660,9 +6661,9 @@ export default function DashboardScreen() {
               hitSlop={8}
               accessibilityLabel="Open calendar"
               onPress={() => { hTap(); setShowCalendar(true); }}
-              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Ionicons name="calendar-outline" size={17} color={MUTED} />
+              <Ionicons name="calendar-outline" size={20} color={MUTED} />
             </PressScale>
             </View>
             <PressScale
@@ -6671,7 +6672,7 @@ export default function DashboardScreen() {
               onPress={() => { hTap(); toggleHidden(); }}
               style={[
                 {
-                  width: 36, height: 36, borderRadius: 10,
+                  width: 42, height: 42, borderRadius: 12,
                   backgroundColor: hidden ? PRIMARY : BG,
                   borderWidth: 1, borderColor: hidden ? PRIMARY : BORDER,
                   alignItems: 'center', justifyContent: 'center',
@@ -6679,24 +6680,25 @@ export default function DashboardScreen() {
                 hidden ? neonGlow(PRIMARY, 8, 0.45) : undefined,
               ].filter(Boolean) as ViewStyle[]}
             >
-              <Ionicons name={hidden ? 'eye-off' : 'eye'} size={17} color={hidden ? ON_PRIMARY : MUTED} />
+              <Ionicons name={hidden ? 'eye-off' : 'eye'} size={20} color={hidden ? ON_PRIMARY : MUTED} />
             </PressScale>
             <PressScale
               hitSlop={8}
               accessibilityLabel={themeName === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
               onPress={() => { hTap(); setThemeName(themeName === 'dark' ? 'light' : 'dark'); }}
-              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Ionicons name={themeName === 'dark' ? 'sunny' : 'moon'} size={17} color={MUTED} />
+              <Ionicons name={themeName === 'dark' ? 'sunny' : 'moon'} size={20} color={MUTED} />
             </PressScale>
             <PressScale
               hitSlop={8}
               accessibilityLabel="Open settings"
               onPress={() => { hTap(); setShowSettings(true); }}
-              style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Ionicons name="settings-outline" size={17} color={MUTED} />
+              <Ionicons name="settings-outline" size={20} color={MUTED} />
             </PressScale>
+          </View>
           </View>
         </View>
 
