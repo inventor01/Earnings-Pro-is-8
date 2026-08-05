@@ -69,6 +69,7 @@ export function AppStoreFrame({
             letterSpacing: "-0.5px",
             fontSize: "clamp(26px, 8.6vw, 78px)",
             color: "#fff",
+            textTransform: "uppercase",
             whiteSpace: "nowrap",
             textShadow: "0 2px 12px rgba(0,0,0,0.10)",
           }}
