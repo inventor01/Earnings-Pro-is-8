@@ -252,14 +252,14 @@ export function WalkthroughOverlay() {
       cancelled = true;
       if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = null; }
     };
-  }, [user?.id]);
+  }, [user?.id, user?.is_demo]);
 
   const finish = useCallback((completed: boolean) => {
     setPhase('hidden');
     setRect(null);
     if (user?.id && !user.is_demo) writeWalkthroughDone(user.id);
     if (completed) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-  }, [user?.id]);
+  }, [user?.id, user?.is_demo]);
 
   const step = STEPS[stepIdx];
 

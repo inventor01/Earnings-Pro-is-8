@@ -63,6 +63,17 @@ export function queueAddEntryWalkthroughReplay(userId: string | number) { replay
 // to storage, so demo can't touch a real account's completion state.
 let demoSeenThisSession: string | number | null = null;
 
+// "Session" means one signed-in stretch: whenever the signed-in account
+// changes (including logout → login into the SAME demo account), the marker
+// clears so reopening the demo always presents the full guided experience.
+let lastSeenAuthUser: string | number | null = null;
+export function noteAuthUserForAddEntryWalkthrough(userId: string | number | null) {
+  if (userId !== lastSeenAuthUser) {
+    lastSeenAuthUser = userId;
+    demoSeenThisSession = null;
+  }
+}
+
 // ─── Target registry ──────────────────────────────────────────────────────────
 
 export type AddEntryTargetId =
@@ -218,6 +229,10 @@ export function AddEntryWalkthroughOverlay({ active }: {
     return () => sub?.remove();
   }, []);
 
+  // Track auth-session changes so the demo in-memory marker resets on every
+  // logout/login — the overlay stays mounted across account switches.
+  useEffect(() => { noteAuthUserForAddEntryWalkthrough(user?.id ?? null); }, [user?.id]);
+
   // Auto-start when the sheet opens: replay queue > demo (always) > first time.
   useEffect(() => {
     if (!active) { startedThisOpen.current = false; setPhase('hidden'); setRect(null); return; }
@@ -253,7 +268,7 @@ export function AddEntryWalkthroughOverlay({ active }: {
       }, 650);
     })();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [active, user?.id]);
+  }, [active, user?.id, user?.is_demo]);
 
   const finish = useCallback((completed: boolean) => {
     setPhase('hidden');
