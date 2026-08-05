@@ -16,11 +16,16 @@ export function AppStoreFrame({
   line2,
   appImage,
   altText = "",
+  mascot,
+  mascotSide = "left",
 }: {
   line1: string;
   line2: string;
   appImage: string;
   altText?: string;
+  /** Optional transparent-PNG mascot cutout, anchored to a bottom corner in front of the phone */
+  mascot?: string;
+  mascotSide?: "left" | "right";
 }) {
   return (
     <div
@@ -205,6 +210,25 @@ export function AppStoreFrame({
           </div>
         </div>
       </div>
+
+      {/* ── Mascot — leans in from a bottom corner, in front of the phone ── */}
+      {mascot && (
+        <img
+          src={mascot}
+          alt="Earnings Ninja mascot"
+          style={{
+            position: "absolute",
+            bottom: "-6vh",
+            [mascotSide]: "-14vw",
+            width: "62vw",
+            zIndex: 3,
+            pointerEvents: "none",
+            filter:
+              "drop-shadow(0 18px 40px rgba(60,35,0,0.45)) drop-shadow(0 0 24px rgba(120,255,120,0.25))",
+            transform: mascotSide === "right" ? "scaleX(-1)" : undefined,
+          }}
+        />
+      )}
     </div>
   );
 }
