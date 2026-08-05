@@ -225,12 +225,15 @@ export function WalkthroughOverlay() {
       if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = null; }
     }
     if (!user?.id || autoStarted.current) return;
+    const isDemo = !!user.is_demo;
     let cancelled = false;
     (async () => {
-      // Demo included: the tour shows once per device per account, then stays
-      // dismissed. (It used to replay every launch on demo, which made the
-      // paid-plan showcase feel broken.)
-      const done = await readWalkthroughDone(user.id);
+      // Real accounts: the tour shows once per device per account, then stays
+      // dismissed. Demo accounts: the persisted flag is ignored AND never
+      // written — every demo session starts with the full tour (the
+      // `autoStarted` ref still prevents repeats within one session, and it
+      // resets whenever the signed-in account changes).
+      const done = isDemo ? false : await readWalkthroughDone(user.id);
       if (cancelled || done || autoStarted.current) return;
       autoStarted.current = true;
       // Let the dashboard settle (skeleton → content) before dimming it.
@@ -238,8 +241,9 @@ export function WalkthroughOverlay() {
         autoTimer.current = null;
         if (cancelled) return;
         // Persist "seen" as soon as the tour starts so killing the app
-        // mid-tour can't make it auto-show again forever.
-        writeWalkthroughDone(user.id);
+        // mid-tour can't make it auto-show again forever (real accounts only —
+        // demo must never write completion state).
+        if (!isDemo) writeWalkthroughDone(user.id);
         setStepIdx(0);
         setPhase('welcome');
       }, 900);
@@ -253,7 +257,7 @@ export function WalkthroughOverlay() {
   const finish = useCallback((completed: boolean) => {
     setPhase('hidden');
     setRect(null);
-    if (user?.id) writeWalkthroughDone(user.id);
+    if (user?.id && !user.is_demo) writeWalkthroughDone(user.id);
     if (completed) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }, [user?.id]);
 
