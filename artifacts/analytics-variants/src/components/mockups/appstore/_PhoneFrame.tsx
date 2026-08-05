@@ -1,15 +1,15 @@
 import React from "react";
 
 /**
- * Fixed App Store display-preview template — 1284×2778 canvas.
+ * App Store display-preview template — outcome-first layout.
  *
  * Layout (fixed, identical across all screenshots):
- *   – Top 22%:  two-line headline in Barlow Condensed 900
- *   – Remaining: centred iPhone mockup, bleeds slightly off the bottom edge
- *
- * Only the headline text and the <img> src change between screens.
- * Pass `appImage` as the cropped app-UI path (e.g. "/images/app-01.png").
- * Pass `headline` as [line1, line2] — line1 is black, line2 is white.
+ *   – ~15% headline: two-line Barlow Condensed 900; line 2 is the emphasized
+ *     key phrase (larger). Tight line spacing.
+ *   – ~85% phone: iPhone 14 Pro frame, aspect-locked 393:852, dominates the
+ *     canvas and bleeds off the bottom edge. Identical position/scale on
+ *     every screenshot.
+ *   – Subtle radial glow behind the phone for depth on the flat yellow.
  */
 export function AppStoreFrame({
   line1,
@@ -25,10 +25,10 @@ export function AppStoreFrame({
   return (
     <div
       style={{
-        // Fixed canvas proportions — always fills the iframe viewport
         width: "100vw",
         height: "100vh",
-        background: "#facc15",
+        background:
+          "radial-gradient(120% 90% at 50% 42%, #ffd83d 0%, #facc15 55%, #eabb06 100%)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -36,25 +36,26 @@ export function AppStoreFrame({
         fontFamily: "'Barlow Condensed', sans-serif",
       }}
     >
-      {/* ─── Headline block — fixed height 22 vh ─── */}
+      {/* ── Headline — 15% of height, tight to the phone ── */}
       <div
         style={{
-          height: "22vh",
+          height: "15vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "flex-end",
-          paddingBottom: "2vh",
-          width: "84%",
+          paddingBottom: "1vh",
+          width: "92%",
           textAlign: "center",
+          flexShrink: 0,
         }}
       >
         <div
           style={{
             fontWeight: 900,
-            lineHeight: 1.08,
+            lineHeight: 1.0,
             letterSpacing: "-0.5px",
-            fontSize: "clamp(18px, 6.2vw, 52px)",
+            fontSize: "clamp(20px, 6.4vw, 58px)",
             color: "#000",
             whiteSpace: "nowrap",
           }}
@@ -64,43 +65,58 @@ export function AppStoreFrame({
         <div
           style={{
             fontWeight: 900,
-            lineHeight: 1.08,
+            lineHeight: 1.02,
             letterSpacing: "-0.5px",
-            fontSize: "clamp(18px, 6.2vw, 52px)",
+            fontSize: "clamp(26px, 8.6vw, 78px)",
             color: "#fff",
             whiteSpace: "nowrap",
+            textShadow: "0 2px 12px rgba(0,0,0,0.10)",
           }}
         >
           {line2}
         </div>
       </div>
 
-      {/* ─── Phone mockup — fills remaining space, bleeds bottom ─── */}
+      {/* ── Phone — dominates the canvas, bleeds off the bottom ── */}
       <div
         style={{
           flex: 1,
-          width: "100%",
           display: "flex",
           justifyContent: "center",
           alignItems: "flex-start",
           overflow: "visible",
+          paddingTop: "1.2vh",
+          position: "relative",
         }}
       >
-        {/* Phone body */}
+        {/* Soft vignette glow behind the phone */}
         <div
           style={{
-            // Keep phone width at 76% of viewport width; height auto via aspect ratio
-            width: "76vw",
-            // iPhone 14 Pro body ratio (393px wide : 852px tall ≈ 0.461)
-            // We add bezel: ~5.5% padding each side = ~111% of screen height
-            height: "114vh",
+            position: "absolute",
+            top: "-2%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "120vw",
+            height: "60vh",
+            background:
+              "radial-gradient(50% 50% at 50% 40%, rgba(0,0,0,0.14) 0%, rgba(0,0,0,0) 70%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Phone body — aspect-locked to iPhone 14 Pro hardware ratio */}
+        <div
+          style={{
+            width: "92vw",
+            aspectRatio: "393 / 852",
             background: "#0a0a0a",
-            borderRadius: "12% / 6%",
-            padding: "2.4%",
-            boxShadow: "0 28px 70px rgba(0,0,0,0.45)",
+            borderRadius: "10%",
+            padding: "2%",
+            boxShadow: "0 30px 80px rgba(0,0,0,0.45)",
             position: "relative",
             boxSizing: "border-box",
             flexShrink: 0,
+            zIndex: 1,
           }}
         >
           {/* Screen area */}
@@ -109,8 +125,8 @@ export function AppStoreFrame({
               width: "100%",
               height: "100%",
               overflow: "hidden",
-              borderRadius: "10% / 5%",
-              background: "#101010",
+              borderRadius: "8.5%",
+              background: "#000",
               position: "relative",
             }}
           >
@@ -121,25 +137,26 @@ export function AppStoreFrame({
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                objectPosition: "top",
+                objectPosition: "top center",
                 display: "block",
               }}
             />
-          </div>
 
-          {/* Dynamic Island pill */}
-          <div
-            style={{
-              position: "absolute",
-              top: "2.2%",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "28%",
-              height: "2.5%",
-              background: "#0a0a0a",
-              borderRadius: 999,
-            }}
-          />
+            {/* Dynamic Island pill — centred over the status-bar gap */}
+            <div
+              style={{
+                position: "absolute",
+                top: "1.6%",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "32%",
+                height: "3.5%",
+                background: "#000",
+                borderRadius: "999px",
+                zIndex: 2,
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
