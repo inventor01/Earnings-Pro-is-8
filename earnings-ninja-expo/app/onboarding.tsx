@@ -157,14 +157,11 @@ export default function OnboardingScreen() {
     // Pre-fill the Add Entry default platform from the first onboarding pick
     // (no-op if a real "last used platform" already exists).
     await seedDefaultPlatformFromOnboarding(state.apps);
-    if (user?.is_demo) {
-      // Demo/reviewer accounts re-run the funnel on EVERY launch: never mark
-      // completion (server or local) and reset the saved progress so the next
-      // session starts from the welcome screen. Normal demo sessions never get
-      // here (their server flag is true); only the reviewer account (flag
-      // manually reset to false) reaches this path.
-      if (userId) writeOnboardingState(userId, { ...DEFAULT_ONBOARDING_STATE }).catch(() => {});
-    } else {
+    {
+      // Demo included: completion persists (server + local). Fresh "Try Demo
+      // Mode" sessions are brand-new accounts, so the funnel still opens each
+      // NEW demo session — but relaunching mid-session (or the persistent
+      // reviewer account) never re-runs a completed funnel.
       let serverSynced = false;
       try {
         await api.completeOnboarding();

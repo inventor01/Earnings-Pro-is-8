@@ -679,12 +679,10 @@ async def complete_onboarding(
     """Mark the one-time onboarding funnel done for this account. Idempotent —
     synced server-side so a reinstall never re-onboards an existing user.
 
-    Demo accounts are a no-op: the App Store reviewer account must re-run the
-    funnel on every login, so its flag can never be flipped to true — not even
-    by older app builds that still call this endpoint for demo users. We still
-    report success so those old clients don't retry forever."""
-    if current_user.is_demo:
-        return {"onboarding_completed": True}
+    Demo accounts persist too: each "Try Demo Mode" session mints a brand-new
+    account (flag false), so the funnel still shows on every NEW demo session —
+    but relaunching the app mid-session, or the persistent reviewer account,
+    completes once and never re-runs (reviewer re-demos by resetting the flag)."""
     if not current_user.onboarding_completed:
         current_user.onboarding_completed = True
         db.commit()

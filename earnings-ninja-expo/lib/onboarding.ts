@@ -99,18 +99,17 @@ export async function adoptPendingDone(userId: string): Promise<void> {
 // FAIL CLOSED toward the dashboard: only an explicit server `false` with no
 // local completion shows the flow. Existing users (flag true), old cached
 // profiles / older servers (flag undefined), and a missing user all skip it.
-// The server flag is authoritative even for demo accounts: normal demo
-// accounts are created with the flag true (so they skip), but the App Store
-// reviewer account's flag can be reset to false to demo the funnel.
+// Demo accounts follow the SAME rules as real ones: each "Try Demo Mode"
+// session is a brand-new account (flag false, no local state) so the funnel
+// naturally shows once per demo session — but completing it sticks, so an app
+// relaunch mid-session (or the persistent reviewer account, once completed)
+// never re-runs the funnel.
 export function needsOnboarding(
   user: Pick<User, 'is_demo' | 'onboarding_completed'> | null | undefined,
   local: Pick<OnboardingState, 'localDone'>,
 ): boolean {
   if (!user) return false;
   if (user.onboarding_completed !== false) return false;
-  // Demo (reviewer) accounts re-run the funnel every login: ignore any local
-  // completion marker left behind by an older build.
-  if (user.is_demo) return true;
   return !local.localDone;
 }
 
