@@ -1,15 +1,15 @@
 import React from "react";
 
 /**
- * App Store display-preview template — outcome-first layout.
+ * App Store display-preview template — "Apple product page" treatment.
  *
- * Layout (fixed, identical across all screenshots):
- *   – ~15% headline: two-line Barlow Condensed 900; line 2 is the emphasized
- *     key phrase (larger). Tight line spacing.
- *   – ~85% phone: iPhone 14 Pro frame, aspect-locked 393:852, dominates the
- *     canvas and bleeds off the bottom edge. Identical position/scale on
- *     every screenshot.
- *   – Subtle radial glow behind the phone for depth on the flat yellow.
+ *   – Background: soft yellow→orange radial gradient, bright behind the phone,
+ *     darker toward the edges, with a faint diagonal ninja-slash texture.
+ *   – Headline: two lines in Barlow Condensed 900 on a subtle glass panel;
+ *     line 2 is the emphasized ALL-CAPS key phrase (~30% larger).
+ *   – Phone: iPhone 14 Pro frame, aspect-locked 393:852, dominates the canvas,
+ *     bleeds off the bottom, floats on a glow + deep soft shadow.
+ *   – Identical position/scale on every screenshot.
  */
 export function AppStoreFrame({
   line1,
@@ -27,58 +27,98 @@ export function AppStoreFrame({
       style={{
         width: "100vw",
         height: "100vh",
+        /* Option A — yellow core → deeper amber edges */
         background:
-          "radial-gradient(120% 90% at 50% 42%, #ffd83d 0%, #facc15 55%, #eabb06 100%)",
+          "radial-gradient(130% 95% at 50% 44%, #ffe159 0%, #fbcf1e 40%, #f2b90c 70%, #d99a05 100%)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         overflow: "hidden",
         fontFamily: "'Barlow Condensed', sans-serif",
+        position: "relative",
       }}
     >
-      {/* ── Headline — 15% of height, tight to the phone ── */}
+      {/* Faint diagonal slash texture — barely-there brand motif */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "repeating-linear-gradient(135deg, rgba(0,0,0,0.025) 0px, rgba(0,0,0,0.025) 2px, transparent 2px, transparent 26px)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Soft edge vignette for depth */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(100% 100% at 50% 45%, transparent 55%, rgba(120,75,0,0.16) 100%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* ── Headline on a subtle glass panel ── */}
       <div
         style={{
           height: "15vh",
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "flex-end",
-          paddingBottom: "1vh",
-          width: "92%",
-          textAlign: "center",
+          alignItems: "flex-end",
+          justifyContent: "center",
           flexShrink: 0,
+          zIndex: 2,
+          width: "100%",
         }}
       >
         <div
           style={{
-            fontWeight: 900,
-            lineHeight: 1.0,
-            letterSpacing: "-0.5px",
-            fontSize: "clamp(20px, 6.4vw, 58px)",
-            color: "#000",
-            whiteSpace: "nowrap",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            padding: "1.2vh 5vw 1.4vh",
+            marginBottom: "0.4vh",
+            borderRadius: "2.4vh",
+            background: "rgba(255,255,255,0.14)",
+            border: "1px solid rgba(255,255,255,0.28)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            boxShadow: "0 8px 30px rgba(120,75,0,0.10)",
+            maxWidth: "94%",
           }}
         >
-          {line1}
-        </div>
-        <div
-          style={{
-            fontWeight: 900,
-            lineHeight: 1.02,
-            letterSpacing: "-0.5px",
-            fontSize: "clamp(26px, 8.6vw, 78px)",
-            color: "#fff",
-            textTransform: "uppercase",
-            whiteSpace: "nowrap",
-            textShadow: "0 2px 12px rgba(0,0,0,0.10)",
-          }}
-        >
-          {line2}
+          <div
+            style={{
+              fontWeight: 900,
+              lineHeight: 1.0,
+              letterSpacing: "-0.5px",
+              fontSize: "clamp(20px, 6.2vw, 56px)",
+              color: "#000",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {line1}
+          </div>
+          <div
+            style={{
+              fontWeight: 900,
+              lineHeight: 1.02,
+              letterSpacing: "-0.3px",
+              fontSize: "clamp(26px, 8.6vw, 78px)",
+              color: "#fff",
+              whiteSpace: "nowrap",
+              textTransform: "uppercase",
+              textShadow: "0 2px 14px rgba(120,75,0,0.28)",
+            }}
+          >
+            {line2}
+          </div>
         </div>
       </div>
 
-      {/* ── Phone — dominates the canvas, bleeds off the bottom ── */}
+      {/* ── Phone — floating, dominant, bleeding off the bottom ── */}
       <div
         style={{
           flex: 1,
@@ -86,21 +126,24 @@ export function AppStoreFrame({
           justifyContent: "center",
           alignItems: "flex-start",
           overflow: "visible",
-          paddingTop: "1.2vh",
+          paddingTop: "1.4vh",
           position: "relative",
+          width: "100%",
+          zIndex: 1,
         }}
       >
-        {/* Soft vignette glow behind the phone */}
+        {/* Moon-like glow directly behind the phone */}
         <div
           style={{
             position: "absolute",
-            top: "-2%",
+            top: "-4%",
             left: "50%",
             transform: "translateX(-50%)",
-            width: "120vw",
-            height: "60vh",
+            width: "130vw",
+            aspectRatio: "1 / 1",
+            borderRadius: "50%",
             background:
-              "radial-gradient(50% 50% at 50% 40%, rgba(0,0,0,0.14) 0%, rgba(0,0,0,0) 70%)",
+              "radial-gradient(50% 50% at 50% 50%, rgba(255,246,200,0.65) 0%, rgba(255,240,160,0.25) 40%, rgba(255,240,160,0) 68%)",
             pointerEvents: "none",
           }}
         />
@@ -113,7 +156,9 @@ export function AppStoreFrame({
             background: "#0a0a0a",
             borderRadius: "10%",
             padding: "2%",
-            boxShadow: "0 30px 80px rgba(0,0,0,0.45)",
+            /* deep soft shadow + faint warm rim so the phone floats */
+            boxShadow:
+              "0 40px 90px rgba(60,35,0,0.50), 0 10px 30px rgba(60,35,0,0.35), 0 0 0 1px rgba(255,255,255,0.06), 0 0 60px rgba(255,220,90,0.35)",
             position: "relative",
             boxSizing: "border-box",
             flexShrink: 0,
