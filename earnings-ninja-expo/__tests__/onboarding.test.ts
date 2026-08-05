@@ -36,13 +36,13 @@ describe('needsOnboarding', () => {
     expect(needsOnboarding({}, notDone)).toBe(false);
   });
 
-  it('follows the server flag for demo accounts (reviewer account can demo the funnel)', () => {
-    // Auto-created demo sessions get onboarding_completed=true server-side and skip.
+  it('treats demo accounts like real ones (funnel shows once, completion sticks)', () => {
+    // Skip when the server flag is already true.
     expect(needsOnboarding({ is_demo: true, onboarding_completed: true }, notDone)).toBe(false);
-    // The App Store reviewer account's flag is reset to false to show the funnel.
+    // Fresh demo session (new account, flag false, no local state) shows the funnel.
     expect(needsOnboarding({ is_demo: true, onboarding_completed: false }, notDone)).toBe(true);
-    // Re-runs every login: a leftover local completion marker is ignored for demo.
-    expect(needsOnboarding({ is_demo: true, onboarding_completed: false }, { localDone: true })).toBe(true);
+    // Completing it sticks: an app relaunch mid-session never re-runs the funnel.
+    expect(needsOnboarding({ is_demo: true, onboarding_completed: false }, { localDone: true })).toBe(false);
   });
 
   it('never shows when there is no user', () => {
