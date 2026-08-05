@@ -1,9 +1,5 @@
 import React from "react";
 import { AppStoreFrame } from "./_PhoneFrame";
 export function Screenshot06() {
-  return (
-    <AppStoreFrame headline={<>Know your real numbers,<br /><span className="text-white">not just gross pay</span></>}>
-      <img src="/images/screenshot-06.png" alt="All-time analytics" className="w-full h-full object-cover object-top" />
-    </AppStoreFrame>
-  );
+  return <AppStoreFrame line1="Know your real numbers," line2="not just gross pay" appImage="/images/app-06.png" altText="Analytics — all-time earnings, efficiency stats" />;
 }

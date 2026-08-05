@@ -1,53 +1,144 @@
 import React from "react";
 
 /**
- * Shared App Store display-preview wrapper.
- * Yellow brand background + iPhone 14 Pro mockup shape.
- * Children are rendered inside the phone screen at 390×844 logical px.
+ * Fixed App Store display-preview template — 1284×2778 canvas.
+ *
+ * Layout (fixed, identical across all screenshots):
+ *   – Top 22%:  two-line headline in Barlow Condensed 900
+ *   – Remaining: centred iPhone mockup, bleeds slightly off the bottom edge
+ *
+ * Only the headline text and the <img> src change between screens.
+ * Pass `appImage` as the cropped app-UI path (e.g. "/images/app-01.png").
+ * Pass `headline` as [line1, line2] — line1 is black, line2 is white.
  */
 export function AppStoreFrame({
-  headline,
-  children,
+  line1,
+  line2,
+  appImage,
+  altText = "",
 }: {
-  headline: React.ReactNode;
-  children: React.ReactNode;
+  line1: string;
+  line2: string;
+  appImage: string;
+  altText?: string;
 }) {
   return (
-    <div className="w-screen h-screen bg-[#facc15] flex flex-col items-center overflow-hidden">
-      {/* Headline */}
-      <div className="w-full px-[8%] pt-[7%] pb-[3%] text-center">
-        <h1
-          className="text-black font-extrabold leading-tight tracking-tight"
-          style={{ fontSize: "clamp(14px, 5.8vw, 28px)", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
-        >
-          {headline}
-        </h1>
-      </div>
-
-      {/* iPhone body */}
-      <div className="relative flex-1 w-full flex justify-center" style={{ minHeight: 0 }}>
+    <div
+      style={{
+        // Fixed canvas proportions — always fills the iframe viewport
+        width: "100vw",
+        height: "100vh",
+        background: "#facc15",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        overflow: "hidden",
+        fontFamily: "'Barlow Condensed', sans-serif",
+      }}
+    >
+      {/* ─── Headline block — fixed height 22 vh ─── */}
+      <div
+        style={{
+          height: "22vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          paddingBottom: "2vh",
+          width: "84%",
+          textAlign: "center",
+        }}
+      >
         <div
-          className="relative bg-black"
           style={{
-            height: "104%",
-            aspectRatio: "390 / 844",
-            padding: "2.6%",
-            borderTopLeftRadius: "18%",
-            borderTopRightRadius: "18%",
-            boxShadow: "0 24px 60px rgba(0,0,0,0.35)",
+            fontWeight: 900,
+            lineHeight: 1.08,
+            letterSpacing: "-0.5px",
+            fontSize: "clamp(18px, 6.2vw, 52px)",
+            color: "#000",
+            whiteSpace: "nowrap",
           }}
         >
-          {/* Screen */}
+          {line1}
+        </div>
+        <div
+          style={{
+            fontWeight: 900,
+            lineHeight: 1.08,
+            letterSpacing: "-0.5px",
+            fontSize: "clamp(18px, 6.2vw, 52px)",
+            color: "#fff",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {line2}
+        </div>
+      </div>
+
+      {/* ─── Phone mockup — fills remaining space, bleeds bottom ─── */}
+      <div
+        style={{
+          flex: 1,
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "flex-start",
+          overflow: "visible",
+        }}
+      >
+        {/* Phone body */}
+        <div
+          style={{
+            // Keep phone width at 76% of viewport width; height auto via aspect ratio
+            width: "76vw",
+            // iPhone 14 Pro body ratio (393px wide : 852px tall ≈ 0.461)
+            // We add bezel: ~5.5% padding each side = ~111% of screen height
+            height: "114vh",
+            background: "#0a0a0a",
+            borderRadius: "12% / 6%",
+            padding: "2.4%",
+            boxShadow: "0 28px 70px rgba(0,0,0,0.45)",
+            position: "relative",
+            boxSizing: "border-box",
+            flexShrink: 0,
+          }}
+        >
+          {/* Screen area */}
           <div
-            className="w-full h-full overflow-hidden bg-[#101010]"
-            style={{ borderTopLeftRadius: "16%", borderTopRightRadius: "16%" }}
+            style={{
+              width: "100%",
+              height: "100%",
+              overflow: "hidden",
+              borderRadius: "10% / 5%",
+              background: "#101010",
+              position: "relative",
+            }}
           >
-            {children}
+            <img
+              src={appImage}
+              alt={altText}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "top",
+                display: "block",
+              }}
+            />
           </div>
-          {/* Dynamic Island notch */}
+
+          {/* Dynamic Island pill */}
           <div
-            className="absolute left-1/2 -translate-x-1/2 bg-black rounded-full"
-            style={{ top: "2%", width: "30%", height: "2.8%" }}
+            style={{
+              position: "absolute",
+              top: "2.2%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "28%",
+              height: "2.5%",
+              background: "#0a0a0a",
+              borderRadius: 999,
+            }}
           />
         </div>
       </div>
