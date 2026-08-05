@@ -1,8 +1,9 @@
 import React from "react";
+import { AppStoreFrame } from "./_PhoneFrame";
 export function Screenshot03() {
   return (
-    <div className="w-screen h-screen flex items-center justify-center bg-black overflow-hidden">
-      <img src="/images/screenshot-03.png" alt="See which apps pay you the most" className="h-full w-auto object-contain" />
-    </div>
+    <AppStoreFrame headline={<>See which apps<br /><span className="text-[#facc15]">pay you the most</span></>}>
+      <img src="/images/screenshot-03.png" alt="Top apps by earnings" className="w-full h-full object-cover object-top" />
+    </AppStoreFrame>
   );
 }
