@@ -56,6 +56,13 @@ export async function resetAddEntryWalkthrough(userId: number | string): Promise
 let replayQueuedFor: string | number | null = null;
 export function queueAddEntryWalkthroughReplay(userId: string | number) { replayQueuedFor = userId; }
 
+// Demo accounts ignore the persisted flag (every demo session gets the full
+// guided experience) but still only auto-show ONCE per app session — this
+// module-level marker tracks which demo user has already seen it this session,
+// and naturally resets on account switch or app relaunch. It is never written
+// to storage, so demo can't touch a real account's completion state.
+let demoSeenThisSession: string | number | null = null;
+
 // ─── Target registry ──────────────────────────────────────────────────────────
 
 export type AddEntryTargetId =
@@ -219,9 +226,15 @@ export function AddEntryWalkthroughOverlay({ active }: {
     let timer: ReturnType<typeof setTimeout> | null = null;
     (async () => {
       const replay = replayQueuedFor === user.id;
-      // Demo included: shows once per device per account (explicit replay
-      // from Settings still works via the `replay` flag).
-      const done = replay ? false : await readAddEntryWalkthroughDone(user.id);
+      const isDemo = !!user.is_demo;
+      // Real accounts: shows once per device per account (explicit replay from
+      // Settings still works via the `replay` flag). Demo accounts: persisted
+      // flag ignored — replays each app session via the in-memory marker.
+      const done = replay
+        ? false
+        : isDemo
+          ? demoSeenThisSession === user.id
+          : await readAddEntryWalkthroughDone(user.id);
       if (cancelled || done || startedThisOpen.current) return;
       startedThisOpen.current = true;
       // Let the sheet slide-in animation finish before dimming it. The replay
@@ -230,10 +243,11 @@ export function AddEntryWalkthroughOverlay({ active }: {
       timer = setTimeout(() => {
         if (cancelled) return;
         if (replayQueuedFor === user.id) replayQueuedFor = null;
-        // Mark "seen" the moment the tour actually starts (production only).
-        // Writing only in finish() meant swiping the sheet closed mid-tour
-        // never persisted the flag → the tour auto-started on EVERY open.
-        writeAddEntryWalkthroughDone(user.id);
+        // Mark "seen" the moment the tour actually starts. Writing only in
+        // finish() meant swiping the sheet closed mid-tour never persisted the
+        // flag → the tour auto-started on EVERY open. Demo: in-memory only.
+        if (isDemo) demoSeenThisSession = user.id;
+        else writeAddEntryWalkthroughDone(user.id);
         setStepIdx(0);
         setPhase('welcome');
       }, 650);
@@ -246,7 +260,10 @@ export function AddEntryWalkthroughOverlay({ active }: {
     setRect(null);
     // Leave the form ready for a real first entry.
     applyPrep({ form: 'calc', entryType: 'ORDER', showMore: false });
-    if (user?.id) writeAddEntryWalkthroughDone(user.id);
+    if (user?.id) {
+      if (user.is_demo) demoSeenThisSession = user.id;
+      else writeAddEntryWalkthroughDone(user.id);
+    }
     if (completed) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }, [user?.id]);
 
