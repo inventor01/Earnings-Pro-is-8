@@ -668,6 +668,7 @@ async def get_current_user_info(current_user: AuthUser = Depends(get_current_use
         "email_verified": bool(current_user.email_verified),
         "is_demo": bool(current_user.is_demo),
         "onboarding_completed": bool(current_user.onboarding_completed),
+        "walkthrough_completed": bool(current_user.walkthrough_completed),
     }
 
 
@@ -687,6 +688,22 @@ async def complete_onboarding(
         current_user.onboarding_completed = True
         db.commit()
     return {"onboarding_completed": True}
+
+
+@router.post("/auth/walkthrough/complete")
+async def complete_walkthrough(
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Dict:
+    """Mark the dashboard tutorial walkthrough seen for this account.
+    Idempotent — synced server-side so a reinstall never re-shows the tour.
+    Demo accounts never call this (the tour intentionally shows every demo
+    session), but writing it for one would be harmless: the client ignores
+    persistence entirely for demo users."""
+    if not current_user.walkthrough_completed:
+        current_user.walkthrough_completed = True
+        db.commit()
+    return {"walkthrough_completed": True}
 
 
 def _email_verification_needed(user: AuthUser) -> bool:

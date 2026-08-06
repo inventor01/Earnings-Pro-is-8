@@ -65,6 +65,11 @@ class AuthUser(Base):
     # existing account). Existing rows are grandfathered true by the boot
     # migration; demo accounts are created with it true.
     onboarding_completed = Column(Boolean, default=False, nullable=False)
+    # Dashboard tutorial walkthrough: device-local AsyncStorage alone loses the
+    # flag on reinstall, so completion is also synced server-side. Existing rows
+    # are grandfathered true by the boot migration; demo accounts intentionally
+    # ignore it (tour shows every demo session).
+    walkthrough_completed = Column(Boolean, default=False, nullable=False)
     email_verification_code_hash = Column(String, nullable=True)
     email_verification_expires_at = Column(String, nullable=True)  # ISO8601 UTC
     email_verification_attempts = Column(Integer, default=0, nullable=False)

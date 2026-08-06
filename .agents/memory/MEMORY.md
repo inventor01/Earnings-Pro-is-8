@@ -43,3 +43,4 @@
 - [Theme override mount race](theme-override-mount-race.md) — clear temp theme overrides before mounting new UI; entering-animated surfaces freeze mount-time colors → mixed-theme (white-on-white) cards.
 - [Client/server validation lockstep](client-server-validation-lockstep.md) — any client-side limit change (min lengths, caps) must change the backend validator too, or the server silently rejects what the app allows.
 - [Canvas preview iframe port](canvas-preview-port.md) — mockup preview vite runs locally on 21353 but is exposed externally on :3003; canvas iframe URLs must use :3003, curl-check before setting live.
+- [Once-ever UX flags need server sync](once-ever-flags-server-sync.md) — device-only AsyncStorage "seen" flags die on reinstall; mirror them on auth_users with the guarded-migration grandfather pattern, and late server-true must veto an already auto-opened surface.

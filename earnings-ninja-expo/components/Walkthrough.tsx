@@ -24,6 +24,7 @@ import Animated, {
   withRepeat, withSequence, withTiming,
 } from 'react-native-reanimated';
 import { useAuth } from '@/lib/authContext';
+import { api } from '@/lib/api';
 import { useTheme, useThemeControls } from '@/lib/theme';
 
 // ─── Persistence ──────────────────────────────────────────────────────────────
@@ -207,6 +208,7 @@ export function WalkthroughOverlay() {
     startListener = () => {
       if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = null; }
       autoStarted.current = true;
+      autoOpened.current = false; // deliberate replay — never server-vetoed
       setStepIdx(0);
       setPhase('welcome');
     };
@@ -218,13 +220,31 @@ export function WalkthroughOverlay() {
   // account changes — otherwise user B on the same device never gets their
   // first-run tour after user A consumed the flag.
   const autoStartUserRef = useRef<string | number | null>(null);
+  // True while a tour that was opened AUTOMATICALLY is on screen. A late
+  // server profile with walkthrough_completed=true dismisses it (the cached
+  // profile hydrates first and may predate the server flag) — but must never
+  // dismiss a deliberate Settings replay.
+  const autoOpened = useRef(false);
   useEffect(() => {
     if (autoStartUserRef.current !== (user?.id ?? null)) {
       autoStartUserRef.current = user?.id ?? null;
       autoStarted.current = false;
+      autoOpened.current = false;
       if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = null; }
     }
-    if (!user?.id || autoStarted.current) return;
+    if (!user?.id) return;
+    // Server veto: if the authoritative profile says this account already saw
+    // the tour, close an auto-opened one immediately (and mirror the flag
+    // locally so offline launches skip the read next time).
+    if (!user.is_demo && user.walkthrough_completed === true) {
+      writeWalkthroughDone(user.id);
+      if (autoOpened.current) {
+        autoOpened.current = false;
+        setPhase('hidden');
+        setRect(null);
+      }
+    }
+    if (autoStarted.current) return;
     const isDemo = !!user.is_demo;
     let cancelled = false;
     (async () => {
@@ -233,8 +253,19 @@ export function WalkthroughOverlay() {
       // written — every demo session starts with the full tour (the
       // `autoStarted` ref still prevents repeats within one session, and it
       // resets whenever the signed-in account changes).
-      const done = isDemo ? false : await readWalkthroughDone(user.id);
-      if (cancelled || done || autoStarted.current) return;
+      // Server flag is authoritative when true: it survives reinstalls, where
+      // the device-local AsyncStorage flag gets wiped. The local flag still
+      // covers offline launches and older servers that omit the field.
+      const doneOnServer = user.walkthrough_completed === true;
+      const doneLocally = isDemo ? false : await readWalkthroughDone(user.id);
+      const done = isDemo ? false : (doneOnServer || doneLocally);
+      if (cancelled) return;
+      // Heal the server flag if this device already saw the tour but the
+      // server missed the write (e.g. it was completed on an older build).
+      if (!isDemo && doneLocally && !doneOnServer) {
+        api.completeWalkthrough().catch(() => {});
+      }
+      if (done || autoStarted.current) return;
       autoStarted.current = true;
       // Let the dashboard settle (skeleton → content) before dimming it.
       autoTimer.current = setTimeout(() => {
@@ -242,8 +273,14 @@ export function WalkthroughOverlay() {
         if (cancelled) return;
         // Persist "seen" as soon as the tour starts so killing the app
         // mid-tour can't make it auto-show again forever (real accounts only —
-        // demo must never write completion state).
-        if (!isDemo) writeWalkthroughDone(user.id);
+        // demo must never write completion state). Written BOTH locally and
+        // server-side so completion survives reinstalls; a failed server
+        // write is retried by the heal path above on the next launch.
+        if (!isDemo) {
+          writeWalkthroughDone(user.id);
+          api.completeWalkthrough().catch(() => {});
+        }
+        autoOpened.current = true;
         setStepIdx(0);
         setPhase('welcome');
       }, 900);
@@ -252,12 +289,18 @@ export function WalkthroughOverlay() {
       cancelled = true;
       if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = null; }
     };
-  }, [user?.id, user?.is_demo]);
+    // walkthrough_completed is included so the late-arriving server profile
+    // (cached user hydrates first) can veto/heal after the initial run.
+  }, [user?.id, user?.is_demo, user?.walkthrough_completed]);
 
   const finish = useCallback((completed: boolean) => {
+    autoOpened.current = false;
     setPhase('hidden');
     setRect(null);
-    if (user?.id && !user.is_demo) writeWalkthroughDone(user.id);
+    if (user?.id && !user.is_demo) {
+      writeWalkthroughDone(user.id);
+      api.completeWalkthrough().catch(() => {});
+    }
     if (completed) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }, [user?.id, user?.is_demo]);
 
