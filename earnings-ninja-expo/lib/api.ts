@@ -243,6 +243,11 @@ export interface User {
   // needs the funnel; undefined (old cached profile / older server) is treated
   // as completed so existing users NEVER see onboarding (fail open).
   onboarding_completed?: boolean;
+  // Server-synced dashboard-tour flag. `true` = this account has seen the
+  // walkthrough on SOME device, so never auto-show it again (survives
+  // reinstall). undefined (old cached profile / older server) falls back to
+  // the device-local AsyncStorage flag only.
+  walkthrough_completed?: boolean;
 }
 
 export interface ReferralInfo {
@@ -498,6 +503,20 @@ export const api = {
       headers,
     });
     if (!res.ok) throw new Error('Failed to save onboarding status');
+    return res.json();
+  },
+
+  // Mark the dashboard tutorial walkthrough seen for this account.
+  // Server-synced so a reinstall never re-shows the tour. Idempotent;
+  // throws on failure so the caller can decide to retry (the device-local
+  // flag still guards same-device relaunches meanwhile).
+  async completeWalkthrough(): Promise<{ walkthrough_completed: boolean }> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/auth/walkthrough/complete`, {
+      method: 'POST',
+      headers,
+    });
+    if (!res.ok) throw new Error('Failed to save walkthrough status');
     return res.json();
   },
 
