@@ -44,4 +44,5 @@
 - [Client/server validation lockstep](client-server-validation-lockstep.md) — any client-side limit change (min lengths, caps) must change the backend validator too, or the server silently rejects what the app allows.
 - [Canvas preview iframe port](canvas-preview-port.md) — mockup preview vite runs locally on 21353 but is exposed externally on :3003; canvas iframe URLs must use :3003, curl-check before setting live.
 - [Account-scoped mirror wipe](account-scoped-mirror-wipe.md) — every new per-account AsyncStorage mirror needs a clear call in the logout wipe, or the next account inherits stale data.
+- [Local sandbox Demo Mode](demo-mode-sandbox.md) — demo is fully client-side (api Proxy + isDemoActive guards); any new AsyncStorage/widget/notification/RC write needs a demo guard, both read and write directions.
 - [Once-ever UX flags need server sync](once-ever-flags-server-sync.md) — device-only AsyncStorage "seen" flags die on reinstall; mirror them on auth_users with the guarded-migration grandfather pattern, and late server-true must veto an already auto-opened surface.

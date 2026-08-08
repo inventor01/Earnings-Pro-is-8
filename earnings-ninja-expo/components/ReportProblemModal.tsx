@@ -5,13 +5,13 @@ import {
   AccessibilityInfo,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as Application from 'expo-application';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
 import { submitProblemReport } from '../lib/api';
+import { readReportDraft, saveReportDraft, clearReportDraft } from '../lib/reportDraft';
 
 const REPORT_TYPES = [
   'Bug Report', 'App Crash', 'Performance Issue', 'Incorrect Data',
@@ -24,7 +24,6 @@ const MAX_SCREENSHOTS = 5;
 // A 20-char minimum made short-but-valid reports like "Crashed" look like a
 // broken Submit button.
 const MIN_DESC = 3;
-const DRAFT_KEY = 'problem-report-draft-v1';
 
 const hTap = () => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); };
 const hOk = () => { if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); };
@@ -47,14 +46,6 @@ export function submitBlockedReason(s: {
   }
   if (!EMAIL_RE.test(s.email.trim())) return 'Please enter a valid contact email so we can follow up.';
   return null;
-}
-
-interface Draft {
-  reportType: string | null;
-  title?: string;
-  description: string;
-  steps: string;
-  email: string;
 }
 
 export default function ReportProblemModal({
@@ -111,28 +102,27 @@ export default function ReportProblemModal({
     setSubmitting(false);
     submittingRef.current = false;
     setEmail((prev) => prev || defaultEmail || '');
-    AsyncStorage.getItem(DRAFT_KEY).then((raw) => {
-      if (!raw) return;
-      try {
-        const d: Draft = JSON.parse(raw);
-        // Only restore if the user actually typed something and the form is empty.
-        if (d.description || d.steps) {
-          setReportType((cur) => cur ?? d.reportType);
-          if (d.title) setTitle((cur) => cur || d.title!);
-          setDescription((cur) => cur || d.description);
-          setSteps((cur) => cur || d.steps);
-          if (d.email) setEmail((cur) => cur || d.email);
-        }
-      } catch {}
+    // Draft read/write/remove all live in lib/reportDraft, which no-ops in
+    // Demo Mode (never restore a real user's draft into the sandbox, never
+    // let sandbox input touch it).
+    readReportDraft().then((d) => {
+      if (!d) return;
+      // Only restore if the user actually typed something and the form is empty.
+      if (d.description || d.steps) {
+        setReportType((cur) => cur ?? d.reportType);
+        if (d.title) setTitle((cur) => cur || d.title);
+        setDescription((cur) => cur || d.description);
+        setSteps((cur) => cur || d.steps);
+        if (d.email) setEmail((cur) => cur || d.email);
+      }
     }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const saveDraft = () => {
-    const d: Draft = { reportType, title, description, steps, email };
-    AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(d)).catch(() => {});
+    saveReportDraft({ reportType, title, description, steps, email }).catch(() => {});
   };
-  const clearDraft = () => AsyncStorage.removeItem(DRAFT_KEY).catch(() => {});
+  const clearDraft = () => { clearReportDraft().catch(() => {}); };
   const resetForm = () => {
     setReportType(null); setTitle(''); setDescription(''); setSteps(''); setShots([]);
     setIncludeDiag(true); setDiagOpen(false); setTypeOpen(false);

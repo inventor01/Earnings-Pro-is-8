@@ -24,6 +24,7 @@ import {
   AccessibilityInfo, Pressable, Text, View, findNodeHandle, useWindowDimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isDemoActive, subscribeDemo } from '../lib/demoSession';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   Easing, FadeIn, FadeOut, cancelAnimation, useAnimatedStyle, useSharedValue,
@@ -37,13 +38,21 @@ import { useTheme } from '@/lib/theme';
 const WALKTHROUGH_ID = 'add_entry';
 const doneKey = (userId: number | string) => `walkthrough_done:${WALKTHROUGH_ID}:${userId}`;
 
+// Demo Mode: the seen-flag is session-local (in memory) — the sandbox must not
+// write per-account keys to the device. Cleared on every demo enter/exit.
+let demoDone = false;
+subscribeDemo(() => { demoDone = false; });
+
 export async function readAddEntryWalkthroughDone(userId: number | string): Promise<boolean> {
+  if (isDemoActive()) return demoDone;
   try { return (await AsyncStorage.getItem(doneKey(userId))) === '1'; } catch { return false; }
 }
 async function writeAddEntryWalkthroughDone(userId: number | string): Promise<void> {
+  if (isDemoActive()) { demoDone = true; return; }
   try { await AsyncStorage.setItem(doneKey(userId), '1'); } catch {}
 }
 export async function resetAddEntryWalkthrough(userId: number | string): Promise<void> {
+  if (isDemoActive()) { demoDone = false; return; }
   try { await AsyncStorage.removeItem(doneKey(userId)); } catch {}
 }
 

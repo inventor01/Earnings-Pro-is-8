@@ -9,9 +9,27 @@ import { setOnline, getSyncState } from './syncStatus';
 // offline we poll a cheap public endpoint so we can flip back to online (and
 // trigger a drain) WITHOUT waiting for the user to make another request.
 
+import { isDemoActive, subscribeDemo } from './demoSession';
+
 let probeUrl: string | null = null;
 let probeTimer: ReturnType<typeof setInterval> | null = null;
 let probing = false;
+// Whether a probe was armed when demo started, so we can deliberately resume
+// it after the sandbox ends (the sandbox itself never probes).
+let probeWasArmed = false;
+
+// Demo Mode lifecycle: entering the sandbox CANCELS any armed probe interval
+// (no timer left ticking against the network); exiting restarts it only if it
+// was armed before, so a previously-offline session resumes recovery polling.
+subscribeDemo(() => {
+  if (isDemoActive()) {
+    probeWasArmed = probeTimer !== null;
+    stopProbe();
+  } else if (probeWasArmed) {
+    probeWasArmed = false;
+    startProbe();
+  }
+});
 
 const PROBE_INTERVAL_MS = 8000;
 
@@ -30,7 +48,15 @@ export function reportSuccess(): void {
 
 export function reportFailure(): void {
   setOnline(false);
+  // Never arm a probe from inside the sandbox (trackedFetch throws before any
+  // demo request, but keep this belt-and-suspenders).
+  if (isDemoActive()) return;
   startProbe();
+}
+
+/** Test-only visibility into whether the recovery interval is armed. */
+export function isProbeArmed(): boolean {
+  return probeTimer !== null;
 }
 
 function startProbe(): void {
@@ -46,6 +72,9 @@ function stopProbe(): void {
 }
 
 async function runProbe(): Promise<void> {
+  // Demo Mode: the interval is cancelled on demo entry (see subscribeDemo
+  // above); this guard is a last line of defense against a stray tick.
+  if (isDemoActive()) return;
   if (probing || !probeUrl) return;
   probing = true;
   try {

@@ -18,6 +18,7 @@ import {
   AccessibilityInfo, Dimensions, Platform, Pressable, Text, View, findNodeHandle, useWindowDimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isDemoActive, subscribeDemo } from '../lib/demoSession';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   Easing, FadeIn, FadeOut, cancelAnimation, useAnimatedStyle, useSharedValue,
@@ -33,13 +34,21 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const doneKey = (userId: number | string) => `walkthrough_done:${userId}`;
 
+// Demo Mode: the seen-flag is session-local (in memory) — the sandbox must not
+// write per-account keys to the device. Cleared on every demo enter/exit.
+let demoWalkthroughDone = false;
+subscribeDemo(() => { demoWalkthroughDone = false; });
+
 export async function readWalkthroughDone(userId: number | string): Promise<boolean> {
+  if (isDemoActive()) return demoWalkthroughDone;
   try { return (await AsyncStorage.getItem(doneKey(userId))) === '1'; } catch { return false; }
 }
 async function writeWalkthroughDone(userId: number | string): Promise<void> {
+  if (isDemoActive()) { demoWalkthroughDone = true; return; }
   try { await AsyncStorage.setItem(doneKey(userId), '1'); } catch {}
 }
 export async function resetWalkthrough(userId: number | string): Promise<void> {
+  if (isDemoActive()) { demoWalkthroughDone = false; return; }
   try { await AsyncStorage.removeItem(doneKey(userId)); } catch {}
 }
 

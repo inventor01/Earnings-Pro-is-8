@@ -208,7 +208,7 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
 });
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
   const [available, setAvailable] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
@@ -301,6 +301,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const rcIdentityRef = useRef<string | null>(null);
   useEffect(() => {
     if (!available) return;
+    // Local sandbox Demo Mode: NEVER identify the demo session with RevenueCat.
+    // Pro is simulated purely in the context value below; logging in a synthetic
+    // id could attach entitlement state to a customer no backend user owns.
+    if (isDemo) return;
     const uid = user?.id ?? null;
     (async () => {
       try {
@@ -321,7 +325,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         // best-effort: identity sync never blocks the UI
       }
     })();
-  }, [available, user?.id]);
+  }, [available, user?.id, isDemo]);
 
   const openFallback = useCallback((options?: PaywallPresentationOptions): Promise<boolean> => {
     return new Promise<boolean>((resolve) => {
@@ -463,19 +467,40 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, [closeFallback]);
 
   const value = useMemo<SubscriptionContextValue>(
-    () => ({
-      available,
-      isPro,
-      customerInfo,
-      offerings,
-      loading,
-      refresh,
-      requirePro,
-      presentPaywall,
-      presentCustomerCenter,
-      restore,
-    }),
+    () => {
+      // Local sandbox Demo Mode: simulate an active Pro entitlement so every
+      // premium feature is explorable, with NO store/RevenueCat interaction.
+      // This lives only in the context value — it can never write entitlement
+      // state anywhere, so it can never leak to a real account.
+      if (isDemo) {
+        return {
+          available,
+          isPro: true,
+          customerInfo,
+          offerings,
+          loading,
+          refresh: async () => {},
+          requirePro: async () => true,
+          presentPaywall: async () => true,
+          presentCustomerCenter: async () => {},
+          restore: async () => ({ status: 'unavailable' as const, isPro: true }),
+        };
+      }
+      return {
+        available,
+        isPro,
+        customerInfo,
+        offerings,
+        loading,
+        refresh,
+        requirePro,
+        presentPaywall,
+        presentCustomerCenter,
+        restore,
+      };
+    },
     [
+      isDemo,
       available,
       isPro,
       customerInfo,

@@ -12,6 +12,8 @@ import {
   clearExpenseCatsMirror, clearHiddenCatsMirror,
 } from './platforms';
 import { refreshPendingCount } from './pendingCount';
+import { DEMO_USER, enterDemoSession, exitDemoSession, isDemoActive } from './demoSession';
+import { setPersistSuspended } from './queryPersist';
 
 // Wipe every device-local copy of the signed-in user's data: the entries/goals
 // mirror, both offline queues, and the persisted React Query cache. Without this,
@@ -65,6 +67,11 @@ interface AuthContextType {
   token: string | null;
   user: User | null;
   isLoading: boolean;
+  // Local sandbox Demo Mode: true while exploring with sample data. No token,
+  // no network, nothing persisted — see lib/demoSession.ts.
+  isDemo: boolean;
+  enterDemo: () => void;
+  exitDemo: () => void;
   login: (token: string) => Promise<void>;
   logout: () => Promise<void>;
   // Refetch /auth/me and update the in-memory + cached user (after profile
@@ -77,6 +84,9 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   user: null,
   isLoading: true,
+  isDemo: false,
+  enterDemo: () => {},
+  exitDemo: () => {},
   login: async () => {},
   logout: async () => {},
   refreshUser: async () => {},
@@ -86,6 +96,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDemo, setIsDemo] = useState(false);
+
+  // Enter the local sandbox demo: synchronous, no network, no token, nothing
+  // written to SecureStore/AsyncStorage. Persisting the React Query cache is
+  // suspended so demo data can never be flushed to disk and inherited by a
+  // later real login; any previously-persisted cache is cleared defensively.
+  const enterDemo = () => {
+    if (isDemoActive()) return;
+    setPersistSuspended(true);
+    clearPersistedCache().catch(() => {});
+    enterDemoSession(); // reseeds the in-memory demo dataset
+    setIsDemo(true);
+    setUser({ ...DEMO_USER });
+  };
+
+  // Exit the demo and destroy all sandbox state. Nothing to clean up on disk —
+  // the demo never wrote there — but clear the persisted cache again in case a
+  // future persist path forgets to honor the suspension flag.
+  const exitDemo = () => {
+    if (!isDemoActive()) {
+      setIsDemo(false);
+      return;
+    }
+    exitDemoSession();
+    setPersistSuspended(false);
+    clearPersistedCache().catch(() => {});
+    setIsDemo(false);
+    setUser(null);
+  };
 
   useEffect(() => {
     getToken().then(async (t) => {
@@ -126,6 +165,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (newToken: string) => {
+    // A real login always terminates any demo session first so the sandbox
+    // user/entitlements can never bleed into the authenticated session.
+    if (isDemoActive()) exitDemo();
     await persistToken(newToken);
     setToken(newToken);
     widgetSync.onLogin(newToken);
@@ -147,6 +189,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    // Demo Mode: "Sign Out" from Settings must ONLY end the sandbox. Running
+    // the real cleanup below would wipe the device-local mirrors/queues of a
+    // real account that signed out earlier expecting its offline data to sync
+    // later — demo never wrote any of that, so there is nothing to clean.
+    if (isDemoActive()) {
+      exitDemo();
+      return;
+    }
     await clearToken();
     await writeCachedUser(null);
     await clearAllLocalData();
@@ -156,7 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, isLoading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ token, user, isLoading, isDemo, enterDemo, exitDemo, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

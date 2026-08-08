@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Appearance, Animated, StyleSheet, AccessibilityInfo } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { widgetSync } from './widgetSync';
+import { isDemoActive, subscribeDemo } from './demoSession';
 
 // Two rendered themes: 'dark' (the neon Car-Dashboard look) and 'light'
 // (clean white background that keeps the exact brand neon accents + glows).
@@ -196,7 +197,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const normalized = normalizePreference(v);
         setPreferenceState(normalized);
         // Rewrite legacy / unknown values so storage stays canonical.
-        if (v !== normalized) {
+        // (Demo-guarded: hydration must never race a demo session into
+        // rewriting the real preference.)
+        if (v !== normalized && !isDemoActive()) {
           AsyncStorage.setItem(STORAGE_KEY, normalized).catch(() => {});
         }
       })
@@ -212,7 +215,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setThemeName = useCallback((name: ThemePreference) => {
     setPreferenceState(name);
-    AsyncStorage.setItem(STORAGE_KEY, name).catch(() => {});
+    // Demo Mode: theme changes are session-local; never persist them over the
+    // real user's device-wide preference.
+    if (!isDemoActive()) {
+      AsyncStorage.setItem(STORAGE_KEY, name).catch(() => {});
+    }
+  }, []);
+
+  // Demo session transitions: on ENTRY replace the theme with the sandbox
+  // default (no read of the stored value — the sandbox must not surface the
+  // real user's preference); on EXIT re-hydrate the REAL persisted preference
+  // so any sandbox theme switching evaporates with the session.
+  useEffect(() => {
+    return subscribeDemo(() => {
+      if (isDemoActive()) {
+        setPreferenceState('light'); // sandbox default
+        return;
+      }
+      AsyncStorage.getItem(STORAGE_KEY)
+        .then((v) => setPreferenceState(normalizePreference(v)))
+        .catch(() => {});
+    });
   }, []);
 
   const setThemeOverride = useCallback((name: ThemeName | null) => {

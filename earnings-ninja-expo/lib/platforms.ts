@@ -1,5 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppType, APP_LABELS, APP_COLORS, Entry, UserPlatform, UserEntryType, UserExpenseCategory, LabelOverride } from './api';
+import { isDemoActive } from './demoSession';
+
+// Local sandbox Demo Mode isolation: the dashboard writes these mirrors on
+// every successful platforms/labels/types/categories query, and in demo those
+// queries are served from the in-memory demo store. Persisting them would leak
+// demo pills/labels into the NEXT real account on this device — so all mirror
+// writes are no-ops while a demo session is active.
 
 // ---------------------------------------------------------------------------
 // Built-in label overrides (per-user cosmetic renames of built-in pills)
@@ -46,6 +53,7 @@ export async function readLabelsMirror(): Promise<LabelOverride[]> {
 }
 
 export async function writeLabelsMirror(list: LabelOverride[]): Promise<void> {
+  if (isDemoActive()) return;
   try { await AsyncStorage.setItem(LABELS_MIRROR_KEY, JSON.stringify(list)); } catch {}
 }
 
@@ -154,6 +162,7 @@ export async function readPlatformsMirror(): Promise<UserPlatform[]> {
 }
 
 export async function writePlatformsMirror(platforms: UserPlatform[]): Promise<void> {
+  if (isDemoActive()) return;
   try {
     await AsyncStorage.setItem(MIRROR_KEY, JSON.stringify(platforms));
   } catch {}
@@ -234,6 +243,7 @@ export async function readEntryTypesMirror(): Promise<UserEntryType[]> {
 }
 
 export async function writeEntryTypesMirror(types: UserEntryType[]): Promise<void> {
+  if (isDemoActive()) return;
   try {
     await AsyncStorage.setItem(TYPES_MIRROR_KEY, JSON.stringify(types));
   } catch {}
@@ -303,6 +313,7 @@ export async function readExpenseCatsMirror(): Promise<UserExpenseCategory[]> {
 }
 
 export async function writeExpenseCatsMirror(cats: UserExpenseCategory[]): Promise<void> {
+  if (isDemoActive()) return;
   try { await AsyncStorage.setItem(CATS_MIRROR_KEY, JSON.stringify(cats)); } catch {}
 }
 
@@ -322,6 +333,7 @@ export async function readHiddenCatsMirror(): Promise<string[]> {
 }
 
 export async function writeHiddenCatsMirror(keys: string[]): Promise<void> {
+  if (isDemoActive()) return;
   try { await AsyncStorage.setItem(HIDDEN_CATS_MIRROR_KEY, JSON.stringify(keys)); } catch {}
 }
 
