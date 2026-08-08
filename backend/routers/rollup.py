@@ -11,6 +11,9 @@ from backend.models import AuthUser
 from backend.auth import get_current_user
 from typing import Optional
 from datetime import datetime, timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -36,8 +39,10 @@ async def get_rollup(
                 to_dt   = datetime.fromisoformat(to_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
             else:
                 from_dt, to_dt = get_est_date_range(from_date, to_date)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid date range: {str(e)}")
+        except Exception:
+            # Don't leak parser internals to the client; details go to logs.
+            logger.warning("Rollup date range parse failed", exc_info=True)
+            raise HTTPException(status_code=400, detail="Invalid date range. Use YYYY-MM-DD or ISO datetimes.")
         rollup = calculate_rollup(db, from_dt, to_dt, None, current_user.id)
         return rollup
 
@@ -59,8 +64,11 @@ async def get_rollup(
                 from_dt, to_dt = get_last_month()
             else:
                 raise HTTPException(status_code=400, detail="Invalid timeframe")
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid timeframe: {str(e)}")
+        except HTTPException:
+            raise
+        except Exception:
+            logger.warning("Rollup timeframe computation failed", exc_info=True)
+            raise HTTPException(status_code=400, detail="Invalid timeframe")
     
     rollup = calculate_rollup(db, from_dt, to_dt, timeframe, current_user.id)
     return rollup

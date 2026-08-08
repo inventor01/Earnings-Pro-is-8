@@ -93,7 +93,7 @@ The real risks cluster in three places: **(1)** the production JWT secret and pr
 2. **[🔴 C-2]** Add server-side RevenueCat verification + webhook; make premium gates fail closed.
 3. **[🟠 H-1]** Remove OAuth demo-credential/localhost fallbacks; require prod values + HTTPS redirects.
 4. **[🟠 H-2]** ✅ Done (2026-08-08): confirmed web isn't shipped (domain serves landing only) and moved `frontend/` token storage to sessionStorage; HttpOnly cookie flow noted as future work if web ever ships.
-5. **[🟡 M-1]** Stop returning `str(e)` to clients; log server-side.
-6. **[🟡 M-2]** Enforce Postgres TLS in code.
-7. **[🟡 M-3]** Narrow credentialed CORS to owned origins.
+5. **[🟡 M-1]** ✅ Done (2026-08-08): OAuth callbacks and rollup parsing now return fixed generic messages; real exceptions logged server-side (`logger.exception`/`exc_info`). Regression tests in `backend/tests/test_error_sanitization.py`.
+6. **[🟡 M-2]** ✅ Done (2026-08-08): `backend/db.py` enforces TLS for remote Postgres: missing `sslmode` → `sslmode=require` injected; explicit non-TLS modes (`disable`/`allow`/`prefer`) → startup refusal. Only TLS-enforcing modes (`require`/`verify-ca`/`verify-full`) are honored. Loopback/dot-less internal hosts (e.g. Replit's built-in Postgres proxy) are exempt; `ALLOW_INSECURE_DB=1` is the explicit local-only escape hatch. Tests: `backend/tests/test_db_tls.py`.
+7. **[🟡 M-3]** ✅ Done (2026-08-08): removed the `*.replit.app`/`*.replit.dev` `allow_origin_regex`; credentialed CORS now allows only explicit origins — local dev hosts, this repl's own `REPLIT_DEV_DOMAIN`/`REPLIT_DOMAINS`, earningsninja.com (+www), and `CORS_ALLOWED_ORIGINS`.
 8. **[🟢]** Remove committed zips from tracking; add a CI check blocking `*.db`/secret commits.

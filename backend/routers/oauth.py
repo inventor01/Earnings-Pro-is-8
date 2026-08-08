@@ -189,8 +189,11 @@ async def uber_callback(
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        # Never echo internal exception text to the browser — log it
+        # server-side and return a generic message.
+        logger.exception("Uber OAuth callback failed")
+        raise HTTPException(status_code=400, detail="Could not complete the Uber connection. Please try again.")
 
 
 @router.get("/oauth/shipt/authorize")
@@ -264,8 +267,9 @@ async def shipt_callback(
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Shipt OAuth callback failed")
+        raise HTTPException(status_code=400, detail="Could not complete the Shipt connection. Please try again.")
 
 
 @router.delete("/oauth/{platform}/disconnect")
