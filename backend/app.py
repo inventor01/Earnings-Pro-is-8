@@ -578,15 +578,25 @@ _default_origins = [
 _replit_dev = os.getenv("REPLIT_DEV_DOMAIN")
 if _replit_dev:
     _default_origins.append(f"https://{_replit_dev}")
+# This repl's own deployment/preview hosts (comma-separated in REPLIT_DOMAINS).
+# We trust ONLY these specific hosts — NOT every *.replit.app/*.replit.dev
+# subdomain, which (with credentials enabled) would make any Replit-hosted
+# page a trusted cross-origin.
+for _d in os.getenv("REPLIT_DOMAINS", "").split(","):
+    _d = _d.strip()
+    if _d:
+        _default_origins.append(f"https://{_d}")
+# Owned production origins.
+_default_origins += [
+    "https://earningsninja.com",
+    "https://www.earningsninja.com",
+]
 _extra = os.getenv("CORS_ALLOWED_ORIGINS", "")
 _cors_origins = _default_origins + [o.strip() for o in _extra.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
-    # Also accept any *.replit.app and *.replit.dev origin via regex so
-    # deployment and preview URLs work without per-deploy env-var churn.
-    allow_origin_regex=r"^https://([a-z0-9\-]+\.)*replit\.(app|dev)$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
