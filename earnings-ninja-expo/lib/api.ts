@@ -764,6 +764,26 @@ export const api = {
     return res.json();
   },
 
+  // Shared non-2xx error reader for platform/type CRUD. FastAPI validation
+  // failures (422) arrive as a LIST of {msg,...} objects — surface the first
+  // human-readable message instead of a generic "check your connection",
+  // otherwise a name the server rejects looks like a random network failure.
+  async _throwApiError(res: Response, fallback: string): Promise<never> {
+    let msg = fallback;
+    try {
+      const j = await res.json();
+      if (typeof j?.detail === 'string' && j.detail) {
+        msg = j.detail;
+      } else if (Array.isArray(j?.detail) && j.detail.length) {
+        const m = j.detail[0]?.msg;
+        if (typeof m === 'string' && m) msg = m.replace(/^Value error,\s*/i, '');
+      }
+    } catch {}
+    const e: any = new Error(msg);
+    e.status = res.status;
+    throw e;
+  },
+
   async addPlatform(name: string, color?: string | null, icon?: string | null): Promise<UserPlatform> {
     const headers = await getAuthHeaders();
     const res = await trackedFetch(`${API_BASE}/api/platforms`, {
@@ -771,13 +791,7 @@ export const api = {
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, color: color ?? null, icon: icon ?? null }),
     });
-    if (!res.ok) {
-      let msg = 'Failed to add platform';
-      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
-      const e: any = new Error(msg);
-      e.status = res.status;
-      throw e;
-    }
+    if (!res.ok) await api._throwApiError(res, 'Failed to add platform');
     return res.json();
   },
 
@@ -798,13 +812,7 @@ export const api = {
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ kind, key, label }),
     });
-    if (!res.ok) {
-      let msg = 'Failed to save the label';
-      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
-      const e: any = new Error(msg);
-      e.status = res.status;
-      throw e;
-    }
+    if (!res.ok) await api._throwApiError(res, 'Failed to save the label');
     return res.json();
   },
 
@@ -819,13 +827,7 @@ export const api = {
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, color: color ?? null, icon: icon ?? null }),
     });
-    if (!res.ok) {
-      let msg = 'Failed to rename platform';
-      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
-      const e: any = new Error(msg);
-      e.status = res.status;
-      throw e;
-    }
+    if (!res.ok) await api._throwApiError(res, 'Failed to rename platform');
     return res.json();
   },
 
@@ -864,13 +866,7 @@ export const api = {
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, kind, color: color ?? null, icon: icon ?? null }),
     });
-    if (!res.ok) {
-      let msg = 'Failed to add type';
-      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
-      const e: any = new Error(msg);
-      e.status = res.status;
-      throw e;
-    }
+    if (!res.ok) await api._throwApiError(res, 'Failed to add type');
     return res.json();
   },
 
@@ -881,13 +877,7 @@ export const api = {
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, color: color ?? null, icon: icon ?? null }),
     });
-    if (!res.ok) {
-      let msg = 'Failed to rename type';
-      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
-      const e: any = new Error(msg);
-      e.status = res.status;
-      throw e;
-    }
+    if (!res.ok) await api._throwApiError(res, 'Failed to rename type');
     return res.json();
   },
 

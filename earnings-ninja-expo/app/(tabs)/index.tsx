@@ -184,8 +184,16 @@ function PressScale({
   disabled?: boolean;
   accessibilityLabel?: string;
 }) {
+  // Android: android_ripple wraps the view's background in a native
+  // RippleDrawable that caches the mount-time backgroundColor — theme flips
+  // re-render with new colors but the native layer keeps painting the old
+  // one (seen: header icons / filter pills stuck in the previous theme).
+  // Keying by theme forces a native remount so every PressScale everywhere
+  // repaints correctly on a theme change.
+  const { themeName } = useThemeControls();
   return (
     <Pressable
+      key={`ps-${themeName}`}
       onPress={onPress}
       onLongPress={onLongPress}
       disabled={disabled}
@@ -4045,7 +4053,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           };
           return (
             <Pressable
-              key={row.tf}
+              key={`${row.tf}-${themeName}`}
               onLongPress={() => { hTapMed(); openEditor(); }}
               delayLongPress={450}
               accessibilityActions={[{ name: 'activate', label: 'Edit Goal' }]}
@@ -6870,7 +6878,12 @@ export default function DashboardScreen() {
               {/* ── Main Hero Card with neon glow (toggle Profit↔Revenue) ──── */}
               {/* Horizontal swipe on this card steps the nav offset (± day/week/month). */}
               {/* collapsable={false} keeps the wrapper measurable for the walkthrough spotlight */}
-              <View ref={registerWalkthroughTarget('hero')} collapsable={false}>
+              {/* key={themeName}: force a full remount of the hero subtree on a
+                  theme flip (incl. the walkthrough's theme-demo revert). On
+                  Android the Revenue/Profit pill was seen keeping its old
+                  light-theme background under dark-theme text until a cold
+                  restart — a remount makes any frozen native style impossible. */}
+              <View key={`hero-${themeName}`} ref={registerWalkthroughTarget('hero')} collapsable={false}>
               <GestureDetector gesture={swipeGesture}>
               <Animated.View style={[
                 {
@@ -7174,6 +7187,7 @@ export default function DashboardScreen() {
                     soon as the ScrollView claims the responder). */}
                 {(
                   <Pressable
+                    key={`goalcard-${themeName}`}
                     onLongPress={() => {
                       if (editingGoal) return; // one editor at a time
                       hTapMed();
@@ -7522,6 +7536,17 @@ export default function DashboardScreen() {
         </View>
       </ScrollView>
 
+      {/* Android: the status bar is translucent, so scrolled content (e.g. the
+          "Goal Reached!" line) draws underneath the clock/wifi icons. Mask the
+          inset strip with the app background so content never collides with
+          the system icons. iOS is untouched. */}
+      {Platform.OS === 'android' && insets.top > 0 && (
+        <View
+          pointerEvents="none"
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: BG, zIndex: 997 }}
+        />
+      )}
+
       {/* ── Scroll-to-Top FAB (neon glow, floats above the Add Entry bar) ──── */}
       <Animated.View
         pointerEvents={showScrollTop ? 'auto' : 'none'}
@@ -7536,6 +7561,7 @@ export default function DashboardScreen() {
         ]}
       >
         <Pressable
+          key={`fab-${themeName}`}
           onPress={scrollToTop}
           accessibilityRole="button"
           accessibilityLabel="Scroll to top"
@@ -7585,6 +7611,7 @@ export default function DashboardScreen() {
         }}
       >
         <Pressable
+          key={`addentry-${themeName}`}
           onPress={() => { hTapMed(); setShowAdd(true); }}
           android_ripple={{ color: 'rgba(0,0,0,0.15)' }}
           style={({ pressed }) => ({

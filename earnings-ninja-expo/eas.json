@@ -71,6 +71,13 @@
     }
   },
   "submit": {
+    "play": {
+      "android": {
+        "serviceAccountKeyPath": "credentials/google-play-service-account.json",
+        "track": "internal",
+        "releaseStatus": "completed"
+      }
+    },
     "testflight": {
       "ios": {
         "appleTeamId": "77827G7735",
