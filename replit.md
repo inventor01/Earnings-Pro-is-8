@@ -32,6 +32,7 @@ Backend: FastAPI (Python 3.11) + SQLAlchemy. Frontend: React 18 + TypeScript + V
 
 ## Deployment & OTA rules (IMPORTANT — operational)
 - The mobile app talks to the **deployed** backend (Railway), so frontend-only changes ship over-the-air; do not assume local backend changes are live.
+- **The React web app (`frontend/`) is NOT shipped.** The public domain (earningsninja.com) serves only the landing site (`landing/dist`, SPA-served by the backend with `/api` excluded). `frontend/` is a dev-only/legacy app; its auth JWT is kept in sessionStorage (never localStorage), and if it is ever shipped publicly, web auth must first move to HttpOnly cookie sessions (see `docs/security-audit-2026-08.md` H-2 and `DEPLOYMENT_READY.md`).
 - **Railway Dockerfile has NO node build stage** — Railway's builder fails `npm ci`. `landing/dist` is pre-built + committed (gitignore negation); after any `landing/` change run `cd landing && npm run build` and commit the new dist before the GitHub push.
 - **JS/UI/logic changes** → `cd earnings-ninja-expo && eas update --branch preview --message "..."` (OTA-deployable).
 - **Native changes** (new native dep, icon/splash, `app.json` plugin/permission, SDK bump, widget target, buildNumber) → `eas build --platform ios --profile testflight --auto-submit` (NOT OTA; OTA only reaches the new build forward).

@@ -42,10 +42,12 @@ The real risks cluster in three places: **(1)** the production JWT secret and pr
 - **Risk:** A deployment missing these env vars silently runs OAuth with publicly-known credentials and an insecure HTTP callback, enabling misconfiguration and callback interception.
 - **Fix:** Fail startup if production OAuth secrets/redirect URIs are unset; remove the demo fallbacks; require HTTPS allowlisted redirect URIs.
 
-**H-2 — Web builds store bearer JWT in AsyncStorage/localStorage**
-- **Files:** `earnings-ninja-expo/lib/tokenStorage.ts:21,30` (native uses SecureStore — good; web falls back to AsyncStorage → `localStorage`).
+**H-2 — Web builds store bearer JWT in AsyncStorage/localStorage** — ✅ Resolved / downgraded to Low (2026-08-08)
+- **Files:** `earnings-ninja-expo/lib/tokenStorage.ts:21,30` (native uses SecureStore — good; web falls back to AsyncStorage → `localStorage`); `frontend/src/lib/authContext.tsx`, `frontend/src/lib/api.ts`.
 - **Risk:** On any web/Expo-web deployment the auth token is readable by any XSS payload. (Native iOS/Android are fine.)
-- **Fix:** If web is shipped, use an HttpOnly+Secure cookie auth flow instead of localStorage; keep SecureStore for native. If web is not shipped, document that and it drops to Low.
+- **Status (2026-08-08):** **The web app is not shipped.** The public domain (earningsninja.com) serves only the static landing site (`landing/dist`, SPA-served by the backend with `/api` excluded); the React web app in `frontend/` is not deployed anywhere in production, and the Expo web target is not published. This drops the finding to Low per the original assessment.
+- **Hardening applied anyway:** `frontend/` now stores the auth JWT in **sessionStorage** (per-tab, cleared on tab close) instead of persistent `localStorage`, and purges any previously persisted `localStorage` token on load (`frontend/src/lib/authContext.tsx`, `api.ts`, `SettingsDrawer.tsx`, `PointsCard.tsx`). This limits token persistence if the dormant app is ever revived.
+- **Future work (if web ships):** move web auth to an HttpOnly+Secure cookie session flow (backend change); sessionStorage still exposes the token to active XSS, it only removes persistence.
 
 ### 🟡 Medium
 
@@ -90,7 +92,7 @@ The real risks cluster in three places: **(1)** the production JWT secret and pr
 1. **[🔴 C-1]** Move `JWT_SECRET_KEY` + `PRELAUNCH_ACCESS_CODE` to secrets manager and rotate the JWT secret.
 2. **[🔴 C-2]** Add server-side RevenueCat verification + webhook; make premium gates fail closed.
 3. **[🟠 H-1]** Remove OAuth demo-credential/localhost fallbacks; require prod values + HTTPS redirects.
-4. **[🟠 H-2]** Fix web token storage (HttpOnly cookie) or confirm web isn't shipped.
+4. **[🟠 H-2]** ✅ Done (2026-08-08): confirmed web isn't shipped (domain serves landing only) and moved `frontend/` token storage to sessionStorage; HttpOnly cookie flow noted as future work if web ever ships.
 5. **[🟡 M-1]** Stop returning `str(e)` to clients; log server-side.
 6. **[🟡 M-2]** Enforce Postgres TLS in code.
 7. **[🟡 M-3]** Narrow credentialed CORS to owned origins.

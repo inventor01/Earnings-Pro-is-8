@@ -15,9 +15,13 @@ export function AuthProvider({ children, queryClient }: { children: React.ReactN
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load token from localStorage on mount
+  // SECURITY: auth tokens live in sessionStorage (per-tab, cleared on close),
+  // NOT localStorage, to limit exposure of the bearer JWT to XSS persistence.
+  // Load token from sessionStorage on mount.
   useEffect(() => {
-    const savedToken = localStorage.getItem('auth_token');
+    // One-time cleanup: purge any token persisted by older builds.
+    localStorage.removeItem('auth_token');
+    const savedToken = sessionStorage.getItem('auth_token');
     if (savedToken) {
       setToken(savedToken);
     }
@@ -28,7 +32,7 @@ export function AuthProvider({ children, queryClient }: { children: React.ReactN
     // Clear React Query cache when switching users to prevent data leakage
     queryClient.clear();
     setToken(newToken);
-    localStorage.setItem('auth_token', newToken);
+    sessionStorage.setItem('auth_token', newToken);
     // Flag to play intro sound on first login (sessionStorage expires on page refresh)
     sessionStorage.setItem('justLoggedIn', 'true');
   };
@@ -37,7 +41,7 @@ export function AuthProvider({ children, queryClient }: { children: React.ReactN
     // Clear React Query cache when logging out to prevent data leakage
     queryClient.clear();
     setToken(null);
-    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_token');
   };
 
   return (

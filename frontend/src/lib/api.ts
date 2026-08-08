@@ -1,8 +1,8 @@
 const API_BASE = import.meta.env.VITE_API_BASE || '';
 
-// Get token from localStorage
+// Get token from sessionStorage (per-tab; never persist auth tokens in localStorage)
 function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
+  return sessionStorage.getItem('auth_token');
 }
 
 // Helper to add auth header to fetch options
