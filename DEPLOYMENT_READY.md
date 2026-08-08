@@ -1,7 +1,11 @@
-# ✅ DEPLOYMENT FOLDER IS RAILWAY-READY
+# ⚠️ LEGACY: web-app deployment path (NOT the current production route)
+
+> **Status (2026-08-08): unshipped/legacy.** Production today is: the FastAPI backend on Railway serving the **landing site** (`landing/dist`) at earningsninja.com, plus the native mobile app. The React web app (`frontend/`) is **not deployed** anywhere and this Docker path that bundles it is not the recommended production route.
+>
+> **Security caveat if you ever revive this path:** the web app keeps the auth JWT in `sessionStorage` (hardened from `localStorage` in Aug 2026). That limits persistence but the token is still readable by any XSS — before shipping the web app publicly, migrate web auth to an HttpOnly+Secure cookie session flow. See `docs/security-audit-2026-08.md` (H-2).
 
 ## Summary
-The `deployment/` folder contains everything needed for Railway deployment and will deploy successfully on the first try.
+The `deployment/` folder contains everything needed for a Railway deployment that bundles the legacy web app.
 
 ## Files Configured:
 

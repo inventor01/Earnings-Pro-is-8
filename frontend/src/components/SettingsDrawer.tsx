@@ -39,7 +39,7 @@ export function SettingsDrawer({ isOpen, onClose, onResetAll, onExport, onImport
   const { data: userInfo } = useQuery<UserInfo>({
     queryKey: ['userInfo'],
     queryFn: async () => {
-      const token = localStorage.getItem('auth_token');
+      const token = sessionStorage.getItem('auth_token');
       if (!token || token === 'guest-token') return null;
       const res = await fetch(`/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` },
