@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Numeric, DateTime, Date, Text, Enum as SQLEnum, Boolean, ForeignKey, Index, text
+from sqlalchemy import Column, Integer, BigInteger, String, Float, Numeric, DateTime, Date, Text, Enum as SQLEnum, Boolean, ForeignKey, Index, text
 from datetime import datetime
 from decimal import Decimal
 import enum
@@ -70,6 +70,17 @@ class AuthUser(Base):
     # are grandfathered true by the boot migration; demo accounts intentionally
     # ignore it (tour shows every demo session).
     walkthrough_completed = Column(Boolean, default=False, nullable=False)
+    # Server-side Pro entitlement state (source of truth for backend gating).
+    # Kept current by the RevenueCat webhook (/api/revenuecat/webhook) and the
+    # on-demand REST fallback in backend/entitlements.py. The RevenueCat
+    # app_user_id equals this row's `id` (client calls Purchases.logIn(user.id)).
+    pro_entitlement_active = Column(Boolean, default=False, nullable=False)
+    pro_entitlement_expires_at = Column(String, nullable=True)   # ISO8601 UTC; NULL = no expiry (lifetime/none)
+    pro_entitlement_updated_at = Column(String, nullable=True)   # ISO8601 UTC; when state was last written
+    pro_entitlement_source = Column(String, nullable=True)       # 'webhook' | 'rest'
+    # RevenueCat event_timestamp_ms of the last APPLIED webhook event — used to
+    # drop out-of-order/replayed webhook deliveries idempotently.
+    pro_entitlement_event_ts_ms = Column(BigInteger, nullable=True)
     email_verification_code_hash = Column(String, nullable=True)
     email_verification_expires_at = Column(String, nullable=True)  # ISO8601 UTC
     email_verification_attempts = Column(Integer, default=0, nullable=False)

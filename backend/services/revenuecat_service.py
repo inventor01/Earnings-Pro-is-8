@@ -14,6 +14,7 @@ app can still receive their reward.
 
 import logging
 import os
+from datetime import datetime, timezone
 from urllib.parse import quote
 
 import httpx
@@ -86,3 +87,48 @@ async def grant_promotional_month(app_user_id: str) -> bool:
     except Exception as exc:  # network / timeout / unexpected
         logger.warning("RevenueCat promotional grant errored for %s: %s", app_user_id, exc)
         return False
+
+
+async def fetch_pro_entitlement(app_user_id: str) -> dict | None:
+    """Query the RevenueCat v1 subscribers API for *app_user_id*'s Pro state.
+
+    Returns ``{"active": bool, "expires_at": str | None}`` on success (where
+    ``expires_at`` is the raw ISO expiry, or None for no expiry / lifetime),
+    or ``None`` when the check could not be performed (missing key, network
+    error, non-2xx). Callers must treat ``None`` as "unknown" — never as
+    "not Pro".
+    """
+    key = _secret_key()
+    if not key or not app_user_id:
+        return None
+
+    url = f"{REVENUECAT_V1_BASE}/subscribers/{quote(app_user_id, safe='')}"
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(url, headers={"Authorization": f"Bearer {key}"})
+        if resp.status_code // 100 != 2:
+            logger.warning(
+                "RevenueCat subscriber lookup failed for %s: %s %s",
+                app_user_id, resp.status_code, resp.text[:300],
+            )
+            return None
+        data = resp.json()
+    except Exception as exc:
+        logger.warning("RevenueCat subscriber lookup errored for %s: %s", app_user_id, exc)
+        return None
+
+    ent = ((data.get("subscriber") or {}).get("entitlements") or {}).get(PRO_ENTITLEMENT_ID)
+    if not ent:
+        return {"active": False, "expires_at": None}
+
+    expires = ent.get("expires_date")  # ISO8601, or None for lifetime access
+    if not expires:
+        return {"active": True, "expires_at": None}
+    try:
+        dt = datetime.fromisoformat(str(expires).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return {"active": dt > datetime.now(timezone.utc), "expires_at": str(expires)}
+    except (ValueError, TypeError):
+        # Unparseable expiry — be conservative and treat as not active.
+        return {"active": False, "expires_at": str(expires)}

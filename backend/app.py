@@ -7,7 +7,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import inspect, text
-from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard, waitlist_routes, referrals, platforms, entry_types, feedback
+from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard, waitlist_routes, referrals, platforms, entry_types, feedback, subscription
 from backend.db import engine, Base
 from backend.services.background_jobs import start_background_jobs, stop_background_jobs
 import os
@@ -485,6 +485,38 @@ def _migrate_auth_users_add_password_changed_at() -> None:
 _migrate_auth_users_add_password_changed_at()
 
 
+def _migrate_auth_users_add_pro_entitlement() -> None:
+    """Server-side Pro entitlement state, kept current by the RevenueCat
+    webhook and REST fallback. All additive ADD COLUMNs (safe on Postgres +
+    SQLite); the boolean gets a FALSE default so every existing row starts
+    non-Pro until a webhook/REST check says otherwise (the client remains
+    fail-open for UX; this is the server-side backstop). Safe to re-run."""
+    insp = inspect(engine)
+    if not insp.has_table("auth_users"):
+        return
+    cols = {c["name"] for c in insp.get_columns("auth_users")}
+    is_pg = engine.dialect.name == "postgresql"
+    false_default = "FALSE" if is_pg else "0"
+    with engine.begin() as conn:
+        if "pro_entitlement_active" not in cols:
+            conn.execute(text(
+                f"ALTER TABLE auth_users ADD COLUMN pro_entitlement_active BOOLEAN NOT NULL DEFAULT {false_default}"
+            ))
+        if "pro_entitlement_expires_at" not in cols:
+            conn.execute(text("ALTER TABLE auth_users ADD COLUMN pro_entitlement_expires_at VARCHAR"))
+        if "pro_entitlement_updated_at" not in cols:
+            conn.execute(text("ALTER TABLE auth_users ADD COLUMN pro_entitlement_updated_at VARCHAR"))
+        if "pro_entitlement_source" not in cols:
+            conn.execute(text("ALTER TABLE auth_users ADD COLUMN pro_entitlement_source VARCHAR"))
+        if "pro_entitlement_event_ts_ms" not in cols:
+            conn.execute(text("ALTER TABLE auth_users ADD COLUMN pro_entitlement_event_ts_ms BIGINT"))
+    if "pro_entitlement_active" not in cols:
+        logger.warning("Ensured auth_users pro entitlement columns exist (server-side Pro state).")
+
+
+_migrate_auth_users_add_pro_entitlement()
+
+
 def _migrate_problem_reports_add_title() -> None:
     """Optional short issue title for bug reports (used in the notification
     email subject). Nullable — legacy reports keep NULL. Plain ADD COLUMN
@@ -606,6 +638,7 @@ app.include_router(leaderboard_routes.router, prefix="/api", tags=["leaderboard"
 app.include_router(referrals.router, prefix="/api", tags=["referrals"])
 app.include_router(waitlist_routes.router, tags=["waitlist"])
 app.include_router(feedback.router, prefix="/api", tags=["feedback"])
+app.include_router(subscription.router, prefix="/api", tags=["subscription"])
 
 # Serve frontend static files (must be after all API routes)
 # Check multiple possible dist locations
