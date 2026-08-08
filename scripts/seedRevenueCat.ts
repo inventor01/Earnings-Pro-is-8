@@ -86,7 +86,7 @@ const PLANS: PlanConfig[] = [
     duration: "P1M",
     packageIdentifier: "$rc_monthly",
     packageDisplayName: "Monthly",
-    prices: [{ amount_micros: 4_990_000, currency: "USD" }], // $4.99
+    prices: [{ amount_micros: 2_990_000, currency: "USD" }], // $2.99
   },
 ];
 
