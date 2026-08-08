@@ -69,6 +69,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isDemoActive } from '@/lib/demoSession';
 
 // Persists the platform the user most recently logged an ORDER against, so the
 // Add Entry modal can default new orders to it (Expenses still default to OTHER).
@@ -2411,7 +2412,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       if (app === oldKey) setApp(customKey(updated.name));
       // Migrate the persisted last-used-platform key too, or the next modal
       // open would auto-select the stale old name and save entries under it.
-      AsyncStorage.getItem(LAST_ORDER_APP_KEY).then((stored) => {
+      // (Skipped in Demo Mode: the sandbox must never touch this device-wide
+      // preference — a demo platform rename could otherwise rewrite it.)
+      if (!isDemoActive()) AsyncStorage.getItem(LAST_ORDER_APP_KEY).then((stored) => {
         if (stored === oldKey) {
           AsyncStorage.setItem(LAST_ORDER_APP_KEY, customKey(updated.name)).catch(() => {});
         }
@@ -2462,7 +2465,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               if (app === deletedKey) setApp('OTHER');
               // Clear the persisted last-used key so the next modal open
               // can't auto-select a platform that no longer exists.
-              AsyncStorage.getItem(LAST_ORDER_APP_KEY).then((stored) => {
+              // (Skipped in Demo Mode — sandbox never touches this preference.)
+              if (!isDemoActive()) AsyncStorage.getItem(LAST_ORDER_APP_KEY).then((stored) => {
                 if (stored === deletedKey) {
                   AsyncStorage.removeItem(LAST_ORDER_APP_KEY).catch(() => {});
                 }
@@ -2530,6 +2534,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     // Fresh open → no manual interaction yet.
     appTouchedRef.current = false;
     if (editing || prefill?.type === 'EXPENSE') return;
+    // Demo Mode: don't read the real user's persisted preference into the
+    // sandbox (isolation runs both ways).
+    if (isDemoActive()) return;
     let cancelled = false;
     AsyncStorage.getItem(LAST_ORDER_APP_KEY).then((stored) => {
       // Bail if the modal closed, the user already picked a platform, or the
@@ -2837,9 +2844,11 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       notifyEarningsChanged();
       // Remember the last app the user logged revenue against — the Add Entry
       // modal defaults new orders to it (read back via LAST_ORDER_APP_KEY).
-      if (vars.type === 'ORDER' && vars.app) {
+      if (vars.type === 'ORDER' && vars.app && !isDemoActive()) {
         // Store the SELECTION key (custom platforms as 'CUSTOM:<name>') so the
         // next open re-selects the exact same pill, not the generic OTHER.
+        // (Skipped in Demo Mode so a sandbox save can't set the default for a
+        // later real account.)
         const key = vars.custom_app ? customKey(vars.custom_app) : vars.app;
         AsyncStorage.setItem(LAST_ORDER_APP_KEY, key).catch(() => {});
       }

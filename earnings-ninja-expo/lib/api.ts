@@ -18,6 +18,8 @@ import {
   overlayPendingOnRollup,
 } from './localStore';
 import { rangeForTimeframe, rangeForDates } from './estRange';
+import { isDemoActive } from './demoSession';
+import { demoApi } from './demoApi';
 
 // Priority: EXPO_PUBLIC env var → app.json extra → production fallback.
 // Production fallback points at the Railway-hosted backend so the shipped
@@ -58,6 +60,13 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 // error) → offline. This is how the app derives connection state without a
 // native NetInfo dependency. All api.* calls route through here.
 async function trackedFetch(input: string, init?: RequestInit): Promise<Response> {
+  // Hard safety net for local sandbox Demo Mode: no request may ever leave the
+  // device while a demo session is active (demo calls are served by demoApi via
+  // the Proxy below; anything that slips through lands here). Throw BEFORE the
+  // try so reportFailure never mislabels the app as offline.
+  if (isDemoActive()) {
+    throw new Error('Demo Mode is offline — create a free account to use this feature.');
+  }
   try {
     const res = await globalThis.fetch(input, init);
     reportSuccess();
@@ -287,7 +296,7 @@ export type LoginResult =
   | { access_token: string; mfa_required?: undefined }
   | { mfa_required: true; challenge_token: string; email?: string };
 
-export const api = {
+const realApi = {
   async login(credential: string, password: string): Promise<LoginResult> {
     const res = await trackedFetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
@@ -1242,6 +1251,22 @@ export const api = {
   },
 
 };
+
+// The `api` every screen imports. While a local sandbox demo session is
+// active, any method that demoApi implements is served from the in-memory
+// demo store instead of the network — one central switch, zero per-screen
+// conditionals. Methods demoApi doesn't implement fall through to the real
+// implementation, where trackedFetch's demo guard blocks the request before
+// it can leave the device.
+export const api: typeof realApi = new Proxy(realApi, {
+  get(target, prop, receiver) {
+    if (isDemoActive()) {
+      const impl = (demoApi as Record<PropertyKey, unknown>)[prop as string];
+      if (typeof impl === 'function') return impl;
+    }
+    return Reflect.get(target, prop, receiver);
+  },
+});
 
 // Best-effort synthetic Entry returned by the offline `updateEntry` path. The
 // caller's mutation onSuccess only invalidates (which fails & is retained

@@ -50,6 +50,15 @@ export async function clearPersistedCache(): Promise<void> {
   }
 }
 
+// While the local sandbox Demo Mode is active, persisting is suspended so demo
+// data can never be flushed to disk and cold-start into a later real session.
+// (authContext toggles this on enterDemo/exitDemo.)
+let persistSuspended = false;
+
+export function setPersistSuspended(suspended: boolean): void {
+  persistSuspended = suspended;
+}
+
 let unsubscribe: (() => void) | null = null;
 
 // Subscribe to the query cache and persist a throttled snapshot. Leading +
@@ -62,6 +71,7 @@ export function startPersisting(qc: QueryClient): () => void {
   let trailing = false;
 
   const persist = async () => {
+    if (persistSuspended) return;
     try {
       const dehydrated = dehydrate(qc, {
         shouldDehydrateQuery: (q) =>

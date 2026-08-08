@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, createElement } from 'react';
 import type { ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isDemoActive, subscribeDemo } from './demoSession';
 
 // ─── Hidden Mode (a.k.a. Stealth Mode) ───────────────────────────────────────
 // When enabled, every monetary value across the app is replaced with MASK so a
@@ -15,6 +16,14 @@ const STORAGE_KEY = HIDDEN_MODE_KEY;
 
 // Mask shown in place of any dollar value when Hidden Mode is on.
 export const MASK = '•••';
+
+// Persist the Hidden Mode preference. Exported (and demo-guarded) so the write
+// path is testable: in local sandbox Demo Mode the toggle is session-only and
+// must never overwrite the real user's device-wide privacy preference.
+export function persistHiddenModePref(v: boolean): void {
+  if (isDemoActive()) return;
+  AsyncStorage.setItem(STORAGE_KEY, v ? '1' : '0').catch(() => {});
+}
 
 interface HiddenModeContextValue {
   hidden: boolean;
@@ -48,8 +57,24 @@ export function HiddenModeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const persist = (v: boolean) => {
-    AsyncStorage.setItem(STORAGE_KEY, v ? '1' : '0').catch(() => {});
+    persistHiddenModePref(v);
   };
+
+  // Local sandbox Demo Mode: Hidden Mode is session-local there (persist() is
+  // a no-op — see persistHiddenModePref). On demo START show values unmasked
+  // (it's sample data; a clean showcase); on demo END re-hydrate the REAL
+  // persisted preference so any sandbox toggling evaporates.
+  useEffect(() => {
+    return subscribeDemo(() => {
+      if (isDemoActive()) {
+        setHiddenState(false);
+      } else {
+        AsyncStorage.getItem(STORAGE_KEY)
+          .then((v) => setHiddenState(v === '1'))
+          .catch(() => setHiddenState(false));
+      }
+    });
+  }, []);
 
   const setHidden = useCallback((v: boolean) => {
     setHiddenState(v);

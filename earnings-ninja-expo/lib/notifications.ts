@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from './api';
+import { isDemoActive } from './demoSession';
 import { HIDDEN_MODE_KEY, MASK } from './hiddenMode';
 import {
   nextOccurrence, occurrenceAt, morningBody, eveningBody,
@@ -163,6 +164,10 @@ export function notifyEarningsChanged(): void {
 export async function refreshMotivationSchedule(
   opts?: { hidden?: boolean; force?: boolean },
 ): Promise<void> {
+  // Local sandbox Demo Mode: never schedule notifications from demo data —
+  // sample numbers must not land on a real lock screen (and the rollup fetch
+  // would be served by the demo store anyway).
+  if (isDemoActive()) return;
   if (!(await getNotifEnabled())) return;
 
   const now = Date.now();
@@ -271,6 +276,9 @@ async function doReschedule(hiddenOverride?: boolean): Promise<void> {
 // `hidden` is passed through so the very first schedule already respects Hidden
 // Mode without waiting for a foreground refresh.
 export async function enableMotivation(hidden?: boolean): Promise<boolean> {
+  // Demo Mode: no OS permission prompt and no persisted preference — the
+  // toggle would otherwise write device-wide state from the sandbox.
+  if (isDemoActive()) return false;
   const granted = await ensureNotifPermission();
   if (!granted) return false;
   await setNotifEnabledFlag(true);
@@ -279,6 +287,9 @@ export async function enableMotivation(hidden?: boolean): Promise<boolean> {
 }
 
 export async function disableMotivation(): Promise<void> {
+  // Demo Mode: never flip the real user's persisted preference or cancel
+  // their scheduled notifications from the sandbox.
+  if (isDemoActive()) return;
   await setNotifEnabledFlag(false);
   await cancelMotivation();
 }
@@ -289,6 +300,9 @@ export async function disableMotivation(): Promise<void> {
 // off and cancelling, so the UI never claims notifications are on when iOS will
 // silently drop them. Returns the reconciled enabled state.
 export async function syncNotifState(): Promise<boolean> {
+  // Demo Mode: report "off" without touching the persisted flag or schedules
+  // (the self-heal below writes to disk).
+  if (isDemoActive()) return false;
   if (!(await getNotifEnabled())) return false;
   try {
     const perms = await Notifications.getPermissionsAsync();

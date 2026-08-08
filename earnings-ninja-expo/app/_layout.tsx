@@ -34,6 +34,7 @@ import { registerDrainHandler } from '@/lib/syncTrigger';
 import { needsOnboarding, readOnboardingState, hasFreshSignupFlag, clearFreshSignupFlag, writeOnboardingState, adoptPendingDone } from '@/lib/onboarding';
 import * as Notifications from 'expo-notifications';
 import IntroVideo from '@/components/IntroVideo';
+import DemoModeChrome from '@/components/DemoModeChrome';
 import { getIntroEnabled } from '@/lib/introPref';
 
 SplashScreen.preventAutoHideAsync();
@@ -64,16 +65,26 @@ const queryClient = new QueryClient({
 });
 
 function RootNav() {
-  const { token, isLoading, user, refreshUser } = useAuth();
+  const { token, isLoading, user, refreshUser, isDemo } = useAuth();
   const { hidden } = useHiddenMode();
   const { BG, isDark } = useTheme();
   const { refresh: refreshSubscription } = useSubscription();
   const queryClient = useQueryClient();
   const draining = useRef(false);
-  const prevToken = useRef<string | null>(token);
+  // Session identity for the cache-wipe effect below: a real token, the local
+  // demo sandbox, or signed out. Any transition OUT of a session (and INTO the
+  // demo) wipes the in-memory query cache so data never crosses sessions.
+  const sessionKey = token ?? (isDemo ? '__demo__' : null);
+  const prevSession = useRef<string | null>(sessionKey);
 
   useEffect(() => {
     if (isLoading) return;
+    if (isDemo && !token) {
+      // Local sandbox demo: no onboarding funnel, no server flags — straight
+      // to the dashboard with the seeded sample data.
+      router.replace('/(tabs)');
+      return;
+    }
     if (!token) {
       router.replace('/login');
       return;
@@ -126,19 +137,21 @@ function RootNav() {
       router.replace(need ? '/onboarding' : '/(tabs)');
     })();
     return () => { cancelled = true; };
-  }, [token, isLoading, user?.id, user?.onboarding_completed, user?.is_demo]);
+  }, [token, isLoading, isDemo, user?.id, user?.onboarding_completed, user?.is_demo]);
 
-  // On logout (token cleared), wipe the IN-MEMORY query cache too. authContext
-  // already clears the persisted on-disk copies; clearing the live cache here
-  // prevents the persist subscriber from immediately re-writing the previous
-  // user's data back to disk, and stops a different account signing in on the
-  // same device from briefly seeing stale dashboards.
+  // On any session transition — logout (token cleared), demo exit, or demo
+  // entry — wipe the IN-MEMORY query cache too. authContext already clears the
+  // persisted on-disk copies; clearing the live cache here prevents the persist
+  // subscriber from re-writing a previous session's data back to disk, stops a
+  // different account from briefly seeing stale dashboards, and guarantees demo
+  // data never survives into (or leaks out of) the sandbox.
   useEffect(() => {
-    if (prevToken.current && !token) {
+    const prev = prevSession.current;
+    if (prev !== sessionKey && (prev !== null || sessionKey === '__demo__')) {
       queryClient.clear();
     }
-    prevToken.current = token;
-  }, [token, queryClient]);
+    prevSession.current = sessionKey;
+  }, [sessionKey, queryClient]);
 
   useEffect(() => {
     SplashScreen.hideAsync();
@@ -403,6 +416,10 @@ function RootNav() {
   // entry handler above) so the code is never lost for a logged-out invitee.
   useEffect(() => {
     if (isLoading) return;
+    // Demo Mode: ignore referral links entirely. The sandbox is not "logged
+    // out" — stashing a pending code here would persist demo-session input to
+    // disk and pre-fill a later real signup.
+    if (isDemo) return;
     const handle = async (url: string | null) => {
       if (!url) return;
       const parsed = Linking.parse(url);
@@ -434,7 +451,7 @@ function RootNav() {
     Linking.getInitialURL().then(handle);
     const sub = Linking.addEventListener('url', (e) => handle(e.url));
     return () => sub.remove();
-  }, [isLoading, token, refreshSubscription]);
+  }, [isLoading, token, isDemo, refreshSubscription]);
 
   return (
     <>
@@ -445,6 +462,7 @@ function RootNav() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="index" />
       </Stack>
+      {isDemo && <DemoModeChrome />}
     </>
   );
 }

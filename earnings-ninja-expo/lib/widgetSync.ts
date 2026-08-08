@@ -16,6 +16,7 @@
 
 import { WidgetBridge } from '../modules/widget-bridge';
 import { API_BASE as apiBase } from './api';
+import { isDemoActive } from './demoSession';
 
 // Reuse the exact same API_BASE the JS app uses so the widget can never
 // drift to a different backend than the main app (env-first → app.json
@@ -52,7 +53,8 @@ export const widgetSync = {
 
   /** Call after the dashboard rollup refreshes. `profit` is today's net. */
   async pushProfit(profit: number) {
-    if (!WidgetBridge.isAvailable()) return;
+    // Demo Mode: never paint sandbox numbers onto the real Home Screen widget.
+    if (!WidgetBridge.isAvailable() || isDemoActive()) return;
     WidgetBridge.setItem('today_profit', profit.toFixed(2));
     WidgetBridge.reloadAllTimelines();
   },
@@ -60,7 +62,8 @@ export const widgetSync = {
   /** Call after the dashboard rollup refreshes. `revenue` is today's gross
    *  revenue (before expenses) — shown on the Lock Screen mini-dashboard. */
   async pushRevenue(revenue: number) {
-    if (!WidgetBridge.isAvailable()) return;
+    // Demo Mode: never paint sandbox numbers onto the real Home Screen widget.
+    if (!WidgetBridge.isAvailable() || isDemoActive()) return;
     WidgetBridge.setItem('today_revenue', revenue.toFixed(2));
     WidgetBridge.reloadAllTimelines();
   },
@@ -69,6 +72,8 @@ export const widgetSync = {
    *  Screen widget can match the app's appearance. (Lock Screen accessory
    *  widgets are rendered monochrome/tinted by iOS regardless of this value.) */
   async pushTheme(name: 'dark' | 'light') {
+    // Demo Mode: never restyle the real Home Screen widget from the sandbox.
+    if (isDemoActive()) return;
     if (!WidgetBridge.isAvailable()) return;
     WidgetBridge.setItem('theme', name);
     WidgetBridge.reloadAllTimelines();

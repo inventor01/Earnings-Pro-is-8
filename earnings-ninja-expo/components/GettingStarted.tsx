@@ -25,6 +25,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Modal, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isDemoActive, subscribeDemo } from '../lib/demoSession';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -57,7 +58,13 @@ type GSState = { done: Partial<Record<MilestoneKey, boolean>>; dismissed: boolea
 const EMPTY: GSState = { done: {}, dismissed: false, retired: false };
 const storeKey = (userId: number | string) => `getting_started:${userId}`;
 
+// Demo Mode: checklist progress is session-local (in memory) — the sandbox
+// must not write per-account keys to the device. Cleared on demo enter/exit.
+let demoGSState: GSState | null = null;
+subscribeDemo(() => { demoGSState = null; });
+
 async function readState(userId: number | string): Promise<GSState> {
+  if (isDemoActive()) return demoGSState ?? { ...EMPTY, done: {} };
   try {
     const raw = await AsyncStorage.getItem(storeKey(userId));
     if (!raw) return { ...EMPTY, done: {} };
@@ -66,6 +73,7 @@ async function readState(userId: number | string): Promise<GSState> {
   } catch { return { ...EMPTY, done: {} }; }
 }
 async function writeState(userId: number | string, s: GSState): Promise<void> {
+  if (isDemoActive()) { demoGSState = s; return; }
   try { await AsyncStorage.setItem(storeKey(userId), JSON.stringify(s)); } catch {}
 }
 

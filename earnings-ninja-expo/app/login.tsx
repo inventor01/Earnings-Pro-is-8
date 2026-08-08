@@ -26,14 +26,13 @@ export default function LoginScreen() {
   const ON_PRIMARY = t.ON_PRIMARY;
 
   const insets = useSafeAreaInsets();
-  const { login } = useAuth();
+  const { login, enterDemo } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [credential, setCredential] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [appleLoading, setAppleLoading] = useState(false);
@@ -167,17 +166,11 @@ export default function LoginScreen() {
     }
   };
 
-  const handleDemo = async () => {
+  // Local sandbox Demo Mode: instant, fully on-device — no server account, no
+  // network call, no token. RootNav routes into the dashboard when isDemo flips.
+  const handleDemo = () => {
     setError('');
-    setDemoLoading(true);
-    try {
-      const res = await api.demo();
-      login(res.access_token);
-    } catch (e: any) {
-      setError(e.message || 'Failed to start demo');
-    } finally {
-      setDemoLoading(false);
-    }
+    enterDemo();
   };
 
   const openForgot = () => {
@@ -484,10 +477,9 @@ export default function LoginScreen() {
             />
           )}
 
-          {/* Demo Button */}
+          {/* Demo Button — local sandbox, no account or network needed */}
           <Pressable
             onPress={handleDemo}
-            disabled={demoLoading}
             style={{
               width: '100%',
               alignSelf: 'stretch',
@@ -499,23 +491,22 @@ export default function LoginScreen() {
               paddingHorizontal: 16,
               alignItems: 'center',
               justifyContent: 'center',
-              opacity: demoLoading ? 0.85 : 1,
             }}
           >
-            {demoLoading
-              ? <ActivityIndicator color={GREEN} />
-              : <Text style={{
-                  color: GREEN,
-                  fontWeight: '900',
-                  fontSize: 17,
-                  letterSpacing: 0.3,
-                  textAlign: 'center',
-                  textAlignVertical: 'center',
-                  includeFontPadding: false,
-                }}>
-                  🚗 Try Demo Mode
-                </Text>
-            }
+            <Text style={{
+              color: GREEN,
+              fontWeight: '900',
+              fontSize: 17,
+              letterSpacing: 0.3,
+              textAlign: 'center',
+              textAlignVertical: 'center',
+              includeFontPadding: false,
+            }}>
+              🚗 Try Demo Mode
+            </Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginTop: 4, textAlign: 'center' }}>
+              Explore Earnings Ninja with sample data. No account required.
+            </Text>
           </Pressable>
         </View>
 

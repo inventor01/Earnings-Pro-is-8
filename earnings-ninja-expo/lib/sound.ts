@@ -1,6 +1,7 @@
 import type { AudioPlayer } from 'expo-audio';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isDemoActive, subscribeDemo } from './demoSession';
 
 // expo-audio is a NATIVE module (the SDK 54 successor to the now-removed
 // expo-av). It is loaded LAZILY via require() inside a try/catch rather than at
@@ -45,7 +46,14 @@ let appStateWired = false;
 let lastPlayMs = 0;
 const RETRIGGER_GUARD_MS = 300;
 
+// Local sandbox Demo Mode: the sound toggle is session-local — never read from
+// or written to the real device preference. Cleared automatically whenever the
+// demo session state flips (enter OR exit), so each demo starts at the default.
+let demoSoundOverride: boolean | null = null;
+subscribeDemo(() => { demoSoundOverride = null; });
+
 export async function getSoundEnabled(): Promise<boolean> {
+  if (isDemoActive()) return demoSoundOverride ?? true; // demo default: on
   try {
     const v = await AsyncStorage.getItem(SOUND_ENABLED_KEY);
     // Unset (null) → enabled by default; otherwise honor the stored flag.
@@ -56,6 +64,7 @@ export async function getSoundEnabled(): Promise<boolean> {
 }
 
 export async function setSoundEnabled(v: boolean): Promise<void> {
+  if (isDemoActive()) { demoSoundOverride = v; return; } // session-local only
   try {
     await AsyncStorage.setItem(SOUND_ENABLED_KEY, v ? '1' : '0');
   } catch {
