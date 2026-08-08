@@ -7,7 +7,10 @@ import { clearLocalStore } from './localStore';
 import { clearMutationQueue } from './mutationQueue';
 import { clearQueue as clearCreateQueue } from './offlineQueue';
 import { clearPersistedCache } from './queryPersist';
-import { clearPlatformsMirror, clearLabelsMirror } from './platforms';
+import {
+  clearPlatformsMirror, clearLabelsMirror, clearEntryTypesMirror,
+  clearExpenseCatsMirror, clearHiddenCatsMirror,
+} from './platforms';
 import { refreshPendingCount } from './pendingCount';
 
 // Wipe every device-local copy of the signed-in user's data: the entries/goals
@@ -26,6 +29,11 @@ async function clearAllLocalData(): Promise<void> {
     // previous user's platform pills / renamed tab labels while offline.
     clearPlatformsMirror(),
     clearLabelsMirror(),
+    // Same leak for custom entry types, custom expense categories, and hidden
+    // built-in category keys.
+    clearEntryTypesMirror(),
+    clearExpenseCatsMirror(),
+    clearHiddenCatsMirror(),
   ]);
   await refreshPendingCount();
 }

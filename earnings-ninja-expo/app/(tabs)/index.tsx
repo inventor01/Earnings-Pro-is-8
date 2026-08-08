@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   api, Entry, EntryCreate, EntryType, AppType, ExpenseCategory, Rollup, Goal,
   APP_LABELS, APP_COLORS, EXPENSE_EMOJIS, TimeframeType, parseServerDate,
-  ReferralInfo, API_BASE, PRIVACY_URL, TERMS_URL, UserPlatform, UserEntryType, LabelOverride,
+  ReferralInfo, API_BASE, PRIVACY_URL, TERMS_URL, UserPlatform, UserEntryType, UserExpenseCategory, LabelOverride,
 } from '@/lib/api';
 import { applyOptimisticGoal, rollbackOptimisticGoal } from '@/lib/goalOptimistic';
 import { useAuth } from '@/lib/authContext';
@@ -54,6 +54,9 @@ import {
   applyLabelOverrides, platformLabel, typeLabel, readLabelsMirror, writeLabelsMirror,
   customTypeKey, isCustomTypeKey, customTypeNameFromKey, typeKeyForEntry, entryTypeLabel,
   applyEntryTypeStyles, readEntryTypesMirror, writeEntryTypesMirror, findDuplicateEntryType,
+  customCatKey, isCustomCatKey, customCatNameFromKey, entryCategoryLabel,
+  readExpenseCatsMirror, writeExpenseCatsMirror, findDuplicateExpenseCat,
+  readHiddenCatsMirror, writeHiddenCatsMirror,
 } from '@/lib/platforms';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
@@ -1236,6 +1239,7 @@ function FormInput({
 function DetailsForm({
   isExp, amount, entryType, setEntryType, expenseUi, app, setApp, appAutoFilled, lastAppLabel, category, setCategory,
   platformOptions, onAddPlatform, onEditPlatform, typeOptions, onAddType, onEditType,
+  categoryOptions, onAddCategory, onEditCategory,
   isBusiness, setIsBusiness,
   miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
   receiptUri, onPickReceipt, onRemoveReceipt,
@@ -1267,8 +1271,15 @@ function DetailsForm({
   typeOptions: { key: string; label: string; color?: string }[];
   onAddType: () => void;
   onEditType: (key: string) => void;
-  category: ExpenseCategory;
-  setCategory: (c: ExpenseCategory) => void;
+  // Selection key: an ExpenseCategory for built-ins, or 'CUSTOMCAT:<name>' for
+  // a user-created category (see lib/platforms.ts).
+  category: string;
+  setCategory: (c: string) => void;
+  // Visible built-ins (hidden ones filtered) + user-created categories, merged
+  // by the parent. Long-press: custom → rename/delete; built-in → hide.
+  categoryOptions: { key: string; label: string }[];
+  onAddCategory: () => void;
+  onEditCategory: (key: string) => void;
   isBusiness: boolean;
   setIsBusiness: (b: boolean) => void;
   miles: string;
@@ -1425,12 +1436,21 @@ function DetailsForm({
             <View ref={registerAddEntryTarget('category')} collapsable={false}>
               <FieldLabel>🏷️ Category</FieldLabel>
               <PillSelect
-                options={EXPENSE_CATS.map(c => ({
-                  key: c,
-                  label: `${EXPENSE_EMOJIS[c]} ${c}`,
-                }))}
+                options={[
+                  ...categoryOptions,
+                  // Trailing "+" pill — opens the add-category prompt instead
+                  // of selecting; intercepted in onChange below.
+                  { key: '__ADD_CATEGORY__', label: '＋ Add' },
+                ]}
                 value={category}
-                onChange={setCategory}
+                onChange={(k) => {
+                  if (k === '__ADD_CATEGORY__') { onAddCategory(); return; }
+                  setCategory(k);
+                }}
+                onLongPressOption={(k) => {
+                  if (k === '__ADD_CATEGORY__') { onAddCategory(); return; }
+                  onEditCategory(k);
+                }}
               />
             </View>
           )}
@@ -1728,6 +1748,40 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   }, []);
   const customEntryTypes = entryTypesQuery.data ?? mirrorEntryTypes;
   useEffect(() => { applyEntryTypeStyles(customEntryTypes); }, [customEntryTypes]);
+  // User-created expense categories + hidden built-ins — same query +
+  // AsyncStorage-mirror pattern as platforms/types.
+  const expenseCatsQuery = useQuery({
+    queryKey: ['expenseCats'],
+    queryFn: async () => {
+      const list = await api.getExpenseCategories();
+      writeExpenseCatsMirror(list).catch(() => {});
+      return list;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const [mirrorExpenseCats, setMirrorExpenseCats] = useState<UserExpenseCategory[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    readExpenseCatsMirror().then(list => { if (!cancelled) setMirrorExpenseCats(list); });
+    return () => { cancelled = true; };
+  }, []);
+  const customExpenseCats = expenseCatsQuery.data ?? mirrorExpenseCats;
+  const hiddenCatsQuery = useQuery({
+    queryKey: ['hiddenExpenseCats'],
+    queryFn: async () => {
+      const list = await api.getHiddenExpenseCategories();
+      writeHiddenCatsMirror(list).catch(() => {});
+      return list;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const [mirrorHiddenCats, setMirrorHiddenCats] = useState<string[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    readHiddenCatsMirror().then(list => { if (!cancelled) setMirrorHiddenCats(list); });
+    return () => { cancelled = true; };
+  }, []);
+  const hiddenCats = hiddenCatsQuery.data ?? mirrorHiddenCats;
   // The BASE EntryType behind the current selection. Custom income types
   // behave like BONUS; custom expense types like EXPENSE. Falls back to the
   // edited row's stored base type when the custom type was deleted meanwhile.
@@ -1800,10 +1854,29 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const [addingEntryType, setAddingEntryType] = useState(false);
   const [renamingEntryType, setRenamingEntryType] = useState<UserEntryType | null>(null);
   const [newTypeKind, setNewTypeKind] = useState<'income' | 'expense'>('income');
+  // Custom expense-category editor modes for the same shared prompt modal.
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [renamingCategory, setRenamingCategory] = useState<UserExpenseCategory | null>(null);
   // When set, the modal edits a BUILT-IN pill label (cosmetic per-user
   // override; the underlying key stored on entries never changes).
   const [editingLabel, setEditingLabel] = useState<{ kind: 'platform' | 'type'; key: string; defaultLabel: string } | null>(null);
-  const [category, setCategory]  = useState<ExpenseCategory>('GAS');
+  // Built-in ExpenseCategory value or 'CUSTOMCAT:<name>' selection key.
+  const [category, setCategory]  = useState<string>('GAS');
+  // Category pill options: visible built-ins (hidden ones filtered out, but
+  // NEVER the currently-selected one while editing an old entry) + customs.
+  const categoryOptions = useMemo(() => ([
+    // Keep the currently-selected built-in visible even when hidden, so
+    // editing an old entry filed under a since-hidden category still shows
+    // its pill selected until the user changes it.
+    ...EXPENSE_CATS.filter(c => !hiddenCats.includes(c) || c === category).map(c => ({
+      key: c as string,
+      label: `${EXPENSE_EMOJIS[c]} ${c}`,
+    })),
+    ...customExpenseCats.map(c => ({
+      key: customCatKey(c.name),
+      label: c.icon ? `${c.icon} ${c.name}` : `🏷️ ${c.name}`,
+    })),
+  ]), [customExpenseCats, hiddenCats, category]);
   const [miles, setMiles]         = useState('');
   const [minutes, setMinutes]     = useState('');
   const [note, setNote]           = useState('');
@@ -1954,6 +2027,205 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     setNewTypeKind('income');
     setAddPlatformError(null);
     setAddPlatformVisible(true);
+  };
+
+  // "+ Add" pill on the Category row → shared prompt in add-category mode.
+  const handleAddCategory = () => {
+    setAddingCategory(true);
+    setRenamingCategory(null);
+    setAddingEntryType(false);
+    setRenamingEntryType(null);
+    setRenamingPlatform(null);
+    setEditingLabel(null);
+    setNewPlatformName('');
+    setNewPlatformColor(null);
+    setNewPlatformIcon(null);
+    setAddPlatformError(null);
+    setAddPlatformVisible(true);
+  };
+
+  // Long-press on a Category pill: user-created categories open the
+  // rename/restyle prompt; built-ins offer a per-user "hide" (cosmetic —
+  // entries already filed under them are untouched).
+  const handleEditCategory = (key: string) => {
+    if (isCustomCatKey(key)) {
+      const name = customCatNameFromKey(key);
+      const row = customExpenseCats.find(c => c.name === name);
+      if (!row) return;
+      setRenamingCategory(row);
+      setAddingCategory(false);
+      setRenamingEntryType(null);
+      setAddingEntryType(false);
+      setRenamingPlatform(null);
+      setEditingLabel(null);
+      setNewPlatformName(row.name);
+      setNewPlatformColor(row.color ?? null);
+      setNewPlatformIcon(row.icon ?? null);
+      setAddPlatformError(null);
+      setAddPlatformVisible(true);
+      return;
+    }
+    Alert.alert(
+      `Hide \u201C${key}\u201D?`,
+      'The category disappears from your selector. Expenses you already logged under it keep it in your history and stats. You can restore it any time from the \u201C+ Add\u201D screen.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Hide',
+          style: 'destructive',
+          onPress: async () => {
+            const next = Array.from(new Set([...hiddenCats, key]));
+            try {
+              const list = await api.setHiddenExpenseCategories(next);
+              queryClient.setQueryData<string[]>(['hiddenExpenseCats'], list);
+              writeHiddenCatsMirror(list).catch(() => {});
+              setMirrorHiddenCats(list);
+              if (category === key) {
+                const remaining = EXPENSE_CATS.filter(c => !list.includes(c));
+                setCategory(remaining.includes('OTHER') ? 'OTHER' : (remaining[0] ?? customExpenseCats[0] ? customCatKey(customExpenseCats[0].name) : 'OTHER'));
+              }
+              hTap();
+            } catch (e: any) {
+              Alert.alert('Error', e?.message || 'Failed to hide category. Check your connection and try again.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // Restore a hidden built-in category (from the add-category prompt).
+  const restoreHiddenCategory = async (key: string) => {
+    try {
+      const list = await api.setHiddenExpenseCategories(hiddenCats.filter(k => k !== key));
+      queryClient.setQueryData<string[]>(['hiddenExpenseCats'], list);
+      writeHiddenCatsMirror(list).catch(() => {});
+      setMirrorHiddenCats(list);
+      hTap();
+    } catch (e: any) {
+      setAddPlatformError(e?.message || 'Failed to restore category. Check your connection and try again.');
+    }
+  };
+
+  // Create a new custom expense category — mirrors submitNewEntryType.
+  const submitNewCategory = async () => {
+    const name = newPlatformName.trim();
+    if (!name || addPlatformBusy) return;
+    const dup = findDuplicateExpenseCat(name, customExpenseCats);
+    if (dup) {
+      setAddPlatformError(dup === 'builtin' ? 'That category is already built in.' : 'You already added that category.');
+      return;
+    }
+    setAddPlatformBusy(true);
+    setAddPlatformError(null);
+    try {
+      const created = await api.addExpenseCategory(name, newPlatformColor, newPlatformIcon);
+      queryClient.setQueryData<UserExpenseCategory[]>(['expenseCats'], (old) => {
+        const list = Array.isArray(old) ? old : customExpenseCats;
+        if (list.some(c => c.name.trim().toLowerCase() === created.name.trim().toLowerCase())) return list;
+        const next = [...list, created];
+        writeExpenseCatsMirror(next).catch(() => {});
+        return next;
+      });
+      setMirrorExpenseCats(prev => prev.some(c => c.name.trim().toLowerCase() === created.name.trim().toLowerCase()) ? prev : [...prev, created]);
+      setCategory(customCatKey(created.name));
+      setAddPlatformVisible(false);
+      setAddingCategory(false);
+      setNewPlatformName('');
+      setNewPlatformColor(null);
+      setNewPlatformIcon(null);
+      hTap();
+    } catch (e: any) {
+      setAddPlatformError(e?.message || 'Failed to add category. Check your connection and try again.');
+    } finally {
+      setAddPlatformBusy(false);
+    }
+  };
+
+  // Rename/restyle a custom category. The server carries existing entries
+  // over to the new name; we patch caches and refetch entry lists.
+  const submitRenameCategory = async () => {
+    if (!renamingCategory || addPlatformBusy) return;
+    const name = newPlatformName.trim();
+    if (!name) return;
+    const styleChanged =
+      (renamingCategory.color ?? null) !== newPlatformColor ||
+      (renamingCategory.icon ?? null) !== newPlatformIcon;
+    if (name === renamingCategory.name && !styleChanged) { setAddPlatformVisible(false); setRenamingCategory(null); return; }
+    const others = customExpenseCats.filter(c => c.id !== renamingCategory.id);
+    const dup = findDuplicateExpenseCat(name, others);
+    if (dup && name.toLowerCase() !== renamingCategory.name.toLowerCase()) {
+      setAddPlatformError(dup === 'builtin' ? 'That category is already built in.' : 'You already added that category.');
+      return;
+    }
+    setAddPlatformBusy(true);
+    setAddPlatformError(null);
+    try {
+      const updated = await api.renameExpenseCategory(renamingCategory.id, name, newPlatformColor, newPlatformIcon);
+      const oldKey = customCatKey(renamingCategory.name);
+      const patch = (list: UserExpenseCategory[]) => list.map(c => (c.id === updated.id ? updated : c));
+      queryClient.setQueryData<UserExpenseCategory[]>(['expenseCats'], (old) => {
+        const next = patch(Array.isArray(old) ? old : customExpenseCats);
+        writeExpenseCatsMirror(next).catch(() => {});
+        return next;
+      });
+      setMirrorExpenseCats(prev => patch(prev));
+      if (category === oldKey) setCategory(customCatKey(updated.name));
+      // Entry rows store the old name — refetch so history follows.
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['rollup'] });
+      setAddPlatformVisible(false);
+      setRenamingCategory(null);
+      setNewPlatformName('');
+      setNewPlatformColor(null);
+      setNewPlatformIcon(null);
+      hTap();
+    } catch (e: any) {
+      setAddPlatformError(e?.message || 'Failed to rename category. Check your connection and try again.');
+    } finally {
+      setAddPlatformBusy(false);
+    }
+  };
+
+  // Delete a custom category (confirmed via Alert). Entries filed under it
+  // are kept — they store the safe enum OTHER — only the pill goes away.
+  const submitDeleteCategory = () => {
+    if (!renamingCategory || addPlatformBusy) return;
+    const row = renamingCategory;
+    Alert.alert(
+      `Delete \u201C${row.name}\u201D?`,
+      'The category is removed from your selector. Expenses you already logged under it stay in your history and stats.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setAddPlatformBusy(true);
+            setAddPlatformError(null);
+            try {
+              await api.deleteExpenseCategory(row.id);
+              const drop = (list: UserExpenseCategory[]) => list.filter(c => c.id !== row.id);
+              queryClient.setQueryData<UserExpenseCategory[]>(['expenseCats'], (old) => {
+                const next = drop(Array.isArray(old) ? old : customExpenseCats);
+                writeExpenseCatsMirror(next).catch(() => {});
+                return next;
+              });
+              setMirrorExpenseCats(prev => drop(prev));
+              if (category === customCatKey(row.name)) setCategory('OTHER');
+              setAddPlatformVisible(false);
+              setRenamingCategory(null);
+              setNewPlatformName('');
+              hTap();
+            } catch (e: any) {
+              setAddPlatformError(e?.message || 'Failed to delete category. Check your connection and try again.');
+            } finally {
+              setAddPlatformBusy(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   // Create a new custom earnings type — mirrors submitNewPlatform: instant
@@ -2289,7 +2561,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     setMode(editing.amount < 0 ? 'subtract' : 'add');
     setEntryType(typeKeyForEntry(editing));
     setApp(keyForEntry(editing));
-    setCategory((editing.category as ExpenseCategory) || 'GAS');
+    setCategory(editing.custom_category ? customCatKey(editing.custom_category) : ((editing.category as ExpenseCategory) || 'GAS'));
     setMiles(editing.distance_miles ? String(editing.distance_miles) : '');
     setMinutes(editing.duration_minutes ? String(editing.duration_minutes) : '');
     setNote(editing.note || '');
@@ -2451,6 +2723,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         app: vars.app,
         custom_app: vars.custom_app ?? null,
         custom_type: vars.custom_type ?? null,
+        custom_category: vars.custom_category ?? null,
         // EXPENSE and CANCELLATION are outflows — the server normalizes both to
         // negative amounts, so the optimistic row must match or a cancellation
         // briefly shows as positive revenue.
@@ -2704,6 +2977,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
           app: patch.app ?? e.app,
           custom_app: patch.custom_app !== undefined ? patch.custom_app : e.custom_app,
           custom_type: patch.custom_type !== undefined ? patch.custom_type : e.custom_type,
+          custom_category: patch.custom_category !== undefined ? patch.custom_category : e.custom_category,
           amount: newSigned,
           distance_miles: newMiles,
           duration_minutes: newMin,
@@ -2796,6 +3070,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     // custom_type: null explicitly when switching back to a built-in type so
     // the server clears the old name.
     const isCustomType = isCustomTypeKey(entryType);
+    // A custom CATEGORY selection ('CUSTOMCAT:<name>') maps to the safe enum
+    // category OTHER with the name carried in custom_category. On edit, send
+    // custom_category: null explicitly when switching back to a built-in.
+    const isCustomCat = isCustomCatKey(category);
     const payload: Partial<EntryCreate> = {
       type: (isCustomType ? effectiveEntryType : entryType) as EntryType,
       custom_type: isCustomType ? customTypeNameFromKey(entryType) : (editing ? null : undefined),
@@ -2804,7 +3082,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       amount: mode === 'subtract' ? -num : num,
       distance_miles: miles ? parseFloat(miles) : undefined,
       duration_minutes: minutes ? parseInt(minutes) : undefined,
-      category: effectiveEntryType === 'EXPENSE' ? category : undefined,
+      category: effectiveEntryType === 'EXPENSE' ? ((isCustomCat ? 'OTHER' : category) as ExpenseCategory) : undefined,
+      custom_category: effectiveEntryType === 'EXPENSE' && isCustomCat
+        ? customCatNameFromKey(category)
+        : (editing ? null : undefined),
       note: note || undefined,
       receipt_url: effectiveEntryType === 'EXPENSE' && receiptDataUri ? receiptDataUri : undefined,
       is_business_expense: effectiveEntryType === 'EXPENSE' ? isBusiness : false,
@@ -2925,6 +3206,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               lastAppLabel={isCustomKey(app) ? customNameFromKey(app) : platformLabel(app)}
               category={category}
               setCategory={setCategory}
+              categoryOptions={categoryOptions}
+              onAddCategory={handleAddCategory}
+              onEditCategory={handleEditCategory}
               isBusiness={isBusiness}
               setIsBusiness={setIsBusiness}
               miles={miles}
@@ -3022,7 +3306,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         {/* ── Add-platform prompt — opened by the trailing "＋ Add" pill in the
             Platform selector. Validates locally (dup vs built-ins + existing
             customs) for instant feedback; the server enforces the same rules. */}
-        <Modal visible={addPlatformVisible} transparent animationType="fade" onRequestClose={() => { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); setRenamingEntryType(null); setAddingEntryType(false); }}>
+        <Modal visible={addPlatformVisible} transparent animationType="fade" onRequestClose={() => { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); setRenamingEntryType(null); setAddingEntryType(false); setRenamingCategory(null); setAddingCategory(false); }}>
           {/* This nested native Modal renders OUTSIDE the AddEntryModal's
               KeyboardAvoidingView, so it needs its own — without it the form
               bottom is cut off by the keyboard on small screens. */}
@@ -3044,7 +3328,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
           >
             {/* Backdrop tap-to-dismiss: absolute layer behind the card. */}
             <Pressable
-              onPress={() => { if (!addPlatformBusy) { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); setRenamingEntryType(null); setAddingEntryType(false); } }}
+              onPress={() => { if (!addPlatformBusy) { setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); setRenamingEntryType(null); setAddingEntryType(false); setRenamingCategory(null); setAddingCategory(false); } }}
               accessible={false}
               style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}
             />
@@ -3060,6 +3344,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   : renamingPlatform ? 'Rename platform'
                   : renamingEntryType ? 'Rename type'
                   : addingEntryType ? 'Add a type'
+                  : renamingCategory ? 'Rename category'
+                  : addingCategory ? 'Add a category'
                   : 'Add a platform'}
               </Text>
               <Text style={{ fontSize: 13, color: '#6b7280' }}>
@@ -3071,18 +3357,22 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   ? `New name for \u201C${renamingEntryType.name}\u201D. Your existing entries move to the new name.`
                   : addingEntryType
                   ? 'Name the earnings type you want to track (e.g. Tips, Referral, Quest).'
+                  : renamingCategory
+                  ? `New name for \u201C${renamingCategory.name}\u201D. Your existing expenses move to the new name.`
+                  : addingCategory
+                  ? 'Name the expense category you want to track (e.g. Car Wash, Insurance).'
                   : 'Name the delivery app or gig platform you want to track (e.g. Roadie, Amazon Flex).'}
               </Text>
               <TextInput
                 value={newPlatformName}
                 onChangeText={(t) => { setNewPlatformName(t); if (addPlatformError) setAddPlatformError(null); }}
-                placeholder={(addingEntryType || renamingEntryType) ? 'Type name' : 'Platform name'}
+                placeholder={(addingEntryType || renamingEntryType) ? 'Type name' : (addingCategory || renamingCategory) ? 'Category name' : 'Platform name'}
                 placeholderTextColor="#9ca3af"
                 autoFocus
                 maxLength={MAX_PLATFORM_NAME_LEN}
                 autoCapitalize="words"
                 returnKeyType="done"
-                onSubmitEditing={() => (editingLabel ? submitLabelOverride() : renamingPlatform ? submitRenamePlatform() : renamingEntryType ? submitRenameEntryType() : addingEntryType ? submitNewEntryType() : submitNewPlatform())}
+                onSubmitEditing={() => (editingLabel ? submitLabelOverride() : renamingPlatform ? submitRenamePlatform() : renamingEntryType ? submitRenameEntryType() : addingEntryType ? submitNewEntryType() : renamingCategory ? submitRenameCategory() : addingCategory ? submitNewCategory() : submitNewPlatform())}
                 style={{
                   backgroundColor: '#ffffff', borderWidth: 2,
                   borderColor: addPlatformError ? '#ef4444' : '#d1d5db',
@@ -3201,7 +3491,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               ) : null}
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                 <Pressable
-                  onPress={() => { hTap(); setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); setRenamingEntryType(null); setAddingEntryType(false); }}
+                  onPress={() => { hTap(); setAddPlatformVisible(false); setRenamingPlatform(null); setEditingLabel(null); setRenamingEntryType(null); setAddingEntryType(false); setRenamingCategory(null); setAddingCategory(false); }}
                   disabled={addPlatformBusy}
                   style={({ pressed }) => ({
                     flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
@@ -3211,7 +3501,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   <Text style={{ color: '#374151', fontWeight: '700', fontSize: 15 }}>Cancel</Text>
                 </Pressable>
                 <Pressable
-                  onPress={() => (editingLabel ? submitLabelOverride() : renamingPlatform ? submitRenamePlatform() : renamingEntryType ? submitRenameEntryType() : addingEntryType ? submitNewEntryType() : submitNewPlatform())}
+                  onPress={() => (editingLabel ? submitLabelOverride() : renamingPlatform ? submitRenamePlatform() : renamingEntryType ? submitRenameEntryType() : addingEntryType ? submitNewEntryType() : renamingCategory ? submitRenameCategory() : addingCategory ? submitNewCategory() : submitNewPlatform())}
                   disabled={addPlatformBusy || !newPlatformName.trim()}
                   style={({ pressed }) => ({
                     flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
@@ -3221,7 +3511,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                 >
                   {addPlatformBusy
                     ? <ActivityIndicator color="#0f172a" />
-                    : <Text style={{ color: '#0f172a', fontWeight: '800', fontSize: 15 }}>{(editingLabel || renamingPlatform || renamingEntryType) ? 'Save' : 'Add'}</Text>}
+                    : <Text style={{ color: '#0f172a', fontWeight: '800', fontSize: 15 }}>{(editingLabel || renamingPlatform || renamingEntryType || renamingCategory) ? 'Save' : 'Add'}</Text>}
                 </Pressable>
               </View>
               {editingLabel && labelOverrides.some(o => o.kind === editingLabel.kind && o.key === editingLabel.key) ? (
@@ -3247,6 +3537,45 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                     Delete this platform
                   </Text>
                 </Pressable>
+              ) : null}
+              {renamingCategory ? (
+                <Pressable
+                  onPress={submitDeleteCategory}
+                  disabled={addPlatformBusy}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete category ${renamingCategory.name}`}
+                  style={({ pressed }) => ({ alignItems: 'center', paddingVertical: 8, opacity: pressed ? 0.7 : 1 })}
+                >
+                  <Text style={{ color: '#ef4444', fontWeight: '700', fontSize: 13 }}>
+                    Delete this category
+                  </Text>
+                </Pressable>
+              ) : null}
+              {addingCategory && hiddenCats.length > 0 ? (
+                <View style={{ gap: 6 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#6b7280' }}>
+                    Hidden built-in categories — tap to restore
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {hiddenCats.map((k) => (
+                      <Pressable
+                        key={k}
+                        onPress={() => restoreHiddenCategory(k)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Restore category ${k}`}
+                        style={({ pressed }) => ({
+                          paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+                          borderWidth: 1, borderColor: '#d1d5db', backgroundColor: '#f9fafb',
+                          opacity: pressed ? 0.7 : 1,
+                        })}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#374151' }}>
+                          {EXPENSE_EMOJIS[k as ExpenseCategory] ?? '🏷️'} {k} ↩︎
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
               ) : null}
               {renamingEntryType ? (
                 <Pressable
@@ -4876,10 +5205,13 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
   // Spend per category — expenses only (stored as negative amounts), summed by
   // their category as positive totals, with each share of the total spend.
   const categoryData = useMemo(() => {
-    const map = new Map<ExpenseCategory, number>();
+    // Key by display label — a custom category name when present, else the
+    // built-in enum value — so custom categories get their own row instead of
+    // all collapsing into OTHER.
+    const map = new Map<string, number>();
     for (const e of entries) {
       if (e.type !== 'EXPENSE') continue;
-      const cat = (e.category ?? 'OTHER') as ExpenseCategory;
+      const cat = entryCategoryLabel(e);
       map.set(cat, (map.get(cat) ?? 0) + Math.abs(Number(e.amount) || 0));
     }
     const total = Array.from(map.values()).reduce((a, b) => a + b, 0);
@@ -5514,7 +5846,7 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
                       paddingVertical: 9, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: DIVIDER,
                     }}>
                       <Text style={{ color: TEXT_MID, fontSize: 14 }}>
-                        {EXPENSE_EMOJIS[r.cat]} {r.cat.charAt(0) + r.cat.slice(1).toLowerCase()}
+                        {EXPENSE_EMOJIS[r.cat as ExpenseCategory] ?? '🏷️'} {r.cat === r.cat.toUpperCase() ? r.cat.charAt(0) + r.cat.slice(1).toLowerCase() : r.cat}
                       </Text>
                       <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
                         <Text style={blur(TEXT)}>{hidden ? MASK : `$${r.amt.toFixed(2)}`}</Text> <Text style={{ color: MUTED, fontSize: 11, fontWeight: '600' }}>· {r.pct.toFixed(0)}%</Text>
@@ -5623,13 +5955,16 @@ function AnalyticsModal({ visible, onClose, initialPeriod = 'today' }: { visible
 // order CANCELLATIONs. This matches the dashboard EXPENSES KPI (rollup.expenses,
 // computed server-side as the magnitude of ALL negative amounts), so the
 // drill-down total reconciles exactly with the number the user tapped.
-type OutflowGroup = ExpenseCategory | 'CANCELLATION';
+// Groups are display labels: built-in enum values, custom category names, or
+// the synthetic 'CANCELLATION' bucket — custom categories get their own group.
+type OutflowGroup = string;
 type ExpenseCatFilter = OutflowGroup | 'ALL';
-// Maps an outflow entry to its filter group: expenses keep their category;
-// cancellations collapse into a synthetic 'CANCELLATION' group.
+// Maps an outflow entry to its filter group: expenses keep their category
+// (custom name wins); cancellations collapse into 'CANCELLATION'.
 const outflowGroup = (e: Entry): OutflowGroup =>
-  e.type === 'CANCELLATION' ? 'CANCELLATION' : ((e.category as ExpenseCategory) || 'OTHER');
-const groupEmoji = (g: OutflowGroup): string => (g === 'CANCELLATION' ? '❌' : EXPENSE_EMOJIS[g]);
+  e.type === 'CANCELLATION' ? 'CANCELLATION' : entryCategoryLabel(e);
+const groupEmoji = (g: OutflowGroup): string =>
+  g === 'CANCELLATION' ? '❌' : (EXPENSE_EMOJIS[g as ExpenseCategory] ?? '🏷️');
 const groupLabel = (g: OutflowGroup): string => (g === 'CANCELLATION' ? 'Cancellation' : g);
 function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const {
@@ -6413,6 +6748,7 @@ export default function DashboardScreen() {
             entryAppLabel(e),
             e.type,
             e.category ?? '',
+            e.custom_category ?? '',
             e.note ?? '',
             String(e.amount),
             amt.toFixed(2),

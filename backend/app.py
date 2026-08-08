@@ -7,7 +7,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import inspect, text
-from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard, waitlist_routes, referrals, platforms, entry_types, feedback, subscription
+from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard, waitlist_routes, referrals, platforms, entry_types, expense_categories, feedback, subscription
 from backend.db import engine, Base
 from backend.services.background_jobs import start_background_jobs, stop_background_jobs
 import os
@@ -199,6 +199,34 @@ def _migrate_entries_add_custom_type() -> None:
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE entries ADD COLUMN custom_type VARCHAR"))
     logger.warning("Added entries.custom_type for user-created earnings types.")
+
+
+def _migrate_entries_add_custom_category() -> None:
+    """Add nullable `custom_category` to `entries` for user-created expense
+    categories. Entries filed under one keep enum category=OTHER and carry the
+    display name here. Safe to re-run."""
+    insp = inspect(engine)
+    if not insp.has_table("entries"):
+        return
+    cols = {c["name"] for c in insp.get_columns("entries")}
+    if "custom_category" in cols:
+        return
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE entries ADD COLUMN custom_category VARCHAR"))
+    logger.warning("Added entries.custom_category for user-created expense categories.")
+
+
+def _migrate_user_expense_categories_ci_unique() -> None:
+    """Case-insensitive per-user uniqueness for custom expense categories, same
+    scheme as user_platforms (functional unique index). Safe to re-run."""
+    insp = inspect(engine)
+    if not insp.has_table("user_expense_categories"):
+        return
+    with engine.begin() as conn:
+        conn.execute(text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_user_expense_categories_user_lname "
+            "ON user_expense_categories (user_id, lower(name))"
+        ))
 
 
 def _migrate_user_entry_types_ci_unique() -> None:
@@ -458,6 +486,8 @@ _migrate_user_platforms_ci_unique()
 _migrate_user_platforms_add_color_icon()
 _migrate_entries_add_custom_type()
 _migrate_user_entry_types_ci_unique()
+_migrate_entries_add_custom_category()
+_migrate_user_expense_categories_ci_unique()
 _migrate_points_for_multi_user()
 _migrate_auth_users_add_referral_code()
 _migrate_auth_users_add_mfa()
@@ -540,6 +570,7 @@ Base.metadata.create_all(bind=engine)
 # create_all — on the boot that first introduces the table, the guarded call in
 # the migration list above no-ops because the table doesn't exist yet.
 _migrate_user_entry_types_ci_unique()
+_migrate_user_expense_categories_ci_unique()
 
 app = FastAPI(title="Delivery Driver Earnings API", docs_url=None, redoc_url=None)
 
@@ -639,6 +670,7 @@ app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
 app.include_router(entries.router, prefix="/api", tags=["entries"])
 app.include_router(platforms.router, prefix="/api", tags=["platforms"])
 app.include_router(entry_types.router, prefix="/api", tags=["entry-types"])
+app.include_router(expense_categories.router, prefix="/api", tags=["expense-categories"])
 app.include_router(rollup.router, prefix="/api", tags=["rollup"])
 app.include_router(goals.router, prefix="/api", tags=["goals"])
 app.include_router(suggestions.router, prefix="/api", tags=["suggestions"])

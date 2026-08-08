@@ -144,6 +144,9 @@ export interface Entry {
   // Display name for entries logged against a user-created earnings type.
   // When set, `type` holds the safe BASE type (BONUS or EXPENSE).
   custom_type?: string | null;
+  // Display name for EXPENSE entries filed under a user-created category.
+  // When set, `category` holds the safe enum value 'OTHER'.
+  custom_category?: string | null;
 }
 
 // Generates a stable, highly-unique client key for idempotent creates. Only
@@ -177,6 +180,9 @@ export interface EntryCreate {
   // User-created earnings type name; sent with a BASE type of BONUS (income
   // customs) or EXPENSE (expense customs) — see Entry.custom_type.
   custom_type?: string | null;
+  // User-created expense category name; sent with category='OTHER' — see
+  // Entry.custom_category.
+  custom_category?: string | null;
 }
 
 // A user-created delivery platform (server-persisted, per account).
@@ -197,6 +203,16 @@ export interface UserEntryType {
   id: number;
   name: string;
   kind: 'income' | 'expense';
+  color?: string | null;
+  icon?: string | null;
+}
+
+// A user-created expense category (server-persisted, per account). EXPENSE
+// entries filed under one carry category='OTHER' plus custom_category=<name>,
+// so totals and older clients keep working.
+export interface UserExpenseCategory {
+  id: number;
+  name: string;
   color?: string | null;
   icon?: string | null;
 }
@@ -894,6 +910,73 @@ export const api = {
       e.status = res.status;
       throw e;
     }
+  },
+
+  // User-created expense categories (server-persisted per account). Same
+  // contract shape as entry types: GET list; POST add (409 = duplicate, incl.
+  // built-ins); PUT rename/restyle; DELETE keeps entries filed under it.
+  // Built-in categories can additionally be hidden per user (cosmetic).
+  async getExpenseCategories(): Promise<UserExpenseCategory[]> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/expense-categories`, { headers });
+    if (!res.ok) throw new Error('Failed to fetch expense categories');
+    return res.json();
+  },
+
+  async addExpenseCategory(name: string, color?: string | null, icon?: string | null): Promise<UserExpenseCategory> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/expense-categories`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, color: color ?? null, icon: icon ?? null }),
+    });
+    if (!res.ok) await api._throwApiError(res, 'Failed to add category');
+    return res.json();
+  },
+
+  async renameExpenseCategory(id: number, name: string, color?: string | null, icon?: string | null): Promise<UserExpenseCategory> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/expense-categories/${id}`, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, color: color ?? null, icon: icon ?? null }),
+    });
+    if (!res.ok) await api._throwApiError(res, 'Failed to rename category');
+    return res.json();
+  },
+
+  async deleteExpenseCategory(id: number): Promise<void> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/expense-categories/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    if (!res.ok && res.status !== 404) {
+      let msg = 'Failed to delete category';
+      try { const j = await res.json(); if (j?.detail) msg = typeof j.detail === 'string' ? j.detail : msg; } catch {}
+      const e: any = new Error(msg);
+      e.status = res.status;
+      throw e;
+    }
+  },
+
+  // Hidden BUILT-IN expense-category keys (wholesale replace, idempotent).
+  async getHiddenExpenseCategories(): Promise<string[]> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/expense-categories/hidden`, { headers });
+    if (!res.ok) throw new Error('Failed to fetch hidden categories');
+    return res.json();
+  },
+
+  async setHiddenExpenseCategories(keys: string[]): Promise<string[]> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/expense-categories/hidden`, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keys }),
+    });
+    if (!res.ok) await api._throwApiError(res, 'Failed to update hidden categories');
+    return res.json();
   },
 
   // Raw DELETE — no offline queue. Used by the mutation-queue drainer so it

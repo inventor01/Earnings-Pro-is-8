@@ -118,6 +118,11 @@ class Entry(Base):
     # EXPENSE for expense customs) so sign rules, rollups, and older clients
     # keep working; this column carries the display identity.
     custom_type = Column(String, nullable=True)
+    # Custom expense-category name for EXPENSE entries filed under a
+    # user-created category. The enum `category` stays OTHER for these rows so
+    # existing rollups/analytics keep working; this column carries the display
+    # identity (same pattern as custom_app/custom_type).
+    custom_category = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -179,6 +184,45 @@ class UserEntryType(Base):
 
     __table_args__ = (
         Index("uq_user_entry_types_user_name", "user_id", "name", unique=True),
+    )
+
+class UserExpenseCategory(Base):
+    """A user-created expense category (beyond the built-in ExpenseCategory
+    enum). EXPENSE entries filed under one carry category=OTHER +
+    custom_category=<name>, so rollups and older clients keep working. Same
+    CI-uniqueness scheme as UserPlatform (functional index added in
+    `_migrate_user_expense_categories_ci_unique()`).
+    """
+    __tablename__ = "user_expense_categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    color = Column(String, nullable=True)
+    icon = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_user_expense_categories_user_name", "user_id", "name", unique=True),
+    )
+
+class UserHiddenBuiltin(Base):
+    """A built-in selector option the user chose to hide from their pickers.
+
+    kind='expense_category' → keys are ExpenseCategory enum values (GAS, ...).
+    Hiding is cosmetic: existing entries keep their stored category and all
+    analytics/history stay intact; only the selector pill disappears.
+    """
+    __tablename__ = "user_hidden_builtins"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
+    kind = Column(String, nullable=False)
+    key = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_user_hidden_builtins_user_kind_key", "user_id", "kind", "key", unique=True),
     )
 
 class UserLabelOverride(Base):
