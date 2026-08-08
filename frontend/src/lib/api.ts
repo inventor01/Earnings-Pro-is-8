@@ -265,32 +265,10 @@ export const api = {
     return res.json();
   },
 
-  async getOAuthStatus(): Promise<Record<string, { connected: boolean; token_expires_at: string | null }>> {
-    const res = await fetch(`${API_BASE}/api/oauth/status`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch OAuth status');
-    return res.json();
-  },
-
-  async getUberAuthUrl(): Promise<{ auth_url: string }> {
-    const res = await fetch(`${API_BASE}/api/oauth/uber/authorize`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error('Failed to get Uber auth URL');
-    return res.json();
-  },
-
-  async getShiptAuthUrl(): Promise<{ auth_url: string }> {
-    const res = await fetch(`${API_BASE}/api/oauth/shipt/authorize`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error('Failed to get Shipt auth URL');
-    return res.json();
-  },
-
-  async disconnectPlatform(platform: string): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE}/api/oauth/${platform}/disconnect`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) throw new Error(`Failed to disconnect ${platform}`);
-    return res.json();
-  },
+  // OAuth connect helpers (Uber/Shipt) were removed: no UI ever used them,
+  // and the backend now returns 503 for unconfigured providers instead of
+  // running a demo flow. Re-add alongside real connect UI when providers
+  // are actually configured.
 
   async getUserPoints() {
     const res = await fetch(`${API_BASE}/api/points/user`, {
