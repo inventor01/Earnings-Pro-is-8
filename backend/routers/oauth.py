@@ -7,19 +7,56 @@ from backend.models import ApiCredential, PlatformIntegration, AuthUser
 from backend.auth import get_current_user, SECRET_KEY, JWT_ALGORITHM
 import httpx
 import jwt
+import logging
 import os
 import secrets
 
 router = APIRouter()
 
-# OAuth credentials from environment
-UBER_CLIENT_ID = os.getenv("UBER_CLIENT_ID", "demo_uber_client")
-UBER_CLIENT_SECRET = os.getenv("UBER_CLIENT_SECRET", "demo_uber_secret")
-UBER_REDIRECT_URI = os.getenv("UBER_REDIRECT_URI", "http://localhost:5000/api/oauth/uber/callback")
+# OAuth credentials from environment — NO fallbacks. A provider is usable only
+# when all three of its env vars are set; otherwise its endpoints return 503.
+# This prevents a misconfigured deploy from silently running with demo
+# credentials or localhost redirect URIs.
+UBER_CLIENT_ID = os.getenv("UBER_CLIENT_ID")
+UBER_CLIENT_SECRET = os.getenv("UBER_CLIENT_SECRET")
+UBER_REDIRECT_URI = os.getenv("UBER_REDIRECT_URI")
 
-SHIPT_CLIENT_ID = os.getenv("SHIPT_CLIENT_ID", "demo_shipt_client")
-SHIPT_CLIENT_SECRET = os.getenv("SHIPT_CLIENT_SECRET", "demo_shipt_secret")
-SHIPT_REDIRECT_URI = os.getenv("SHIPT_REDIRECT_URI", "http://localhost:5000/api/oauth/shipt/callback")
+SHIPT_CLIENT_ID = os.getenv("SHIPT_CLIENT_ID")
+SHIPT_CLIENT_SECRET = os.getenv("SHIPT_CLIENT_SECRET")
+SHIPT_REDIRECT_URI = os.getenv("SHIPT_REDIRECT_URI")
+
+logger = logging.getLogger(__name__)
+
+
+def _provider_config(provider: str):
+    """Return (client_id, client_secret, redirect_uri) for a configured
+    provider, or raise 503 if any piece is missing. Reads module globals so
+    tests can monkeypatch them."""
+    if provider == "UBER":
+        cfg = (UBER_CLIENT_ID, UBER_CLIENT_SECRET, UBER_REDIRECT_URI)
+    elif provider == "SHIPT":
+        cfg = (SHIPT_CLIENT_ID, SHIPT_CLIENT_SECRET, SHIPT_REDIRECT_URI)
+    else:
+        raise HTTPException(status_code=404, detail="Unknown provider")
+    if not all(cfg):
+        raise HTTPException(
+            status_code=503,
+            detail=f"{provider.capitalize()} integration is not configured",
+        )
+    return cfg
+
+
+_unconfigured = [
+    p for p, cfg in (
+        ("UBER", (UBER_CLIENT_ID, UBER_CLIENT_SECRET, UBER_REDIRECT_URI)),
+        ("SHIPT", (SHIPT_CLIENT_ID, SHIPT_CLIENT_SECRET, SHIPT_REDIRECT_URI)),
+    ) if not all(cfg)
+]
+if _unconfigured:
+    logger.warning(
+        "OAuth providers not configured (endpoints will return 503): %s",
+        ", ".join(_unconfigured),
+    )
 
 # OAuth `state` is a short-lived JWT binding the redirect back to one user.
 # Without this, the callback couldn't tell which logged-in user the
@@ -80,10 +117,11 @@ def _callback_html(message: str) -> HTMLResponse:
 @router.get("/oauth/uber/authorize")
 async def uber_authorize(current_user: AuthUser = Depends(get_current_user)):
     """Build the Uber OAuth authorize URL bound to the current user."""
+    client_id, _, redirect_uri = _provider_config("UBER")
     state = _issue_oauth_state(current_user.id, "UBER")
     params = {
-        "client_id": UBER_CLIENT_ID,
-        "redirect_uri": UBER_REDIRECT_URI,
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": "delivery.read delivery.write",
         "state": state,
@@ -101,6 +139,7 @@ async def uber_callback(
     """Handle Uber OAuth callback. The user_id comes from the signed `state`
     JWT — never from a query param or session cookie — so the credential
     is always bound to the user who initiated the connect flow."""
+    client_id, client_secret, redirect_uri = _provider_config("UBER")
     user_id = _verify_oauth_state(state, "UBER")
     try:
         async with httpx.AsyncClient() as client:
@@ -109,9 +148,9 @@ async def uber_callback(
                 data={
                     "grant_type": "authorization_code",
                     "code": code,
-                    "client_id": UBER_CLIENT_ID,
-                    "client_secret": UBER_CLIENT_SECRET,
-                    "redirect_uri": UBER_REDIRECT_URI,
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "redirect_uri": redirect_uri,
                 },
             )
 
@@ -156,10 +195,11 @@ async def uber_callback(
 
 @router.get("/oauth/shipt/authorize")
 async def shipt_authorize(current_user: AuthUser = Depends(get_current_user)):
+    client_id, _, redirect_uri = _provider_config("SHIPT")
     state = _issue_oauth_state(current_user.id, "SHIPT")
     params = {
-        "client_id": SHIPT_CLIENT_ID,
-        "redirect_uri": SHIPT_REDIRECT_URI,
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": "orders.read orders.write",
         "state": state,
@@ -174,6 +214,7 @@ async def shipt_callback(
     state: str = Query(...),
     db: Session = Depends(get_db),
 ):
+    client_id, client_secret, redirect_uri = _provider_config("SHIPT")
     user_id = _verify_oauth_state(state, "SHIPT")
     try:
         async with httpx.AsyncClient() as client:
@@ -182,9 +223,9 @@ async def shipt_callback(
                 data={
                     "grant_type": "authorization_code",
                     "code": code,
-                    "client_id": SHIPT_CLIENT_ID,
-                    "client_secret": SHIPT_CLIENT_SECRET,
-                    "redirect_uri": SHIPT_REDIRECT_URI,
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "redirect_uri": redirect_uri,
                 },
             )
 
