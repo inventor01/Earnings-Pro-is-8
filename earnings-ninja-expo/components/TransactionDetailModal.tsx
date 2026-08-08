@@ -111,7 +111,7 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
                       {entryAppLabel(entry)}
                     </Text>
                     <Text style={{ color: LABEL, fontSize: 12, marginTop: 2 }}>
-                      {entryTypeLabel(entry, entry.type)}{entry.category ? ` · ${EXPENSE_EMOJIS[entry.category] || ''} ${entry.category}` : ''}
+                      {entryTypeLabel(entry, entry.type)}{entry.category ? ` · ${entry.custom_category ? '🏷️' : (EXPENSE_EMOJIS[entry.category] || '')} ${entry.custom_category ?? entry.category}` : ''}
                     </Text>
                   </View>
                   <Pressable
