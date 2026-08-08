@@ -2082,7 +2082,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               setMirrorHiddenCats(list);
               if (category === key) {
                 const remaining = EXPENSE_CATS.filter(c => !list.includes(c));
-                setCategory(remaining.includes('OTHER') ? 'OTHER' : (remaining[0] ?? customExpenseCats[0] ? customCatKey(customExpenseCats[0].name) : 'OTHER'));
+                setCategory(remaining.includes('OTHER') ? 'OTHER' : (remaining[0] ?? (customExpenseCats[0] ? customCatKey(customExpenseCats[0].name) : 'OTHER')));
               }
               hTap();
             } catch (e: any) {
