@@ -15,6 +15,11 @@ const FADE_MS = 500;
 
 export default function IntroVideo({ onDone }: { onDone: () => void }) {
   const [unmounted, setUnmounted] = useState(false);
+  // Android's native video layer fades unreliably (frames can stay stuck on
+  // top of the app). So when the intro ends we remove the video immediately
+  // and fade out a plain solid-color overlay instead — that's a normal view,
+  // so the cross-fade to the app underneath is always smooth.
+  const [videoGone, setVideoGone] = useState(false);
   const fadingRef = useRef(false);
   const opacity = useRef(new Animated.Value(1)).current;
   const scale = useRef(new Animated.Value(1)).current;
@@ -31,6 +36,7 @@ export default function IntroVideo({ onDone }: { onDone: () => void }) {
   const finish = () => {
     if (fadingRef.current) return;
     fadingRef.current = true;
+    setVideoGone(true);
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 0,
@@ -69,13 +75,18 @@ export default function IntroVideo({ onDone }: { onDone: () => void }) {
       pointerEvents={fadingRef.current ? 'none' : 'auto'}
     >
       <Pressable style={StyleSheet.absoluteFill} onPress={finish} accessibilityLabel="Skip intro">
-        <VideoView
+        {!videoGone && <VideoView
           player={player}
           style={StyleSheet.absoluteFill}
           contentFit="contain"
           nativeControls={false}
           pointerEvents="none"
-        />
+          // Android: the default SurfaceView ignores the parent's animated
+          // opacity, so the last video frame stayed fully opaque over the
+          // login screen during the fade-out. TextureView composites like a
+          // normal view, so the cross-fade actually applies to the video.
+          surfaceType="textureView"
+        />}
       </Pressable>
     </Animated.View>
   );

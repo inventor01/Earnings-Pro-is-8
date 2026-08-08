@@ -15,7 +15,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AccessibilityInfo, Dimensions, Pressable, Text, View, findNodeHandle, useWindowDimensions,
+  AccessibilityInfo, Dimensions, Platform, Pressable, Text, View, findNodeHandle, useWindowDimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -151,27 +151,27 @@ type Step = {
 
 const STEPS: Step[] = [
   { key: 'dashboard', target: 'hero', emoji: '📊', title: 'Your live dashboard',
-    body: "Track today's income, hours, and progress toward your goal at a glance — every number updates the moment you log an entry." },
+    body: "Know what you made, what you kept, and how close you are to your goal — every number updates the moment you log an entry." },
   { key: 'add', target: 'addEntry', emoji: '➕', title: 'Log every order',
-    body: 'Every delivery or ride you complete gets logged here. The more you track, the more accurate your analytics — and your true hourly pay — become.' },
+    body: 'Every delivery or ride you log brings you closer to knowing what your gig work is really worth.' },
   { key: 'calendar', target: 'calendar', emoji: '📅', title: 'Your earnings history',
-    body: 'Review earnings by day, week, or month. Tap any day to see exactly how it went.' },
+    body: 'Review what you made by day, week, or month so you always know where you stand after a shift.' },
   { key: 'editEntries', target: 'entryRow', emoji: '✏️', title: 'View & edit any entry',
-    body: 'Tap and hold any entry to view its full details — where you can edit or delete it if something changed.' },
+    body: 'Keep your history accurate. Edit or delete an entry whenever something changes.' },
   { key: 'analytics', target: 'analytics', emoji: '📈', title: 'Know your real numbers',
-    body: 'See your real hourly pay, trends, profit, and expenses. Advanced business insights unlock with Premium.' },
+    body: 'See your real hourly pay, trends, profit, and expenses — insights your gig apps do not show you.' },
   { key: 'goals', target: 'goals', emoji: '🎯', title: 'Set income goals',
-    body: "Set daily, weekly, and monthly goals — we'll keep you motivated and on track." },
+    body: "Set daily, weekly, and monthly goals so you know whether your work is paying off." },
   { key: 'expenses', target: 'kpis', emoji: '💸', title: 'Expenses & orders',
-    body: 'Track your expenses and orders at a glance — log gas, maintenance, and every delivery to see your true profit.' },
+    body: 'Revenue is not the whole story. Track gas, maintenance, and other costs to see what you actually keep.' },
   { key: 'reminders', emoji: '🔔', title: 'Helpful nudges, not spam',
-    body: "We'll send gentle reminders and a daily recap to keep you on track. You control all of it in Settings." },
+    body: "Stay consistent with gentle reminders and a daily recap. You control every notification in Settings." },
   { key: 'widgets', emoji: '📱', title: 'Home screen widget',
-    body: "Monitor today's earnings right from your home screen and quick-add orders without opening the app." },
+    body: "See today's earnings at a glance and quick-add orders without opening the app." },
   { key: 'theme', emoji: '🌙', title: 'Light & Dark Themes',
-    body: "Earnings Ninja supports Light and Dark themes — watch the app switch right now! Choose what's most comfortable for you, day or night. You can change this anytime in Settings." },
+    body: "Choose the look that helps you stay focused — switch between Light and Dark themes anytime in Settings." },
   { key: 'premium', emoji: '⭐', title: 'Go further with Premium',
-    body: 'Premium unlocks advanced analytics, AI insights, profit forecasts, unlimited tracking, and more powerful reports — whenever you\'re ready.' },
+    body: 'Go deeper with advanced analytics, AI insights, profit forecasts, and more powerful reports whenever you are ready.' },
 ];
 
 // ─── Overlay ──────────────────────────────────────────────────────────────────
@@ -368,7 +368,14 @@ export function WalkthroughOverlay() {
     shadowRadius: 10 + pulse.value * 8,
   }));
 
-  const fade = reduceMotion ? { entering: FadeIn.duration(150), exiting: FadeOut.duration(120) }
+  // Android: skip Reanimated entering/exiting on the card entirely. The
+  // layout-animation snapshot can freeze the mount-time backgroundColor while
+  // Text children re-render to the real theme after the theme-demo revert —
+  // seen on-device as a dark card with dark title on the Premium step. The
+  // theme-keyed remount below is not enough on Android because the freshly
+  // entering view snapshots mid-flip. iOS keeps the fade.
+  const fade = Platform.OS === 'android' ? {}
+             : reduceMotion ? { entering: FadeIn.duration(150), exiting: FadeOut.duration(120) }
                             : { entering: FadeIn.duration(260), exiting: FadeOut.duration(180) };
 
   const DIM = 'rgba(0,0,0,0.78)';
@@ -456,12 +463,12 @@ export function WalkthroughOverlay() {
           <>
             <Text accessibilityRole="header" style={{ fontSize: 40, textAlign: 'center' }}>{isWelcome ? '👋' : '🎉'}</Text>
             <Text style={{ color: t.TEXT, fontSize: 22, fontWeight: '900', textAlign: 'center' }}>
-              {isWelcome ? 'Welcome to Earnings Ninja!' : "You're Ready!"}
+              {isWelcome ? 'Welcome to Earnings Ninja!' : '🥷 You’re ready to take control.'}
             </Text>
             <Text style={{ color: t.MUTED, fontSize: 15, lineHeight: 22, textAlign: 'center' }}>
               {isWelcome
                 ? "Let's take 60 seconds to tour the features that will help you earn more and stay organized."
-                : "You're all set to track your gig business like a professional. Let's build your earnings history."}
+                 : 'No more guessing what you made. Track your earnings, track your costs, and know your real profit after every shift.'}
             </Text>
             <View style={{ gap: 10, marginTop: 8 }}>
               {isWelcome
@@ -469,7 +476,7 @@ export function WalkthroughOverlay() {
                     {btn('Start Tour', () => { setStepIdx(0); setPhase('tour'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); }, true)}
                     {btn('Skip', () => finish(false), false, 'Skip the walkthrough')}
                   </>
-                : btn('Start Tracking', () => finish(true), true)}
+                : btn('Log My First Entry', () => finish(true), true)}
             </View>
           </>,
           { width: Math.min(360, win.width - 40) },
