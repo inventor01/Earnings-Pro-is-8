@@ -116,7 +116,7 @@ http://localhost:5000
 
 | Variable | Description |
 |----------|-------------|
-| `PRELAUNCH_ACCESS_CODE` | Early access password (default: ep2025) |
+| `PRELAUNCH_ACCESS_CODE` | Optional early-access gate code. Set via the secrets manager (Replit Secrets / Railway Variables) — never in tracked files. Empty/unset disables the gate. |
 | `RESEND_API_KEY` | API key for password reset emails |
 | `DATABASE_URL` | PostgreSQL connection string (optional) |
 
