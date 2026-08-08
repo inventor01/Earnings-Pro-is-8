@@ -1,0 +1,62 @@
+name: Repo Guard
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  artifact-denylist:
+    name: Block zips / db files / env files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tracked files against deny-list
+        run: |
+          set -euo pipefail
+          # Deny archive snapshots, database files, and env files (default-deny).
+          # Explicit allowlist: .env.example templates plus two named
+          # placeholder-only production templates — and even those are content-
+          # validated below (no VAR=value with a non-placeholder value).
+          allowlist='(^|/)\.env\.example$|^backend/\.env\.production$|^frontend/\.env\.production$'
+          prod_templates='^(backend|frontend)/\.env\.production$'
+          violations=$(git ls-files | grep -Ei \
+            '(\.zip|\.db|\.sqlite3?)$|(^|/)\.env(\.[^/]+)?$' \
+            | grep -Ev "$allowlist" || true)
+          if [ -n "$violations" ]; then
+            echo "::error::Forbidden files are tracked in git:"
+            echo "$violations"
+            exit 1
+          fi
+          # The two named .env.production files must stay placeholder-only:
+          # every non-comment assignment must be empty, a ${VAR} reference,
+          # or the fixed ENVIRONMENT=production marker.
+          # (.env.example files are templates by convention and are still
+          # covered by the gitleaks job.)
+          bad=0
+          for f in $(git ls-files | grep -E "$prod_templates"); do
+            if grep -Ev '^\s*(#|$)' "$f" | grep -Ev '^ENVIRONMENT=production$|^[A-Za-z_][A-Za-z0-9_]*=(\$\{[A-Za-z_][A-Za-z0-9_]*\})?$' ; then
+              echo "::error::$f contains non-placeholder values; production env templates must only use empty or \${VAR} values."
+              bad=1
+            fi
+          done
+          [ "$bad" -eq 0 ]
+          echo "No forbidden tracked files."
+
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+          GITLEAKS_ENABLE_SUMMARY: "true"
