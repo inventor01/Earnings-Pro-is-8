@@ -66,3 +66,9 @@ falling back to `https://apps.apple.com/account/subscriptions`. Prefer
 **Why:** same reason the app uses `FallbackPaywall` (no dashboard paywall) — this
 project has no Customer Center config either, so the rich in-app flow is never
 available; go straight to the OS screen.
+
+## Server-side enforcement (Aug 2026)
+- Backend now stores per-user Pro state (auth_users.pro_entitlement_*), updated by the RevenueCat webhook (/api/revenuecat/webhook, shared-secret Authorization header via REVENUECAT_WEBHOOK_AUTH_TOKEN, fail-closed) and an on-demand v1 subscribers REST fallback.
+- `require_pro` dependency (backend/entitlements.py) fails CLOSED (403) — applied to /api/suggestions; client gating stays fail-open (presentation only).
+- Webhook handling must cover REFUND and TRANSFER as immediate revocations, and every mutation must respect the per-user event_timestamp_ms watermark (only move forward) — completion review rejected three times over these exact gaps.
+- User still must configure the webhook in the RC dashboard: see docs/revenuecat-webhook-setup.md.
