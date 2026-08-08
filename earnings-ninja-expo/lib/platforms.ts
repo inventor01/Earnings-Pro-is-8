@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppType, APP_LABELS, APP_COLORS, Entry, UserPlatform, UserEntryType, LabelOverride } from './api';
+import { AppType, APP_LABELS, APP_COLORS, Entry, UserPlatform, UserEntryType, UserExpenseCategory, LabelOverride } from './api';
 
 // ---------------------------------------------------------------------------
 // Built-in label overrides (per-user cosmetic renames of built-in pills)
@@ -250,6 +250,94 @@ export function findDuplicateEntryType(name: string, existing: UserEntryType[]):
   if (!n) return null;
   if (BUILTIN_TYPE_NAMES.has(n)) return 'builtin';
   if (existing.some(t => t.name.trim().toLowerCase() === n)) return 'custom';
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Custom EXPENSE CATEGORIES (the Category row on EXPENSE entries) — mirrors
+// the custom-type design. Selector keys are 'CUSTOMCAT:<name>'; on submit a
+// custom selection maps to the safe enum category 'OTHER' + custom_category
+// name, so rollups and older clients keep working. Built-in categories can
+// also be hidden per user (cosmetic — stored entries untouched).
+// ---------------------------------------------------------------------------
+
+export const CUSTOM_CAT_PREFIX = 'CUSTOMCAT:';
+
+export function customCatKey(name: string): string {
+  return `${CUSTOM_CAT_PREFIX}${name}`;
+}
+
+export function isCustomCatKey(key: string): boolean {
+  return key.startsWith(CUSTOM_CAT_PREFIX);
+}
+
+export function customCatNameFromKey(key: string): string {
+  return isCustomCatKey(key) ? key.slice(CUSTOM_CAT_PREFIX.length) : key;
+}
+
+// Selection key for an existing entry (edit prefill).
+export function catKeyForEntry(e: Pick<Entry, 'category' | 'custom_category'>): string {
+  return e.custom_category ? customCatKey(e.custom_category) : (e.category ?? 'OTHER');
+}
+
+// Display name for an entry's category (custom name wins over the enum value).
+export function entryCategoryLabel(e: Pick<Entry, 'category' | 'custom_category'>): string {
+  return e.custom_category || (e.category ?? 'OTHER');
+}
+
+const CATS_MIRROR_KEY = 'customExpenseCatsMirror.v1';
+const HIDDEN_CATS_MIRROR_KEY = 'hiddenExpenseCatsMirror.v1';
+
+export async function readExpenseCatsMirror(): Promise<UserExpenseCategory[]> {
+  try {
+    const raw = await AsyncStorage.getItem(CATS_MIRROR_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (t: any) => t && typeof t.id === 'number' && typeof t.name === 'string' && t.name.length > 0,
+    );
+  } catch {
+    return [];
+  }
+}
+
+export async function writeExpenseCatsMirror(cats: UserExpenseCategory[]): Promise<void> {
+  try { await AsyncStorage.setItem(CATS_MIRROR_KEY, JSON.stringify(cats)); } catch {}
+}
+
+export async function clearExpenseCatsMirror(): Promise<void> {
+  try { await AsyncStorage.removeItem(CATS_MIRROR_KEY); } catch {}
+}
+
+export async function readHiddenCatsMirror(): Promise<string[]> {
+  try {
+    const raw = await AsyncStorage.getItem(HIDDEN_CATS_MIRROR_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((k: any) => typeof k === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function writeHiddenCatsMirror(keys: string[]): Promise<void> {
+  try { await AsyncStorage.setItem(HIDDEN_CATS_MIRROR_KEY, JSON.stringify(keys)); } catch {}
+}
+
+export async function clearHiddenCatsMirror(): Promise<void> {
+  try { await AsyncStorage.removeItem(HIDDEN_CATS_MIRROR_KEY); } catch {}
+}
+
+const BUILTIN_CAT_NAMES = new Set<string>([
+  'gas', 'parking', 'tolls', 'maintenance', 'phone', 'subscription', 'food', 'leisure', 'charity', 'other',
+]);
+
+export function findDuplicateExpenseCat(name: string, existing: UserExpenseCategory[]): 'builtin' | 'custom' | null {
+  const n = name.trim().toLowerCase();
+  if (!n) return null;
+  if (BUILTIN_CAT_NAMES.has(n)) return 'builtin';
+  if (existing.some(c => c.name.trim().toLowerCase() === n)) return 'custom';
   return null;
 }
 

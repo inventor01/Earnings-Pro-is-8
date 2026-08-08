@@ -111,6 +111,7 @@ export function synthesizeEntry(item: QueuedEntry): Entry {
     app: p.app,
     custom_app: p.custom_app ?? null,
     custom_type: p.custom_type ?? null,
+    custom_category: p.custom_category ?? null,
     amount: p.amount,
     distance_miles: p.distance_miles ?? 0,
     duration_minutes: p.duration_minutes ?? 0,

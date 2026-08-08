@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from backend.db import get_db
-from backend.models import Entry, EntryType, AppType, AuthUser, Goal
+from backend.models import Entry, EntryType, AppType, AuthUser, Goal, ExpenseCategory
 from backend.schemas import EntryCreate, EntryUpdate, EntryResponse
 from backend.auth import get_current_user
 from typing import List, Optional
@@ -84,6 +84,7 @@ async def create_entry(entry: EntryCreate, db: Session = Depends(get_db), curren
         idempotency_key=entry.idempotency_key,
         custom_app=entry.custom_app,
         custom_type=entry.custom_type,
+        custom_category=entry.custom_category,
     )
     db.add(db_entry)
     try:
@@ -226,6 +227,15 @@ async def update_entry(entry_id: int, entry_update: EntryUpdate, db: Session = D
     # partial update that flips the type to ORDER/CANCELLATION clears the name.
     if db_entry.custom_type and db_entry.type not in (EntryType.BONUS, EntryType.EXPENSE):
         db_entry.custom_type = None
+
+    # Custom expense-category rides only on EXPENSE entries with the safe enum
+    # category OTHER. Enforce against the FINAL state (partial updates may flip
+    # the type or category without resending custom_category).
+    if db_entry.custom_category:
+        if db_entry.type != EntryType.EXPENSE:
+            db_entry.custom_category = None
+        else:
+            db_entry.category = ExpenseCategory.OTHER
 
     setattr(db_entry, 'updated_at', datetime.utcnow())
     db.commit()

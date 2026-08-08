@@ -57,11 +57,13 @@ class EntryCreate(BaseModel):
     idempotency_key: Optional[str] = None
     custom_app: Optional[str] = None
     custom_type: Optional[str] = None
+    custom_category: Optional[str] = None
 
     # NOTE: the custom_type line must precede the custom_app one — once the
     # class attribute `_validate_custom_app` is assigned, the bare name inside
     # this class body refers to the wrapped proxy, not the module function.
     _validate_custom_type = field_validator("custom_type")(_validate_custom_app)
+    _validate_custom_category = field_validator("custom_category")(_validate_custom_app)
     _validate_receipt = field_validator("receipt_url")(_validate_receipt)
     _validate_custom_app = field_validator("custom_app")(_validate_custom_app)
 
@@ -78,6 +80,13 @@ class EntryCreate(BaseModel):
         # their own analytics semantics (order counts, cancellation lists).
         if self.custom_type and self.type not in (EntryType.BONUS, EntryType.EXPENSE):
             self.custom_type = None
+        # Invariant: a custom expense-category name rides only on EXPENSE
+        # entries with category=OTHER (mirrors the custom_app design).
+        if self.custom_category:
+            if self.type != EntryType.EXPENSE:
+                self.custom_category = None
+            else:
+                self.category = ExpenseCategory.OTHER
         return self
 
 
@@ -98,9 +107,11 @@ class EntryUpdate(BaseModel):
     during_business_hours: Optional[bool] = None
     custom_app: Optional[str] = None
     custom_type: Optional[str] = None
+    custom_category: Optional[str] = None
 
     # custom_type first — see ordering note on EntryCreate.
     _validate_custom_type = field_validator("custom_type")(_validate_custom_app)
+    _validate_custom_category = field_validator("custom_category")(_validate_custom_app)
     _validate_custom_app = field_validator("custom_app")(_validate_custom_app)
 
     _validate_receipt = field_validator("receipt_url")(_validate_receipt)
@@ -117,6 +128,13 @@ class EntryUpdate(BaseModel):
         # On partial updates the route re-checks against the row's final type.
         if self.custom_type and self.type is not None and self.type not in (EntryType.BONUS, EntryType.EXPENSE):
             self.custom_type = None
+        # Custom expense-category rides only on EXPENSE + category=OTHER. On
+        # partial updates the route re-checks against the row's final state.
+        if self.custom_category:
+            if self.type is not None and self.type != EntryType.EXPENSE:
+                self.custom_category = None
+            else:
+                self.category = ExpenseCategory.OTHER
         return self
 
 
@@ -142,6 +160,7 @@ class EntryResponse(BaseModel):
     idempotency_key: Optional[str] = None
     custom_app: Optional[str] = None
     custom_type: Optional[str] = None
+    custom_category: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -224,6 +243,31 @@ class EntryTypeResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ExpenseCategoryCreate(BaseModel):
+    name: str
+    color: Optional[str] = None
+    icon: Optional[str] = None
+
+    _validate_name = field_validator("name")(_validate_custom_app)
+    _validate_color = field_validator("color")(_validate_platform_color)
+    _validate_icon = field_validator("icon")(_validate_platform_icon)
+
+
+class ExpenseCategoryResponse(BaseModel):
+    id: int
+    name: str
+    color: Optional[str] = None
+    icon: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class HiddenBuiltinsSet(BaseModel):
+    # Full replacement list of hidden built-in expense-category keys.
+    keys: list[str]
 
 
 class LabelOverrideSet(BaseModel):
