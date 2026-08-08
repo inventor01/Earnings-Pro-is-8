@@ -22,7 +22,16 @@ ENV/
 env/
 .venv
 
+# Env files: default-deny, allow only known placeholder-only templates
 .env
+.env.*
+!.env.example
+!backend/.env.production
+!frontend/.env.production
+!deployment/frontend/.env.example
+
+# Archive snapshots must never be tracked
+*.zip
 
 *.db
 *.sqlite
