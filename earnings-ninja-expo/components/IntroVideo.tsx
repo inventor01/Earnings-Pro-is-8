@@ -26,6 +26,11 @@ export default function IntroVideo({ onDone }: { onDone: () => void }) {
   const player = useVideoPlayer(require('@/assets/intro.mp4'), (p) => {
     p.loop = false;
     p.muted = true;
+    // The intro is purely visual (the mp4 has no audio track and is muted),
+    // but by default expo-video still claims the audio session / audio focus
+    // when playback starts — which pauses Spotify/Apple Music/podcasts on
+    // launch. mixWithOthers keeps external audio playing untouched.
+    p.audioMixingMode = 'mixWithOthers';
     p.playbackRate = PLAYBACK_RATE;
     p.play();
   });

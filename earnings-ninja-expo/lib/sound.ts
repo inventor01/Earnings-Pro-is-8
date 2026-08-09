@@ -126,7 +126,14 @@ function ensurePlayer(): AudioPlayer | null {
     // user action (saving an entry) and is fully opt-outable, so a driver on
     // silent still gets the satisfying confirmation they enabled. Best-effort;
     // a failure here must not block creating/playing the sound.
-    setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+    // interruptionMode 'mixWithOthers': the ka-ching is a short confirmation
+    // blip that should layer OVER the user's music/podcast, never pause or
+    // duck it. Without this the default audio session interrupts external
+    // audio (Spotify/Apple Music stop) the first time a sound plays.
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      interruptionMode: 'mixWithOthers',
+    }).catch(() => {});
     audioModeSet = true;
   }
   // createAudioPlayer is synchronous and loads the bundled asset eagerly, so the
