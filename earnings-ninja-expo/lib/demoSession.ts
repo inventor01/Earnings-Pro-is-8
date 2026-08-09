@@ -84,7 +84,7 @@ export function exitDemoSession(): void {
 // single non-intrusive "Ready to track your real earnings?" prompt. Counters
 // live here (in-memory) so they reset with the session.
 
-const CONVERSION_ENTRY_THRESHOLD = 3;
+const CONVERSION_ENTRY_THRESHOLD = 1;
 
 let entriesAdded = 0;
 let promptShown = false;

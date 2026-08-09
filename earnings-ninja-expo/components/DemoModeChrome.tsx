@@ -4,7 +4,7 @@
 // active. Provides:
 //   - a persistent, compact "DEMO" pill so the user always knows they're in
 //     sample data (tap → actions: Create Free Account / Exit Demo)
-//   - a one-time conversion prompt after the user has added a few entries
+//   - a one-time conversion prompt after the user adds their first entry
 //
 // Exiting (or converting) destroys the sandbox and returns to the login
 // screen — see lib/demoSession.ts for the isolation guarantees.
@@ -25,7 +25,8 @@ export default function DemoModeChrome() {
   const insets = useSafeAreaInsets();
   const [convertVisible, setConvertVisible] = useState(false);
 
-  // Watch the demo session for the conversion-prompt threshold (3 entries added).
+  // Watch the demo session for the conversion-prompt threshold (first entry
+  // added — income or expense both count).
   useEffect(() => {
     const check = () => {
       if (shouldShowConversionPrompt()) {
@@ -117,14 +118,16 @@ export default function DemoModeChrome() {
             <Pressable
               onPress={leaveDemo}
               style={{
-                backgroundColor: GREEN ?? '#22c55e',
+                // Demo-mode yellow CTA (matches the brand accent used across
+                // the app's primary actions).
+                backgroundColor: '#facc15',
                 borderRadius: 14,
                 paddingVertical: 14,
                 alignItems: 'center',
                 marginTop: 18,
               }}
             >
-              <Text style={{ color: '#052e12', fontWeight: '900', fontSize: 16 }}>Create Free Account</Text>
+              <Text style={{ color: '#0f172a', fontWeight: '900', fontSize: 16 }}>Try for Free</Text>
             </Pressable>
             <Pressable onPress={() => setConvertVisible(false)} style={{ paddingVertical: 12, alignItems: 'center', marginTop: 4 }}>
               <Text style={{ color: MUTED ?? '#94a3b8', fontWeight: '700', fontSize: 14 }}>Keep Exploring</Text>
