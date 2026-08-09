@@ -177,7 +177,7 @@ def main():
         print("✅ DONE. Copy these into App Store Connect:")
         print("─" * 60)
         print(f"   Username : {DEMO_EMAIL}")
-        print(f"   Password : {DEMO_PASSWORD}")
+        print("   Password : (set via DEMO_PASSWORD env var — not printed)")
         print("─" * 60)
         print("   App Store Connect → My App → App Information →")
         print("   App Review Information → Sign-In Information")
