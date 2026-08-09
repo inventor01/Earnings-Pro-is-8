@@ -49,7 +49,7 @@ import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
 import { getIntroEnabled, setIntroEnabled } from '@/lib/introPref';
 import {
   customKey, isCustomKey, customNameFromKey, keyForEntry,
-  entryAppLabel, entryAppColor, colorForCustomName, applyPlatformStyles, CUSTOM_COLORS,
+  entryAppLabel, entryAppColor, colorForCustomName, applyPlatformStyles, PRESET_COLORS,
   readPlatformsMirror, writePlatformsMirror, findDuplicatePlatform, MAX_PLATFORM_NAME_LEN,
   applyLabelOverrides, platformLabel, typeLabel, readLabelsMirror, writeLabelsMirror,
   customTypeKey, isCustomTypeKey, customTypeNameFromKey, typeKeyForEntry, entryTypeLabel,
@@ -3497,30 +3497,48 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                     Color (optional — used in charts &amp; calendar)
                   </Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                    {CUSTOM_COLORS.map((c) => {
-                      const active = newPlatformColor === c;
-                      return (
-                        <Pressable
-                          key={c}
-                          onPress={() => { hTap(); setNewPlatformColor(active ? null : c); }}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Color ${c}`}
-                          accessibilityState={{ selected: active }}
-                          style={{
-                            width: 32, height: 32, borderRadius: 16,
-                            backgroundColor: c,
-                            borderWidth: 3,
-                            borderColor: active ? '#0f172a' : 'transparent',
-                          }}
-                        >
-                          {active ? (
-                            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                              <Ionicons name="checkmark" size={16} color="#ffffff" />
-                            </View>
-                          ) : null}
-                        </Pressable>
-                      );
-                    })}
+                    {(() => {
+                      // If the item being edited carries a color that's not in
+                      // the preset grid (legacy palette pick or server-side
+                      // value), surface it as a leading "Current" swatch so the
+                      // saved choice stays visible/selected and is never lost.
+                      const inPresets = PRESET_COLORS.some(p => p.hex === newPlatformColor);
+                      const swatches = newPlatformColor && !inPresets
+                        ? [{ hex: newPlatformColor, name: 'Current color' }, ...PRESET_COLORS]
+                        : PRESET_COLORS;
+                      return swatches.map(({ hex: c, name }) => {
+                        const active = newPlatformColor === c;
+                        return (
+                          <Pressable
+                            key={c}
+                            onPress={() => { hTap(); setNewPlatformColor(active ? null : c); }}
+                            hitSlop={6}
+                            accessibilityRole="button"
+                            accessibilityLabel={name}
+                            accessibilityState={{ selected: active }}
+                            style={{
+                              width: 34, height: 34, borderRadius: 17,
+                              backgroundColor: c,
+                              borderWidth: 3,
+                              // Light-hued swatches (silver/yellow) need a faint
+                              // outline so they don't vanish on the white modal.
+                              borderColor: active ? '#0f172a' : 'rgba(15,23,42,0.12)',
+                            }}
+                          >
+                            {active ? (
+                              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                                <Ionicons
+                                  name="checkmark"
+                                  size={16}
+                                  // Contrast-safe checkmark on light swatches.
+                                  color={['#eab308', '#94a3b8', '#f59e0b', '#84cc16', '#fb7185', '#f87171'].includes(c) ? '#0f172a' : '#ffffff'}
+                                />
+                              </View>
+                            ) : null}
+                          </Pressable>
+                        );
+                      });
+                    })()}
                     {(newPlatformColor || newPlatformIcon) ? (
                       <Pressable
                         onPress={() => { hTap(); setNewPlatformColor(null); setNewPlatformIcon(null); }}

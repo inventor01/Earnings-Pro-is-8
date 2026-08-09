@@ -100,10 +100,46 @@ export function entryAppLabel(e: Pick<Entry, 'app' | 'custom_app'>): string {
 
 // Distinct, readable palette for custom platform dots/avatars. Picked by a
 // stable hash of the name so a platform keeps its color everywhere, forever.
-// Also doubles as the preset swatch row in the platform editor.
+// DO NOT reorder/resize: hash % length must stay stable or every auto-colored
+// platform silently changes color. The editor swatch grid uses PRESET_COLORS.
 export const CUSTOM_COLORS = [
   '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#3b82f6',
   '#84cc16', '#e11d48', '#0ea5e9', '#a855f7', '#f59e0b',
+];
+
+// Expanded preset palette for the Add/Edit editors (platforms, entry types,
+// expense categories). 28 well-spaced hues, each with a spoken name for
+// VoiceOver/TalkBack. Any hex the server already stores that isn't in this
+// list still renders fine — presets only gate NEW picks, never old ones.
+export const PRESET_COLORS: { hex: string; name: string }[] = [
+  { hex: '#ef4444', name: 'Red' },
+  { hex: '#e11d48', name: 'Rose' },
+  { hex: '#f87171', name: 'Coral' },
+  { hex: '#f97316', name: 'Orange' },
+  { hex: '#f59e0b', name: 'Amber' },
+  { hex: '#eab308', name: 'Yellow' },
+  { hex: '#84cc16', name: 'Lime' },
+  { hex: '#22c55e', name: 'Green' },
+  { hex: '#10b981', name: 'Emerald' },
+  { hex: '#14b8a6', name: 'Teal' },
+  { hex: '#06b6d4', name: 'Cyan' },
+  { hex: '#0ea5e9', name: 'Sky Blue' },
+  { hex: '#3b82f6', name: 'Blue' },
+  { hex: '#1d4ed8', name: 'Dark Blue' },
+  { hex: '#6366f1', name: 'Indigo' },
+  { hex: '#8b5cf6', name: 'Violet' },
+  { hex: '#a855f7', name: 'Purple' },
+  { hex: '#c026d3', name: 'Magenta' },
+  { hex: '#ec4899', name: 'Pink' },
+  { hex: '#fb7185', name: 'Light Rose' },
+  { hex: '#92400e', name: 'Brown' },
+  { hex: '#b45309', name: 'Caramel' },
+  { hex: '#166534', name: 'Forest Green' },
+  { hex: '#0f766e', name: 'Deep Teal' },
+  { hex: '#6b7280', name: 'Gray' },
+  { hex: '#475569', name: 'Slate' },
+  { hex: '#94a3b8', name: 'Silver' },
+  { hex: '#111827', name: 'Black' },
 ];
 
 // User-chosen styles (color/icon) keyed by lowercased platform name. Module-
