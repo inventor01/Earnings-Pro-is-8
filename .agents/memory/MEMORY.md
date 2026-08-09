@@ -2,6 +2,7 @@
 - [Edit/delete 404 (stale id)](entry-edit-stale-positive-id-404.md) — a positive-id PUT/DELETE 404 means the cached row diverged from server; treat as resync (rollback+refetch+friendly msg), not a hard error.
 - [Optimistic create window-scoping](optimistic-create-window-scoping.md) — Add-Entry optimistic insert must target only windows whose date range contains the entry.
 - [Random data-wipe root cause](random-data-wipe-root-cause.md) — old Railway code silently fell back to ephemeral SQLite; every redeploy wiped ALL data; guard fixed locally, live only after push+DATABASE_URL.
+- [Railway API management](railway-api-management.md) — Railway_Token is a project token; rotate vars via GraphQL variableUpsert + serviceInstanceRedeploy; JWT secret rotated Aug 2026, zip history purged.
 - [Railway prod backend](railway-prod-backend.md) — live backend is on Railway, not Replit; Replit Postgres is a stale backup. Verify via the live Railway URL + demo account.
 - [Web domain routing](web-domain-routing.md) — earningsninja.com apex = THIS repl's Replit vm deployment (NOT Railway); shipping landing changes needs gitPush AND a Replit republish; gitPush doesn't commit dirty files; apex waitlist rows land in Replit prod DB.
 - [EAS kickoff silent death](eas-kickoff-silent-death.md) — `eas build` can die after upload WITHOUT registering; verify via build:list, recover with a DEBUG wrapper-script re-run.
