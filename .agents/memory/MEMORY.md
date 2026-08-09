@@ -46,3 +46,4 @@
 - [Account-scoped mirror wipe](account-scoped-mirror-wipe.md) — every new per-account AsyncStorage mirror needs a clear call in the logout wipe, or the next account inherits stale data.
 - [Local sandbox Demo Mode](demo-mode-sandbox.md) — demo is fully client-side (api Proxy + isDemoActive guards); any new AsyncStorage/widget/notification/RC write needs a demo guard, both read and write directions.
 - [Once-ever UX flags need server sync](once-ever-flags-server-sync.md) — device-only AsyncStorage "seen" flags die on reinstall; mirror them on auth_users with the guarded-migration grandfather pattern, and late server-true must veto an already auto-opened surface.
+- [Android datetime picker crash](android-datetime-picker-crash.md) — mode="datetime" is iOS-only; Android needs two-step date→time dialogs or it blank-screen crashes.
