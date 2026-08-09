@@ -6,12 +6,12 @@ from decimal import Decimal
 from datetime import datetime
 from typing import Optional
 
-def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None, timeframe: Optional[str] = None, user_id: Optional[str] = None):
-    # Build efficient SQL query with aggregations
-    query = db.query(Entry)
-    
-    if user_id:
-        query = query.filter(Entry.user_id == user_id)
+def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None, timeframe: Optional[str] = None, user_id: str = ""):
+    # A rollup without a user filter would aggregate EVERY user's entries —
+    # never allowed. Fail loudly instead of silently computing global totals.
+    if not user_id:
+        raise ValueError("calculate_rollup requires a user_id; refusing to aggregate across all users")
+    query = db.query(Entry).filter(Entry.user_id == user_id)
     if from_date:
         query = query.filter(Entry.timestamp >= from_date)
     if to_date:
@@ -20,7 +20,7 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
     # Fetch entries first for by_type and by_app calculations
     entries = query.all()
     
-    settings = db.query(Settings).filter(Settings.user_id == user_id).first() if user_id else db.query(Settings).first()
+    settings = db.query(Settings).filter(Settings.user_id == user_id).first()
     cost_per_mile = settings.cost_per_mile if settings else Decimal("0")
     
     total_amount = Decimal("0")

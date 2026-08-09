@@ -23,14 +23,14 @@ def get_ai_suggestions(
     db: Session,
     from_date: Optional[datetime] = None,
     to_date: Optional[datetime] = None,
-    user_id: Optional[str] = None
+    user_id: str = ""
 ) -> dict:
     """Generate AI suggestions for earning optimization based on recent data"""
     
-    # Fetch recent entries - use default user if no user_id provided
-    from backend.auth import DEFAULT_USER_ID
+    # Suggestions must always be scoped to the requesting user; a silent
+    # fallback account could surface another user's totals.
     if not user_id:
-        user_id = DEFAULT_USER_ID
+        raise ValueError("get_ai_suggestions requires a user_id")
     
     query = db.query(Entry).filter(Entry.user_id == user_id)
     if from_date:
