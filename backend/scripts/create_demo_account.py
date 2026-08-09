@@ -14,12 +14,12 @@ Usage (against the local SQLite dev DB):
 Usage against Railway production (set DATABASE_URL inline):
     DATABASE_URL="postgresql://..." \
     DEMO_EMAIL="reviewer@earningsninja.app" \
-    DEMO_PASSWORD="ReviewMe2026!" \
+    DEMO_PASSWORD="<choose-a-strong-password>" \
     python -m backend.scripts.create_demo_account
 
 Environment variables:
     DEMO_EMAIL     — defaults to "reviewer@earningsninja.app"
-    DEMO_PASSWORD  — defaults to "ReviewMe2026!"
+    DEMO_PASSWORD  — REQUIRED; never hardcoded in source
 
 After running, paste the printed credentials into App Store Connect:
     App Information → App Review Information → Sign-In Information.
@@ -45,7 +45,11 @@ from backend.models import (  # noqa: E402
 
 
 DEMO_EMAIL = os.environ.get("DEMO_EMAIL", "reviewer@earningsninja.app")
-DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "ReviewMe2026!")
+# No in-source default: a predictable reviewer password in the repo would let
+# anyone log into the demo account. The password must come from the environment.
+DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "")
+if not DEMO_PASSWORD:
+    sys.exit("ERROR: set the DEMO_PASSWORD environment variable (no hardcoded default).")
 
 
 def hash_password(password: str) -> str:

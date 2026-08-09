@@ -45,7 +45,7 @@ def test_rollup_revenue_calculation(db_session):
     db_session.add(entry2)
     db_session.commit()
     
-    rollup = calculate_rollup(db_session)
+    rollup = calculate_rollup(db_session, user_id=TEST_USER_ID)
     
     assert rollup["revenue"] == Decimal("35.00")
     assert rollup["expenses"] == Decimal("0")
@@ -67,7 +67,7 @@ def test_rollup_expense_calculation(db_session):
     db_session.add(expense1)
     db_session.commit()
     
-    rollup = calculate_rollup(db_session)
+    rollup = calculate_rollup(db_session, user_id=TEST_USER_ID)
     
     assert rollup["expenses"] == Decimal("40.00")
 
@@ -98,7 +98,7 @@ def test_rollup_profit_with_mileage(db_session):
     db_session.add(expense)
     db_session.commit()
     
-    rollup = calculate_rollup(db_session)
+    rollup = calculate_rollup(db_session, user_id=TEST_USER_ID)
     
     assert rollup["revenue"] == Decimal("100.00")
     assert rollup["expenses"] == Decimal("20.00")
@@ -123,7 +123,7 @@ def test_rollup_dollars_per_mile(db_session):
     db_session.add(entry)
     db_session.commit()
     
-    rollup = calculate_rollup(db_session)
+    rollup = calculate_rollup(db_session, user_id=TEST_USER_ID)
     
     assert rollup["dollars_per_mile"] == Decimal("5.00")
 
@@ -156,7 +156,7 @@ def test_rollup_dollars_per_hour(db_session):
     db_session.add(entry2)
     db_session.commit()
     
-    rollup = calculate_rollup(db_session)
+    rollup = calculate_rollup(db_session, user_id=TEST_USER_ID)
     
     assert rollup["hours"] == 2.0
     assert rollup["dollars_per_hour"] == Decimal("30.00")
@@ -244,3 +244,22 @@ def test_rollup_user_with_no_entries(db_session):
     assert rollup["profit"] == 0.0
     assert rollup["miles"] == 0.0
     assert rollup["hours"] == 0.0
+
+
+def test_rollup_requires_user_id(db_session):
+    """A rollup must NEVER aggregate without a user filter — global totals
+    across all users would be a data leak. Empty/None user_id must raise."""
+    with pytest.raises(ValueError):
+        calculate_rollup(db_session)
+    with pytest.raises(ValueError):
+        calculate_rollup(db_session, user_id="")
+    with pytest.raises(ValueError):
+        calculate_rollup(db_session, user_id=None)  # type: ignore[arg-type]
+
+
+def test_suggestions_require_user_id(db_session):
+    from backend.services.ai_suggestions import get_ai_suggestions
+    with pytest.raises(ValueError):
+        get_ai_suggestions(db_session)
+    with pytest.raises(ValueError):
+        get_ai_suggestions(db_session, user_id="")
