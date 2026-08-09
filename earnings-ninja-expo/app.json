@@ -80,7 +80,7 @@
         "backgroundColor": "#FACC15"
       },
       "package": "com.earningsninja.app",
-      "versionCode": 11,
+      "versionCode": 12,
       "permissions": []
     },
     "web": {
