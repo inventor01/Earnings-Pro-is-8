@@ -169,8 +169,14 @@ def test_verify_reset_token_rate_limited(auth_app):
     assert codes[20] == 429
 
 
-def test_feedback_report_rate_limited(db_session):
+def test_feedback_report_rate_limited(db_session, monkeypatch):
     from backend.auth import get_current_user
+
+    # Never send real emails from tests — each report otherwise fires a live
+    # Resend email at the support inbox.
+    async def _no_email(report, screenshots):
+        return None
+    monkeypatch.setattr(feedback, "_send_report_email", _no_email)
 
     user = _make_user(db_session)
     app = FastAPI()
