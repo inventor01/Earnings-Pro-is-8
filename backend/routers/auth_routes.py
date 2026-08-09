@@ -1002,11 +1002,13 @@ async def forgot_password(
     return {"message": "If an account with that email exists, a password reset link has been sent."}
 
 @router.post("/auth/reset-password")
-async def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+@auth_limiter.limit("10/hour")
+async def reset_password(request: Request, body: ResetPasswordRequest, db: Session = Depends(get_db)):
     """Reset password using a valid reset token"""
+    # `request` is required by slowapi; the JSON payload arrives as `body`.
     # Find the token
     token_record = db.query(PasswordResetToken).filter(
-        PasswordResetToken.token == _hash_reset_token(request.token),
+        PasswordResetToken.token == _hash_reset_token(body.token),
         PasswordResetToken.used == False
     ).first()
     
@@ -1020,7 +1022,7 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
         raise HTTPException(status_code=400, detail="Reset token has expired")
     
     # Validate new password
-    if len(request.new_password) < 6:
+    if len(body.new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
     
     # Find the user
@@ -1029,7 +1031,7 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
         raise HTTPException(status_code=400, detail="User not found")
     
     # Update password
-    user.password_hash = hash_password(request.new_password)
+    user.password_hash = hash_password(body.new_password)
     # Kill every previously-issued session token: a stolen JWT must not survive
     # the victim resetting their password (see get_current_user iat check).
     user.password_changed_at = datetime.utcnow().isoformat()
@@ -1042,7 +1044,8 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
     return {"message": "Password has been reset successfully"}
 
 @router.get("/auth/verify-reset-token/{token}")
-async def verify_reset_token(token: str, db: Session = Depends(get_db)):
+@auth_limiter.limit("20/hour")
+async def verify_reset_token(request: Request, token: str, db: Session = Depends(get_db)):
     """Verify if a reset token is valid"""
     token_record = db.query(PasswordResetToken).filter(
         PasswordResetToken.token == _hash_reset_token(token),

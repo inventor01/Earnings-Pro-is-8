@@ -6,8 +6,10 @@ import logging
 import os
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, field_validator
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from backend.auth import get_current_user
@@ -16,6 +18,7 @@ from backend.models import ProblemReport
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+report_limiter = Limiter(key_func=get_remote_address)
 
 REPORT_TYPES = {
     "Bug Report", "App Crash", "Performance Issue", "Incorrect Data",
@@ -113,7 +116,9 @@ class ProblemReportIn(BaseModel):
 
 
 @router.post("/feedback/report")
+@report_limiter.limit("10/hour")
 async def submit_problem_report(
+    request: Request,
     body: ProblemReportIn,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
