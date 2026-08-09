@@ -1239,6 +1239,7 @@ function FormInput({
 
 function DetailsForm({
   isExp, amount, entryType, setEntryType, expenseUi, app, setApp, appAutoFilled, lastAppLabel, category, setCategory,
+  entryKind, onSwitchKind,
   platformOptions, onAddPlatform, onEditPlatform, typeOptions, onAddType, onEditType,
   categoryOptions, onAddCategory, onEditCategory,
   isBusiness, setIsBusiness,
@@ -1256,6 +1257,11 @@ function DetailsForm({
   // custom type with kind='expense') — drives category/receipt/platform
   // visibility. Computed by the parent, which knows the custom types' kinds.
   expenseUi: boolean;
+  // Active financial context. Drives which type pills are visible and which
+  // "+ Add" flavor the trailing pill creates. Switching clears cross-mode
+  // state in the parent (platform/category/miles/receipt).
+  entryKind: 'revenue' | 'expense';
+  onSwitchKind: (k: 'revenue' | 'expense') => void;
   app: string;
   setApp: (a: string) => void;
   appAutoFilled: boolean;
@@ -1367,6 +1373,37 @@ function DetailsForm({
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={{ padding: 18, gap: 16 }}
         >
+          {/* Revenue ↔ Expense context switch. Two distinct financial modes
+              sharing the same form shell — each mode only shows its own type
+              pills, and switching clears cross-mode state in the parent. */}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {([['revenue', '💵 Revenue'], ['expense', '🧾 Expense']] as const).map(([k, lbl]) => {
+              const active = entryKind === k;
+              return (
+                <Pressable
+                  key={k}
+                  onPress={() => { if (!active) { hTap(); onSwitchKind(k); } }}
+                  accessibilityRole="button"
+                  accessibilityLabel={lbl}
+                  accessibilityState={{ selected: active }}
+                  style={{
+                    flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center',
+                    borderWidth: 2,
+                    borderColor: active ? (k === 'expense' ? '#fca5a5' : '#86efac') : '#e5e7eb',
+                    backgroundColor: active ? (k === 'expense' ? '#fee2e2' : '#dcfce7') : '#f9fafb',
+                  }}
+                >
+                  <Text style={{
+                    color: active ? (k === 'expense' ? '#b91c1c' : '#15803d') : '#6b7280',
+                    fontWeight: active ? '900' : '600', fontSize: 14,
+                  }}>
+                    {lbl}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
           {/* Type — long-press a pill to rename it (per-user label) */}
           <View ref={registerAddEntryTarget('type')} collapsable={false}>
             <FieldLabel>📝 Type</FieldLabel>
@@ -1374,9 +1411,9 @@ function DetailsForm({
               scroll
               options={[
                 ...typeOptions,
-                // Trailing "+" pill — opens the add-type prompt instead of
-                // selecting; intercepted in onChange below.
-                { key: '__ADD_TYPE__', label: '＋ Add', color: '#6b7280' },
+                // Trailing "+" pill — creates a type in the ACTIVE mode only
+                // (revenue type vs expense type); intercepted in onChange.
+                { key: '__ADD_TYPE__', label: entryKind === 'expense' ? '＋ Add Expense Type' : '＋ Add Revenue Type', color: '#6b7280' },
               ]}
               value={entryType}
               onChange={(k) => {
@@ -1866,16 +1903,55 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       color: p.color || colorForCustomName(p.name),
     })),
   ]), [customPlatforms, labelOverrides]);
-  const typeOptions = useMemo(() => ([
-    { key: 'ORDER' as string,        label: typeLabel('ORDER', 'Order') },
-    { key: 'BONUS' as string,        label: typeLabel('BONUS', 'Bonus') },
-    { key: 'EXPENSE' as string,      label: typeLabel('EXPENSE', 'Expense') },
-    { key: 'CANCELLATION' as string, label: typeLabel('CANCELLATION', 'Cancellation') },
-    ...customEntryTypes.map(t => ({
-      key: customTypeKey(t.name),
-      label: t.icon ? `${t.icon} ${t.name}` : t.name,
-    })),
-  ]), [labelOverrides, customEntryTypes]);
+  // Type pills are split into the two financial contexts so the form only
+  // ever shows options relevant to the active mode (Revenue vs Expense).
+  // Custom income types live with the revenue built-ins; custom expense
+  // types live with the Expense built-in. If the current selection is a
+  // custom type that no longer exists (deleted while editing an old entry),
+  // a synthetic pill keeps it visible/selected until the user changes it.
+  const typeOptions = useMemo(() => {
+    const revenue = [
+      { key: 'ORDER' as string,        label: typeLabel('ORDER', 'Order') },
+      { key: 'BONUS' as string,        label: typeLabel('BONUS', 'Bonus') },
+      { key: 'CANCELLATION' as string, label: typeLabel('CANCELLATION', 'Cancellation') },
+      ...customEntryTypes.filter(t => t.kind !== 'expense').map(t => ({
+        key: customTypeKey(t.name),
+        label: t.icon ? `${t.icon} ${t.name}` : t.name,
+      })),
+    ];
+    const expense = [
+      { key: 'EXPENSE' as string, label: typeLabel('EXPENSE', 'Expense') },
+      ...customEntryTypes.filter(t => t.kind === 'expense').map(t => ({
+        key: customTypeKey(t.name),
+        label: t.icon ? `${t.icon} ${t.name}` : t.name,
+      })),
+    ];
+    const active = effectiveEntryType === 'EXPENSE' ? expense : revenue;
+    if (isCustomTypeKey(entryType) && !active.some(o => o.key === entryType)) {
+      active.push({ key: entryType, label: customTypeNameFromKey(entryType) });
+    }
+    return active;
+  }, [labelOverrides, customEntryTypes, effectiveEntryType, entryType]);
+  // Revenue ↔ Expense mode switch: reset to the mode's default type and clear
+  // any state that only makes sense in the other mode, so no stale platform /
+  // category / miles ride along on the saved entry or linger in the UI.
+  const entryKind: 'revenue' | 'expense' = effectiveEntryType === 'EXPENSE' ? 'expense' : 'revenue';
+  const switchEntryKind = (k: 'revenue' | 'expense') => {
+    if (k === entryKind) return;
+    if (k === 'expense') {
+      setEntryType('EXPENSE');
+      setMode('subtract');
+      setMiles('');
+      setMinutes('');
+    } else {
+      setEntryType('ORDER');
+      setMode('add');
+      setCategory('GAS');
+      setIsBusiness(false);
+      setReceiptUri(null);
+      setReceiptDataUri(null);
+    }
+  };
   // Add/rename-platform prompt state. When `renamingPlatform` is set the
   // modal is in RENAME mode for that user-created platform; otherwise ADD.
   const [addPlatformVisible, setAddPlatformVisible] = useState(false);
@@ -2064,7 +2140,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     setNewPlatformName('');
     setNewPlatformColor(null);
     setNewPlatformIcon(null);
-    setNewTypeKind('income');
+    // Contextual add: the "+ Add" pill lives inside either the Revenue or the
+    // Expense mode of the form, so the new type's kind is locked to the mode
+    // the user is in — no cross-kind leaks (the prompt hides the kind toggle).
+    setNewTypeKind(effectiveEntryType === 'EXPENSE' ? 'expense' : 'income');
     setAddPlatformError(null);
     setAddPlatformVisible(true);
   };
@@ -3247,6 +3326,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               onAddPlatform={() => { setRenamingPlatform(null); setEditingLabel(null); setNewPlatformName(''); setNewPlatformColor(null); setNewPlatformIcon(null); setAddPlatformError(null); setAddPlatformVisible(true); }}
               onEditPlatform={handleEditPlatform}
               typeOptions={typeOptions}
+              entryKind={entryKind}
+              onSwitchKind={switchEntryKind}
               onAddType={handleAddType}
               onEditType={handleEditType}
               expenseUi={effectiveEntryType === 'EXPENSE'}
@@ -3435,30 +3516,22 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   historical entries mean. */}
               {addingEntryType && (
                 <>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#6b7280', marginTop: 2 }}>
-                    What kind of type is this?
-                  </Text>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    {([['income', '💵 Income'], ['expense', '🧾 Expense']] as const).map(([k, lbl]) => {
-                      const active = newTypeKind === k;
-                      return (
-                        <Pressable
-                          key={k}
-                          onPress={() => { hTap(); setNewTypeKind(k); }}
-                          accessibilityRole="button"
-                          accessibilityLabel={lbl}
-                          accessibilityState={{ selected: active }}
-                          style={{
-                            flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center',
-                            borderWidth: 2,
-                            borderColor: active ? '#facc15' : '#e5e7eb',
-                            backgroundColor: active ? '#fef9c3' : '#f9fafb',
-                          }}
-                        >
-                          <Text style={{ color: '#0f172a', fontWeight: '700', fontSize: 13 }}>{lbl}</Text>
-                        </Pressable>
-                      );
-                    })}
+                  {/* Kind is locked to the mode the "+ Add" pill was tapped in
+                      (Revenue → income, Expense → expense) so a new type can
+                      never leak into the other context. Shown read-only. */}
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 8,
+                    paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12,
+                    borderWidth: 2,
+                    borderColor: newTypeKind === 'expense' ? '#fca5a5' : '#86efac',
+                    backgroundColor: newTypeKind === 'expense' ? '#fee2e2' : '#dcfce7',
+                  }}>
+                    <Text style={{
+                      color: newTypeKind === 'expense' ? '#b91c1c' : '#15803d',
+                      fontWeight: '800', fontSize: 13,
+                    }}>
+                      {newTypeKind === 'expense' ? '🧾 Expense type' : '💵 Revenue type'}
+                    </Text>
                   </View>
                   <Text style={{ fontSize: 11, color: '#9ca3af' }}>
                     Income counts toward your earnings; Expense subtracts from profit. This can’t be changed later.
