@@ -197,3 +197,15 @@ def test_feedback_report_rate_limited(db_session):
     feedback.report_limiter.reset()
     assert all(c == 200 for c in codes[:10])
     assert codes[10] == 429
+
+
+def test_demo_script_import_and_missing_password(monkeypatch):
+    """Importing the demo script must not exit; running main() without
+    DEMO_PASSWORD must fail closed."""
+    import importlib
+    monkeypatch.delenv("DEMO_PASSWORD", raising=False)
+    import backend.scripts.create_demo_account as demo
+    demo = importlib.reload(demo)  # re-evaluate module scope without the env var
+    assert demo.DEMO_PASSWORD == ""
+    with pytest.raises(SystemExit):
+        demo.main()

@@ -47,9 +47,8 @@ from backend.models import (  # noqa: E402
 DEMO_EMAIL = os.environ.get("DEMO_EMAIL", "reviewer@earningsninja.app")
 # No in-source default: a predictable reviewer password in the repo would let
 # anyone log into the demo account. The password must come from the environment.
+# Validated in main() — not at import time — so importing helpers never exits.
 DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "")
-if not DEMO_PASSWORD:
-    sys.exit("ERROR: set the DEMO_PASSWORD environment variable (no hardcoded default).")
 
 
 def hash_password(password: str) -> str:
@@ -160,6 +159,8 @@ def seed_demo_data(db, user_id: str) -> dict:
 
 
 def main():
+    if not DEMO_PASSWORD:
+        sys.exit("ERROR: set the DEMO_PASSWORD environment variable (no hardcoded default).")
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
