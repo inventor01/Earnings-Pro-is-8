@@ -1302,6 +1302,9 @@ function DetailsForm({
   // Date & Time, Notes) behind a "See more" toggle so the form stays short on
   // open — the common case is just amount + type/platform (+ miles).
   const [showMore, setShowMore] = useState(false);
+  // Android date picking is a two-step system-dialog flow (date → time);
+  // tracks which dialog is up. iOS ignores this (inline datetime spinner).
+  const [androidPickerStage, setAndroidPickerStage] = useState<'date' | 'time'>('date');
   // Let the guided walkthrough expand/collapse the optional fields.
   useEffect(() => {
     registerAddEntryShowMore(setShowMore);
@@ -1625,12 +1628,12 @@ function DetailsForm({
                   </Text>
                   <Ionicons name={showDatePicker ? 'chevron-up' : 'chevron-down'} size={16} color="#6b7280" />
                 </Pressable>
-                {showDatePicker && (
+                {showDatePicker && Platform.OS === 'ios' && (
                   <View style={{ marginTop: 8, backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden' }}>
                     <DateTimePicker
                       value={entryDate}
                       mode="datetime"
-                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      display="spinner"
                       // Force the iOS spinner to render with black wheel text on
                       // the white modal background. Without these the wheel text
                       // can come out white-on-white when the device is in dark
@@ -1639,12 +1642,48 @@ function DetailsForm({
                       textColor="#000000"
                       accentColor="#000000"
                       onChange={(_, selected) => {
-                        if (Platform.OS === 'android') onToggleDatePicker();
                         if (selected) onChangeDate(selected);
                       }}
                       maximumDate={new Date(Date.now() + 24 * 60 * 60 * 1000)}
                     />
                   </View>
+                )}
+                {/* Android: mode="datetime" is iOS-only and hard-crashes the
+                    native picker, so run a two-step date → time dialog flow.
+                    Each system dialog fires onChange exactly once (set or
+                    dismissed). */}
+                {showDatePicker && Platform.OS === 'android' && androidPickerStage === 'date' && (
+                  <DateTimePicker
+                    value={entryDate}
+                    mode="date"
+                    display="default"
+                    onChange={(event, selected) => {
+                      if (event.type !== 'set' || !selected) {
+                        setAndroidPickerStage('date');
+                        onToggleDatePicker();
+                        return;
+                      }
+                      // Carry the existing time-of-day onto the newly picked day,
+                      // then ask for the time in step 2.
+                      const next = new Date(selected);
+                      next.setHours(entryDate.getHours(), entryDate.getMinutes(), 0, 0);
+                      onChangeDate(next);
+                      setAndroidPickerStage('time');
+                    }}
+                    maximumDate={new Date(Date.now() + 24 * 60 * 60 * 1000)}
+                  />
+                )}
+                {showDatePicker && Platform.OS === 'android' && androidPickerStage === 'time' && (
+                  <DateTimePicker
+                    value={entryDate}
+                    mode="time"
+                    display="default"
+                    onChange={(event, selected) => {
+                      setAndroidPickerStage('date');
+                      onToggleDatePicker();
+                      if (event.type === 'set' && selected) onChangeDate(selected);
+                    }}
+                  />
                 )}
               </View>
 
