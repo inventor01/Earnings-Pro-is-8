@@ -67,17 +67,21 @@ export function DemoPill() {
         paddingHorizontal: 12,
         paddingVertical: 5,
         flexShrink: 1,
+        minWidth: 0,
       }}
     >
       <View
         style={{
           width: 7, height: 7, borderRadius: 4,
           backgroundColor: GREEN ?? '#22c55e', marginRight: 6,
+          flexShrink: 0,
         }}
       />
       <Text
         numberOfLines={1}
-        style={{ color: GREEN ?? '#22c55e', fontWeight: '800', fontSize: 12, letterSpacing: 0.6 }}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+        style={{ flexShrink: 1, minWidth: 0, color: GREEN ?? '#22c55e', fontWeight: '800', fontSize: 12, letterSpacing: 0.6 }}
       >
         DEMO · sample data
       </Text>
@@ -107,27 +111,6 @@ export default function DemoModeChrome() {
     setConvertVisible(false);
     exitDemo();
     router.replace('/login');
-  };
-
-  const onPillPress = () => {
-    Alert.alert(
-      'Demo Mode',
-      'You\u2019re exploring with sample data. Nothing here is saved.',
-      [
-        { text: 'Create Free Account', onPress: leaveDemo },
-        {
-          text: 'Exit Demo',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('Exit Demo?', 'Sample data will be reset.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Exit', style: 'destructive', onPress: leaveDemo },
-            ]);
-          },
-        },
-        { text: 'Keep Exploring', style: 'cancel' },
-      ],
-    );
   };
 
   return (
