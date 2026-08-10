@@ -30,4 +30,6 @@ user must act on Railway (ensure a persistent `DATABASE_URL`, restore from a
 Railway backup, or migrate hosting). Harden `backend/db.py` to fail loudly when
 `DATABASE_URL` is missing rather than silently using ephemeral SQLite.
 
+**Stale NEON_DATABASE_URL secret:** the workspace `NEON_DATABASE_URL` secret points at an OLD Neon DB with an outdated schema (missing `auth_users.referral_code` etc.) — NOT prod. Real prod DB: pull `DATABASE_PUBLIC_URL` from the Railway `Postgres` service variables via GraphQL (the backend's `DATABASE_URL` is `postgres.railway.internal`, unreachable from Replit). Login API body uses `credential`, not `email`.
+
 **Merge ≠ deployed:** task-agent merges land only in the workspace repo; the live Railway backend only updates after a `gitPush` to GitHub. Symptom of forgetting: new client features that depend on a server field (e.g. onboarding flag) flash then fail closed on real devices. Always check `git status -sb` for "ahead" and verify the field on the live URL after merges.
