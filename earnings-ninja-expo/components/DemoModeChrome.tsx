@@ -12,17 +12,82 @@
 import { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/authContext';
 import { useTheme } from '@/lib/theme';
 import {
   subscribeDemo, shouldShowConversionPrompt, markConversionPromptShown,
 } from '@/lib/demoSession';
 
+// Compact tappable "DEMO · sample data" pill. Rendered INLINE in the
+// dashboard header (replacing the wordmark) rather than as a floating
+// overlay — the old top-center overlay sat on top of the header action
+// buttons (search/calendar) and blocked their taps.
+export function DemoPill() {
+  const { exitDemo } = useAuth();
+  const { GREEN, isDark } = useTheme();
+
+  const leaveDemo = () => {
+    exitDemo();
+    router.replace('/login');
+  };
+
+  const onPillPress = () => {
+    Alert.alert(
+      'Demo Mode',
+      'You\u2019re exploring with sample data. Nothing here is saved.',
+      [
+        { text: 'Create Free Account', onPress: leaveDemo },
+        {
+          text: 'Exit Demo',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert('Exit Demo?', 'Sample data will be reset.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Exit', style: 'destructive', onPress: leaveDemo },
+            ]);
+          },
+        },
+        { text: 'Keep Exploring', style: 'cancel' },
+      ],
+    );
+  };
+
+  return (
+    <Pressable
+      onPress={onPillPress}
+      hitSlop={8}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        backgroundColor: isDark ? 'rgba(34,197,94,0.18)' : 'rgba(22,163,74,0.14)',
+        borderColor: GREEN ?? '#22c55e',
+        borderWidth: 1,
+        borderRadius: 999,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        flexShrink: 1,
+      }}
+    >
+      <View
+        style={{
+          width: 7, height: 7, borderRadius: 4,
+          backgroundColor: GREEN ?? '#22c55e', marginRight: 6,
+        }}
+      />
+      <Text
+        numberOfLines={1}
+        style={{ color: GREEN ?? '#22c55e', fontWeight: '800', fontSize: 12, letterSpacing: 0.6 }}
+      >
+        DEMO · sample data
+      </Text>
+    </Pressable>
+  );
+}
+
 export default function DemoModeChrome() {
   const { exitDemo } = useAuth();
-  const { CARD_BG, TEXT, MUTED, GREEN, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
+  const { CARD_BG, TEXT, MUTED, isDark } = useTheme();
   const [convertVisible, setConvertVisible] = useState(false);
 
   // Watch the demo session for the conversion-prompt threshold (first entry
@@ -67,44 +132,8 @@ export default function DemoModeChrome() {
 
   return (
     <>
-      {/* Persistent DEMO pill — top-center, above all screens, never blocks
-          more than its own footprint. */}
-      <View
-        pointerEvents="box-none"
-        style={{
-          position: 'absolute',
-          top: insets.top + 4,
-          left: 0,
-          right: 0,
-          alignItems: 'center',
-        }}
-      >
-        <Pressable
-          onPress={onPillPress}
-          hitSlop={8}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: isDark ? 'rgba(34,197,94,0.18)' : 'rgba(22,163,74,0.14)',
-            borderColor: GREEN ?? '#22c55e',
-            borderWidth: 1,
-            borderRadius: 999,
-            paddingHorizontal: 12,
-            paddingVertical: 5,
-          }}
-        >
-          <View
-            style={{
-              width: 7, height: 7, borderRadius: 4,
-              backgroundColor: GREEN ?? '#22c55e', marginRight: 6,
-            }}
-          />
-          <Text style={{ color: GREEN ?? '#22c55e', fontWeight: '800', fontSize: 12, letterSpacing: 0.6 }}>
-            DEMO · sample data
-          </Text>
-        </Pressable>
-      </View>
-
+      {/* The DEMO pill now lives inline in the dashboard header (see
+          DemoPill export above) so it can't cover the header buttons. */}
       {/* One-time conversion prompt */}
       <Modal visible={convertVisible} transparent animationType="fade" onRequestClose={() => setConvertVisible(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 28 }}>
