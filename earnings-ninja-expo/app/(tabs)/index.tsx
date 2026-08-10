@@ -70,7 +70,6 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isDemoActive } from '@/lib/demoSession';
-import { DemoPill } from '@/components/DemoModeChrome';
 
 // Persists the platform the user most recently logged an ORDER against, so the
 // Add Entry modal can default new orders to it (Expenses still default to OTHER).
@@ -7104,21 +7103,15 @@ export default function DashboardScreen() {
                 style={{ width: 36, height: 36, resizeMode: 'contain' }}
               />
             </Animated.View>
-            {isDemoActive() ? (
-              // Demo session: the wordmark cedes its spot to the DEMO pill so
-              // it never floats over (and blocks) the header action buttons.
-              <DemoPill />
-            ) : (
-              <Text
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-                style={{ flexShrink: 1, fontSize: 18, fontWeight: '900', letterSpacing: 0.3, color: TEXT }}
-              >
-                EARNINGS{' '}
-                <Text style={{ color: PRIMARY_TXT }}>NINJA</Text>
-              </Text>
-            )}
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              style={{ flexShrink: 1, fontSize: 18, fontWeight: '900', letterSpacing: 0.3, color: TEXT }}
+            >
+              EARNINGS{' '}
+              <Text style={{ color: PRIMARY_TXT }}>NINJA</Text>
+            </Text>
           </View>
           {/* Right icon group: fixed-size, never shrinks, always visible. */}
           <View style={{ flexDirection: 'row', gap: 8, flexShrink: 0 }}>
