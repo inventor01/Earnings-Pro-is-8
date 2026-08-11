@@ -198,3 +198,45 @@ uri = "file://artifacts/analytics-variants/exports/screenshot-06.png"
 type = "image"
 title = "App Store screenshot 06 — Hit your INCOME GOALS"
 description = "1284×2778 PNG, ready for App Store Connect (6.5\" display)"
+
+[[outputs]]
+id = "8cYdy_8DIY5vJnjxtfscY"
+uri = "file://attached_assets/play-tablet/tablet-01-real-profit.png"
+type = "image"
+title = "Real profit, not gross pay"
+description = "Play Store tablet screenshot (1536×1536)"
+
+[[outputs]]
+id = "dB7MRsgY9vnFx6fds0tga"
+uri = "file://attached_assets/play-tablet/tablet-02-top-gig-apps.png"
+type = "image"
+title = "See which gig apps pay most"
+description = "Play Store tablet screenshot (1536×1536)"
+
+[[outputs]]
+id = "wUWaePLXuckQnACvl46tV"
+uri = "file://attached_assets/play-tablet/tablet-03-day-by-day.png"
+type = "image"
+title = "Track earnings day by day"
+description = "Play Store tablet screenshot (1536×1536)"
+
+[[outputs]]
+id = "KgyX4WIsKx_HDXlOJZmlc"
+uri = "file://attached_assets/play-tablet/tablet-04-peak-hours.png"
+type = "image"
+title = "Spot peak earning hours"
+description = "Play Store tablet screenshot (1536×1536)"
+
+[[outputs]]
+id = "JClUU_ut2XIBEkhqoHKYJ"
+uri = "file://attached_assets/play-tablet/tablet-05-daily-profit.png"
+type = "image"
+title = "Every day's profit at a glance"
+description = "Play Store tablet screenshot (1536×1536)"
+
+[[outputs]]
+id = "QFmszXyljZIJIyFtXpW1o"
+uri = "file://attached_assets/play-tablet/tablet-06-export-data.png"
+type = "image"
+title = "Your data, your way (CSV export)"
+description = "Play Store tablet screenshot (1536×1536)"
