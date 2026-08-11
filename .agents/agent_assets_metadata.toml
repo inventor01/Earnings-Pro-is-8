@@ -282,3 +282,24 @@ uri = "file://attached_assets/play-tablet-clean/tablet-06-export-data.png"
 type = "image"
 title = "Your data, your way (CSV export)"
 description = "Play Store tablet screenshot — 1920×1080 (16:9)"
+
+[[outputs]]
+id = "ubpeFC3dUADs4gVynwGoZ"
+uri = "file://attached_assets/store-shots-android.zip"
+type = "unspecified"
+title = "Android store screenshots (all 18)"
+description = "Phone 1080×1920 + 7\" and 10\" tablet 1920×1080 sets — 6 scenes each, captured from the real app in demo mode."
+
+[[outputs]]
+id = "JmhVhSV9p1FxnyGoRdxL9"
+uri = "file://attached_assets/store-shots-android/phone/1-dashboard.png"
+type = "image"
+title = "Phone sample — Dashboard"
+description = "1080×1920 phone screenshot, scene 1."
+
+[[outputs]]
+id = "n2E-oQXGGqPfxK3marPyA"
+uri = "file://attached_assets/store-shots-android/tablet10/2-platforms.png"
+type = "image"
+title = "10\" tablet sample — Top platforms"
+description = "1920×1080 tablet screenshot, scene 2."
