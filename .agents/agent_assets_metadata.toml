@@ -240,3 +240,45 @@ uri = "file://attached_assets/play-tablet/tablet-06-export-data.png"
 type = "image"
 title = "Your data, your way (CSV export)"
 description = "Play Store tablet screenshot (1536×1536)"
+
+[[outputs]]
+id = "tAxxgHTOggU-8FLufvjoC"
+uri = "file://attached_assets/play-tablet-clean/tablet-01-real-profit.png"
+type = "image"
+title = "Real profit, not gross pay"
+description = "Play Store tablet screenshot — 1920×1080 (16:9)"
+
+[[outputs]]
+id = "ImF2CRpkS45hkHVBDvNq0"
+uri = "file://attached_assets/play-tablet-clean/tablet-02-top-gig-apps.png"
+type = "image"
+title = "See which gig apps pay most"
+description = "Play Store tablet screenshot — 1920×1080 (16:9)"
+
+[[outputs]]
+id = "i7T_VWFdMu7cl5geTuJiD"
+uri = "file://attached_assets/play-tablet-clean/tablet-03-day-by-day.png"
+type = "image"
+title = "Track earnings day by day"
+description = "Play Store tablet screenshot — 1920×1080 (16:9)"
+
+[[outputs]]
+id = "MVPrf9_mmz8_Vit2v3Ukg"
+uri = "file://attached_assets/play-tablet-clean/tablet-04-peak-hours.png"
+type = "image"
+title = "Spot peak earning hours"
+description = "Play Store tablet screenshot — 1920×1080 (16:9)"
+
+[[outputs]]
+id = "mN88we0gJp3zLlTxZ9ybe"
+uri = "file://attached_assets/play-tablet-clean/tablet-05-daily-profit.png"
+type = "image"
+title = "Every day's profit at a glance"
+description = "Play Store tablet screenshot — 1920×1080 (16:9)"
+
+[[outputs]]
+id = "8LgLn-ic7Rn0XRVMA6qIl"
+uri = "file://attached_assets/play-tablet-clean/tablet-06-export-data.png"
+type = "image"
+title = "Your data, your way (CSV export)"
+description = "Play Store tablet screenshot — 1920×1080 (16:9)"
