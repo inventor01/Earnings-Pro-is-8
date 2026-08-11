@@ -79,6 +79,16 @@ function RootNav() {
 
   useEffect(() => {
     if (isLoading) return;
+    // Screenshot studio (dev + web only) manages its own content; don't let
+    // the auth redirects yank it to /login or /(tabs).
+    if (
+      __DEV__ &&
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      window.location.pathname.replace(/\/+$/, '') === '/screenshot-studio'
+    ) {
+      return;
+    }
     if (isDemo && !token) {
       // Local sandbox demo: no onboarding funnel, no server flags — straight
       // to the dashboard with the seeded sample data.

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, User } from './api';
 import { getToken, setToken as persistToken, clearToken } from './tokenStorage';
@@ -127,6 +128,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // Screenshot-studio iframes (dev + web only, ?ssdemo=1) must NEVER
+    // inherit the developer's real persisted session: skip token bootstrap
+    // entirely and boot straight into the in-memory demo sandbox, so no
+    // authenticated API calls, sync, or real data can ever reach a marketing
+    // capture. Dead code in native/production builds.
+    if (__DEV__ && Platform.OS === 'web' && typeof window !== 'undefined') {
+      try {
+        if (new URLSearchParams(window.location.search).get('ssdemo') === '1') {
+          enterDemo();
+          setIsLoading(false);
+          return;
+        }
+      } catch {
+        // URL APIs unavailable — fall through to the normal bootstrap.
+      }
+    }
     getToken().then(async (t) => {
       if (t) {
         setToken(t);
