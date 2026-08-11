@@ -49,3 +49,4 @@
 - [Once-ever UX flags need server sync](once-ever-flags-server-sync.md) — device-only AsyncStorage "seen" flags die on reinstall; mirror them on auth_users with the guarded-migration grandfather pattern, and late server-true must veto an already auto-opened surface.
 - [Android datetime picker crash](android-datetime-picker-crash.md) — mode="datetime" is iOS-only; Android needs two-step date→time dialogs or it blank-screen crashes.
 - [Audio focus mixWithOthers](audio-focus-mixwithothers.md) — muted expo-video/expo-audio still pause Spotify by default; always set audioMixingMode/interruptionMode mixWithOthers.
+- [Screenshot Studio](screenshot-studio.md) — dev-only /screenshot-studio on expo web frames the REAL app via ?ssdemo=1 iframe; color-scheme/transform/timing iframe gotchas.
