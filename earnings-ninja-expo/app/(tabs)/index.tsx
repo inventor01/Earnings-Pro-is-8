@@ -2228,7 +2228,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     }
     Alert.alert(
       `Hide \u201C${key}\u201D?`,
-      'The category disappears from your selector. Expenses you already logged under it keep it in your history and stats. You can restore it any time from the \u201C+ Add\u201D screen.',
+      `It won\u2019t show when adding entries. Your previous ${key} expenses will still be viewable in the entries list. Restore anytime from \u201C+ Add\u201D.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -2266,7 +2266,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     }
     Alert.alert(
       `Hide \u201C${label}\u201D?`,
-      'The platform disappears from your selector. Entries you already logged under it keep it in your history and stats. You can restore it any time from the \u201C+ Add\u201D screen.',
+      `It won\u2019t show when adding entries. Your previous ${label} entries will still be viewable in the entries list. Restore anytime from \u201C+ Add\u201D.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -2325,7 +2325,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     const label = typeLabel(key as EntryType, key === 'BONUS' ? 'Bonus' : 'Cancellation');
     Alert.alert(
       `Hide \u201C${label}\u201D?`,
-      'The type disappears from your selector. Entries you already logged under it keep it in your history and stats. You can restore it any time from the \u201C+ Add\u201D screen.',
+      `It won\u2019t show when adding entries. Your previous ${label} entries will still be viewable in the entries list. Restore anytime from \u201C+ Add\u201D.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
