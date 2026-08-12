@@ -303,3 +303,10 @@ uri = "file://attached_assets/store-shots-android/tablet10/2-platforms.png"
 type = "image"
 title = "10\" tablet sample — Top platforms"
 description = "1920×1080 tablet screenshot, scene 2."
+
+[[outputs]]
+id = "iOIGyujg7uUmIrU9QHogS"
+uri = "file://android-screenshots.zip"
+type = "unspecified"
+title = "Android screenshots (download)"
+description = "phone/ (1080×1920), tablet7/ and tablet10/ (1920×1080) — 6 shots each, ready for Play Console."
