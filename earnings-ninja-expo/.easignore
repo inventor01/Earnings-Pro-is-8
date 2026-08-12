@@ -1,0 +1,4 @@
+# Exclude locally-generated and build artifacts from EAS archive
+dist/
+android/
+ios/
