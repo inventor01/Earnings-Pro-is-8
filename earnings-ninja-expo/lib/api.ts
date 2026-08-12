@@ -988,6 +988,44 @@ const realApi = {
     return res.json();
   },
 
+  // Hidden BUILT-IN platform keys (wholesale replace, idempotent).
+  async getHiddenPlatforms(): Promise<string[]> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/platforms/hidden`, { headers });
+    if (!res.ok) throw new Error('Failed to fetch hidden platforms');
+    return res.json();
+  },
+
+  async setHiddenPlatforms(keys: string[]): Promise<string[]> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/platforms/hidden`, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keys }),
+    });
+    if (!res.ok) await api._throwApiError(res, 'Failed to update hidden platforms');
+    return res.json();
+  },
+
+  // Hidden BUILT-IN type-pill keys (wholesale replace, idempotent).
+  async getHiddenEntryTypes(): Promise<string[]> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/entry-types/hidden`, { headers });
+    if (!res.ok) throw new Error('Failed to fetch hidden types');
+    return res.json();
+  },
+
+  async setHiddenEntryTypes(keys: string[]): Promise<string[]> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/entry-types/hidden`, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keys }),
+    });
+    if (!res.ok) await api._throwApiError(res, 'Failed to update hidden types');
+    return res.json();
+  },
+
   // Raw DELETE — no offline queue. Used by the mutation-queue drainer so it
   // can't recurse. ALWAYS throws on failure (network or non-2xx); the thrown
   // Error carries `.status` (including 404) so the drainer can classify a

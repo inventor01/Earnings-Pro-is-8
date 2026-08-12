@@ -27,6 +27,7 @@ import {
   demoGetEntryTypes, demoAddEntryType, demoRenameEntryType, demoDeleteEntryType,
   demoGetExpenseCats, demoAddExpenseCat, demoRenameExpenseCat, demoDeleteExpenseCat,
   demoGetHiddenCats, demoSetHiddenCats, demoGetLabelOverrides, demoSetLabelOverride,
+  demoGetHiddenPlatforms, demoSetHiddenPlatforms, demoGetHiddenTypes, demoSetHiddenTypes,
 } from './demoStore';
 
 function notInDemo(action: string): never {
@@ -155,6 +156,11 @@ export const demoApi = {
 
   async getHiddenExpenseCategories(): Promise<string[]> { return demoGetHiddenCats(); },
   async setHiddenExpenseCategories(keys: string[]): Promise<string[]> { return demoSetHiddenCats(keys); },
+
+  async getHiddenPlatforms(): Promise<string[]> { return demoGetHiddenPlatforms(); },
+  async setHiddenPlatforms(keys: string[]): Promise<string[]> { return demoSetHiddenPlatforms(keys); },
+  async getHiddenEntryTypes(): Promise<string[]> { return demoGetHiddenTypes(); },
+  async setHiddenEntryTypes(keys: string[]): Promise<string[]> { return demoSetHiddenTypes(keys); },
 
   async getLabelOverrides(): Promise<LabelOverride[]> { return demoGetLabelOverrides(); },
   async setLabelOverride(kind: 'platform' | 'type', key: string, label: string | null): Promise<LabelOverride[]> {

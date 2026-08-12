@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from backend.db import get_db
-from backend.models import AuthUser, UserPlatform, Entry, UserLabelOverride
-from backend.schemas import PlatformCreate, PlatformResponse, LabelOverrideSet, LabelOverrideResponse
+from backend.models import AuthUser, UserPlatform, Entry, UserLabelOverride, UserHiddenBuiltin, AppType
+from backend.schemas import PlatformCreate, PlatformResponse, LabelOverrideSet, LabelOverrideResponse, HiddenBuiltinsSet
 from backend.auth import get_current_user
 from typing import List
 
@@ -39,6 +39,64 @@ async def list_platforms(db: Session = Depends(get_db), current_user: AuthUser =
         .order_by(UserPlatform.created_at.asc(), UserPlatform.id.asc())
         .all()
     )
+
+
+# ── Hidden BUILT-IN platforms (cosmetic, per-user) ──────────────────────────
+# Same design as hidden expense categories: hiding only removes the selector
+# pill; entries already logged under a hidden platform are untouched.
+
+HIDDEN_PLATFORM_KIND = "platform"
+BUILTIN_PLATFORM_KEYS = {a.value for a in AppType}
+
+
+@router.get("/platforms/hidden", response_model=List[str])
+async def list_hidden_builtin_platforms(db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
+    rows = (
+        db.query(UserHiddenBuiltin)
+        .filter(UserHiddenBuiltin.user_id == current_user.id, UserHiddenBuiltin.kind == HIDDEN_PLATFORM_KIND)
+        .order_by(UserHiddenBuiltin.id.asc())
+        .all()
+    )
+    return [r.key for r in rows]
+
+
+@router.put("/platforms/hidden", response_model=List[str])
+async def set_hidden_builtin_platforms(
+    payload: HiddenBuiltinsSet,
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
+    """Replace the hidden-builtins set wholesale (idempotent)."""
+    keys = []
+    seen = set()
+    for k in payload.keys:
+        k = (k or "").strip().upper()
+        if not k or k in seen:
+            continue
+        if k not in BUILTIN_PLATFORM_KEYS:
+            raise HTTPException(status_code=422, detail=f"Unknown platform key: {k}")
+        seen.add(k)
+        keys.append(k)
+    # Never allow every built-in to be hidden while the user has no custom
+    # platforms — the Platform row would be empty and revenue entries
+    # unloggable. The client also guards this; the server is the backstop.
+    if len(keys) >= len(BUILTIN_PLATFORM_KEYS):
+        has_custom = db.query(UserPlatform).filter(UserPlatform.user_id == current_user.id).first() is not None
+        if not has_custom:
+            raise HTTPException(status_code=400, detail="At least one platform must stay visible.")
+
+    db.query(UserHiddenBuiltin).filter(
+        UserHiddenBuiltin.user_id == current_user.id,
+        UserHiddenBuiltin.kind == HIDDEN_PLATFORM_KIND,
+    ).delete(synchronize_session=False)
+    for k in keys:
+        db.add(UserHiddenBuiltin(user_id=current_user.id, kind=HIDDEN_PLATFORM_KIND, key=k))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Could not update hidden platforms. Try again.")
+    return keys
 
 
 @router.post("/platforms", response_model=PlatformResponse, status_code=201)

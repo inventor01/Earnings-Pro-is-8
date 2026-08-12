@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from backend.db import get_db
-from backend.models import AuthUser, UserEntryType, Entry
-from backend.schemas import EntryTypeCreate, EntryTypeResponse
+from backend.models import AuthUser, UserEntryType, Entry, UserHiddenBuiltin
+from backend.schemas import EntryTypeCreate, EntryTypeResponse, HiddenBuiltinsSet
 from backend.auth import get_current_user
 from typing import List
 
@@ -34,6 +34,59 @@ async def list_entry_types(db: Session = Depends(get_db), current_user: AuthUser
         .order_by(UserEntryType.created_at.asc(), UserEntryType.id.asc())
         .all()
     )
+
+
+# ── Hidden BUILT-IN type pills (cosmetic, per-user) ─────────────────────────
+# Same design as hidden expense categories: hiding only removes the selector
+# pill; entries already logged under a hidden type are untouched. EXPENSE is
+# NOT hideable — it anchors the Expense mode of the entry form; ORDER is NOT
+# hideable — it anchors the Revenue mode and is the default selection.
+
+HIDDEN_TYPE_KIND = "entry_type"
+HIDEABLE_TYPE_KEYS = {"BONUS", "CANCELLATION"}
+
+
+@router.get("/entry-types/hidden", response_model=List[str])
+async def list_hidden_builtin_types(db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
+    rows = (
+        db.query(UserHiddenBuiltin)
+        .filter(UserHiddenBuiltin.user_id == current_user.id, UserHiddenBuiltin.kind == HIDDEN_TYPE_KIND)
+        .order_by(UserHiddenBuiltin.id.asc())
+        .all()
+    )
+    return [r.key for r in rows]
+
+
+@router.put("/entry-types/hidden", response_model=List[str])
+async def set_hidden_builtin_types(
+    payload: HiddenBuiltinsSet,
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
+    """Replace the hidden-builtins set wholesale (idempotent)."""
+    keys = []
+    seen = set()
+    for k in payload.keys:
+        k = (k or "").strip().upper()
+        if not k or k in seen:
+            continue
+        if k not in HIDEABLE_TYPE_KEYS:
+            raise HTTPException(status_code=422, detail=f"Type {k} cannot be hidden.")
+        seen.add(k)
+        keys.append(k)
+
+    db.query(UserHiddenBuiltin).filter(
+        UserHiddenBuiltin.user_id == current_user.id,
+        UserHiddenBuiltin.kind == HIDDEN_TYPE_KIND,
+    ).delete(synchronize_session=False)
+    for k in keys:
+        db.add(UserHiddenBuiltin(user_id=current_user.id, kind=HIDDEN_TYPE_KIND, key=k))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Could not update hidden types. Try again.")
+    return keys
 
 
 @router.post("/entry-types", response_model=EntryTypeResponse, status_code=201)

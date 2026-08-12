@@ -57,6 +57,8 @@ import {
   customCatKey, isCustomCatKey, customCatNameFromKey, entryCategoryLabel,
   readExpenseCatsMirror, writeExpenseCatsMirror, findDuplicateExpenseCat,
   readHiddenCatsMirror, writeHiddenCatsMirror,
+  readHiddenPlatformsMirror, writeHiddenPlatformsMirror,
+  readHiddenTypesMirror, writeHiddenTypesMirror,
 } from '@/lib/platforms';
 import { widgetSync } from '@/lib/widgetSync';
 import { exportEntriesCsv, easternDateTime } from '@/lib/csvExport';
@@ -1859,6 +1861,39 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     return () => { cancelled = true; };
   }, []);
   const hiddenCats = hiddenCatsQuery.data ?? mirrorHiddenCats;
+  // Hidden BUILT-IN platform / type pills — same query + mirror pattern.
+  const hiddenPlatformsQuery = useQuery({
+    queryKey: ['hiddenPlatforms'],
+    queryFn: async () => {
+      const list = await api.getHiddenPlatforms();
+      writeHiddenPlatformsMirror(list).catch(() => {});
+      return list;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const [mirrorHiddenPlatforms, setMirrorHiddenPlatforms] = useState<string[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    readHiddenPlatformsMirror().then(list => { if (!cancelled) setMirrorHiddenPlatforms(list); });
+    return () => { cancelled = true; };
+  }, []);
+  const hiddenPlatforms = hiddenPlatformsQuery.data ?? mirrorHiddenPlatforms;
+  const hiddenTypesQuery = useQuery({
+    queryKey: ['hiddenEntryTypes'],
+    queryFn: async () => {
+      const list = await api.getHiddenEntryTypes();
+      writeHiddenTypesMirror(list).catch(() => {});
+      return list;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const [mirrorHiddenTypes, setMirrorHiddenTypes] = useState<string[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    readHiddenTypesMirror().then(list => { if (!cancelled) setMirrorHiddenTypes(list); });
+    return () => { cancelled = true; };
+  }, []);
+  const hiddenTypes = hiddenTypesQuery.data ?? mirrorHiddenTypes;
   // The BASE EntryType behind the current selection. Custom income types
   // behave like BONUS; custom expense types like EXPENSE. Falls back to the
   // edited row's stored base type when the custom type was deleted meanwhile.
@@ -1894,7 +1929,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const labelOverrides = labelsQuery.data ?? mirrorLabels;
   useEffect(() => { applyLabelOverrides(labelOverrides); }, [labelOverrides]);
   const platformOptions = useMemo(() => ([
-    ...APPS.map(a => ({ key: a.key as string, label: platformLabel(a.key), color: a.color })),
+    // Hidden built-ins stay visible while they're the current selection (e.g.
+    // editing an old entry logged under a since-hidden platform).
+    ...APPS.filter(a => !hiddenPlatforms.includes(a.key) || a.key === app)
+      .map(a => ({ key: a.key as string, label: platformLabel(a.key), color: a.color })),
     ...customPlatforms.map(p => ({
       key: customKey(p.name),
       label: p.icon ? `${p.icon} ${p.name}` : p.name,
@@ -1902,7 +1940,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       // memo recomputes deterministically from its own deps.
       color: p.color || colorForCustomName(p.name),
     })),
-  ]), [customPlatforms, labelOverrides]);
+  ]), [customPlatforms, labelOverrides, hiddenPlatforms, app]);
   // Type pills are split into the two financial contexts so the form only
   // ever shows options relevant to the active mode (Revenue vs Expense).
   // Custom income types live with the revenue built-ins; custom expense
@@ -1910,10 +1948,14 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // custom type that no longer exists (deleted while editing an old entry),
   // a synthetic pill keeps it visible/selected until the user changes it.
   const typeOptions = useMemo(() => {
+    // Hidden built-ins stay visible while they're the current selection (e.g.
+    // editing an old entry logged under a since-hidden type). ORDER is never
+    // hideable (it anchors Revenue mode); EXPENSE anchors Expense mode.
     const revenue = [
       { key: 'ORDER' as string,        label: typeLabel('ORDER', 'Order') },
-      { key: 'BONUS' as string,        label: typeLabel('BONUS', 'Bonus') },
-      { key: 'CANCELLATION' as string, label: typeLabel('CANCELLATION', 'Cancellation') },
+      ...(['BONUS', 'CANCELLATION'] as const)
+        .filter(k => !hiddenTypes.includes(k) || k === entryType)
+        .map(k => ({ key: k as string, label: typeLabel(k, k === 'BONUS' ? 'Bonus' : 'Cancellation') })),
       ...customEntryTypes.filter(t => t.kind !== 'expense').map(t => ({
         key: customTypeKey(t.name),
         label: t.icon ? `${t.icon} ${t.name}` : t.name,
@@ -1931,7 +1973,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       active.push({ key: entryType, label: customTypeNameFromKey(entryType) });
     }
     return active;
-  }, [labelOverrides, customEntryTypes, effectiveEntryType, entryType]);
+  }, [labelOverrides, customEntryTypes, effectiveEntryType, entryType, hiddenTypes]);
   // Revenue ↔ Expense mode switch: reset to the mode's default type and clear
   // any state that only makes sense in the other mode, so no stale platform /
   // category / miles ride along on the saved entry or linger in the UI.
@@ -2211,6 +2253,122 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
         },
       ],
     );
+  };
+
+  // Hide a BUILT-IN platform pill (cosmetic — entries untouched). Offered
+  // from the built-in rename modal; blocked when it's the last visible pill.
+  const hideBuiltinPlatform = (key: string) => {
+    const label = platformLabel(key);
+    const visibleCount = APPS.filter(a => !hiddenPlatforms.includes(a.key)).length + customPlatforms.length;
+    if (visibleCount <= 1) {
+      Alert.alert('Can\u2019t hide', 'At least one platform must stay visible.');
+      return;
+    }
+    Alert.alert(
+      `Hide \u201C${label}\u201D?`,
+      'The platform disappears from your selector. Entries you already logged under it keep it in your history and stats. You can restore it any time from the \u201C+ Add\u201D screen.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Hide',
+          style: 'destructive',
+          onPress: async () => {
+            const next = Array.from(new Set([...hiddenPlatforms, key]));
+            try {
+              const list = await api.setHiddenPlatforms(next);
+              queryClient.setQueryData<string[]>(['hiddenPlatforms'], list);
+              writeHiddenPlatformsMirror(list).catch(() => {});
+              setMirrorHiddenPlatforms(list);
+              // Only reset the selection for a NEW-entry draft. When editing
+              // a historical entry, keep its (now hidden) platform selected —
+              // the options filter keeps it visible — so saving unrelated
+              // changes never silently rewrites the stored platform.
+              if (app === key && !editing) {
+                const remaining = APPS.filter(a => !list.includes(a.key));
+                setApp(remaining[0]?.key ?? (customPlatforms[0] ? customKey(customPlatforms[0].name) : 'OTHER'));
+              }
+              setAddPlatformVisible(false);
+              setEditingLabel(null);
+              hTap();
+            } catch (e: any) {
+              Alert.alert('Error', e?.message || 'Failed to hide platform. Check your connection and try again.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // Restore a hidden built-in platform (from the add-platform prompt).
+  // Guarded by the shared busy flag: the PUT is a whole-set replace, so two
+  // in-flight restores computed from the same stale array would race
+  // (last-writer-wins, one pill stays hidden).
+  const restoreHiddenPlatform = async (key: string) => {
+    if (addPlatformBusy) return;
+    setAddPlatformBusy(true);
+    try {
+      const list = await api.setHiddenPlatforms(hiddenPlatforms.filter(k => k !== key));
+      queryClient.setQueryData<string[]>(['hiddenPlatforms'], list);
+      writeHiddenPlatformsMirror(list).catch(() => {});
+      setMirrorHiddenPlatforms(list);
+      hTap();
+    } catch (e: any) {
+      setAddPlatformError(e?.message || 'Failed to restore platform. Check your connection and try again.');
+    } finally {
+      setAddPlatformBusy(false);
+    }
+  };
+
+  // Hide a BUILT-IN type pill (BONUS / CANCELLATION only — ORDER anchors
+  // Revenue mode and EXPENSE anchors Expense mode, so they never hide).
+  const hideBuiltinType = (key: string) => {
+    const label = typeLabel(key as EntryType, key === 'BONUS' ? 'Bonus' : 'Cancellation');
+    Alert.alert(
+      `Hide \u201C${label}\u201D?`,
+      'The type disappears from your selector. Entries you already logged under it keep it in your history and stats. You can restore it any time from the \u201C+ Add\u201D screen.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Hide',
+          style: 'destructive',
+          onPress: async () => {
+            const next = Array.from(new Set([...hiddenTypes, key]));
+            try {
+              const list = await api.setHiddenEntryTypes(next);
+              queryClient.setQueryData<string[]>(['hiddenEntryTypes'], list);
+              writeHiddenTypesMirror(list).catch(() => {});
+              setMirrorHiddenTypes(list);
+              // Same edit-safety rule as platforms: never rewrite the type on
+              // a historical entry being edited.
+              if (entryType === key && !editing) setEntryType('ORDER');
+              setAddPlatformVisible(false);
+              setEditingLabel(null);
+              hTap();
+            } catch (e: any) {
+              Alert.alert('Error', e?.message || 'Failed to hide type. Check your connection and try again.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // Restore a hidden built-in type (from the add-type prompt). Same busy
+  // guard as restoreHiddenPlatform — the PUT is a whole-set replace.
+  const restoreHiddenType = async (key: string) => {
+    if (addPlatformBusy) return;
+    setAddPlatformBusy(true);
+    try {
+      const list = await api.setHiddenEntryTypes(hiddenTypes.filter(k => k !== key));
+      queryClient.setQueryData<string[]>(['hiddenEntryTypes'], list);
+      writeHiddenTypesMirror(list).catch(() => {});
+      setMirrorHiddenTypes(list);
+      hTap();
+    } catch (e: any) {
+      setAddPlatformError(e?.message || 'Failed to restore type. Check your connection and try again.');
+    } finally {
+      setAddPlatformBusy(false);
+    }
   };
 
   // Restore a hidden built-in category (from the add-category prompt).
@@ -3664,6 +3822,19 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   </Text>
                 </Pressable>
               ) : null}
+              {editingLabel && (editingLabel.kind === 'platform' || editingLabel.key === 'BONUS' || editingLabel.key === 'CANCELLATION') ? (
+                <Pressable
+                  onPress={() => (editingLabel.kind === 'platform' ? hideBuiltinPlatform(editingLabel.key) : hideBuiltinType(editingLabel.key))}
+                  disabled={addPlatformBusy}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Hide ${editingLabel.defaultLabel}`}
+                  style={({ pressed }) => ({ alignItems: 'center', paddingVertical: 8, opacity: pressed ? 0.7 : 1 })}
+                >
+                  <Text style={{ color: '#ef4444', fontWeight: '700', fontSize: 13 }}>
+                    {editingLabel.kind === 'platform' ? 'Hide this platform' : 'Hide this type'}
+                  </Text>
+                </Pressable>
+              ) : null}
               {renamingPlatform ? (
                 <Pressable
                   onPress={submitDeletePlatform}
@@ -3689,6 +3860,62 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                     Delete this category
                   </Text>
                 </Pressable>
+              ) : null}
+              {/* Add-platform mode (the fallback branch of the shared modal):
+                  offer restore chips for hidden built-in platforms. */}
+              {!editingLabel && !renamingPlatform && !renamingEntryType && !addingEntryType && !renamingCategory && !addingCategory && hiddenPlatforms.length > 0 ? (
+                <View style={{ gap: 6 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#6b7280' }}>
+                    Hidden built-in platforms — tap to restore
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {hiddenPlatforms.map((k) => (
+                      <Pressable
+                        key={k}
+                        onPress={() => restoreHiddenPlatform(k)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Restore platform ${platformLabel(k)}`}
+                        style={({ pressed }) => ({
+                          paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+                          borderWidth: 1, borderColor: '#d1d5db', backgroundColor: '#f9fafb',
+                          opacity: pressed ? 0.7 : 1,
+                        })}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#374151' }}>
+                          {platformLabel(k)} ↩︎
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+              {/* Add-type mode: restore chips for hidden built-in types
+                  (revenue only — the Expense pill is never hideable). */}
+              {addingEntryType && newTypeKind !== 'expense' && hiddenTypes.length > 0 ? (
+                <View style={{ gap: 6 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#6b7280' }}>
+                    Hidden built-in types — tap to restore
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {hiddenTypes.map((k) => (
+                      <Pressable
+                        key={k}
+                        onPress={() => restoreHiddenType(k)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Restore type ${typeLabel(k as EntryType, k)}`}
+                        style={({ pressed }) => ({
+                          paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+                          borderWidth: 1, borderColor: '#d1d5db', backgroundColor: '#f9fafb',
+                          opacity: pressed ? 0.7 : 1,
+                        })}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#374151' }}>
+                          {typeLabel(k as EntryType, k === 'BONUS' ? 'Bonus' : 'Cancellation')} ↩︎
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
               ) : null}
               {addingCategory && hiddenCats.length > 0 ? (
                 <View style={{ gap: 6 }}>

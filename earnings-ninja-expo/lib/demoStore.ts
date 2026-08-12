@@ -29,6 +29,8 @@ interface DemoState {
   entryTypes: UserEntryType[];
   expenseCats: UserExpenseCategory[];
   hiddenCatKeys: string[];
+  hiddenPlatformKeys: string[];
+  hiddenTypeKeys: string[];
   labelOverrides: LabelOverride[];
   nextMetaId: number;
 }
@@ -236,6 +238,8 @@ function buildSeed(): DemoState {
     entryTypes: [],
     expenseCats: [],
     hiddenCatKeys: [],
+    hiddenPlatformKeys: [],
+    hiddenTypeKeys: [],
     labelOverrides: [],
     nextMetaId: 10,
   };
@@ -542,6 +546,20 @@ export function demoGetHiddenCats(): string[] { return [...s().hiddenCatKeys]; }
 
 export function demoSetHiddenCats(keys: string[]): string[] {
   s().hiddenCatKeys = [...keys];
+  return [...keys];
+}
+
+export function demoGetHiddenPlatforms(): string[] { return [...s().hiddenPlatformKeys]; }
+
+export function demoSetHiddenPlatforms(keys: string[]): string[] {
+  s().hiddenPlatformKeys = [...keys];
+  return [...keys];
+}
+
+export function demoGetHiddenTypes(): string[] { return [...s().hiddenTypeKeys]; }
+
+export function demoSetHiddenTypes(keys: string[]): string[] {
+  s().hiddenTypeKeys = [...keys];
   return [...keys];
 }
 

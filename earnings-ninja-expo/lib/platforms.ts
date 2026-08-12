@@ -377,6 +377,47 @@ export async function clearHiddenCatsMirror(): Promise<void> {
   try { await AsyncStorage.removeItem(HIDDEN_CATS_MIRROR_KEY); } catch {}
 }
 
+// Hidden BUILT-IN platform / type pills — same mirror pattern as categories.
+const HIDDEN_PLATFORMS_MIRROR_KEY = 'hiddenPlatformsMirror.v1';
+const HIDDEN_TYPES_MIRROR_KEY = 'hiddenEntryTypesMirror.v1';
+
+async function readStringListMirror(key: string): Promise<string[]> {
+  try {
+    const raw = await AsyncStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((k: any) => typeof k === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function readHiddenPlatformsMirror(): Promise<string[]> {
+  return readStringListMirror(HIDDEN_PLATFORMS_MIRROR_KEY);
+}
+
+export async function writeHiddenPlatformsMirror(keys: string[]): Promise<void> {
+  if (isDemoActive()) return;
+  try { await AsyncStorage.setItem(HIDDEN_PLATFORMS_MIRROR_KEY, JSON.stringify(keys)); } catch {}
+}
+
+export async function clearHiddenPlatformsMirror(): Promise<void> {
+  try { await AsyncStorage.removeItem(HIDDEN_PLATFORMS_MIRROR_KEY); } catch {}
+}
+
+export async function readHiddenTypesMirror(): Promise<string[]> {
+  return readStringListMirror(HIDDEN_TYPES_MIRROR_KEY);
+}
+
+export async function writeHiddenTypesMirror(keys: string[]): Promise<void> {
+  if (isDemoActive()) return;
+  try { await AsyncStorage.setItem(HIDDEN_TYPES_MIRROR_KEY, JSON.stringify(keys)); } catch {}
+}
+
+export async function clearHiddenTypesMirror(): Promise<void> {
+  try { await AsyncStorage.removeItem(HIDDEN_TYPES_MIRROR_KEY); } catch {}
+}
+
 const BUILTIN_CAT_NAMES = new Set<string>([
   'gas', 'parking', 'tolls', 'maintenance', 'phone', 'subscription', 'food', 'leisure', 'charity', 'other',
 ]);

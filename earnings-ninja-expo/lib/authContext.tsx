@@ -11,6 +11,7 @@ import { clearPersistedCache } from './queryPersist';
 import {
   clearPlatformsMirror, clearLabelsMirror, clearEntryTypesMirror,
   clearExpenseCatsMirror, clearHiddenCatsMirror,
+  clearHiddenPlatformsMirror, clearHiddenTypesMirror,
 } from './platforms';
 import { refreshPendingCount } from './pendingCount';
 import { DEMO_USER, enterDemoSession, exitDemoSession, isDemoActive } from './demoSession';
@@ -37,6 +38,8 @@ async function clearAllLocalData(): Promise<void> {
     clearEntryTypesMirror(),
     clearExpenseCatsMirror(),
     clearHiddenCatsMirror(),
+    clearHiddenPlatformsMirror(),
+    clearHiddenTypesMirror(),
   ]);
   await refreshPendingCount();
 }

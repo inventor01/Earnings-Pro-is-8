@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
 import { api } from '@/lib/api';
+import { PasswordInput } from '@/components/PasswordInput';
 
 // Settings row for opt-in email two-factor auth. Self-contained: fetches its own
 // status, and drives the enable (emailed-code confirm) and disable (password)
@@ -242,17 +243,12 @@ export function TwoFactorRow() {
             <Text style={{ color: MUTED, fontSize: 13, marginBottom: 16, lineHeight: 18 }}>
               Enter your password to confirm. Leave blank if you sign in with Apple.
             </Text>
-            <TextInput
+            <PasswordInput
               value={pw}
               onChangeText={setPw}
-              placeholder="••••••••"
-              placeholderTextColor={MUTED}
-              secureTextEntry
               editable={!pwBusy}
-              style={{
-                backgroundColor: CARD_BG, borderWidth: 1, borderColor: BORDER, borderRadius: 12,
-                paddingHorizontal: 14, paddingVertical: 12, color: TEXT, fontSize: 16, marginBottom: 12,
-              }}
+              containerStyle={{ marginBottom: 12 }}
+              style={{ paddingVertical: 12 }}
             />
             {pwErr ? (
               <View style={{ backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: '#ef4444', borderRadius: 10, padding: 10, marginBottom: 12 }}>

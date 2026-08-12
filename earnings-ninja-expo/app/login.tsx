@@ -11,6 +11,7 @@ import { useTheme } from '@/lib/theme';
 import { getPendingReferral, clearPendingReferral } from '@/lib/pendingReferral';
 import { setFreshSignupFlag } from '@/lib/onboarding';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { PasswordInput } from '@/components/PasswordInput';
 
 export default function LoginScreen() {
   const t = useTheme();
@@ -201,7 +202,10 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: BG }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      // 'padding' on BOTH platforms: with Android edge-to-edge (SDK 54 default)
+      // the window no longer resizes for the keyboard, so without this the
+      // keyboard covers the password field on the login/signup form.
+      behavior="padding"
     >
       <ScrollView
         contentContainerStyle={{
@@ -371,22 +375,11 @@ export default function LoginScreen() {
 
           <View style={{ marginBottom: 6 }}>
             <Text style={{ color: MUTED, fontSize: 12, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Password</Text>
-            <TextInput
+            <PasswordInput
               value={password}
               onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor={MUTED}
-              secureTextEntry
-              style={{
-                backgroundColor: INPUT_BG,
-                borderWidth: 1,
-                borderColor: BORDER,
-                borderRadius: 12,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                color: TEXT,
-                fontSize: 16,
-              }}
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit}
             />
           </View>
 
