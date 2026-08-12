@@ -78,6 +78,13 @@
         "releaseStatus": "completed"
       }
     },
+    "play-closed": {
+      "android": {
+        "serviceAccountKeyPath": "credentials/google-play-service-account.json",
+        "track": "alpha",
+        "releaseStatus": "completed"
+      }
+    },
     "testflight": {
       "ios": {
         "appleTeamId": "77827G7735",
