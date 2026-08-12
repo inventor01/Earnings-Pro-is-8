@@ -54,14 +54,21 @@ const channelReady: Promise<unknown> = Platform.OS === 'android'
 
 // Foreground display behaviour. Without a handler iOS suppresses banners while
 // the app is in the foreground; we want the driver to see the nudge regardless.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
+// Wrapped so a native module init failure here (this runs at module import,
+// i.e. during app startup) degrades to "no foreground banners" instead of
+// crashing the launch.
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+} catch (e) {
+  if (__DEV__) console.warn('[notifications] setNotificationHandler failed:', e);
+}
 
 export async function getNotifEnabled(): Promise<boolean> {
   try {

@@ -493,11 +493,28 @@ export default function RootLayout() {
   const [showIntro, setShowIntro] = useState(false);
   useEffect(() => {
     (async () => {
-      if (Platform.OS !== 'web' && (await getIntroEnabled())) setShowIntro(true);
-      await hydrateQueryClient(queryClient);
-      startPersisting(queryClient);
-      initConnectivity(`${API_BASE}/api/health`);
-      await refreshPendingCount();
+      // Startup safety net: none of these steps is allowed to take the app
+      // down. Each is best-effort — a failed hydrate just means an empty
+      // cache, a failed intro check just skips the intro — and setHydrated
+      // ALWAYS runs so the app can never be stranded on the splash screen by
+      // an unhandled rejection here.
+      try {
+        if (Platform.OS !== 'web' && (await getIntroEnabled())) setShowIntro(true);
+      } catch (e) {
+        if (__DEV__) console.warn('[startup] intro preference check failed:', e);
+      }
+      try {
+        await hydrateQueryClient(queryClient);
+        startPersisting(queryClient);
+      } catch (e) {
+        if (__DEV__) console.warn('[startup] cache hydration failed:', e);
+      }
+      try {
+        initConnectivity(`${API_BASE}/api/health`);
+        await refreshPendingCount();
+      } catch (e) {
+        if (__DEV__) console.warn('[startup] connectivity/queue init failed:', e);
+      }
       setHydrated(true);
     })();
   }, []);
