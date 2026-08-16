@@ -3,6 +3,9 @@
 ## Overview
 This project is a mobile-first application for delivery drivers ("Earnings Ninja"). It helps drivers track earnings, expenses, mileage, and profit across multiple gig platforms (DoorDash, UberEats, Instacart, GrubHub), with real-time financial insights, AI-powered earning suggestions, and a "Car Dashboard Aesthetic" UI with neon-glowing KPIs. Components: Expo iOS app (`earnings-ninja-expo/`, the primary product, in App Store review), FastAPI backend (`backend/`, production on Railway), React web app (`frontend/`), and marketing landing site (`landing/`).
 
+## Feature work checklist (READ FIRST)
+Before building any feature, run through `FEATURE_CHECKLIST.md` at the repo root — it captures the project's hard-won guardrails (day-bucketing timezone contract, optimistic/offline rules, demo-mode guards, RN gotchas, shipping + verification steps). Every feature must pass its applicable items.
+
 ## User Preferences
 - Mobile-first design is priority #1
 - Clean, Shopify-like aesthetic with Tailwind CSS
