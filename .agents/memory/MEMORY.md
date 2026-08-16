@@ -50,4 +50,5 @@
 - [Android datetime picker crash](android-datetime-picker-crash.md) — mode="datetime" is iOS-only; Android needs two-step date→time dialogs or it blank-screen crashes.
 - [Audio focus mixWithOthers](audio-focus-mixwithothers.md) — muted expo-video/expo-audio still pause Spotify by default; always set audioMixingMode/interruptionMode mixWithOthers.
 - [Entry-delete tombstones](entry-delete-tombstones.md) — deleted ids need a short-TTL tombstone filtered BEFORE mirror writes and offline reads, or racing GETs resurrect the row.
+- [Secure-entry toggle resync](secure-entry-toggle-resync.md) — the show/hide password wipe fix must run in a useEffect after the secureTextEntry commit; rAF-from-handler races and no-ops, text-diff heuristics unsound.
 - [Screenshot Studio](screenshot-studio.md) — dev-only /screenshot-studio on expo web frames the REAL app via ?ssdemo=1 iframe; color-scheme/transform/timing iframe gotchas.
