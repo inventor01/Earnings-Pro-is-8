@@ -22,6 +22,7 @@ export const modules: ModuleMap = {
   "./components/mockups/appstore/Screenshot04.tsx": () => import("../components/mockups/appstore/Screenshot04.tsx"),
   "./components/mockups/appstore/Screenshot05.tsx": () => import("../components/mockups/appstore/Screenshot05.tsx"),
   "./components/mockups/appstore/Screenshot06.tsx": () => import("../components/mockups/appstore/Screenshot06.tsx"),
+  "./components/mockups/header/HeaderRedesign.tsx": () => import("../components/mockups/header/HeaderRedesign.tsx"),
   "./components/mockups/onboarding/BlurredPreview.tsx": () => import("../components/mockups/onboarding/BlurredPreview.tsx"),
   "./components/mockups/onboarding/BuildingDashboard.tsx": () => import("../components/mockups/onboarding/BuildingDashboard.tsx"),
   "./components/mockups/onboarding/Challenge.tsx": () => import("../components/mockups/onboarding/Challenge.tsx"),
@@ -29,6 +30,5 @@ export const modules: ModuleMap = {
   "./components/mockups/onboarding/Paywall.tsx": () => import("../components/mockups/onboarding/Paywall.tsx"),
   "./components/mockups/onboarding/Solution.tsx": () => import("../components/mockups/onboarding/Solution.tsx"),
   "./components/mockups/onboarding/WeeklyGoal.tsx": () => import("../components/mockups/onboarding/WeeklyGoal.tsx"),
-  "./components/mockups/onboarding/Welcome.tsx": () => import("../components/mockups/onboarding/Welcome.tsx"),
-  "./components/mockups/header/HeaderRedesign.tsx": () => import("../components/mockups/header/HeaderRedesign.tsx")
+  "./components/mockups/onboarding/Welcome.tsx": () => import("../components/mockups/onboarding/Welcome.tsx")
 };
