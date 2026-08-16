@@ -8,8 +8,9 @@
 //
 // Aggregation mirrors backend/services/rollup_service.py (and lib/localStore's
 // aggregate) so demo KPIs behave exactly like real ones. All day-bucketing is
-// US/Eastern via lib/estRange, matching the rest of the app.
+// the user's timezone via lib/estRange + lib/userTz, matching the rest of the app.
 
+import { getUserTz } from './userTz';
 import type {
   Entry, EntryCreate, Goal, Rollup, TimeframeType,
   UserPlatform, UserEntryType, UserExpenseCategory, LabelOverride,
@@ -121,7 +122,7 @@ function buildSeed(): DemoState {
   };
 
   // EST "now" hour so today's data never appears in the future.
-  const nowEst = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const nowEst = new Date(new Date().toLocaleString('en-US', { timeZone: getUserTz() }));
   const nowHour = nowEst.getHours();
 
   for (let off = -(SEED_DAYS - 1); off <= 0; off++) {
@@ -386,7 +387,7 @@ export function demoUpdateEntry(entryId: number, patch: Partial<EntryCreate>): E
   if (patch.receipt_url !== undefined) next.receipt_url = patch.receipt_url;
   if (patch.is_business_expense !== undefined) next.is_business_expense = patch.is_business_expense;
   if (patch.date || patch.time) {
-    const curEst = new Date(parseUTC(cur.timestamp).toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const curEst = new Date(parseUTC(cur.timestamp).toLocaleString('en-US', { timeZone: getUserTz() }));
     const dateStr = patch.date
       || `${curEst.getFullYear()}-${String(curEst.getMonth() + 1).padStart(2, '0')}-${String(curEst.getDate()).padStart(2, '0')}`;
     const timeStr = patch.time

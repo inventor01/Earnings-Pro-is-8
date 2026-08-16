@@ -15,6 +15,7 @@ import {
 } from './platforms';
 import { refreshPendingCount } from './pendingCount';
 import { DEMO_USER, enterDemoSession, exitDemoSession, isDemoActive } from './demoSession';
+import { loadUserTz, setUserTz, clearUserTz } from './userTz';
 import { setPersistSuspended } from './queryPersist';
 
 // Wipe every device-local copy of the signed-in user's data: the entries/goals
@@ -40,6 +41,9 @@ async function clearAllLocalData(): Promise<void> {
     clearHiddenCatsMirror(),
     clearHiddenPlatformsMirror(),
     clearHiddenTypesMirror(),
+    // Account timezone mirror: the next account must not inherit this one's
+    // day-bucketing zone (offline math would disagree with its server).
+    clearUserTz(),
   ]);
   await refreshPendingCount();
 }
@@ -56,6 +60,12 @@ async function readCachedUser(): Promise<User | null> {
   } catch {
     return null;
   }
+}
+
+// Mirror the server's account timezone into the local userTz module so all
+// day/week/month math (online and offline) buckets in the account's zone.
+function syncUserTz(u: User | null): void {
+  if (u?.timezone) setUserTz(u.timezone);
 }
 
 async function writeCachedUser(user: User | null): Promise<void> {
@@ -148,6 +158,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     getToken().then(async (t) => {
+      // Restore the mirrored account timezone BEFORE any data renders so an
+      // offline cold start buckets days in the account zone, not the default.
+      await loadUserTz();
       if (t) {
         setToken(t);
         // Re-push token to the iOS widget on cold-start. Without this the
@@ -158,10 +171,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Show the cached profile immediately so a cold start offline doesn't
         // render a blank/anonymous header while getMe() is failing.
         const cached = await readCachedUser();
-        if (cached) setUser(cached);
+        if (cached) {
+          setUser(cached);
+          syncUserTz(cached);
+        }
         try {
           const u = await api.getMe();
           setUser(u);
+          syncUserTz(u);
           await writeCachedUser(u);
         } catch (err: any) {
           // Only force-logout if the server *explicitly* rejected the token
@@ -194,6 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const u = await api.getMe();
       setUser(u);
+      syncUserTz(u);
       await writeCachedUser(u);
     } catch {}
   };
@@ -202,6 +220,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const u = await api.getMe();
       setUser(u);
+      syncUserTz(u);
       await writeCachedUser(u);
     } catch {
       // Offline / transient failure — keep the current user state.

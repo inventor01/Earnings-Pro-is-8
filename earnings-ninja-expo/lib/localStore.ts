@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getUserTz } from './userTz';
 import type { Entry, EntryCreate, Goal, Rollup, TimeframeType } from './api';
 import { estDateIsoForOffset, rangeForTimeframe, rangeForDates, estWallToUTCms, parseUTC } from './estRange';
 import { getQueuedCreates } from './offlineQueue';
@@ -139,7 +140,7 @@ function applyPatch(e: Entry, patch: Partial<EntryCreate>): Entry {
   if (patch.note !== undefined) next.note = patch.note;
   if (patch.date || patch.time) {
     const cur = parseUTC(e.timestamp);
-    const curEst = new Date(cur.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const curEst = new Date(cur.toLocaleString('en-US', { timeZone: getUserTz() }));
     const dateStr = patch.date || `${curEst.getFullYear()}-${String(curEst.getMonth() + 1).padStart(2, '0')}-${String(curEst.getDate()).padStart(2, '0')}`;
     const timeStr = patch.time || `${String(curEst.getHours()).padStart(2, '0')}:${String(curEst.getMinutes()).padStart(2, '0')}`;
     const [y, m, d] = dateStr.split('-').map(Number);

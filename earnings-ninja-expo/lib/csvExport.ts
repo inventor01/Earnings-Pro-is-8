@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import { getUserTz } from './userTz';
 import * as Sharing from 'expo-sharing';
 import { Entry, parseServerDate } from './api';
 
@@ -38,7 +39,7 @@ export function easternDateTime(d: Date): { date: string; time: string } {
   // any entry timed between midnight and 9:59am Eastern. Padding here fixes it
   // for both new and edited entries, in every timezone.
   const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
+    timeZone: getUserTz(),
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

@@ -76,6 +76,9 @@ class SignupRequest(BaseModel):
     # Optional referral code the new driver was invited with (attribution only;
     # the free-month reward promotion was retired).
     referral_code: Optional[str] = None
+    # Device-detected IANA timezone (e.g. 'America/Detroit'). Invalid or
+    # missing values fall back to America/New_York server-side.
+    timezone: Optional[str] = None
 
 class AuthResponse(BaseModel):
     access_token: str
@@ -86,12 +89,21 @@ class AuthResponse(BaseModel):
 class ForgotPasswordRequest(BaseModel):
     email: str
 
+def _valid_tz_or_default(tz: Optional[str]) -> str:
+    """Validated IANA zone or the legacy Eastern default."""
+    from backend.services.period import validate_timezone, DEFAULT_TZ
+    return tz if tz and validate_timezone(tz) else DEFAULT_TZ
+
+
 class AppleSignInRequest(BaseModel):
     # `identity_token` is the JWT issued by Apple's Sign In with Apple flow
     # (returned by expo-apple-authentication's `signInAsync`). We verify it
     # server-side against Apple's JWKS to confirm the user really signed in
     # with Apple — we never trust client-supplied `user`/`email` alone.
     identity_token: str
+    # Device-detected IANA timezone (e.g. 'America/Detroit') — stored on
+    # first-account creation; invalid/missing falls back to America/New_York.
+    timezone: Optional[str] = None
     # Apple only returns name on FIRST sign-in. The client should cache these
     # client-side after the first auth and forward them here so we can set
     # them on account creation. After that they're ignored.
@@ -319,13 +331,16 @@ async def _signup(
             raise HTTPException(status_code=409, detail="Username already taken")
     
     # Create new user
+    from backend.services.period import validate_timezone, DEFAULT_TZ
     user_id = str(uuid.uuid4())
     user = AuthUser(
         id=user_id,
         email=request.email,
         password_hash=hash_password(request.password),
         first_name=username,
-        last_name=""
+        last_name="",
+        # Auto-detected device zone; all day/week/month bucketing uses it.
+        timezone=request.timezone if request.timezone and validate_timezone(request.timezone) else DEFAULT_TZ,
     )
     db.add(user)
     db.flush()
@@ -479,6 +494,8 @@ async def apple_sign_in(request: Request, body: AppleSignInRequest, db: Session 
             # Apple has already verified the email it returns, so there's nothing
             # for us to nudge — mark it confirmed up front.
             email_verified=True,
+            # Auto-detected device zone; all day/week/month bucketing uses it.
+            timezone=_valid_tz_or_default(body.timezone),
         )
         db.add(user)
         db.flush()
@@ -677,7 +694,33 @@ async def get_current_user_info(current_user: AuthUser = Depends(get_current_use
         "is_demo": bool(current_user.is_demo),
         "onboarding_completed": bool(current_user.onboarding_completed),
         "walkthrough_completed": bool(current_user.walkthrough_completed),
+        "timezone": current_user.timezone or "America/New_York",
     }
+
+
+class TimezoneUpdateRequest(BaseModel):
+    timezone: str
+
+
+@router.post("/auth/timezone")
+async def update_timezone(
+    body: TimezoneUpdateRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Dict:
+    """Set the account's IANA timezone. All day/week/month bucketing (rollups,
+    goals, charts, CSV interpretation) uses this zone from the next request on.
+    Timestamps are absolute UTC, so changing the zone only re-buckets display —
+    every entry always lands in exactly one local day; nothing is double-counted
+    or lost."""
+    from backend.services.period import validate_timezone
+    tz = (body.timezone or "").strip()
+    if not validate_timezone(tz):
+        raise HTTPException(status_code=400, detail="Invalid timezone (expected an IANA name like America/Detroit)")
+    if current_user.timezone != tz:
+        current_user.timezone = tz
+        db.commit()
+    return {"timezone": tz}
 
 
 @router.post("/auth/onboarding/complete")

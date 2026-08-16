@@ -86,7 +86,7 @@ def delete_goal(timeframe: str, db: Session = Depends(get_db), current_user: Aut
 
 from datetime import date as date_type
 from backend.models import DailyGoal
-from backend.services.period import get_est_today_date
+from backend.services.period import get_est_today_date, user_tz_name
 from pydantic import BaseModel
 from decimal import Decimal as _Decimal
 
@@ -144,7 +144,7 @@ def upsert_daily_goal(goal_date: str, payload: DailyGoalUpdate, db: Session = De
     # Editing TODAY also rolls the inherited default forward so future dates
     # (which have no explicit row yet) pick up the new value. Past/future date
     # edits deliberately do NOT touch the default.
-    if d == get_est_today_date():
+    if d == get_est_today_date(user_tz_name(current_user)):
         legacy = db.query(Goal).filter(Goal.timeframe == TimeframeType.TODAY, Goal.user_id == current_user.id).first()
         if legacy:
             legacy.target_profit = payload.target_profit

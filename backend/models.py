@@ -51,6 +51,11 @@ class AuthUser(Base):
     # the login email changes; get_current_user rejects any JWT whose iat is
     # older, so a stolen token dies the moment the victim resets their password.
     password_changed_at = Column(String, nullable=True)
+    # IANA timezone all day/week/month bucketing uses for this account (e.g.
+    # 'America/Detroit'). Auto-detected from the device at signup/login and
+    # editable in settings. Legacy rows are backfilled to America/New_York by
+    # the boot migration, preserving the old fixed-EST behavior exactly.
+    timezone = Column(String, nullable=True)
     mfa_enabled = Column(Boolean, default=False, nullable=False)
     mfa_code_hash = Column(String, nullable=True)
     mfa_code_expires_at = Column(String, nullable=True)  # ISO8601 UTC

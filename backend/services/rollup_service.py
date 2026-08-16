@@ -6,7 +6,7 @@ from decimal import Decimal
 from datetime import datetime
 from typing import Optional
 
-def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None, timeframe: Optional[str] = None, user_id: str = ""):
+def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None, timeframe: Optional[str] = None, user_id: str = "", tz_name: str = "America/New_York"):
     # A rollup without a user filter would aggregate EVERY user's entries —
     # never allowed. Fail loudly instead of silently computing global totals.
     if not user_id:
@@ -100,7 +100,7 @@ def calculate_rollup(db: Session, from_date: Optional[datetime] = None, to_date:
             # goal is independent. Falls back to the legacy timeframe row (the
             # inherited default) when no explicit per-date goal exists.
             if tf in (TimeframeType.TODAY, TimeframeType.YESTERDAY) and from_date is not None:
-                est_date = get_est_date_for_utc(from_date)
+                est_date = get_est_date_for_utc(from_date, tz_name)
                 daily = db.query(DailyGoal).filter(
                     DailyGoal.user_id == user_id, DailyGoal.goal_date == est_date
                 ).first()

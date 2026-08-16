@@ -5,7 +5,8 @@ from backend.schemas import RollupResponse
 from backend.services.rollup_service import calculate_rollup
 from backend.services.period import (
     get_today, get_yesterday, get_this_week, get_last_7_days,
-    get_this_month, get_last_month, get_day_offset, get_est_date_range
+    get_this_month, get_last_month, get_day_offset, get_est_date_range,
+    user_tz_name,
 )
 from backend.models import AuthUser
 from backend.auth import get_current_user
@@ -28,6 +29,7 @@ async def get_rollup(
 ):
     from_dt = None
     to_dt = None
+    tz = user_tz_name(current_user)
 
     # Custom range: from_date/to_date take precedence when both provided.
     # Accept either YYYY-MM-DD (interpreted as inclusive EST calendar days) or
@@ -38,12 +40,12 @@ async def get_rollup(
                 from_dt = datetime.fromisoformat(from_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
                 to_dt   = datetime.fromisoformat(to_date.replace('Z', '+00:00')).astimezone(timezone.utc).replace(tzinfo=None)
             else:
-                from_dt, to_dt = get_est_date_range(from_date, to_date)
+                from_dt, to_dt = get_est_date_range(from_date, to_date, tz)
         except Exception:
             # Don't leak parser internals to the client; details go to logs.
             logger.warning("Rollup date range parse failed", exc_info=True)
             raise HTTPException(status_code=400, detail="Invalid date range. Use YYYY-MM-DD or ISO datetimes.")
-        rollup = calculate_rollup(db, from_dt, to_dt, None, current_user.id)
+        rollup = calculate_rollup(db, from_dt, to_dt, None, current_user.id, tz)
         return rollup
 
     # Use timeframe parameter to calculate date boundaries server-side (eliminates timezone issues)
@@ -51,17 +53,17 @@ async def get_rollup(
         try:
             if timeframe == "TODAY":
                 # When TODAY is requested, apply day_offset for day navigation
-                from_dt, to_dt = get_day_offset(day_offset)
+                from_dt, to_dt = get_day_offset(day_offset, tz)
             elif timeframe == "YESTERDAY":
-                from_dt, to_dt = get_yesterday()
+                from_dt, to_dt = get_yesterday(tz)
             elif timeframe == "THIS_WEEK":
-                from_dt, to_dt = get_this_week()
+                from_dt, to_dt = get_this_week(tz)
             elif timeframe == "LAST_7_DAYS":
-                from_dt, to_dt = get_last_7_days()
+                from_dt, to_dt = get_last_7_days(tz)
             elif timeframe == "THIS_MONTH":
-                from_dt, to_dt = get_this_month()
+                from_dt, to_dt = get_this_month(tz)
             elif timeframe == "LAST_MONTH":
-                from_dt, to_dt = get_last_month()
+                from_dt, to_dt = get_last_month(tz)
             else:
                 raise HTTPException(status_code=400, detail="Invalid timeframe")
         except HTTPException:
@@ -70,5 +72,5 @@ async def get_rollup(
             logger.warning("Rollup timeframe computation failed", exc_info=True)
             raise HTTPException(status_code=400, detail="Invalid timeframe")
     
-    rollup = calculate_rollup(db, from_dt, to_dt, timeframe, current_user.id)
+    rollup = calculate_rollup(db, from_dt, to_dt, timeframe, current_user.id, tz)
     return rollup

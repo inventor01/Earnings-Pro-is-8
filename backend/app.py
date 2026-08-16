@@ -547,6 +547,27 @@ def _migrate_auth_users_add_pro_entitlement() -> None:
 _migrate_auth_users_add_pro_entitlement()
 
 
+def _migrate_auth_users_add_timezone() -> None:
+    """Per-user IANA timezone for all day/week/month bucketing. The
+    grandfather backfill to America/New_York lives INSIDE the add-column guard
+    (never re-runs), so existing accounts keep bit-identical buckets to the
+    old fixed-EST behavior while new signups get their device zone. Plain ADD
+    COLUMN works on both Postgres and SQLite. Safe to re-run."""
+    insp = inspect(engine)
+    if not insp.has_table("auth_users"):
+        return
+    cols = {c["name"] for c in insp.get_columns("auth_users")}
+    if "timezone" in cols:
+        return
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE auth_users ADD COLUMN timezone VARCHAR"))
+        conn.execute(text("UPDATE auth_users SET timezone = 'America/New_York' WHERE timezone IS NULL"))
+    logger.warning("Added auth_users.timezone (grandfathered to America/New_York).")
+
+
+_migrate_auth_users_add_timezone()
+
+
 def _migrate_problem_reports_add_title() -> None:
     """Optional short issue title for bug reports (used in the notification
     email subject). Nullable — legacy reports keep NULL. Plain ADD COLUMN

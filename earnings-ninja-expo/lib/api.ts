@@ -19,6 +19,7 @@ import {
 } from './localStore';
 import { rangeForTimeframe, rangeForDates } from './estRange';
 import { isDemoActive } from './demoSession';
+import { deviceTimezone } from './userTz';
 import { demoApi } from './demoApi';
 
 // Priority: EXPO_PUBLIC env var → app.json extra → production fallback.
@@ -273,6 +274,10 @@ export interface User {
   // reinstall). undefined (old cached profile / older server) falls back to
   // the device-local AsyncStorage flag only.
   walkthrough_completed?: boolean;
+  // Account IANA timezone (e.g. 'America/Detroit') — all day/week/month
+  // bucketing uses it. undefined (old cached profile / older server) falls
+  // back to America/New_York, matching the server's grandfather backfill.
+  timezone?: string;
 }
 
 export interface ReferralInfo {
@@ -462,6 +467,9 @@ const realApi = {
     const body: Record<string, string> = { email, password, username };
     const code = (referralCode || '').trim();
     if (code) body.referral_code = code;
+    // Auto-detect the device zone so the new account buckets days locally
+    // from the very first entry (server validates; falls back to Eastern).
+    body.timezone = deviceTimezone();
     const res = await trackedFetch(`${API_BASE}/api/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -512,6 +520,22 @@ const realApi = {
 
   // Account profile changes. Both throw with the server's human-readable
   // `detail` message so the Settings UI can surface it directly.
+  // Change the account's timezone (IANA name). All day/week/month bucketing —
+  // rollups, goals, charts, CSV — follows it on both server and client.
+  async updateTimezone(timezone: string): Promise<{ timezone: string }> {
+    const headers = await getAuthHeaders();
+    const res = await trackedFetch(`${API_BASE}/api/auth/timezone`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ timezone }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not update your timezone');
+    }
+    return res.json();
+  },
+
   async changeUsername(username: string): Promise<{ success: boolean; username: string }> {
     const headers = await getAuthHeaders();
     const res = await trackedFetch(`${API_BASE}/api/auth/change-username`, {
@@ -814,7 +838,9 @@ const realApi = {
     const res = await trackedFetch(`${API_BASE}/api/auth/apple`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity_token, first_name, last_name }),
+      // timezone: auto-detected device zone stored on FIRST-account creation
+      // (ignored for existing accounts), so Apple signups bucket days locally.
+      body: JSON.stringify({ identity_token, first_name, last_name, timezone: deviceTimezone() }),
     });
     if (!res.ok) {
       let msg = 'Apple sign-in failed';

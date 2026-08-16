@@ -12,8 +12,8 @@ from decimal import Decimal
 router = APIRouter()
 
 
-def _est_components_to_utc_naive(date_str: str, time_str: str) -> datetime:
-    """Convert an EST wall-clock date + time into a naive UTC datetime.
+def _est_components_to_utc_naive(date_str: str, time_str: str, tz_name: str = "America/New_York") -> datetime:
+    """Convert a user-local wall-clock date + time into a naive UTC datetime.
 
     Builds the datetime from integer components instead of
     ``datetime.fromisoformat(f"{date}T{time}:00")`` so it tolerates inputs that
@@ -30,9 +30,9 @@ def _est_components_to_utc_naive(date_str: str, time_str: str) -> datetime:
     hour, minute = int(hh_str), int(mm_str)
     if hour == 24:
         hour = 0
-    est = pytz_timezone("US/Eastern")
+    tz = pytz_timezone(tz_name)
     naive_local = datetime(year, month, day, hour, minute)
-    return est.localize(naive_local).astimezone(timezone.utc).replace(tzinfo=None)
+    return tz.localize(naive_local).astimezone(timezone.utc).replace(tzinfo=None)
 
 
 @router.post("/entries", response_model=EntryResponse)
@@ -58,10 +58,11 @@ async def create_entry(entry: EntryCreate, db: Session = Depends(get_db), curren
     
     # Calculate timestamp - prefer date/time components over timestamp (for proper timezone handling)
     if entry.date and entry.time:
-        # Parse date and time as EST, then convert to UTC. Tolerant of
-        # non-zero-padded components (see _est_components_to_utc_naive).
+        # Parse date and time in the user's timezone, then convert to UTC.
+        # Tolerant of non-zero-padded components (see _est_components_to_utc_naive).
         try:
-            timestamp = _est_components_to_utc_naive(entry.date, entry.time)
+            from backend.services.period import user_tz_name
+            timestamp = _est_components_to_utc_naive(entry.date, entry.time, user_tz_name(current_user))
         except Exception:
             timestamp = entry.timestamp or datetime.utcnow()
     else:
@@ -118,8 +119,9 @@ async def get_entries(
 ):
     from backend.services.period import (
         get_today, get_yesterday, get_this_week, get_last_7_days,
-        get_this_month, get_last_month, get_day_offset
+        get_this_month, get_last_month, get_day_offset, user_tz_name
     )
+    tz = user_tz_name(current_user)
     
     query = db.query(Entry).filter(Entry.user_id == current_user.id)
     
@@ -127,21 +129,21 @@ async def get_entries(
     if timeframe:
         if timeframe == 'TODAY':
             if day_offset is not None:
-                from_dt, to_dt = get_day_offset(day_offset)
+                from_dt, to_dt = get_day_offset(day_offset, tz)
             else:
-                from_dt, to_dt = get_today()
+                from_dt, to_dt = get_today(tz)
         elif timeframe == 'YESTERDAY':
-            from_dt, to_dt = get_yesterday()
+            from_dt, to_dt = get_yesterday(tz)
         elif timeframe == 'THIS_WEEK':
-            from_dt, to_dt = get_this_week()
+            from_dt, to_dt = get_this_week(tz)
         elif timeframe == 'LAST_7_DAYS':
-            from_dt, to_dt = get_last_7_days()
+            from_dt, to_dt = get_last_7_days(tz)
         elif timeframe == 'THIS_MONTH':
-            from_dt, to_dt = get_this_month()
+            from_dt, to_dt = get_this_month(tz)
         elif timeframe == 'LAST_MONTH':
-            from_dt, to_dt = get_last_month()
+            from_dt, to_dt = get_last_month(tz)
         else:
-            from_dt, to_dt = get_today()
+            from_dt, to_dt = get_today(tz)
         
         query = query.filter(Entry.timestamp >= from_dt)
         query = query.filter(Entry.timestamp <= to_dt)
@@ -149,10 +151,10 @@ async def get_entries(
     # Accepts either full ISO datetimes OR YYYY-MM-DD (interpreted as inclusive
     # EST calendar days, mirroring the timeframe helpers).
     elif from_date or to_date:
-        from backend.services.period import get_est_date_range
+        from backend.services.period import get_est_date_range, user_tz_name as _utz
         if from_date and to_date and 'T' not in from_date and 'T' not in to_date:
             try:
-                from_dt, to_dt = get_est_date_range(from_date, to_date)
+                from_dt, to_dt = get_est_date_range(from_date, to_date, _utz(current_user))
                 query = query.filter(Entry.timestamp >= from_dt)
                 query = query.filter(Entry.timestamp <= to_dt)
             except Exception:
@@ -185,8 +187,9 @@ async def update_entry(entry_id: int, entry_update: EntryUpdate, db: Session = D
     # Tolerant of non-zero-padded components (see _est_components_to_utc_naive).
     if "date" in update_data and "time" in update_data and update_data["date"] and update_data["time"]:
         try:
+            from backend.services.period import user_tz_name
             update_data["timestamp"] = _est_components_to_utc_naive(
-                update_data["date"], update_data["time"]
+                update_data["date"], update_data["time"], user_tz_name(current_user)
             )
         except Exception:
             pass
@@ -308,7 +311,8 @@ async def import_entries(entries_data: List[EntryCreate], db: Session = Depends(
             # Tolerant of non-zero-padded components (see _est_components_to_utc_naive).
             if entry.date and entry.time:
                 try:
-                    timestamp = _est_components_to_utc_naive(entry.date, entry.time)
+                    from backend.services.period import user_tz_name
+                    timestamp = _est_components_to_utc_naive(entry.date, entry.time, user_tz_name(current_user))
                 except Exception:
                     timestamp = entry.timestamp or datetime.utcnow()
             else:

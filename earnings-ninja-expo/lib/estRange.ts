@@ -1,11 +1,14 @@
-// US/Eastern date-range math for LOCAL (offline) rollup/entries computation.
+// User-timezone date-range math for LOCAL (offline) rollup/entries computation.
 // Mirrors backend/services/period.py so locally-computed windows line up exactly
-// with the server's EST day/week/month boundaries — independent of device tz.
+// with the server's day/week/month boundaries in the ACCOUNT's timezone (see
+// lib/userTz — defaults to America/New_York until synced, matching the server's
+// grandfather backfill). Function names keep their historical 'est' prefix.
 //
 // All ranges are returned as absolute UTC millisecond bounds [fromMs, toMs] so
 // they can be compared directly against an entry's parsed UTC timestamp.
 
 import type { TimeframeType } from './api';
+import { getUserTz } from './userTz';
 
 // Parse a server timestamp to a correct UTC instant. FastAPI serializes naive
 // UTC without a trailing 'Z', which JS would misread as device-local — append
@@ -17,15 +20,25 @@ export function parseUTC(ts: string | Date): Date {
   return new Date(ts + 'Z');
 }
 
-// Offset (ms) of America/New_York from UTC at the given instant. EST = -5h, EDT
-// = -4h, so this is negative. Uses Intl so DST is handled automatically.
+// Offset (ms) of the user's timezone from UTC at the given instant (negative
+// west of Greenwich). Uses Intl so DST is handled automatically. Formatters are
+// cached per zone — creating one per call is expensive on RN.
+const offsetFmtCache = new Map<string, Intl.DateTimeFormat>();
+function offsetFmt(tz: string): Intl.DateTimeFormat {
+  let f = offsetFmtCache.get(tz);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hourCycle: 'h23',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+    offsetFmtCache.set(tz, f);
+  }
+  return f;
+}
 function tzOffsetMs(at: Date): number {
-  const dtf = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    hourCycle: 'h23',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-  });
+  const dtf = offsetFmt(getUserTz());
   const parts = dtf.formatToParts(at);
   const map: Record<string, string> = {};
   for (const p of parts) map[p.type] = p.value;
@@ -36,7 +49,7 @@ function tzOffsetMs(at: Date): number {
   return asUTC - at.getTime();
 }
 
-// Convert an EST/EDT wall-clock time (y, m=1-12, d, hh, mm, ss, ms) to the
+// Convert a user-local wall-clock time (y, m=1-12, d, hh, mm, ss, ms) to the
 // absolute UTC instant (ms). Two-pass so the offset is resolved at the actual
 // instant (correct across DST transitions, except the rare ambiguous fall-back
 // hour which never affects day-boundary midnights).
@@ -52,9 +65,33 @@ export function estWallToUTCms(
   return utc;
 }
 
-// Today's EST calendar date as a UTC-anchored Date (matches index.tsx).
+// Today's calendar date in the user's timezone as a UTC-anchored Date.
+// ── DateTimePicker bridge ─────────────────────────────────────────────────────
+// The native picker can only edit a DEVICE-LOCAL Date. When the account zone
+// differs from the device zone, the wall-clock the picker shows must be the
+// ACCOUNT-zone wall-clock of the instant, or a traveling user picks "9:00 AM"
+// and the entry files under a different time. These two helpers convert a real
+// UTC instant ↔ a "shifted" device-local Date whose local fields equal the
+// account-zone wall-clock. Always round-trip through them around the picker;
+// the shifted Date is display-only and must never be saved directly.
+export function instantToPickerDate(instant: Date): Date {
+  const dtf = offsetFmt(getUserTz());
+  const map: Record<string, string> = {};
+  for (const p of dtf.formatToParts(instant)) map[p.type] = p.value;
+  return new Date(
+    Number(map.year), Number(map.month) - 1, Number(map.day),
+    Number(map.hour), Number(map.minute), Number(map.second),
+  );
+}
+export function pickerDateToInstant(picked: Date): Date {
+  return new Date(estWallToUTCms(
+    picked.getFullYear(), picked.getMonth() + 1, picked.getDate(),
+    picked.getHours(), picked.getMinutes(), picked.getSeconds(),
+  ));
+}
+
 export function estTodayUTC(): Date {
-  const s = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const s = new Date().toLocaleDateString('en-CA', { timeZone: getUserTz() });
   const [y, m, d] = s.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d));
 }

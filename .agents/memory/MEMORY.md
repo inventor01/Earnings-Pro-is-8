@@ -9,7 +9,7 @@
 - [eas update long-running](eas-update-long-running.md) — `eas update` exceeds the tool limit; run foreground, confirm with `eas update:list`. Main agent publishes via `GIT_CEILING_DIRECTORIES=… EAS_NO_VCS=1`.
 - [Offline queue synthetic-id identity](offline-queue-synthetic-id-identity.md) — queued entries need stable client identity, serialized AsyncStorage RMW, single-drain guard, per-item delete re-check.
 - [React Query focus refetch in RN](react-query-focus-refetch-rn.md) — wire focusManager to AppState or data only refreshes on cold restart.
-- [EST vs device-local date](est-vs-device-local-date.md) — all day-bucketing is US/Eastern; client "is this today?" checks must use estTodayUTC(), never the device clock.
+- [Per-user timezone bucketing](per-user-timezone.md) — day bucketing is per-account IANA tz (was fixed Eastern); new bucketed features must use user_tz_name()/getUserTz(), never a hardcoded zone or device clock.
 - [Optimistic rollup window scoping](optimistic-rollup-window-scoping.md) — entry add/edit optimistic ['rollup'] patches must scope per-window via keyWindowContainsDate; a net delta is 0 for a date move, leaving KPIs stale until cold restart.
 - [Offline local source-of-truth](offline-local-source-of-truth.md) — cold-start offline reads need local computation (localStore mirror + queue overlay) as a network-only fallback, not just React-Query cache; full-pull reconcile is server-wins LWW after draining.
 - [Expo restart port-8081 loop](expo-workflow-restart-port-loop.md) — restarting Expo Mobile can leave a stale watchdog holding 8081 → infinite "port in use" loop; kill stale PIDs (not pkill -f 'expo start' — self-kills), then one clean restart.

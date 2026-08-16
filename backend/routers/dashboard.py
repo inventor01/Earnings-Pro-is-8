@@ -19,27 +19,28 @@ async def get_dashboard_overview(
     """Combined endpoint: returns entries + rollup + goal in ONE call"""
     from backend.services.period import (
         get_today, get_yesterday, get_this_week, get_last_7_days,
-        get_this_month, get_last_month, get_day_offset
+        get_this_month, get_last_month, get_day_offset, user_tz_name
     )
+    tz = user_tz_name(current_user)
     
     # Determine date range
     if timeframe:
         if timeframe == 'TODAY':
-            from_dt, to_dt = get_day_offset(day_offset) if day_offset is not None else get_today()
+            from_dt, to_dt = get_day_offset(day_offset, tz) if day_offset is not None else get_today(tz)
         elif timeframe == 'YESTERDAY':
-            from_dt, to_dt = get_yesterday()
+            from_dt, to_dt = get_yesterday(tz)
         elif timeframe == 'THIS_WEEK':
-            from_dt, to_dt = get_this_week()
+            from_dt, to_dt = get_this_week(tz)
         elif timeframe == 'LAST_7_DAYS':
-            from_dt, to_dt = get_last_7_days()
+            from_dt, to_dt = get_last_7_days(tz)
         elif timeframe == 'THIS_MONTH':
-            from_dt, to_dt = get_this_month()
+            from_dt, to_dt = get_this_month(tz)
         elif timeframe == 'LAST_MONTH':
-            from_dt, to_dt = get_last_month()
+            from_dt, to_dt = get_last_month(tz)
         else:
-            from_dt, to_dt = get_today()
+            from_dt, to_dt = get_today(tz)
     else:
-        from_dt, to_dt = get_today()
+        from_dt, to_dt = get_today(tz)
     
     # Get entries - limited to 100 most recent for performance
     entries = db.query(Entry).filter(
@@ -49,7 +50,7 @@ async def get_dashboard_overview(
     ).order_by(Entry.timestamp.desc()).limit(100).all()  # Limited result set for faster queries
     
     # Get rollup (includes goal data)
-    rollup = calculate_rollup(db, from_dt, to_dt, timeframe, current_user.id)
+    rollup = calculate_rollup(db, from_dt, to_dt, timeframe, current_user.id, tz)
     
     return {
         "entries": entries,

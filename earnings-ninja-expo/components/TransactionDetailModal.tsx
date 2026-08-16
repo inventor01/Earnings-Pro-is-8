@@ -6,6 +6,7 @@ import Animated, { FadeIn, withTiming, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
+import { getUserTz } from '@/lib/userTz';
 import {
   Entry, EXPENSE_EMOJIS, parseServerDate,
 } from '@/lib/api';
@@ -46,11 +47,14 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
   const isExpense = entry.amount < 0;
   const appColor = entryAppColor(entry) || MUTED;
   const d = parseServerDate(entry.timestamp);
+  // Render in the ACCOUNT zone — the same zone the list, editor, and day
+  // bucketing use — never the device zone (a traveling user would otherwise
+  // see a time that disagrees with the entry editor and the day it files under).
   const dateStr = d.toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+    timeZone: getUserTz(), weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
   });
   const timeStr = d.toLocaleTimeString('en-US', {
-    hour: 'numeric', minute: '2-digit', hour12: true,
+    timeZone: getUserTz(), hour: 'numeric', minute: '2-digit', hour12: true,
   });
 
   const confirmDelete = () => {

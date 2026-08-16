@@ -57,6 +57,7 @@ export const demoApi = {
 
   // ── Blocked account operations (friendly, explicit) ───────────────────────
   async changeUsername(): Promise<never> { notInDemo('Changing your username'); },
+  async updateTimezone(): Promise<never> { notInDemo('Changing your timezone'); },
   async changeEmail(): Promise<never> { notInDemo('Changing your email'); },
   async deleteAccount(): Promise<never> { notInDemo('Deleting an account'); },
   async enableMfa(): Promise<never> { notInDemo('Two-factor authentication'); },

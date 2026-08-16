@@ -11,6 +11,7 @@
 // the helpers below, never through the native local-time Date getters.
 
 import { parseUTC, estTodayUTC } from './estRange';
+import { getUserTz } from './userTz';
 
 export type ChartBucket = { key: string; sum: number; label: string };
 
@@ -18,17 +19,27 @@ type ChartEntry = { timestamp: string | Date; amount: number | string };
 type ChartPeriod = 'today' | 'yesterday' | 'week' | 'last7' | 'month' | 'lastMonth' | 'custom';
 type CustomRange = { from: string; to: string };
 
-// Shared formatter — hourCycle h23 so hours come back 0-23.
-const EAST = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'America/New_York',
-  hourCycle: 'h23',
-  year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
-});
+// Shared formatter — hourCycle h23 so hours come back 0-23. Cached per zone
+// (the user's timezone can change at runtime via settings).
+const fmtCache = new Map<string, Intl.DateTimeFormat>();
+function EASTFmt(): Intl.DateTimeFormat {
+  const tz = getUserTz();
+  let f = fmtCache.get(tz);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hourCycle: 'h23',
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
+    });
+    fmtCache.set(tz, f);
+  }
+  return f;
+}
 
 // { y, m (1-12), d, h (0-23) } of the given instant in US/Eastern.
 export function easternParts(at: Date): { y: number; m: number; d: number; h: number } {
   const map: Record<string, string> = {};
-  for (const p of EAST.formatToParts(at)) map[p.type] = p.value;
+  for (const p of EASTFmt().formatToParts(at)) map[p.type] = p.value;
   return { y: Number(map.year), m: Number(map.month), d: Number(map.day), h: Number(map.hour) % 24 };
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { getUserTz } from '../lib/userTz';
 import {
   View, Text, Pressable, Modal, ScrollView, ActivityIndicator,
   ViewStyle, Platform, useWindowDimensions, Alert,
@@ -79,14 +80,14 @@ function PressScale({
   );
 }
 
-// Build YYYY-MM-DD in America/New_York from a Date or ISO string.
+// Build YYYY-MM-DD in the user's timezone from a Date or ISO string.
 // Mirrors the web's getESTDateString so calendar buckets match the dashboard.
 function estDateString(input: Date | string): string {
   const d = input instanceof Date ? input : new Date(input);
   if (isNaN(d.getTime())) return '';
   // 'en-CA' returns YYYY-MM-DD natively.
   return d.toLocaleDateString('en-CA', {
-    timeZone: 'America/New_York',
+    timeZone: getUserTz(),
     year: 'numeric', month: '2-digit', day: '2-digit',
   });
 }

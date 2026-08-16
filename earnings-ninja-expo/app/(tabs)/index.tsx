@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { getUserTz, setUserTz, deviceTimezone } from '../../lib/userTz';
 import {
   View, Text, ScrollView, Pressable, Modal,
   RefreshControl, ActivityIndicator, Image, Alert,
@@ -44,7 +45,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 import { useSubscription, offeringTrialDays, restoreAlertCopy } from '@/lib/revenuecat';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
-import { syncNotifState, enableMotivation, disableMotivation, notifyEarningsChanged } from '@/lib/notifications';
+import { syncNotifState, enableMotivation, disableMotivation, notifyEarningsChanged, refreshMotivationSchedule } from '@/lib/notifications';
+import { instantToPickerDate, pickerDateToInstant, estWallToUTCms } from '@/lib/estRange';
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
 import { getIntroEnabled, setIntroEnabled } from '@/lib/introPref';
 import {
@@ -442,7 +444,7 @@ function formatShortDate(yyyymmdd: string): string {
 // the device timezone; only the *initial* "today" is resolved in US/Eastern so
 // the windows line up exactly with the server's EST day/week/month boundaries.
 function estTodayUTC(): Date {
-  const s = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); // YYYY-MM-DD
+  const s = new Date().toLocaleDateString('en-CA', { timeZone: getUserTz() }); // YYYY-MM-DD
   const [y, m, d] = s.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d));
 }
@@ -775,10 +777,10 @@ function EntryRow({
   // from the time they actually entered (and from the day the entry is counted
   // under). Eastern keeps display, entry, and bucketing all consistent.
   const time      = parseServerDate(entry.timestamp).toLocaleTimeString('en-US', {
-    timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true,
+    timeZone: getUserTz(), hour: 'numeric', minute: '2-digit', hour12: true,
   });
   const date      = parseServerDate(entry.timestamp).toLocaleDateString('en-US', {
-    timeZone: 'America/New_York', month: 'short', day: 'numeric',
+    timeZone: getUserTz(), month: 'short', day: 'numeric',
   });
 
   const body = (
@@ -1661,16 +1663,20 @@ function DetailsForm({
                     {/* Show the US/Eastern wall-clock the entry will actually file
                         under (Today/Yesterday are EST), so the label matches the
                         saved day even for non-EST users. */}
-                    {entryDate.toLocaleDateString('en-US', { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                    {entryDate.toLocaleDateString('en-US', { timeZone: getUserTz(), weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                     {'  ·  '}
-                    {entryDate.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true })}
+                    {entryDate.toLocaleTimeString('en-US', { timeZone: getUserTz(), hour: 'numeric', minute: '2-digit', hour12: true })}
                   </Text>
                   <Ionicons name={showDatePicker ? 'chevron-up' : 'chevron-down'} size={16} color="#6b7280" />
                 </Pressable>
                 {showDatePicker && Platform.OS === 'ios' && (
                   <View style={{ marginTop: 8, backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden' }}>
                     <DateTimePicker
-                      value={entryDate}
+                      // The native picker edits DEVICE-local fields; feed it the
+                      // account-zone wall-clock of the instant and convert back
+                      // on change so a traveling user's "9:00 AM" means 9:00 AM
+                      // in their account zone (matching the label + bucketing).
+                      value={instantToPickerDate(entryDate)}
                       mode="datetime"
                       display="spinner"
                       // Force the iOS spinner to render with black wheel text on
@@ -1681,7 +1687,7 @@ function DetailsForm({
                       textColor="#000000"
                       accentColor="#000000"
                       onChange={(_, selected) => {
-                        if (selected) onChangeDate(selected);
+                        if (selected) onChangeDate(pickerDateToInstant(selected));
                       }}
                       maximumDate={new Date(Date.now() + 24 * 60 * 60 * 1000)}
                     />
@@ -1693,7 +1699,7 @@ function DetailsForm({
                     dismissed). */}
                 {showDatePicker && Platform.OS === 'android' && androidPickerStage === 'date' && (
                   <DateTimePicker
-                    value={entryDate}
+                    value={instantToPickerDate(entryDate)}
                     mode="date"
                     display="default"
                     onChange={(event, selected) => {
@@ -1702,11 +1708,13 @@ function DetailsForm({
                         onToggleDatePicker();
                         return;
                       }
-                      // Carry the existing time-of-day onto the newly picked day,
-                      // then ask for the time in step 2.
+                      // Carry the existing ACCOUNT-zone time-of-day onto the newly
+                      // picked day, then ask for the time in step 2. All math on
+                      // the shifted picker Date; convert back to a real instant.
+                      const cur = instantToPickerDate(entryDate);
                       const next = new Date(selected);
-                      next.setHours(entryDate.getHours(), entryDate.getMinutes(), 0, 0);
-                      onChangeDate(next);
+                      next.setHours(cur.getHours(), cur.getMinutes(), 0, 0);
+                      onChangeDate(pickerDateToInstant(next));
                       setAndroidPickerStage('time');
                     }}
                     maximumDate={new Date(Date.now() + 24 * 60 * 60 * 1000)}
@@ -1714,13 +1722,15 @@ function DetailsForm({
                 )}
                 {showDatePicker && Platform.OS === 'android' && androidPickerStage === 'time' && (
                   <DateTimePicker
-                    value={entryDate}
+                    value={instantToPickerDate(entryDate)}
                     mode="time"
                     display="default"
                     onChange={(event, selected) => {
                       setAndroidPickerStage('date');
                       onToggleDatePicker();
-                      if (event.type === 'set' && selected) onChangeDate(selected);
+                      // The time dialog returns device-local fields carrying the
+                      // account-zone wall-clock (we seeded it shifted) — unshift.
+                      if (event.type === 'set' && selected) onChangeDate(pickerDateToInstant(selected));
                     }}
                   />
                 )}
@@ -4187,6 +4197,99 @@ function ImportCsvRow({ onDone, onNeedUpgrade }: { onDone: () => void; onNeedUpg
   );
 }
 
+// Settings row: view + change the account timezone. All day/week/month
+// bucketing (dashboard, goals, charts, CSV) follows the chosen zone on both
+// the server and this device. Entries keep their absolute timestamps — a
+// timezone change only re-buckets which local day they display under.
+const COMMON_TZS = [
+  'America/New_York', 'America/Chicago', 'America/Denver', 'America/Phoenix',
+  'America/Los_Angeles', 'America/Anchorage', 'Pacific/Honolulu',
+  'America/Toronto', 'America/Vancouver', 'Europe/London',
+];
+function TimezoneRow() {
+  const { SURFACE, BORDER, PRIMARY, TEXT, MUTED, BG, PRIMARY_TXT } = useTheme();
+  const { refreshUser, isDemo } = useAuth();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [tzShown, setTzShown] = useState(getUserTz());
+  const deviceTz = deviceTimezone();
+  // Device zone first (if not already in the list), then common zones.
+  const options = [deviceTz, ...COMMON_TZS.filter((z) => z !== deviceTz)];
+
+  const choose = async (tz: string) => {
+    if (busy || tz === getUserTz()) { setOpen(false); return; }
+    setBusy(true);
+    try {
+      await api.updateTimezone(tz); // server first — single source of truth
+      setUserTz(tz);
+      setTzShown(tz);
+      setOpen(false);
+      // Every day-bucketed view must recompute in the new zone.
+      queryClient.invalidateQueries();
+      refreshUser().catch(() => {});
+      // Scheduled notification copy carries day-bucketed figures ("today's
+      // profit/goal") computed in the OLD zone — re-author it immediately.
+      refreshMotivationSchedule({ force: true }).catch(() => {});
+    } catch (e: any) {
+      Alert.alert('Could not change timezone', e?.message || 'Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <Pressable
+        onPress={() => { hTap(); setTzShown(getUserTz()); setOpen(true); }}
+        accessibilityRole="button"
+        accessibilityLabel="Change timezone"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 10, minHeight: 44 }}
+      >
+        <Ionicons name="globe-outline" size={20} color={PRIMARY_TXT} />
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Timezone</Text>
+          <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>{tzShown.replace(/_/g, ' ')}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={MUTED} />
+      </Pressable>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 24 }} onPress={() => setOpen(false)}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: BG, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 16, maxHeight: '75%' }}>
+            <Text style={{ color: TEXT, fontSize: 17, fontWeight: '800', marginBottom: 4 }}>Timezone</Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginBottom: 12 }}>
+              Days, weeks, and goals are counted in this timezone. Your entries keep their exact times — changing it only changes which day they count toward.
+            </Text>
+            {isDemo && (
+              <Text style={{ color: MUTED, fontSize: 12, marginBottom: 10 }}>Not available in Demo Mode.</Text>
+            )}
+            <ScrollView style={{ maxHeight: 380 }}>
+              {options.map((tz) => {
+                const active = tz === tzShown;
+                return (
+                  <Pressable
+                    key={tz}
+                    disabled={busy || isDemo}
+                    onPress={() => { hTap(); choose(tz); }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 8, borderRadius: 10, backgroundColor: active ? SURFACE : 'transparent', opacity: isDemo ? 0.5 : 1 }}
+                  >
+                    <Text style={{ color: TEXT, fontSize: 14, fontWeight: active ? '800' : '500', flex: 1 }}>
+                      {tz.replace(/_/g, ' ')}{tz === deviceTz ? '  (device)' : ''}
+                    </Text>
+                    {active && <Ionicons name="checkmark-circle" size={20} color={PRIMARY} />}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
 function ExportCsvRow({ onNeedUpgrade }: { onNeedUpgrade: () => void }) {
   const { SURFACE, BORDER, PRI_LITE, PRIMARY, PRIMARY_TXT, TEXT, MUTED } = useTheme();
   const { available: proAvailable, isPro } = useSubscription();
@@ -4918,6 +5021,13 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             </Pressable>
           );
         })}
+
+        {/* ── Timezone ──────────────────────────────────────────────────── */}
+        <View style={{ height: 28 }} />
+        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+          🌍  Timezone
+        </Text>
+        <TimezoneRow />
 
         {/* ── Subscription (Earnings Ninja Pro) ─────────────────────────── */}
         {proAvailable && (
@@ -6637,9 +6747,9 @@ function ExpensesModal({ visible, onClose }: { visible: boolean; onClose: () => 
                             {biz ? <Text style={{ color: '#3b82f6', fontWeight: '700' }}>  💼 Business</Text> : null}
                           </Text>
                           <Text style={{ color: LABEL, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
-                            {when.toLocaleDateString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric' })}
+                            {when.toLocaleDateString('en-US', { timeZone: getUserTz(), month: 'short', day: 'numeric' })}
                             {' · '}
-                            {when.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true })}
+                            {when.toLocaleTimeString('en-US', { timeZone: getUserTz(), hour: 'numeric', minute: '2-digit', hour12: true })}
                           </Text>
                           {e.note ? (
                             <Text style={{ color: MUTED, fontSize: 11, marginTop: 2, fontStyle: 'italic' }} numberOfLines={1}>
@@ -6850,7 +6960,12 @@ export default function DashboardScreen() {
     if (!(isDayPeriod && effectiveDayOffset < 0)) return undefined;
     const { date } = easternDateTime(new Date());
     const [y, m, d] = date.split('-').map(Number);
-    return new Date(Date.UTC(y, m - 1, d + effectiveDayOffset, 16, 0, 0));
+    // Anchor to NOON in the ACCOUNT zone of the viewed day (a fixed-UTC hour
+    // could land on the wrong account-zone day for far-from-Eastern zones).
+    const target = new Date(Date.UTC(y, m - 1, d + effectiveDayOffset));
+    return new Date(estWallToUTCms(
+      target.getUTCFullYear(), target.getUTCMonth() + 1, target.getUTCDate(), 12,
+    ));
   }, [isDayPeriod, effectiveDayOffset]);
 
   // Which period tab to HIGHLIGHT. Data is always driven by `period`; when swiping
@@ -7868,7 +7983,7 @@ export default function DashboardScreen() {
                     periodExpenses.map((e, idx) => {
                       const g = outflowGroup(e);
                       const t = parseServerDate(e.timestamp);
-                      const when = t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' });
+                      const when = t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: getUserTz() });
                       return (
                         <View
                           key={e.id ?? idx}
