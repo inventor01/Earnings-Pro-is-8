@@ -29,7 +29,18 @@ The app URL helper read only `REPLIT_DEV_DOMAIN`/`REPLIT_DOMAINS`, which do NOT
 exist on Railway → reset links and the welcome button pointed at
 `http://localhost:5000`.
 **Fix:** prefer explicit `PUBLIC_APP_URL` (then `APP_BASE_URL`/`FRONTEND_URL`)
-before the Replit envs. Set `PUBLIC_APP_URL=https://earningsninja.app` on Railway.
+before the Replit envs.
+
+**Aug 2026 gotcha — Railway's custom domain lies:** Railway has
+`earningsninja.com` configured as its custom domain, so `RAILWAY_PUBLIC_DOMAIN`
+= `earningsninja.com` — but DNS for that apex actually points at the **Replit**
+deployment (different DB). With `PUBLIC_APP_URL` unset, reset emails linked to
+earningsninja.com and the token was never found there → "Invalid reset token"
+on every attempt. Fixed by setting
+`PUBLIC_APP_URL=https://earnings-pro-is-8-production.up.railway.app` on Railway
+(via GraphQL variableUpsert + redeploy). **Never trust RAILWAY_PUBLIC_DOMAIN
+for email links; PUBLIC_APP_URL must always be set to an origin that truly
+serves the Railway backend/DB.**
 
 ## 3. The reset page must live in the DEPLOYED SPA (landing/), not frontend/
 Production serves `landing/dist` (see public-web-domain-serves-landing.md). The
