@@ -102,8 +102,12 @@ function entryDateStr(e: Entry): string {
   let raw: string | undefined =
     (e as any).timestamp || (e as any).created_at || (e as any).date;
   if (!raw || typeof raw !== 'string') return '';
+  // A bare 'YYYY-MM-DD' is ALREADY the EST business day — use it verbatim.
+  // (new Date('YYYY-MM-DD') parses as UTC midnight, and estDateString would
+  // then shift it to the PREVIOUS evening — entries bucketed one day early.)
+  if (!raw.includes('T')) return raw.substring(0, 10);
   // Treat naive ISO (no Z, no offset) as UTC — that's what the backend emits.
-  if (raw.includes('T') && !raw.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(raw)) {
+  if (!raw.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(raw)) {
     raw = raw + 'Z';
   }
   const d = new Date(raw);

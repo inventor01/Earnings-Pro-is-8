@@ -294,6 +294,14 @@ async def _signup(
     """Sign up new user"""
     if not request.email or not request.password:
         raise HTTPException(status_code=400, detail="Email and password are required")
+    # Length limits — MUST stay in lockstep with the mobile client's signup
+    # validation (app/login.tsx): username ≤ 20 chars, password 6–64 chars.
+    if len(request.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    if len(request.password) > 64:
+        raise HTTPException(status_code=400, detail="Password must be 64 characters or fewer")
+    if request.username and len(request.username.strip()) > 20:
+        raise HTTPException(status_code=400, detail="Username must be 20 characters or fewer")
     
     # Check if email already exists
     existing_email = db.query(AuthUser).filter(AuthUser.email == request.email).first()
@@ -943,11 +951,12 @@ async def _issue_reset_token_and_email(user_id: str, user_email: str, user_name:
     from backend.db import SessionLocal
     db = SessionLocal()
     try:
-        db.query(PasswordResetToken).filter(
-            PasswordResetToken.user_id == user_id,
-            PasswordResetToken.used == False
-        ).update({"used": True})
-
+        # NOTE: earlier unused tokens are deliberately left valid. Users retry
+        # the "send link" button (especially after a flaky mobile connection),
+        # and invalidating prior tokens here made the FIRST email's link fail
+        # with "invalid reset token" as soon as a retry landed. All unused
+        # tokens are swept when a reset actually succeeds, and each expires in
+        # 1 hour anyway.
         reset_token = secrets.token_urlsafe(32)
         token_record = PasswordResetToken(
             user_id=user_id,
@@ -1030,14 +1039,32 @@ async def reset_password(request: Request, body: ResetPasswordRequest, db: Sessi
     if not user:
         raise HTTPException(status_code=400, detail="User not found")
     
+    # Atomically CONSUME this token before touching the password: a conditional
+    # UPDATE that requires the row to still be unused. Two concurrent resets
+    # (two valid links from separate "send" requests) would otherwise both read
+    # used=False and both succeed — the loser must 400 instead of overwriting
+    # the winner's new password.
+    consumed = db.query(PasswordResetToken).filter(
+        PasswordResetToken.id == token_record.id,
+        PasswordResetToken.used == False
+    ).update({"used": True}, synchronize_session=False)
+    if consumed != 1:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
     # Update password
     user.password_hash = hash_password(body.new_password)
     # Kill every previously-issued session token: a stolen JWT must not survive
     # the victim resetting their password (see get_current_user iat check).
     user.password_changed_at = datetime.utcnow().isoformat()
     
-    # Mark token as used
-    token_record.used = True
+    # Mark ALL of this user's outstanding tokens used (multiple "send link"
+    # requests may have issued several valid tokens — a successful reset
+    # retires every one of them).
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == token_record.user_id,
+        PasswordResetToken.used == False
+    ).update({"used": True})
     
     db.commit()
     

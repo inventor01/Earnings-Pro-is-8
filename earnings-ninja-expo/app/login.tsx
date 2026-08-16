@@ -104,6 +104,20 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       if (mode === 'signup') {
+        // Length limits — MUST stay in lockstep with the backend validator
+        // (backend/routers/auth_routes.py signup): username ≤ 20, password 6–64.
+        if (username.trim().length > 20) {
+          setError('Username must be 20 characters or fewer');
+          return;
+        }
+        if (password.length < 6) {
+          setError('Password must be at least 6 characters');
+          return;
+        }
+        if (password.length > 64) {
+          setError('Password must be 64 characters or fewer');
+          return;
+        }
         const res = await api.signup(credential, password, username, referralCode);
         await clearPendingReferral();
         // Route this brand-new account into onboarding immediately (before
@@ -193,7 +207,15 @@ export default function LoginScreen() {
       const res = await api.requestPasswordReset(forgotEmail.trim());
       setForgotMessage(res.message || 'If that email is on file, a reset link is on its way.');
     } catch (e: any) {
-      setForgotError(e.message || 'Could not send reset email');
+      // Raw RN transport failures surface as "Network request failed" — the
+      // request may still have gone through (the server replies before doing
+      // the email work), so don't imply it definitely failed.
+      const transport = /network request failed|abort/i.test(String(e?.message || ''));
+      setForgotError(
+        transport
+          ? 'Connection hiccup — the request may still have gone through. Check your inbox in a minute; if nothing arrives, tap Send again (earlier links keep working).'
+          : (e.message || 'Could not send reset email'),
+      );
     } finally {
       setForgotLoading(false);
     }
@@ -302,6 +324,7 @@ export default function LoginScreen() {
                 placeholder="your_username"
                 placeholderTextColor={MUTED}
                 autoCapitalize="none"
+                maxLength={20}
                 style={{
                   backgroundColor: INPUT_BG,
                   borderWidth: 1,

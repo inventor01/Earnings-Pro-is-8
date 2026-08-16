@@ -1949,20 +1949,22 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // a synthetic pill keeps it visible/selected until the user changes it.
   const typeOptions = useMemo(() => {
     // Hidden built-ins stay visible while they're the current selection (e.g.
-    // editing an old entry logged under a since-hidden type). ORDER is never
-    // hideable (it anchors Revenue mode); EXPENSE anchors Expense mode.
+    // editing an old entry logged under a since-hidden type). ORDER / EXPENSE
+    // can now be hidden too, as long as their mode keeps at least one visible
+    // type (enforced in hideBuiltinType + server-side).
     const revenue = [
-      { key: 'ORDER' as string,        label: typeLabel('ORDER', 'Order') },
-      ...(['BONUS', 'CANCELLATION'] as const)
+      ...(['ORDER', 'BONUS', 'CANCELLATION'] as const)
         .filter(k => !hiddenTypes.includes(k) || k === entryType)
-        .map(k => ({ key: k as string, label: typeLabel(k, k === 'BONUS' ? 'Bonus' : 'Cancellation') })),
+        .map(k => ({ key: k as string, label: typeLabel(k, k === 'ORDER' ? 'Order' : k === 'BONUS' ? 'Bonus' : 'Cancellation') })),
       ...customEntryTypes.filter(t => t.kind !== 'expense').map(t => ({
         key: customTypeKey(t.name),
         label: t.icon ? `${t.icon} ${t.name}` : t.name,
       })),
     ];
     const expense = [
-      { key: 'EXPENSE' as string, label: typeLabel('EXPENSE', 'Expense') },
+      ...(['EXPENSE'] as const)
+        .filter(k => !hiddenTypes.includes(k) || k === entryType)
+        .map(k => ({ key: k as string, label: typeLabel(k, 'Expense') })),
       ...customEntryTypes.filter(t => t.kind === 'expense').map(t => ({
         key: customTypeKey(t.name),
         label: t.icon ? `${t.icon} ${t.name}` : t.name,
@@ -1981,14 +1983,14 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const switchEntryKind = (k: 'revenue' | 'expense') => {
     if (k === entryKind) return;
     if (k === 'expense') {
-      setEntryType('EXPENSE');
+      setEntryType(defaultExpenseType());
       setMode('subtract');
       setMiles('');
       setMinutes('');
     } else {
-      setEntryType('ORDER');
+      setEntryType(defaultRevenueType());
       setMode('add');
-      setCategory('GAS');
+      setCategory(defaultCategory());
       setIsBusiness(false);
       setReceiptUri(null);
       setReceiptDataUri(null);
@@ -2070,9 +2072,35 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const entryTypeRef  = useRef<string>(entryType);
   useEffect(() => { entryTypeRef.current = entryType; }, [entryType]);
 
+  // First VISIBLE defaults — hardcoding ORDER / DOORDASH / GAS resurrected
+  // hidden pills (the options filter keeps the current selection visible even
+  // when hidden, so a hidden default reappeared on every new draft).
+  const defaultRevenueType = () => {
+    const builtin = (['ORDER', 'BONUS', 'CANCELLATION'] as const).find(k => !hiddenTypes.includes(k));
+    if (builtin) return builtin as string;
+    const custom = customEntryTypes.find(t => t.kind !== 'expense');
+    return custom ? customTypeKey(custom.name) : 'ORDER';
+  };
+  const defaultExpenseType = () => {
+    if (!hiddenTypes.includes('EXPENSE')) return 'EXPENSE';
+    const custom = customEntryTypes.find(t => t.kind === 'expense');
+    return custom ? customTypeKey(custom.name) : 'EXPENSE';
+  };
+  const defaultPlatform = () => {
+    const builtin = APPS.find(a => !hiddenPlatforms.includes(a.key));
+    if (builtin) return builtin.key as string;
+    return customPlatforms[0] ? customKey(customPlatforms[0].name) : 'OTHER';
+  };
+  const defaultCategory = () => {
+    if (!hiddenCats.includes('GAS')) return 'GAS';
+    const builtin = EXPENSE_CATS.find(c => !hiddenCats.includes(c));
+    if (builtin) return builtin as string;
+    return customExpenseCats[0] ? customCatKey(customExpenseCats[0].name) : 'OTHER';
+  };
+
   const reset = () => {
     setStep('calc'); setAmount('0'); setMode('add');
-    setEntryType('ORDER'); setApp('DOORDASH'); setCategory('GAS');
+    setEntryType(defaultRevenueType()); setApp(defaultPlatform()); setCategory(defaultCategory());
     setMiles(''); setMinutes(''); setNote('');
     setReceiptUri(null); setReceiptDataUri(null);
     setIsBusiness(false);
@@ -2284,8 +2312,12 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               // the options filter keeps it visible — so saving unrelated
               // changes never silently rewrites the stored platform.
               if (app === key && !editing) {
+                // Prefer the neutral OTHER pill over the first brand in the
+                // list — falling back to a specific brand (Uber Eats) surprised
+                // users who had just hidden their only other platform.
                 const remaining = APPS.filter(a => !list.includes(a.key));
-                setApp(remaining[0]?.key ?? (customPlatforms[0] ? customKey(customPlatforms[0].name) : 'OTHER'));
+                const fallback = remaining.find(a => a.key === 'OTHER') ?? remaining[0];
+                setApp(fallback?.key ?? (customPlatforms[0] ? customKey(customPlatforms[0].name) : 'OTHER'));
               }
               setAddPlatformVisible(false);
               setEditingLabel(null);
@@ -2319,10 +2351,28 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     }
   };
 
-  // Hide a BUILT-IN type pill (BONUS / CANCELLATION only — ORDER anchors
-  // Revenue mode and EXPENSE anchors Expense mode, so they never hide).
+  // Hide a BUILT-IN type pill. ORDER / EXPENSE may be hidden too, as long as
+  // their mode (revenue / expense) keeps at least one visible type — built-in
+  // or custom — so the entry form never ends up with an empty Type row.
   const hideBuiltinType = (key: string) => {
-    const label = typeLabel(key as EntryType, key === 'BONUS' ? 'Bonus' : 'Cancellation');
+    const TYPE_DEFAULTS: Record<string, string> = { ORDER: 'Order', BONUS: 'Bonus', CANCELLATION: 'Cancellation', EXPENSE: 'Expense' };
+    const label = typeLabel(key as EntryType, TYPE_DEFAULTS[key] ?? key);
+    // "At least one visible per mode" pre-check (server enforces it too).
+    const nextHidden = new Set([...hiddenTypes, key]);
+    if (key === 'EXPENSE') {
+      if (!customEntryTypes.some(t => t.kind === 'expense')) {
+        Alert.alert('Can\u2019t hide', 'At least one expense type must stay visible. Add a custom expense type first.');
+        return;
+      }
+    } else {
+      const revenueLeft =
+        (['ORDER', 'BONUS', 'CANCELLATION'] as const).some(k => !nextHidden.has(k)) ||
+        customEntryTypes.some(t => t.kind !== 'expense');
+      if (!revenueLeft) {
+        Alert.alert('Can\u2019t hide', 'At least one revenue type must stay visible.');
+        return;
+      }
+    }
     Alert.alert(
       `Hide \u201C${label}\u201D?`,
       `It won\u2019t show when adding entries. Your previous ${label} entries will still be viewable in the entries list. Restore anytime from \u201C+ Add\u201D.`,
@@ -2339,8 +2389,19 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               writeHiddenTypesMirror(list).catch(() => {});
               setMirrorHiddenTypes(list);
               // Same edit-safety rule as platforms: never rewrite the type on
-              // a historical entry being edited.
-              if (entryType === key && !editing) setEntryType('ORDER');
+              // a historical entry being edited. Fall back to the first still-
+              // visible type of the SAME mode (ORDER may itself be hidden now).
+              if (entryType === key && !editing) {
+                const hiddenNow = new Set(list);
+                if (key === 'EXPENSE') {
+                  const firstExpense = customEntryTypes.find(t => t.kind === 'expense');
+                  setEntryType(firstExpense ? customTypeKey(firstExpense.name) : 'EXPENSE');
+                } else {
+                  const builtin = (['ORDER', 'BONUS', 'CANCELLATION'] as const).find(k => !hiddenNow.has(k));
+                  const firstIncome = customEntryTypes.find(t => t.kind !== 'expense');
+                  setEntryType(builtin ?? (firstIncome ? customTypeKey(firstIncome.name) : 'ORDER'));
+                }
+              }
               setAddPlatformVisible(false);
               setEditingLabel(null);
               hTap();
@@ -3822,7 +3883,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   </Text>
                 </Pressable>
               ) : null}
-              {editingLabel && (editingLabel.kind === 'platform' || editingLabel.key === 'BONUS' || editingLabel.key === 'CANCELLATION') ? (
+              {editingLabel && (editingLabel.kind === 'platform' || editingLabel.kind === 'type') ? (
                 <Pressable
                   onPress={() => (editingLabel.kind === 'platform' ? hideBuiltinPlatform(editingLabel.key) : hideBuiltinType(editingLabel.key))}
                   disabled={addPlatformBusy}
@@ -4489,15 +4550,6 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             <Text style={{ color: TEXT, fontSize: 16, fontWeight: '700' }}>{user?.username || user?.first_name || 'Driver'}</Text>
             <Text style={{ color: MUTED, fontSize: 12 }}>{user?.email || ''}</Text>
           </View>
-          <Pressable
-            onPress={() => Alert.alert('Sign Out', 'Are you sure?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Sign Out', style: 'destructive', onPress: logout },
-            ])}
-            style={{ backgroundColor: RED_LT, borderWidth: 1, borderColor: RED + '44', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}
-          >
-            <Text style={{ color: RED, fontWeight: '700', fontSize: 13 }}>Sign Out</Text>
-          </Pressable>
         </View>
 
         {/* Support */}
@@ -5054,6 +5106,29 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         >
           <Text style={{ color: RED, fontWeight: '800', fontSize: 14 }}>Delete My Account</Text>
           <Text style={{ color: MUTED, fontSize: 11, marginTop: 4 }}>Permanently erase all of your data</Text>
+        </Pressable>
+
+        {/* Sign Out — lives at the very bottom of Settings (moved out of the
+            account card so the easy-to-reach action is signing out, not
+            deleting the account). */}
+        <View style={{ height: 16 }} />
+        <Pressable
+          onPress={() => Alert.alert('Sign Out', 'Are you sure?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Sign Out', style: 'destructive', onPress: logout },
+          ])}
+          accessibilityRole="button"
+          accessibilityLabel="Sign Out"
+          style={({ pressed }) => ({
+            backgroundColor: SURFACE,
+            borderWidth: 1,
+            borderColor: pressed ? RED : BORDER,
+            borderRadius: 14,
+            padding: 16,
+            alignItems: 'center',
+          })}
+        >
+          <Text style={{ color: RED, fontWeight: '800', fontSize: 14 }}>Sign Out</Text>
         </Pressable>
       </ScrollView>
       <DeleteAccountConfirmModal
@@ -7278,6 +7353,21 @@ export default function DashboardScreen() {
 
   // ── Hero metric toggle (tap small number to swap with big number) ──
   const [heroMetric, setHeroMetric] = useState<'profit' | 'revenue'>('profit');
+  // Tap-to-conceal for the $/Mile + Miles stat cards (device-level display
+  // preference, like theme — persists across restarts, applies to any account).
+  const [statsConcealed, setStatsConcealed] = useState(false);
+  useEffect(() => {
+    AsyncStorage.getItem('stat_cards_concealed_v1')
+      .then(v => { if (v === '1') setStatsConcealed(true); })
+      .catch(() => {});
+  }, []);
+  const toggleStatsConcealed = () => {
+    hTap();
+    setStatsConcealed(v => {
+      AsyncStorage.setItem('stat_cards_concealed_v1', v ? '0' : '1').catch(() => {});
+      return !v;
+    });
+  };
   const isProfitHero = heroMetric === 'profit';
   const heroValue   = isProfitHero ? profit  : revenue;
   const heroLabel   = isProfitHero ? 'NET PROFIT' : 'REVENUE';
@@ -7620,6 +7710,9 @@ export default function DashboardScreen() {
                       backgroundColor: BG,
                       borderWidth: 1,
                       borderColor: BORDER,
+                      // Big values must squeeze, not push the share icon off
+                      // the card. flexShrink lets this pill give up width.
+                      flexShrink: 1,
                     }}
                   >
                     <Text style={{ color: MUTED, fontSize: 13, fontWeight: '600' }}>
@@ -7645,11 +7738,18 @@ export default function DashboardScreen() {
                   </Pressable>
                 </View>
 
-                {/* Big number with count-up */}
+                {/* Big number with count-up. Font steps down for 5/6+ digit
+                    totals so the value never clips off the card edge. */}
                 <AnimatedNumber
                   value={heroValue}
                   format={(n) => (n < 0 ? '-' : '') + '$' + Math.abs(n).toFixed(2)}
-                  style={{ color: heroColor, fontSize: 48, fontWeight: '900', lineHeight: 56, marginTop: 4 }}
+                  style={{
+                    color: heroColor,
+                    fontSize: Math.abs(heroValue) >= 1000000 ? 30 : Math.abs(heroValue) >= 100000 ? 34 : Math.abs(heroValue) >= 10000 ? 40 : 48,
+                    fontWeight: '900',
+                    lineHeight: 56,
+                    marginTop: 4,
+                  }}
                 />
 
                 {/* Date range row — chevrons step the nav offset (back / forward in time). */}
@@ -7810,14 +7910,29 @@ export default function DashboardScreen() {
                 </Animated.View>
               )}
 
-              {/* ── Secondary Stat Cards: $/Mile, Miles (centered row) ──────── */}
+              {/* ── Secondary Stat Cards: $/Mile, Miles (centered row) ────────
+                  Tap either card to conceal/reveal both values (•••). */}
               <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center' }}>
-                <View style={{ flex: 1, maxWidth: '48%' }}>
-                  <StatCard label="$/Mile" icon="📍" value={`$${perMile.toFixed(2)}`} numericValue={perMile} format={(n) => `$${n.toFixed(2)}`} />
-                </View>
-                <View style={{ flex: 1, maxWidth: '48%' }}>
-                  <StatCard label="Miles"  icon="🚗" value={miles.toFixed(1)}         numericValue={miles}   format={(n) => n.toFixed(1)} hideable={false} />
-                </View>
+                <Pressable
+                  onPress={toggleStatsConcealed}
+                  accessibilityRole="button"
+                  accessibilityLabel={statsConcealed ? 'Show $/Mile' : 'Hide $/Mile'}
+                  style={{ flex: 1, maxWidth: '48%' }}
+                >
+                  {statsConcealed
+                    ? <StatCard label="$/Mile" icon="📍" value={'•••'} />
+                    : <StatCard label="$/Mile" icon="📍" value={`$${perMile.toFixed(2)}`} numericValue={perMile} format={(n) => `$${n.toFixed(2)}`} />}
+                </Pressable>
+                <Pressable
+                  onPress={toggleStatsConcealed}
+                  accessibilityRole="button"
+                  accessibilityLabel={statsConcealed ? 'Show Miles' : 'Hide Miles'}
+                  style={{ flex: 1, maxWidth: '48%' }}
+                >
+                  {statsConcealed
+                    ? <StatCard label="Miles" icon="🚗" value={'•••'} hideable={false} />
+                    : <StatCard label="Miles" icon="🚗" value={miles.toFixed(1)} numericValue={miles} format={(n) => n.toFixed(1)} hideable={false} />}
+                </Pressable>
               </View>
 
               {/* ── Analytics entry point (full-screen modal) ──────────────── */}
@@ -8255,7 +8370,9 @@ export default function DashboardScreen() {
         style={[
           {
             position: 'absolute',
-            right: 20,
+            // Left side: the entry rows' edit/delete icons live on the right,
+            // so a right-side FAB sat on top of them and blocked taps.
+            left: 20,
             bottom: insets.bottom + 100,
             zIndex: 998,
           },

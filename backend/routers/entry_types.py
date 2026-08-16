@@ -38,12 +38,14 @@ async def list_entry_types(db: Session = Depends(get_db), current_user: AuthUser
 
 # ── Hidden BUILT-IN type pills (cosmetic, per-user) ─────────────────────────
 # Same design as hidden expense categories: hiding only removes the selector
-# pill; entries already logged under a hidden type are untouched. EXPENSE is
-# NOT hideable — it anchors the Expense mode of the entry form; ORDER is NOT
-# hideable — it anchors the Revenue mode and is the default selection.
+# pill; entries already logged under a hidden type are untouched. ORDER and
+# EXPENSE may now be hidden too, as long as their mode (revenue / expense)
+# still has at least one visible type pill left — built-in or custom — so the
+# entry form is never left with an empty Type row.
 
 HIDDEN_TYPE_KIND = "entry_type"
-HIDEABLE_TYPE_KEYS = {"BONUS", "CANCELLATION"}
+HIDEABLE_TYPE_KEYS = {"ORDER", "BONUS", "CANCELLATION", "EXPENSE"}
+REVENUE_BUILTIN_KEYS = {"ORDER", "BONUS", "CANCELLATION"}
 
 
 @router.get("/entry-types/hidden", response_model=List[str])
@@ -74,6 +76,27 @@ async def set_hidden_builtin_types(
             raise HTTPException(status_code=422, detail=f"Type {k} cannot be hidden.")
         seen.add(k)
         keys.append(k)
+
+    # Each entry-form mode must keep at least one visible Type pill.
+    hidden = set(keys)
+    custom_kinds = {
+        kind
+        for (kind,) in db.query(UserEntryType.kind)
+        .filter(UserEntryType.user_id == current_user.id)
+        .all()
+    }
+    has_custom_income = any(k != "expense" for k in custom_kinds)
+    has_custom_expense = any(k == "expense" for k in custom_kinds)
+    if REVENUE_BUILTIN_KEYS.issubset(hidden) and not has_custom_income:
+        raise HTTPException(
+            status_code=400,
+            detail="At least one revenue type must stay visible.",
+        )
+    if "EXPENSE" in hidden and not has_custom_expense:
+        raise HTTPException(
+            status_code=400,
+            detail="At least one expense type must stay visible.",
+        )
 
     db.query(UserHiddenBuiltin).filter(
         UserHiddenBuiltin.user_id == current_user.id,

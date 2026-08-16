@@ -296,6 +296,31 @@ export type LoginResult =
   | { access_token: string; mfa_required?: undefined }
   | { mfa_required: true; challenge_token: string; email?: string };
 
+// ── Recently-deleted tombstones ──────────────────────────────────────────────
+// A GET that was already in flight when a delete landed can resolve AFTER the
+// optimistic removal and re-insert the row for a moment ("deleted entry pops
+// back, delete again" reports). Any id deleted (or queued for delete) in the
+// last minute is filtered out of every entries response; by the time the TTL
+// lapses the server state has long converged.
+const DELETED_TOMBSTONE_TTL_MS = 60_000;
+const recentlyDeletedIds = new Map<number, number>();
+function markEntryDeleted(id: number) {
+  const now = Date.now();
+  recentlyDeletedIds.set(id, now);
+  // Opportunistic sweep so the map can't grow unbounded.
+  for (const [k, t] of recentlyDeletedIds) {
+    if (now - t > DELETED_TOMBSTONE_TTL_MS) recentlyDeletedIds.delete(k);
+  }
+}
+function dropTombstoned(entries: Entry[]): Entry[] {
+  if (recentlyDeletedIds.size === 0) return entries;
+  const now = Date.now();
+  return entries.filter(e => {
+    const t = recentlyDeletedIds.get(e.id);
+    return t === undefined || now - t > DELETED_TOMBSTONE_TTL_MS;
+  });
+}
+
 const realApi = {
   async login(credential: string, password: string): Promise<LoginResult> {
     const res = await trackedFetch(`${API_BASE}/api/auth/login`, {
@@ -450,11 +475,25 @@ const realApi = {
   },
 
   async requestPasswordReset(email: string): Promise<{ message: string }> {
-    const res = await trackedFetch(`${API_BASE}/api/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
+    // One silent retry on a transport failure (Android in particular drops
+    // the response on flaky connections even though the request landed).
+    // Safe to repeat: the endpoint is idempotent-enough — every request just
+    // issues an additional reset token and earlier links stay valid.
+    let res: Response;
+    try {
+      res = await trackedFetch(`${API_BASE}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    } catch (e) {
+      await new Promise(r => setTimeout(r, 1200));
+      res = await trackedFetch(`${API_BASE}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    }
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'Could not send reset email');
@@ -632,10 +671,12 @@ const realApi = {
     try {
       res = await trackedFetch(`${API_BASE}/api/entries?timeframe=${timeframe}&limit=${limit}${offsetParam}`, { headers });
     } catch {
-      return localEntriesForTimeframe(timeframe, limit, dayOffset);
+      return dropTombstoned(await localEntriesForTimeframe(timeframe, limit, dayOffset));
     }
     if (!res.ok) throw new Error('Failed to fetch entries');
-    const data: Entry[] = await res.json();
+    // Strip tombstoned rows BEFORE the mirror write — a GET that raced a
+    // delete must not re-persist the deleted row into the local mirror.
+    const data: Entry[] = dropTombstoned(await res.json());
     // AWAIT the mirror write so any row the UI then renders is already in the
     // local mirror; otherwise an edit fired before this lands would enqueue with
     // no LWW baseline and the strict drain gate would drop it (lost write).
@@ -644,7 +685,7 @@ const realApi = {
     // refetch (pull-to-refresh / focus / staleTime) can't erase a queued entry.
     // No-op when nothing is queued.
     const { fromMs, toMs } = rangeForTimeframe(timeframe, dayOffset);
-    return overlayPendingOnEntries(data, fromMs, toMs, limit);
+    return dropTombstoned(await overlayPendingOnEntries(data, fromMs, toMs, limit));
   },
 
   async getEntriesInRange(fromIso: string, toIso: string, limit = 1000): Promise<Entry[]> {
@@ -654,18 +695,19 @@ const realApi = {
     try {
       res = await trackedFetch(url, { headers });
     } catch {
-      return localEntriesForRange(fromIso, toIso, limit);
+      return dropTombstoned(await localEntriesForRange(fromIso, toIso, limit));
     }
     if (!res.ok) throw new Error('Failed to fetch entries');
-    const data: Entry[] = await res.json();
+    // Strip tombstoned rows BEFORE the mirror write (see getEntries).
+    const data: Entry[] = dropTombstoned(await res.json());
     // AWAIT the mirror write (see getEntries) so a baseline is always available
     // before the UI can fire an edit against any row from this range.
     await mergeServerEntries(data).catch(() => {});
     // Layer pending offline mutations back on (see getEntries). No-op when the
     // queue is empty; skipped if the range can't be parsed into EST bounds.
     const bounds = rangeForDates(fromIso, toIso);
-    if (!bounds) return data;
-    return overlayPendingOnEntries(data, bounds.fromMs, bounds.toMs, limit);
+    if (!bounds) return dropTombstoned(data);
+    return dropTombstoned(await overlayPendingOnEntries(data, bounds.fromMs, bounds.toMs, limit));
   },
 
   // Full pull of the user's entries into the local mirror (authoritative). Run
@@ -677,7 +719,9 @@ const realApi = {
     const url = `${API_BASE}/api/entries?from_date=2000-01-01&to_date=2100-01-01&limit=100000`;
     const res = await trackedFetch(url, { headers });
     if (!res.ok) throw new Error('Failed to fetch entries');
-    const data: Entry[] = await res.json();
+    // Strip tombstoned rows before the authoritative mirror replace too — the
+    // full pull can race a just-confirmed delete the same way partial GETs do.
+    const data: Entry[] = dropTombstoned(await res.json());
     await replaceServerEntries(data);
     return data;
   },
@@ -1027,6 +1071,8 @@ const realApi = {
   },
 
   // Raw DELETE — no offline queue. Used by the mutation-queue drainer so it
+  // (tombstones for recently-deleted ids live just above `api` — see
+  // markEntryDeleted / dropTombstoned)
   // can't recurse. ALWAYS throws on failure (network or non-2xx); the thrown
   // Error carries `.status` (including 404) so the drainer can classify a
   // remote-deleted row (404 → drop) without regex.
@@ -1055,16 +1101,21 @@ const realApi = {
         const { removeQueuedBySyntheticId } = await import('./offlineQueue');
         await removeQueuedBySyntheticId(id);
       } catch {}
+      markEntryDeleted(id);
       await refreshPendingCount();
       return;
     }
     try {
       await this.deleteEntryRaw(id);
+      // Tombstone AFTER a confirmed delete so any GET that raced this DELETE
+      // can't briefly re-insert the row when its (stale) response lands.
+      markEntryDeleted(id);
+      return;
     } catch (err: any) {
       const status: number | undefined = err?.status;
       // Already-gone row (404) — the desired state (row absent) is achieved;
       // treat as success so the optimistic removal isn't rolled back.
-      if (status === 404) return;
+      if (status === 404) { markEntryDeleted(id); return; }
       const isTransient =
         status === undefined ||
         status === 401 ||
@@ -1079,6 +1130,7 @@ const realApi = {
       const baseUpdatedAt = (await getLocalEntry(id))?.updated_at;
       const { enqueueMutation } = await import('./mutationQueue');
       await enqueueMutation({ kind: 'deleteEntry', id, baseUpdatedAt });
+      markEntryDeleted(id);
       await refreshPendingCount();
       requestDrain();
     }
