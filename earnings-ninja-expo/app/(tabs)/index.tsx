@@ -5283,31 +5283,10 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         </Text>
         <TwoFactorRow />
 
-        {/* Delete Account — Apple Guideline 5.1.1(v) requires apps that support */}
-        {/* account creation to also support in-app account deletion. */}
+        {/* Sign Out — the easy-to-reach account action at the bottom of
+            Settings. Delete Account sits BELOW it as a deliberately
+            low-prominence text link (see next block). */}
         <View style={{ height: 28 }} />
-        <Text style={{ color: LABEL, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
-          ⚠️  Danger Zone
-        </Text>
-        <Pressable
-          onPress={() => setShowDeleteConfirm(true)}
-          style={{
-            backgroundColor: RED_LT,
-            borderWidth: 1,
-            borderColor: RED + '66',
-            borderRadius: 14,
-            padding: 16,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: RED, fontWeight: '800', fontSize: 14 }}>Delete My Account</Text>
-          <Text style={{ color: MUTED, fontSize: 11, marginTop: 4 }}>Permanently erase all of your data</Text>
-        </Pressable>
-
-        {/* Sign Out — lives at the very bottom of Settings (moved out of the
-            account card so the easy-to-reach action is signing out, not
-            deleting the account). */}
-        <View style={{ height: 16 }} />
         <Pressable
           onPress={() => Alert.alert('Sign Out', 'Are you sure?', [
             { text: 'Cancel', style: 'cancel' },
@@ -5325,6 +5304,27 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
           })}
         >
           <Text style={{ color: RED, fontWeight: '800', fontSize: 14 }}>Sign Out</Text>
+        </Pressable>
+
+        {/* Delete Account — Apple Guideline 5.1.1(v) requires in-app account
+            deletion, but it must not read as a primary CTA. Compact centered
+            text link at the very bottom, visually subordinate to Sign Out;
+            the padded pressable keeps a ≥44pt accessible touch target. Tapping
+            opens the existing type-DELETE confirmation flow (unchanged). */}
+        <Pressable
+          onPress={() => setShowDeleteConfirm(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Delete Account"
+          hitSlop={8}
+          style={({ pressed }) => ({
+            alignSelf: 'center',
+            paddingVertical: 14,
+            paddingHorizontal: 24,
+            marginTop: 10,
+            opacity: pressed ? 0.6 : 1,
+          })}
+        >
+          <Text style={{ color: RED, fontWeight: '600', fontSize: 13 }}>Delete Account</Text>
         </Pressable>
       </ScrollView>
       <DeleteAccountConfirmModal
