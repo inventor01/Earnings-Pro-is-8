@@ -41,6 +41,15 @@ export function PasswordInput({ containerStyle, style, ...inputProps }: Props) {
   // Runs after the secureTextEntry prop change has committed to the native
   // view, which is the only ordering that reliably clears iOS's
   // "fresh secure field" state (see header comment).
+  //
+  // The rewrite must go through a string that DIFFERS from the current text
+  // (the canonical "append a space, then remove it" workaround from
+  // facebook/react-native#21572). A clear+rewrite of the SAME text can be
+  // coalesced by the native batch into a net no-op — the field never sees a
+  // text change, the fresh flag survives, and the next keystroke still wipes
+  // the password (observed on device). The two writes are split across a
+  // frame so they can't be merged, and the restore reads lastValueRef at
+  // restore time so a keystroke landing in between is never clobbered.
   useEffect(() => {
     if (!mountedRef.current) {
       mountedRef.current = true;
@@ -48,8 +57,11 @@ export function PasswordInput({ containerStyle, style, ...inputProps }: Props) {
     }
     if (Platform.OS !== 'ios') return;
     const current = inputProps.value ?? lastValueRef.current ?? '';
-    inputRef.current?.setNativeProps({ text: '' });
-    inputRef.current?.setNativeProps({ text: current });
+    if (!current) return; // nothing typed yet — nothing to protect
+    inputRef.current?.setNativeProps({ text: current + ' ' });
+    requestAnimationFrame(() => {
+      inputRef.current?.setNativeProps({ text: lastValueRef.current ?? '' });
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 

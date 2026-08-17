@@ -19,3 +19,11 @@ mid-string edits, false negatives when the typed char is a prefix).
 `useEffect` keyed on the `visible` state (skipping first mount). Any future
 secure-field toggle must keep that ordering; never move it back into the press
 handler or infer wipes from text diffs.
+
+**Second failure (Aug 2026, on device):** a same-tick clear+rewrite of the SAME
+final text got coalesced by the native update batch into a net no-op, so the
+fresh flag survived and iPhone kept wiping. The repair is the canonical
+"different-string" trick (facebook/react-native#21572): write `value + ' '`
+after the commit, then restore the real value on the next frame from
+`lastValueRef` (so an interleaved keystroke is never clobbered). Skip when the
+field is empty. Never resync via same-text writes.
