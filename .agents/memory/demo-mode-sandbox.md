@@ -10,3 +10,5 @@ description: Isolation invariants for the Expo app's fully client-side demo; any
 **Why:** the old demo (`POST /api/auth/demo`, kept only for old builds/reviewer) wrote throwaway users into the prod DB; and any leaked demo state (mirrors, prefs, entitlement, drafts) is inherited by the next real login on the device. A demo "Sign Out" running real logout cleanup would destroy a signed-out real account's unsynced offline data. Direct-fetch paths (connectivity probe) bypass the api-layer guard and need their own.
 
 **How to apply:** when adding any AsyncStorage read/write, mirror, widget push, notification schedule/flag, RC identity call, or direct fetch, guard it with the demo-active check (or confirm it's only reachable with a real token). Regression suite: `__tests__/demoIsolation.test.ts`.
+
+**Parity + import gotcha (Aug 2026):** demoStore must enforce the same business invariants as the real backend (e.g. min-visible hidden-set/delete guards), or sandbox behavior diverges from prod. Also: demoStore cannot value-import from lib/api (circular — resolves undefined at module init under jest/metro); duplicate stable enum key lists literally instead.
