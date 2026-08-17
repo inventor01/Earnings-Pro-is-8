@@ -4568,6 +4568,14 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
       if (notifOn) {
         await disableMotivation();
         setNotifOn(false);
+      } else if (isDemoActive()) {
+        // Demo Mode intentionally never schedules notifications (sample data
+        // must not land on a real lock screen). Say so, instead of the
+        // misleading "turn it on in Settings" alert below.
+        Alert.alert(
+          'Not available in Demo Mode',
+          'Create a free account to get your daily motivation and evening recap notifications.',
+        );
       } else {
         const ok = await enableMotivation(hidden);
         if (ok) {
