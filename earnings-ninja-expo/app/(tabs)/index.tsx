@@ -4573,9 +4573,16 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
         if (ok) {
           setNotifOn(true);
         } else {
+          // Permission denied at the OS level. Copy must be platform-neutral
+          // (this runs on Android too) and give a one-tap path to the system
+          // settings screen instead of a dead end.
           Alert.alert(
             'Notifications are off',
-            'Turn on notifications for Earnings Ninja in iOS Settings to get your daily motivation and evening recap.',
+            `Allow notifications for Earnings Ninja in your ${Platform.OS === 'android' ? 'phone' : 'iPhone'} Settings to get your daily motivation and evening recap.`,
+            [
+              { text: 'Not now', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            ],
           );
         }
       }
