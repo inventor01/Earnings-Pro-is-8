@@ -18,17 +18,23 @@ import { isDemoActive } from './demoSession';
 
 let PLATFORM_LABEL_OVERRIDES: Record<string, string> = {};
 let TYPE_LABEL_OVERRIDES: Record<string, string> = {};
+// Section-heading titles (kind='heading', keys PLATFORM / TYPE) — the user can
+// rename the "Platform" / "Type" headings themselves (12-char cap, display only).
+let HEADING_LABEL_OVERRIDES: Record<string, string> = {};
 
 export function applyLabelOverrides(list: LabelOverride[]): void {
   const p: Record<string, string> = {};
   const t: Record<string, string> = {};
+  const h: Record<string, string> = {};
   for (const o of list) {
     if (!o || typeof o.key !== 'string' || typeof o.label !== 'string' || !o.label) continue;
     if (o.kind === 'platform') p[o.key] = o.label;
     else if (o.kind === 'type') t[o.key] = o.label;
+    else if (o.kind === 'heading') h[o.key] = o.label;
   }
   PLATFORM_LABEL_OVERRIDES = p;
   TYPE_LABEL_OVERRIDES = t;
+  HEADING_LABEL_OVERRIDES = h;
 }
 
 export function platformLabel(appKey: string): string {
@@ -37,6 +43,26 @@ export function platformLabel(appKey: string): string {
 
 export function typeLabel(typeKey: string, fallback: string): string {
   return TYPE_LABEL_OVERRIDES[typeKey] ?? fallback;
+}
+
+// Renamed section-heading title ('PLATFORM' | 'TYPE'), falling back to the
+// built-in default. Enforced to 12 chars by the editor + the server.
+export const MAX_HEADING_LEN = 12;
+
+// The server counts Unicode CODE POINTS (Python len()), not UTF-16 units —
+// an emoji like 🚗 is ONE character, not two. Count/truncate the same way so
+// the client cap exactly matches the server's.
+export function headingCharCount(s: string): number {
+  return Array.from(s).length;
+}
+
+export function clampHeading(s: string): string {
+  const chars = Array.from(s);
+  return chars.length <= MAX_HEADING_LEN ? s : chars.slice(0, MAX_HEADING_LEN).join('');
+}
+
+export function headingLabel(key: 'PLATFORM' | 'TYPE', fallback: string): string {
+  return HEADING_LABEL_OVERRIDES[key] ?? fallback;
 }
 
 const LABELS_MIRROR_KEY = 'labelOverridesMirror.v1';

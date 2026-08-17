@@ -54,7 +54,7 @@ import {
   customKey, isCustomKey, customNameFromKey, keyForEntry,
   entryAppLabel, entryAppColor, colorForCustomName, applyPlatformStyles, PRESET_COLORS, canHideBuiltin,
   readPlatformsMirror, writePlatformsMirror, findDuplicatePlatform, MAX_PLATFORM_NAME_LEN,
-  applyLabelOverrides, platformLabel, typeLabel, readLabelsMirror, writeLabelsMirror,
+  applyLabelOverrides, platformLabel, typeLabel, headingLabel, MAX_HEADING_LEN, headingCharCount, clampHeading, readLabelsMirror, writeLabelsMirror,
   customTypeKey, isCustomTypeKey, customTypeNameFromKey, typeKeyForEntry, entryTypeLabel,
   applyEntryTypeStyles, readEntryTypesMirror, writeEntryTypesMirror, findDuplicateEntryType,
   customCatKey, isCustomCatKey, customCatNameFromKey, entryCategoryLabel,
@@ -1112,11 +1112,34 @@ function CalcPad({ amount, mode, onAmount, onMode }: {
 }
 
 // ─── Details Form (mirrors web EntryForm 1:1) ──────────────────────────────────
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
+function FieldLabel({ children, onLongPress, renameHint }: {
+  children: React.ReactNode;
+  // Optional: long-press the heading TEXT itself to rename the section title
+  // (e.g. "Platform" → "Gig App"). Fires once per hold, with a light haptic.
+  onLongPress?: () => void;
+  // Accessible label for the rename action (long press can't be the only path
+  // for screen-reader users).
+  renameHint?: string;
+}) {
+  const label = (
     <Text style={{ fontSize: 15, fontWeight: '700', color: '#1f2937', marginBottom: 8 }}>
       {children}
     </Text>
+  );
+  if (!onLongPress) return label;
+  return (
+    <Pressable
+      onLongPress={() => { hTap(); onLongPress(); }}
+      delayLongPress={450}
+      hitSlop={8}
+      accessibilityRole="header"
+      accessibilityHint={renameHint}
+      accessibilityActions={[{ name: 'longpress' as const, label: renameHint ?? 'Rename heading' }]}
+      onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'longpress') onLongPress(); }}
+      style={{ alignSelf: 'flex-start' }}
+    >
+      {label}
+    </Pressable>
   );
 }
 
@@ -1252,6 +1275,7 @@ function DetailsForm({
   entryKind, onSwitchKind,
   platformOptions, onAddPlatform, onEditPlatform, typeOptions, onAddType, onEditType,
   categoryOptions, onAddCategory, onEditCategory,
+  platformHeading, typeHeading, onRenameHeading,
   isBusiness, setIsBusiness,
   miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
   receiptUri, onPickReceipt, onRemoveReceipt,
@@ -1297,6 +1321,11 @@ function DetailsForm({
   categoryOptions: { key: string; label: string }[];
   onAddCategory: () => void;
   onEditCategory: (key: string) => void;
+  // Per-account renamed SECTION HEADINGS ("Platform" / "Type" titles) + the
+  // long-press rename opener. Display-only; never touches records or form state.
+  platformHeading: string;
+  typeHeading: string;
+  onRenameHeading: (key: 'PLATFORM' | 'TYPE') => void;
   isBusiness: boolean;
   setIsBusiness: (b: boolean) => void;
   miles: string;
@@ -1414,9 +1443,13 @@ function DetailsForm({
             })}
           </View>
 
-          {/* Type — long-press a pill to rename it (per-user label) */}
+          {/* Type — long-press a pill to rename it (per-user label); on the
+              Revenue form, long-press the HEADING itself to rename the title. */}
           <View ref={registerAddEntryTarget('type')} collapsable={false}>
-            <FieldLabel>📝 Type</FieldLabel>
+            <FieldLabel
+              onLongPress={entryKind === 'revenue' ? () => onRenameHeading('TYPE') : undefined}
+              renameHint="Rename Type heading"
+            >📝 {typeHeading}</FieldLabel>
             <PillSelect
               scroll
               options={[
@@ -1441,7 +1474,10 @@ function DetailsForm({
           {!expenseUi && (
             <View ref={registerAddEntryTarget('platform')} collapsable={false}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <FieldLabel>🚗 Platform</FieldLabel>
+                <FieldLabel
+                  onLongPress={() => onRenameHeading('PLATFORM')}
+                  renameHint="Rename Platform heading"
+                >🚗 {platformHeading}</FieldLabel>
                 {appAutoFilled ? (
                   <View style={{
                     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -2037,7 +2073,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const [renamingCategory, setRenamingCategory] = useState<UserExpenseCategory | null>(null);
   // When set, the modal edits a BUILT-IN pill label (cosmetic per-user
   // override; the underlying key stored on entries never changes).
-  const [editingLabel, setEditingLabel] = useState<{ kind: 'platform' | 'type'; key: string; defaultLabel: string } | null>(null);
+  const [editingLabel, setEditingLabel] = useState<{ kind: 'platform' | 'type' | 'heading'; key: string; defaultLabel: string } | null>(null);
   // Built-in ExpenseCategory value or 'CUSTOMCAT:<name>' selection key.
   const [category, setCategory]  = useState<string>('GAS');
   // Category pill options: visible built-ins (hidden ones filtered out, but
@@ -2218,6 +2254,26 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     setAddPlatformError(null);
     setAddPlatformVisible(true);
   };
+
+  // Long-press on the "Platform" / "Type" SECTION HEADING itself (Revenue
+  // form): rename the heading title (display-only, per-account, 12-char cap).
+  const handleRenameHeading = (key: 'PLATFORM' | 'TYPE') => {
+    const def = key === 'PLATFORM' ? 'Platform' : 'Type';
+    setEditingLabel({ kind: 'heading', key, defaultLabel: def });
+    setRenamingPlatform(null);
+    setRenamingEntryType(null);
+    setAddingEntryType(false);
+    setRenamingCategory(null);
+    setAddingCategory(false);
+    setNewPlatformName(headingLabel(key, def));
+    setAddPlatformError(null);
+    setAddPlatformVisible(true);
+  };
+  // Current heading titles — recomputed whenever overrides change so the form
+  // updates immediately after a rename. (labelOverrides is the reactive dep;
+  // headingLabel reads the module map applyLabelOverrides just refreshed.)
+  const platformHeading = useMemo(() => { void labelOverrides; return headingLabel('PLATFORM', 'Platform'); }, [labelOverrides]);
+  const typeHeading = useMemo(() => { void labelOverrides; return headingLabel('TYPE', 'Type'); }, [labelOverrides]);
 
   // "+ Add" pill on the Type row → open the shared prompt in add-type mode.
   const handleAddType = () => {
@@ -2732,6 +2788,12 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     if (!editingLabel || addPlatformBusy) return;
     const label = labelArg === null ? null : (labelArg ?? newPlatformName).trim();
     if (label === '') return;
+    // Heading titles carry a hard 12-char cap. maxLength already blocks typing
+    // past it, but never rely on the UI alone — validate before persisting.
+    if (editingLabel.kind === 'heading' && label !== null && headingCharCount(label) > MAX_HEADING_LEN) {
+      setAddPlatformError(`Titles are limited to ${MAX_HEADING_LEN} characters.`);
+      return;
+    }
     // Typing the default name back = reset to default.
     const effective = label !== null && label.toLowerCase() === editingLabel.defaultLabel.toLowerCase() ? null : label;
     setAddPlatformBusy(true);
@@ -3595,6 +3657,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               onSwitchKind={switchEntryKind}
               onAddType={handleAddType}
               onEditType={handleEditType}
+              platformHeading={platformHeading}
+              typeHeading={typeHeading}
+              onRenameHeading={handleRenameHeading}
               expenseUi={effectiveEntryType === 'EXPENSE'}
               appAutoFilled={appAutoFilled && effectiveEntryType !== 'EXPENSE'}
               lastAppLabel={isCustomKey(app) ? customNameFromKey(app) : platformLabel(app)}
@@ -3734,7 +3799,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
             >
               <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>
                 {editingLabel
-                  ? `Rename \u201C${editingLabel.defaultLabel}\u201D`
+                  ? (editingLabel.kind === 'heading'
+                      ? `Rename ${editingLabel.defaultLabel} Title`
+                      : `Rename \u201C${editingLabel.defaultLabel}\u201D`)
                   : renamingPlatform ? 'Rename platform'
                   : renamingEntryType ? 'Rename type'
                   : addingEntryType ? 'Add a type'
@@ -3744,7 +3811,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               </Text>
               <Text style={{ fontSize: 13, color: '#6b7280' }}>
                 {editingLabel
-                  ? 'This only changes how the tab is shown on your account. Your entries and stats are unaffected.'
+                  ? (editingLabel.kind === 'heading'
+                      ? `New title for the \u201C${editingLabel.defaultLabel}\u201D section (e.g. ${editingLabel.key === 'PLATFORM' ? 'Gig App, Service' : 'Order Type, Shift Type'}). Display only — your entries, options, and stats are unaffected.`
+                      : 'This only changes how the tab is shown on your account. Your entries and stats are unaffected.')
                   : renamingPlatform
                   ? `New name for \u201C${renamingPlatform.name}\u201D. Your existing entries move to the new name.`
                   : renamingEntryType
@@ -3759,11 +3828,17 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               </Text>
               <TextInput
                 value={newPlatformName}
-                onChangeText={(t) => { setNewPlatformName(t); if (addPlatformError) setAddPlatformError(null); }}
-                placeholder={(addingEntryType || renamingEntryType) ? 'Type name' : (addingCategory || renamingCategory) ? 'Category name' : 'Platform name'}
+                onChangeText={(t) => {
+                  // Heading titles: cap at 12 Unicode CHARACTERS (code points),
+                  // matching the server's count — native maxLength counts
+                  // UTF-16 units, which would short-change emoji.
+                  setNewPlatformName(editingLabel?.kind === 'heading' ? clampHeading(t) : t);
+                  if (addPlatformError) setAddPlatformError(null);
+                }}
+                placeholder={editingLabel?.kind === 'heading' ? editingLabel.defaultLabel : (addingEntryType || renamingEntryType) ? 'Type name' : (addingCategory || renamingCategory) ? 'Category name' : 'Platform name'}
                 placeholderTextColor="#9ca3af"
                 autoFocus
-                maxLength={MAX_PLATFORM_NAME_LEN}
+                maxLength={editingLabel?.kind === 'heading' ? undefined : MAX_PLATFORM_NAME_LEN}
                 autoCapitalize="words"
                 returnKeyType="done"
                 onSubmitEditing={() => (editingLabel ? submitLabelOverride() : renamingPlatform ? submitRenamePlatform() : renamingEntryType ? submitRenameEntryType() : addingEntryType ? submitNewEntryType() : renamingCategory ? submitRenameCategory() : addingCategory ? submitNewCategory() : submitNewPlatform())}
@@ -3774,6 +3849,15 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   color: '#0f172a', fontSize: 16, fontWeight: '600',
                 }}
               />
+              {/* Heading rename: live character counter under the 12-char cap. */}
+              {editingLabel?.kind === 'heading' ? (
+                <Text
+                  accessibilityLiveRegion="polite"
+                  style={{ fontSize: 12, fontWeight: '700', color: headingCharCount(newPlatformName) >= MAX_HEADING_LEN ? '#b45309' : '#9ca3af', alignSelf: 'flex-end' }}
+                >
+                  {`${headingCharCount(newPlatformName)} / ${MAX_HEADING_LEN}`}
+                </Text>
+              ) : null}
               {/* Icon + color pickers — custom platforms only (built-in label
                   edits keep their brand identity). */}
               {/* Income/Expense choice — ADD-type mode only. Fixed after

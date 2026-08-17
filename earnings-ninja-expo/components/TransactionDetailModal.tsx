@@ -10,7 +10,7 @@ import { getUserTz } from '@/lib/userTz';
 import {
   Entry, EXPENSE_EMOJIS, parseServerDate,
 } from '@/lib/api';
-import { entryAppLabel, entryAppColor, entryTypeLabel } from '@/lib/platforms';
+import { entryAppLabel, entryAppColor, entryTypeLabel, headingLabel } from '@/lib/platforms';
 
 // Smooth, non-bouncy card entrance: a controlled opacity fade + a slight
 // scale-up (0.96 → 1) driven purely by withTiming. Replaces the previous
@@ -162,8 +162,8 @@ export function TransactionDetailModal({ visible, entry, onClose, onEdit, onDele
                   {/* Stat grid */}
                   <DetailRow label="Date"     value={dateStr}                           TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
                   <DetailRow label="Time"     value={timeStr}                           TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
-                  <DetailRow label="Platform" value={entryAppLabel(entry) || entry.app} TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
-                  <DetailRow label="Type"     value={entryTypeLabel(entry, entry.type)}  TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
+                  <DetailRow label={headingLabel('PLATFORM', 'Platform')} value={entryAppLabel(entry) || entry.app} TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
+                  <DetailRow label={headingLabel('TYPE', 'Type')}     value={entryTypeLabel(entry, entry.type)}  TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
                   {Number(entry.distance_miles) > 0 && (
                     <DetailRow label="Miles" value={`${Number(entry.distance_miles).toFixed(2)} mi`} TEXT={TEXT} LABEL={LABEL} DIVIDER={DIVIDER} />
                   )}

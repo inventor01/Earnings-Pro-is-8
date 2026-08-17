@@ -164,7 +164,7 @@ export const demoApi = {
   async setHiddenEntryTypes(keys: string[]): Promise<string[]> { return demoSetHiddenTypes(keys); },
 
   async getLabelOverrides(): Promise<LabelOverride[]> { return demoGetLabelOverrides(); },
-  async setLabelOverride(kind: 'platform' | 'type', key: string, label: string | null): Promise<LabelOverride[]> {
+  async setLabelOverride(kind: 'platform' | 'type' | 'heading', key: string, label: string | null): Promise<LabelOverride[]> {
     return demoSetLabelOverride(kind, key, label);
   },
 };

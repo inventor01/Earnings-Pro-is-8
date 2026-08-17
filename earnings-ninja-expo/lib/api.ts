@@ -250,8 +250,10 @@ export interface UserExpenseCategory {
 // A per-user cosmetic rename of a BUILT-IN Platform or Type pill label.
 // The underlying key stored on entries never changes.
 export interface LabelOverride {
-  kind: 'platform' | 'type';
-  key: string;   // e.g. DOORDASH / ORDER
+  // 'heading' renames a SECTION TITLE on the Add Entry form (keys PLATFORM /
+  // TYPE) rather than an individual pill. Display-only in every case.
+  kind: 'platform' | 'type' | 'heading';
+  key: string;   // e.g. DOORDASH / ORDER / PLATFORM
   label: string;
 }
 
@@ -920,7 +922,7 @@ const realApi = {
 
   // Upsert one override (empty/undefined label = reset to default). Returns
   // the full override list so callers can replace their cache atomically.
-  async setLabelOverride(kind: 'platform' | 'type', key: string, label: string | null): Promise<LabelOverride[]> {
+  async setLabelOverride(kind: 'platform' | 'type' | 'heading', key: string, label: string | null): Promise<LabelOverride[]> {
     const headers = await getAuthHeaders();
     const res = await trackedFetch(`${API_BASE}/api/labels`, {
       method: 'PUT',
