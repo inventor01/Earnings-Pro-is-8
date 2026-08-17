@@ -150,6 +150,35 @@ def test_hidden_builtins_roundtrip(client):
     assert client.put("/api/expense-categories/hidden", json={"keys": []}).json() == []
 
 
+def test_hidden_builtins_cannot_hide_all_without_custom(client):
+    all_keys = [c.value for c in ExpenseCategory]
+    r = client.put("/api/expense-categories/hidden", json={"keys": all_keys})
+    assert r.status_code == 400
+    assert "at least one" in r.json()["detail"].lower()
+    # Hiding all-but-one is fine.
+    assert client.put("/api/expense-categories/hidden", json={"keys": all_keys[:-1]}).status_code == 200
+
+
+def test_hidden_builtins_all_allowed_with_custom_category(client):
+    assert client.post("/api/expense-categories", json={"name": "Car Wash"}).status_code == 201
+    all_keys = [c.value for c in ExpenseCategory]
+    r = client.put("/api/expense-categories/hidden", json={"keys": all_keys})
+    assert r.status_code == 200
+    assert sorted(r.json()) == sorted(all_keys)
+
+
+def test_delete_last_custom_blocked_while_all_builtins_hidden(client):
+    cid = client.post("/api/expense-categories", json={"name": "Car Wash"}).json()["id"]
+    all_keys = [c.value for c in ExpenseCategory]
+    assert client.put("/api/expense-categories/hidden", json={"keys": all_keys}).status_code == 200
+    r = client.delete(f"/api/expense-categories/{cid}")
+    assert r.status_code == 400
+    assert "at least one" in r.json()["detail"].lower()
+    # Restoring a built-in unblocks the delete.
+    assert client.put("/api/expense-categories/hidden", json={"keys": all_keys[:-1]}).status_code == 200
+    assert client.delete(f"/api/expense-categories/{cid}").status_code == 204
+
+
 def test_hidden_builtins_rejects_unknown_key(client):
     assert client.put("/api/expense-categories/hidden", json={"keys": ["NOT_A_CAT"]}).status_code == 422
 

@@ -52,7 +52,7 @@ import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
 import { getIntroEnabled, setIntroEnabled } from '@/lib/introPref';
 import {
   customKey, isCustomKey, customNameFromKey, keyForEntry,
-  entryAppLabel, entryAppColor, colorForCustomName, applyPlatformStyles, PRESET_COLORS,
+  entryAppLabel, entryAppColor, colorForCustomName, applyPlatformStyles, PRESET_COLORS, canHideBuiltin,
   readPlatformsMirror, writePlatformsMirror, findDuplicatePlatform, MAX_PLATFORM_NAME_LEN,
   applyLabelOverrides, platformLabel, typeLabel, readLabelsMirror, writeLabelsMirror,
   customTypeKey, isCustomTypeKey, customTypeNameFromKey, typeKeyForEntry, entryTypeLabel,
@@ -1950,8 +1950,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     ...APPS.filter(a => !hiddenPlatforms.includes(a.key) || a.key === app)
       .map(a => ({ key: a.key as string, label: platformLabel(a.key), color: a.color })),
     ...customPlatforms.map(p => ({
+      // Platforms are identified by their color dot only (product decision):
+      // no emoji prefix, matching the built-in brand pills.
       key: customKey(p.name),
-      label: p.icon ? `${p.icon} ${p.name}` : p.name,
+      label: p.name,
       // Read the chosen color from the row directly (not the registry) so the
       // memo recomputes deterministically from its own deps.
       color: p.color || colorForCustomName(p.name),
@@ -2036,6 +2038,11 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // When set, the modal edits a BUILT-IN pill label (cosmetic per-user
   // override; the underlying key stored on entries never changes).
   const [editingLabel, setEditingLabel] = useState<{ kind: 'platform' | 'type'; key: string; defaultLabel: string } | null>(null);
+  // True when the shared prompt modal is editing a PLATFORM (add or rename):
+  // no type/category/built-in-label mode is active. Platforms render with a
+  // color dot only, so the emoji icon picker is hidden in this mode.
+  const isPlatformEditorMode =
+    !addingEntryType && !renamingEntryType && !addingCategory && !renamingCategory && !editingLabel;
   // Built-in ExpenseCategory value or 'CUSTOMCAT:<name>' selection key.
   const [category, setCategory]  = useState<string>('GAS');
   // Category pill options: visible built-ins (hidden ones filtered out, but
@@ -2270,6 +2277,13 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       setAddPlatformVisible(true);
       return;
     }
+    // Same resulting-state rule as platforms: block only when ZERO selectable
+    // categories (built-in or custom) would remain after this hide.
+    const check = canHideBuiltin(EXPENSE_CATS as readonly string[], hiddenCats, key, customExpenseCats.length);
+    if (!check.allowed) {
+      Alert.alert('Can\u2019t hide', 'At least one expense category must stay visible.');
+      return;
+    }
     Alert.alert(
       `Hide \u201C${key}\u201D?`,
       `It won\u2019t show when adding entries. Your previous ${key} expenses will still be viewable in the entries list. Restore anytime from \u201C+ Add\u201D.`,
@@ -2303,8 +2317,13 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // from the built-in rename modal; blocked when it's the last visible pill.
   const hideBuiltinPlatform = (key: string) => {
     const label = platformLabel(key);
-    const visibleCount = APPS.filter(a => !hiddenPlatforms.includes(a.key)).length + customPlatforms.length;
-    if (visibleCount <= 1) {
+    // Validate the RESULTING state, not the current count: the pill row may
+    // show an already-hidden platform (retained while it's the current
+    // selection), so "what the user sees" can differ from the true visible
+    // set. Counting what would remain AFTER this hide is always correct,
+    // including when `key` is already in the hidden set (no-op hide).
+    const check = canHideBuiltin(APPS.map(a => a.key), hiddenPlatforms, key, customPlatforms.length);
+    if (!check.allowed) {
       Alert.alert('Can\u2019t hide', 'At least one platform must stay visible.');
       return;
     }
@@ -2546,6 +2565,14 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const submitDeleteCategory = () => {
     if (!renamingCategory || addPlatformBusy) return;
     const row = renamingCategory;
+    // Resulting-state guard (server enforces it too): deleting the last
+    // custom category while every built-in is hidden leaves zero options.
+    const remainingAfter =
+      EXPENSE_CATS.filter(c => !hiddenCats.includes(c)).length + customExpenseCats.length - 1;
+    if (remainingAfter < 1) {
+      Alert.alert('Can\u2019t delete', 'At least one expense category must stay visible. Restore a built-in category first.');
+      return;
+    }
     Alert.alert(
       `Delete \u201C${row.name}\u201D?`,
       'The category is removed from your selector. Expenses you already logged under it stay in your history and stats.',
@@ -2794,6 +2821,14 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const submitDeletePlatform = () => {
     if (!renamingPlatform || addPlatformBusy) return;
     const row = renamingPlatform;
+    // Resulting-state guard (server enforces it too): deleting the last
+    // custom platform while every built-in is hidden leaves zero options.
+    const remainingAfter =
+      APPS.filter(a => !hiddenPlatforms.includes(a.key)).length + customPlatforms.length - 1;
+    if (remainingAfter < 1) {
+      Alert.alert('Can\u2019t delete', 'At least one platform must stay visible. Restore a built-in platform first.');
+      return;
+    }
     Alert.alert(
       `Delete \u201C${row.name}\u201D?`,
       'The platform is removed from your selector. Entries you already logged under it stay in your history and stats.',
@@ -3773,7 +3808,11 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   </Text>
                 </>
               )}
-              {!editingLabel && (
+              {/* Icon picker — types & categories only. Platforms (add OR
+                  rename) are identified by their color dot alone (product
+                  decision), so offering an emoji there would pick something
+                  the pills never render. */}
+              {!editingLabel && !isPlatformEditorMode && (
                 <>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: '#6b7280', marginTop: 2 }}>
                     Icon (optional)

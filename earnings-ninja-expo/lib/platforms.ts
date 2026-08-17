@@ -90,6 +90,27 @@ export function keyForEntry(e: Pick<Entry, 'app' | 'custom_app'>): string {
 }
 
 // ---------------------------------------------------------------------------
+// Minimum-visible validation — shared by platform and category hide flows
+// ---------------------------------------------------------------------------
+// Validates the RESULTING state: how many selectable options would remain
+// AFTER hiding `keyToHide`. Never trust the current on-screen pill count —
+// the pill row deliberately keeps showing an already-hidden option while it
+// is the current selection, so screen count ≠ true visible count. Hiding an
+// already-hidden key is a no-op and must not change the outcome.
+export function canHideBuiltin(
+  builtinKeys: readonly string[],
+  hiddenKeys: readonly string[],
+  keyToHide: string,
+  customCount: number,
+  minimumVisible = 1,
+): { allowed: boolean; remainingVisibleCount: number } {
+  const nextHidden = new Set([...hiddenKeys, keyToHide]);
+  const remainingVisibleCount =
+    builtinKeys.filter(k => !nextHidden.has(k)).length + Math.max(0, customCount);
+  return { allowed: remainingVisibleCount >= minimumVisible, remainingVisibleCount };
+}
+
+// ---------------------------------------------------------------------------
 // Display helpers — work for BOTH built-in and custom platforms
 // ---------------------------------------------------------------------------
 

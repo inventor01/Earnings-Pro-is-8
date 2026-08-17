@@ -243,6 +243,24 @@ async def delete_platform(
     )
     if row is None:
         raise HTTPException(status_code=404, detail="Platform not found.")
+    # Deleting the LAST custom platform while every built-in is hidden would
+    # leave zero selectable platforms — same invariant as the hidden-set PUT.
+    hidden_count = (
+        db.query(UserHiddenBuiltin)
+        .filter(UserHiddenBuiltin.user_id == current_user.id, UserHiddenBuiltin.kind == HIDDEN_PLATFORM_KIND)
+        .count()
+    )
+    if hidden_count >= len(BUILTIN_PLATFORM_KEYS):
+        remaining_custom = (
+            db.query(UserPlatform)
+            .filter(UserPlatform.user_id == current_user.id, UserPlatform.id != row.id)
+            .first()
+        )
+        if remaining_custom is None:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one platform must stay visible. Restore a built-in platform first.",
+            )
     db.delete(row)
     db.commit()
     return None

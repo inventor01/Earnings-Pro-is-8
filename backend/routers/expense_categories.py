@@ -69,6 +69,18 @@ async def set_hidden_builtin_categories(
             raise HTTPException(status_code=422, detail=f"Unknown category key: {k}")
         seen.add(k)
         keys.append(k)
+    # Never allow every built-in category to be hidden while the user has no
+    # custom categories — the Category row would be empty and expense entries
+    # unloggable. Mirrors the platform rule; the client also guards this.
+    if len(keys) >= len(BUILTIN_CATEGORY_KEYS):
+        has_custom = (
+            db.query(UserExpenseCategory)
+            .filter(UserExpenseCategory.user_id == current_user.id)
+            .first()
+            is not None
+        )
+        if not has_custom:
+            raise HTTPException(status_code=400, detail="At least one expense category must stay visible.")
 
     db.query(UserHiddenBuiltin).filter(
         UserHiddenBuiltin.user_id == current_user.id,
@@ -231,6 +243,24 @@ async def delete_expense_category(
     )
     if row is None:
         raise HTTPException(status_code=404, detail="Category not found.")
+    # Deleting the LAST custom category while every built-in is hidden would
+    # leave zero selectable categories — same invariant as the hidden-set PUT.
+    hidden_count = (
+        db.query(UserHiddenBuiltin)
+        .filter(UserHiddenBuiltin.user_id == current_user.id, UserHiddenBuiltin.kind == HIDDEN_KIND)
+        .count()
+    )
+    if hidden_count >= len(BUILTIN_CATEGORY_KEYS):
+        remaining_custom = (
+            db.query(UserExpenseCategory)
+            .filter(UserExpenseCategory.user_id == current_user.id, UserExpenseCategory.id != row.id)
+            .first()
+        )
+        if remaining_custom is None:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one expense category must stay visible. Restore a built-in category first.",
+            )
     db.delete(row)
     db.commit()
     return None

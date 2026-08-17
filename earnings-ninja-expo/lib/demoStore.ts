@@ -19,6 +19,18 @@ import {
   rangeForTimeframe, rangeForDates, estWallToUTCms, estDateIsoForOffset, parseUTC,
 } from './estRange';
 
+// Built-in keys, for the same minimum-visible invariant the real backend
+// enforces (sandbox parity): never zero selectable platforms/categories.
+// Listed literally (NOT imported from ./api — that import is circular and
+// resolves to undefined at module-init time under jest/metro). Keys are the
+// stable server enums; keep in sync with AppType / ExpenseCategory.
+const BUILTIN_PLATFORM_KEYS = new Set([
+  'DOORDASH', 'UBEREATS', 'INSTACART', 'GRUBHUB', 'SHIPT', 'OTHER',
+]);
+const BUILTIN_CATEGORY_KEYS = new Set([
+  'GAS', 'PARKING', 'TOLLS', 'MAINTENANCE', 'PHONE', 'SUPPLIES', 'FOOD', 'FUN', 'CHARITY', 'OTHER',
+]);
+
 // ─── State ───────────────────────────────────────────────────────────────────
 
 interface DemoState {
@@ -488,6 +500,15 @@ export function demoRenamePlatform(pid: number, name: string, color?: string | n
 
 export function demoDeletePlatform(pid: number): void {
   const st = s();
+  // Server parity: deleting the last custom platform while every built-in is
+  // hidden would leave zero selectable platforms.
+  if (
+    st.hiddenPlatformKeys.length >= BUILTIN_PLATFORM_KEYS.size &&
+    st.platforms.filter(p => p.id !== pid).length === 0 &&
+    st.platforms.some(p => p.id === pid)
+  ) {
+    conflict('At least one platform must stay visible. Restore a built-in platform first.');
+  }
   st.platforms = st.platforms.filter(p => p.id !== pid);
 }
 
@@ -540,21 +561,52 @@ export function demoRenameExpenseCat(cid: number, name: string, color?: string |
 
 export function demoDeleteExpenseCat(cid: number): void {
   const st = s();
+  // Server parity: deleting the last custom category while every built-in is
+  // hidden would leave zero selectable categories.
+  if (
+    st.hiddenCatKeys.length >= BUILTIN_CATEGORY_KEYS.size &&
+    st.expenseCats.filter(c => c.id !== cid).length === 0 &&
+    st.expenseCats.some(c => c.id === cid)
+  ) {
+    conflict('At least one expense category must stay visible. Restore a built-in category first.');
+  }
   st.expenseCats = st.expenseCats.filter(c => c.id !== cid);
 }
 
 export function demoGetHiddenCats(): string[] { return [...s().hiddenCatKeys]; }
 
 export function demoSetHiddenCats(keys: string[]): string[] {
-  s().hiddenCatKeys = [...keys];
-  return [...keys];
+  // Server parity: normalize/dedupe and never allow every built-in hidden
+  // while no custom category exists.
+  const st = s();
+  const norm: string[] = [];
+  for (const k of keys) {
+    const up = (k || '').trim().toUpperCase();
+    if (up && BUILTIN_CATEGORY_KEYS.has(up) && !norm.includes(up)) norm.push(up);
+  }
+  if (norm.length >= BUILTIN_CATEGORY_KEYS.size && st.expenseCats.length === 0) {
+    conflict('At least one expense category must stay visible.');
+  }
+  st.hiddenCatKeys = norm;
+  return [...norm];
 }
 
 export function demoGetHiddenPlatforms(): string[] { return [...s().hiddenPlatformKeys]; }
 
 export function demoSetHiddenPlatforms(keys: string[]): string[] {
-  s().hiddenPlatformKeys = [...keys];
-  return [...keys];
+  // Server parity: normalize/dedupe and never allow every built-in hidden
+  // while no custom platform exists.
+  const st = s();
+  const norm: string[] = [];
+  for (const k of keys) {
+    const up = (k || '').trim().toUpperCase();
+    if (up && BUILTIN_PLATFORM_KEYS.has(up) && !norm.includes(up)) norm.push(up);
+  }
+  if (norm.length >= BUILTIN_PLATFORM_KEYS.size && st.platforms.length === 0) {
+    conflict('At least one platform must stay visible.');
+  }
+  st.hiddenPlatformKeys = norm;
+  return [...norm];
 }
 
 export function demoGetHiddenTypes(): string[] { return [...s().hiddenTypeKeys]; }
