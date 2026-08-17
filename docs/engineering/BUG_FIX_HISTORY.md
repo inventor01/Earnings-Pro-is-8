@@ -42,11 +42,10 @@ There was no ID/normalization problem: built-ins are stored by stable enum key
   platform rule already existed server-side.
 
 ### Icon standardization (same release)
-Product decision: revenue platforms are identified by their color dot only.
-- Custom platform pills no longer render an emoji prefix (affects e.g. Spark and
-  Amazon Flex, which are user-created platforms — they are not built-ins).
-- The emoji icon picker is hidden in the platform add/rename editor (color picker
-  kept). Stored icons/colors are untouched — no user data migration.
+Product decision (revised after user feedback): platforms are uniform by default —
+color dot + name, no emoji — but a user-picked emoji still renders and the icon
+picker stays available in the platform editor. Stored icons/colors are untouched —
+no user data migration.
 - Expense categories and entry types intentionally keep their emojis (explicit product
   decision: "do not touch expenses").
 

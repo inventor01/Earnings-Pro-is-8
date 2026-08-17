@@ -1950,10 +1950,10 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
     ...APPS.filter(a => !hiddenPlatforms.includes(a.key) || a.key === app)
       .map(a => ({ key: a.key as string, label: platformLabel(a.key), color: a.color })),
     ...customPlatforms.map(p => ({
-      // Platforms are identified by their color dot only (product decision):
-      // no emoji prefix, matching the built-in brand pills.
+      // No emoji unless the user explicitly picked one — platforms are
+      // uniform (color dot + name) by default.
       key: customKey(p.name),
-      label: p.name,
+      label: p.icon ? `${p.icon} ${p.name}` : p.name,
       // Read the chosen color from the row directly (not the registry) so the
       // memo recomputes deterministically from its own deps.
       color: p.color || colorForCustomName(p.name),
@@ -2038,11 +2038,6 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // When set, the modal edits a BUILT-IN pill label (cosmetic per-user
   // override; the underlying key stored on entries never changes).
   const [editingLabel, setEditingLabel] = useState<{ kind: 'platform' | 'type'; key: string; defaultLabel: string } | null>(null);
-  // True when the shared prompt modal is editing a PLATFORM (add or rename):
-  // no type/category/built-in-label mode is active. Platforms render with a
-  // color dot only, so the emoji icon picker is hidden in this mode.
-  const isPlatformEditorMode =
-    !addingEntryType && !renamingEntryType && !addingCategory && !renamingCategory && !editingLabel;
   // Built-in ExpenseCategory value or 'CUSTOMCAT:<name>' selection key.
   const [category, setCategory]  = useState<string>('GAS');
   // Category pill options: visible built-ins (hidden ones filtered out, but
@@ -3808,11 +3803,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   </Text>
                 </>
               )}
-              {/* Icon picker — types & categories only. Platforms (add OR
-                  rename) are identified by their color dot alone (product
-                  decision), so offering an emoji there would pick something
-                  the pills never render. */}
-              {!editingLabel && !isPlatformEditorMode && (
+              {!editingLabel && (
                 <>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: '#6b7280', marginTop: 2 }}>
                     Icon (optional)
