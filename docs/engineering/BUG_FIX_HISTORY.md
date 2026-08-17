@@ -1,5 +1,71 @@
 # Bug Fix History
 
+## 2026-08-17 — iOS password text deletes after hide/show toggle (3rd and root-cause fix)
+
+### Category
+Authentication / iOS / Password Input
+
+### Symptoms
+On iPhone only: type a password → tap the eye to show → tap again to hide →
+continue typing → previously typed text sometimes disappears. Android always
+worked. Two earlier fixes reduced but did not eliminate the failure.
+
+### Confirmed Root Cause (evidence: code audit + upstream issue; NOT reproduced on device)
+Flipping `secureTextEntry` marks the native UITextField "fresh", so iOS clears
+all text on the next keystroke (facebook/react-native#21572). The app's repair
+rewrote the native text with a different string via
+`inputRef.setNativeProps({ text })`. But this app runs the New Architecture
+(Fabric — Expo SDK 54 default, RN 0.81), where `setNativeProps({ text })` on a
+TextInput is **silently dropped once the user has typed**
+(facebook/react-native#47266, open, iOS/Fabric). So the repair no-oped in
+exactly the buggy scenario, the fresh flag survived, and the next keystroke
+wiped the field.
+
+### Why Android Doesn't Fail
+Android's EditText has no "clear secure field on next keystroke" behavior;
+the resync path is iOS-only and Android never executes it.
+
+### Why the Previous Fixes Were Insufficient
+1. Fix #1 moved the resync into a post-commit effect (correct ordering) — but
+   rewrote the SAME text, which native coalesced into a no-op.
+2. Fix #2 added the different-string trick (`value + ' '` then restore) — the
+   right algorithm, but still shipped through `setNativeProps`, the channel
+   Fabric drops after user input. Intermittent because the write only dies
+   after native/JS event counts diverge (i.e., after typing).
+
+### Permanent Fix
+`components/PasswordInput.tsx`: the two-phase different-string rewrite now
+flows through **committed React value updates** — a temporary internal
+`resyncDisplay` state overrides the rendered `value` (`base + ' '`, then back
+to the parent value next frame). Both writes travel Fabric's real
+state/eventCount path, so they cannot be dropped. `setNativeProps` is no
+longer used for text at all. A keystroke landing inside the one-frame window
+immediately cancels the override so it can never clobber the user's input, and
+`normalizeResyncText` still strips the temp space from any change event in the
+window. Android path unchanged (iOS-only guard retained).
+
+### Files Changed
+- `earnings-ninja-expo/components/PasswordInput.tsx` — resync via committed
+  state instead of setNativeProps; window-cancel on keystroke.
+- `earnings-ninja-expo/__tests__/passwordResyncNormalize.test.ts` — extended.
+
+### Tests Added
+Toggle-sequence regression cases: type→show→hide→type, triple toggle, space
+typed in window, paste in window, write echo. 176 jest tests pass; tsc clean.
+
+### QA Evidence
+Static analysis + upstream-issue evidence + automated tests (VERIFIED).
+On-device reproduction/verification: NOT VERIFIED (no device access from this
+environment) — user to verify on a real iPhone in the next TestFlight build.
+
+### Affected Version/Build
+All password screens use the one shared `PasswordInput` (login/signup, 2FA
+disable, delete-account confirm). iOS 1.0.5 builds ≤ 117 affected.
+
+### Fixed Version/Build
+Ships in the next native builds after 2026-08-17 (OTA is not used for this
+app). Exact build numbers to be recorded when kicked off.
+
 ## 2026-08-17 — Incorrect "at least one must stay visible" validation + platform icon standardization
 
 ### Category

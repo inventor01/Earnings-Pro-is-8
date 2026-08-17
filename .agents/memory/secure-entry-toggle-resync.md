@@ -20,6 +20,19 @@ mid-string edits, false negatives when the typed char is a prefix).
 secure-field toggle must keep that ordering; never move it back into the press
 handler or infer wipes from text diffs.
 
+**Third failure — REAL root cause (Aug 2026):** the app runs the New
+Architecture (Fabric, Expo 54 default). On Fabric iOS,
+`setNativeProps({ text })` on a TextInput is SILENTLY DROPPED once the user
+has typed (facebook/react-native#47266) — so both prior repairs no-oped in
+exactly the buggy scenario. The fix: never use setNativeProps for text; do
+both different-string writes as COMMITTED React value updates (internal
+display-override state renders `base + ' '`, a second effect keyed on that
+state schedules the restore after phase 1 commits). The component must always
+render a concrete string value (internal mirror backs uncontrolled use), and
+toggle() must synchronously invalidate the in-flight window before flipping
+secure mode (rapid double-tap race); windows are fresh object tokens compared
+by identity so identical text can't alias.
+
 **Second failure (Aug 2026, on device):** a same-tick clear+rewrite of the SAME
 final text got coalesced by the native update batch into a net no-op, so the
 fresh flag survived and iPhone kept wiping. The repair is the canonical
