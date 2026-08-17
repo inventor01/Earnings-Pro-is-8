@@ -5,6 +5,7 @@ from backend.db import get_db
 from backend.models import Entry, EntryType, AppType, AuthUser, Goal, ExpenseCategory
 from backend.schemas import EntryCreate, EntryUpdate, EntryResponse
 from backend.auth import get_current_user
+from backend.entitlements import require_pro
 from typing import List, Optional
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -274,7 +275,11 @@ async def delete_all_entries(db: Session = Depends(get_db), current_user: AuthUs
         raise HTTPException(status_code=500, detail="Failed to delete data")
 
 @router.post("/entries/import")
-async def import_entries(entries_data: List[EntryCreate], db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
+async def import_entries(entries_data: List[EntryCreate], db: Session = Depends(get_db), current_user: AuthUser = Depends(require_pro)):
+    # CSV import is a Pro feature. The client gates it too (paywall), but the
+    # client is presentation-only: require_pro is the server-side enforcement
+    # backstop (fails closed with 403; re-verifies stale state against
+    # RevenueCat first so a paying user is never wrongly rejected).
     imported_entries = []
     skipped_duplicates = 0
 
