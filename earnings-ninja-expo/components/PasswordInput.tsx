@@ -20,6 +20,18 @@ type Props = Omit<TextInputProps, 'secureTextEntry'> & {
   containerStyle?: StyleProp<ViewStyle>;
 };
 
+// While an iOS resync is in flight the native text is temporarily
+// `base + ' '`. A change event fired inside that window (a fast keystroke, or
+// the programmatic write itself on some RN versions) therefore starts with
+// that temp string; strip the injected space so it can never reach state or
+// the controlled value. Exported for tests.
+export function normalizeResyncText(base: string | null, text: string): string {
+  if (base != null && text.startsWith(base + ' ')) {
+    return base + text.slice(base.length + 1);
+  }
+  return text;
+}
+
 export function PasswordInput({ containerStyle, style, ...inputProps }: Props) {
   const t = useTheme();
   const [visible, setVisible] = useState(false);
@@ -29,9 +41,15 @@ export function PasswordInput({ containerStyle, style, ...inputProps }: Props) {
   const lastValueRef = useRef(inputProps.value ?? '');
   const mountedRef = useRef(false);
 
+  // Base value of an in-flight resync (see effect below). While set, any
+  // change event may carry the temporarily injected trailing space; normalize
+  // it out so the space can never leak into state or the controlled value.
+  const pendingResyncRef = useRef<string | null>(null);
+
   const handleChangeText = (text: string) => {
-    lastValueRef.current = text;
-    inputProps.onChangeText?.(text);
+    const t = normalizeResyncText(pendingResyncRef.current, text);
+    lastValueRef.current = t;
+    inputProps.onChangeText?.(t);
   };
 
   useEffect(() => {
@@ -58,8 +76,13 @@ export function PasswordInput({ containerStyle, style, ...inputProps }: Props) {
     if (Platform.OS !== 'ios') return;
     const current = inputProps.value ?? lastValueRef.current ?? '';
     if (!current) return; // nothing typed yet — nothing to protect
+    pendingResyncRef.current = current;
     inputRef.current?.setNativeProps({ text: current + ' ' });
     requestAnimationFrame(() => {
+      pendingResyncRef.current = null;
+      // lastValueRef holds the latest LOGICAL value — already normalized by
+      // handleChangeText if a keystroke landed during the window — so the
+      // restore also scrubs the temporary space from the native field.
       inputRef.current?.setNativeProps({ text: lastValueRef.current ?? '' });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

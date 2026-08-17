@@ -81,6 +81,26 @@ async function trackedFetch(input: string, init?: RequestInit): Promise<Response
   }
 }
 
+// For IDEMPOTENT requests only (wholesale-replace PUTs / reads): one automatic
+// re-send when the fetch itself THROWS (transport failure — no HTTP response).
+// Android's HTTP stack reuses kept-alive sockets that die while the app idles
+// or the network switches; the first request after that fails with
+// "Network request failed" and a manual retry succeeds on a fresh socket
+// (iOS recovers from the same condition silently). HTTP error statuses are
+// NEVER retried here — 4xx/5xx pass straight through to the caller. Do not
+// use this for non-idempotent mutations without an idempotency key.
+async function idempotentFetch(input: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await trackedFetch(input, init);
+  } catch (err: any) {
+    // AbortError = deliberate cancel; demo throws deterministically — neither
+    // is a dead socket, so a retry would be wrong/pointless.
+    if (err?.name === 'AbortError' || isDemoActive()) throw err;
+    await new Promise((r) => setTimeout(r, 350));
+    return trackedFetch(input, init);
+  }
+}
+
 export type EntryType = 'ORDER' | 'BONUS' | 'EXPENSE' | 'CANCELLATION';
 export type AppType = 'DOORDASH' | 'UBEREATS' | 'INSTACART' | 'GRUBHUB' | 'SHIPT' | 'OTHER';
 export type ExpenseCategory = 'GAS' | 'PARKING' | 'TOLLS' | 'MAINTENANCE' | 'PHONE' | 'SUBSCRIPTION' | 'FOOD' | 'LEISURE' | 'CHARITY' | 'OTHER';
@@ -1042,14 +1062,14 @@ const realApi = {
   // Hidden BUILT-IN expense-category keys (wholesale replace, idempotent).
   async getHiddenExpenseCategories(): Promise<string[]> {
     const headers = await getAuthHeaders();
-    const res = await trackedFetch(`${API_BASE}/api/expense-categories/hidden`, { headers });
+    const res = await idempotentFetch(`${API_BASE}/api/expense-categories/hidden`, { headers });
     if (!res.ok) throw new Error('Failed to fetch hidden categories');
     return res.json();
   },
 
   async setHiddenExpenseCategories(keys: string[]): Promise<string[]> {
     const headers = await getAuthHeaders();
-    const res = await trackedFetch(`${API_BASE}/api/expense-categories/hidden`, {
+    const res = await idempotentFetch(`${API_BASE}/api/expense-categories/hidden`, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ keys }),
@@ -1061,14 +1081,14 @@ const realApi = {
   // Hidden BUILT-IN platform keys (wholesale replace, idempotent).
   async getHiddenPlatforms(): Promise<string[]> {
     const headers = await getAuthHeaders();
-    const res = await trackedFetch(`${API_BASE}/api/platforms/hidden`, { headers });
+    const res = await idempotentFetch(`${API_BASE}/api/platforms/hidden`, { headers });
     if (!res.ok) throw new Error('Failed to fetch hidden platforms');
     return res.json();
   },
 
   async setHiddenPlatforms(keys: string[]): Promise<string[]> {
     const headers = await getAuthHeaders();
-    const res = await trackedFetch(`${API_BASE}/api/platforms/hidden`, {
+    const res = await idempotentFetch(`${API_BASE}/api/platforms/hidden`, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ keys }),
@@ -1080,14 +1100,14 @@ const realApi = {
   // Hidden BUILT-IN type-pill keys (wholesale replace, idempotent).
   async getHiddenEntryTypes(): Promise<string[]> {
     const headers = await getAuthHeaders();
-    const res = await trackedFetch(`${API_BASE}/api/entry-types/hidden`, { headers });
+    const res = await idempotentFetch(`${API_BASE}/api/entry-types/hidden`, { headers });
     if (!res.ok) throw new Error('Failed to fetch hidden types');
     return res.json();
   },
 
   async setHiddenEntryTypes(keys: string[]): Promise<string[]> {
     const headers = await getAuthHeaders();
-    const res = await trackedFetch(`${API_BASE}/api/entry-types/hidden`, {
+    const res = await idempotentFetch(`${API_BASE}/api/entry-types/hidden`, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ keys }),
