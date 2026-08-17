@@ -275,7 +275,14 @@ async def delete_platform(
 LABEL_KINDS = {
     "platform": {"DOORDASH", "UBEREATS", "INSTACART", "GRUBHUB", "SHIPT", "OTHER"},
     "type": {"ORDER", "BONUS", "EXPENSE", "CANCELLATION"},
+    # Section-heading titles on the Add Entry form (e.g. rename the "Platform"
+    # heading to "Gig App"). Display-only, capped at 12 characters.
+    "heading": {"PLATFORM", "TYPE"},
 }
+
+# Heading titles are rendered as compact section labels, so they carry a hard
+# 12-character cap (enforced here, not just in the client UI).
+MAX_HEADING_LABEL_LEN = 12
 
 
 @router.get("/labels", response_model=List[LabelOverrideResponse])
@@ -311,6 +318,11 @@ async def set_label_override(
         raise HTTPException(status_code=422, detail="Unknown key for this kind.")
 
     label = (payload.label or "").strip()
+    if kind == "heading" and label and len(label) > MAX_HEADING_LABEL_LEN:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Heading titles are limited to {MAX_HEADING_LABEL_LEN} characters.",
+        )
     row = (
         db.query(UserLabelOverride)
         .filter(
