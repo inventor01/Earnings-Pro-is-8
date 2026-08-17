@@ -52,3 +52,4 @@
 - [Entry-delete tombstones](entry-delete-tombstones.md) — deleted ids need a short-TTL tombstone filtered BEFORE mirror writes and offline reads, or racing GETs resurrect the row.
 - [Secure-entry toggle resync](secure-entry-toggle-resync.md) — the show/hide password wipe fix must run in a useEffect after the secureTextEntry commit; rAF-from-handler races and no-ops, text-diff heuristics unsound.
 - [Screenshot Studio](screenshot-studio.md) — dev-only /screenshot-studio on expo web frames the REAL app via ?ssdemo=1 iframe; color-scheme/transform/timing iframe gotchas.
+- [Play closed-track promotion](play-track-promotion.md) — same versionCode to a 2nd track: eas submit fails ("already submitted"); use Play API edits/tracks promotion instead.
