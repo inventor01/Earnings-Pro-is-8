@@ -45,6 +45,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useThemeControls, THEMES, ThemeName } from '@/lib/theme';
 import { useSubscription, offeringTrialDays, restoreAlertCopy } from '@/lib/revenuecat';
 import { useHiddenMode, MASK } from '@/lib/hiddenMode';
+import { useStatCardsHidden } from '@/lib/statCardsPref';
 import { syncNotifState, enableMotivation, disableMotivation, notifyEarningsChanged, refreshMotivationSchedule } from '@/lib/notifications';
 import { instantToPickerDate, pickerDateToInstant, estWallToUTCms } from '@/lib/estRange';
 import { getSoundEnabled, setSoundEnabled, playKaching } from '@/lib/sound';
@@ -347,6 +348,9 @@ function SkeletonBox({
 
 function DashboardSkeleton() {
   const { SURFACE, BORDER } = useTheme();
+  // Mirror the real dashboard: if the $/Mile + Miles row is hidden, its
+  // skeleton stand-in must not appear either.
+  const [statCardsHidden] = useStatCardsHidden();
   return (
     <View style={{ gap: 12 }}>
       {/* Hero card mock */}
@@ -375,7 +379,8 @@ function DashboardSkeleton() {
         </View>
       </View>
 
-      {/* KPI strip: $/Mile + Miles */}
+      {/* KPI strip: $/Mile + Miles (hidden together with the real row) */}
+      {!statCardsHidden && (
       <View style={{ flexDirection: 'row', gap: 10 }}>
         {[0, 1].map(i => (
           <View key={i} style={{
@@ -390,6 +395,7 @@ function DashboardSkeleton() {
           </View>
         ))}
       </View>
+      )}
 
       {/* Goals section header + bar */}
       <View style={{ marginTop: 4, gap: 8 }}>
@@ -4479,6 +4485,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
   const { BG, SURFACE, BORDER, PRIMARY, PRIMARY_TXT, PRI_LITE, TEXT, MUTED, LABEL, GREEN, RED, RED_LT, ON_PRIMARY } = useTheme();
   const { themeName, setThemeName } = useThemeControls();
   const { hidden, toggle: toggleHidden } = useHiddenMode();
+  const [statCardsHidden, setStatCardsHiddenPref] = useStatCardsHidden();
   const { logout, user } = useAuth();
   const { available: proAvailable, isPro, presentPaywall, presentCustomerCenter, restore, offerings } = useSubscription();
   // Trial-forward upgrade copy — only when a real ASC free trial exists
@@ -4749,7 +4756,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
               flexDirection: 'row', alignItems: 'center', gap: 12,
               backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1,
               borderColor: hidden ? PRIMARY : BORDER,
-              padding: 14, marginBottom: 24,
+              padding: 14, marginBottom: 12,
             },
             hidden ? neonGlow(PRIMARY, 10, 0.25) : undefined,
           ].filter(Boolean) as ViewStyle[]}
@@ -4771,6 +4778,40 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
             alignItems: hidden ? 'flex-end' : 'flex-start', justifyContent: 'center',
           }}>
             <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: hidden ? ON_PRIMARY : SURFACE }} />
+          </View>
+        </Pressable>
+
+        {/* Driving stats cards ($/Mile + Miles row) — ON shows the row on the
+            dashboard; users hide it by long-pressing the cards. */}
+        <Pressable
+          onPress={() => { hTap(); setStatCardsHiddenPref(!statCardsHidden); }}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: !statCardsHidden }}
+          accessibilityLabel="Driving stats cards"
+          style={{
+            flexDirection: 'row', alignItems: 'center', gap: 12,
+            backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1,
+            borderColor: BORDER,
+            padding: 14, marginBottom: 24,
+          }}
+        >
+          <View style={{
+            width: 36, height: 36, borderRadius: 18,
+            backgroundColor: PRI_LITE, alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Ionicons name="car" size={18} color={PRIMARY_TXT} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT, fontSize: 15, fontWeight: '700' }}>Driving stats cards</Text>
+            <Text style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>Show the $/Mile and Miles cards on your dashboard</Text>
+          </View>
+          {/* Pill-style toggle (no native Switch — keeps Dark Neon look) */}
+          <View style={{
+            width: 48, height: 28, borderRadius: 14, padding: 3,
+            backgroundColor: !statCardsHidden ? PRIMARY : BORDER,
+            alignItems: !statCardsHidden ? 'flex-end' : 'flex-start', justifyContent: 'center',
+          }}>
+            <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: !statCardsHidden ? ON_PRIMARY : SURFACE }} />
           </View>
         </Pressable>
 
@@ -7483,6 +7524,30 @@ export default function DashboardScreen() {
       return !v;
     });
   };
+  // Hide the whole $/Mile + Miles row (not just the numbers). Long-press
+  // either card → confirm → row disappears; restored via Settings → Privacy.
+  const [statCardsHidden, setStatCardsHiddenPref] = useStatCardsHidden();
+  const confirmHideStatCards = () => {
+    hTap();
+    Alert.alert(
+      'Hide these cards?',
+      'The $/Mile and Miles cards will be removed from your dashboard. You can bring them back anytime in Settings → Privacy.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Hide',
+          style: 'destructive',
+          onPress: () => {
+            setStatCardsHiddenPref(true);
+            // Post-hide hint so the unhide path is never a mystery.
+            setTimeout(() => {
+              Alert.alert('Cards hidden', 'Turn them back on in Settings → Privacy → Driving stats cards.');
+            }, 400);
+          },
+        },
+      ],
+    );
+  };
   const isProfitHero = heroMetric === 'profit';
   const heroValue   = isProfitHero ? profit  : revenue;
   const heroLabel   = isProfitHero ? 'NET PROFIT' : 'REVENUE';
@@ -8026,12 +8091,16 @@ export default function DashboardScreen() {
               )}
 
               {/* ── Secondary Stat Cards: $/Mile, Miles (centered row) ────────
-                  Tap either card to conceal/reveal both values (•••). */}
+                  Tap either card to conceal/reveal both values (•••).
+                  Long-press to hide the whole row (restore in Settings → Privacy). */}
+              {!statCardsHidden && (
               <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center' }}>
                 <Pressable
                   onPress={toggleStatsConcealed}
+                  onLongPress={confirmHideStatCards}
                   accessibilityRole="button"
                   accessibilityLabel={statsConcealed ? 'Show $/Mile' : 'Hide $/Mile'}
+                  accessibilityHint="Long press to hide these cards completely"
                   style={{ flex: 1, maxWidth: '48%' }}
                 >
                   {statsConcealed
@@ -8040,8 +8109,10 @@ export default function DashboardScreen() {
                 </Pressable>
                 <Pressable
                   onPress={toggleStatsConcealed}
+                  onLongPress={confirmHideStatCards}
                   accessibilityRole="button"
                   accessibilityLabel={statsConcealed ? 'Show Miles' : 'Hide Miles'}
+                  accessibilityHint="Long press to hide these cards completely"
                   style={{ flex: 1, maxWidth: '48%' }}
                 >
                   {statsConcealed
@@ -8049,6 +8120,7 @@ export default function DashboardScreen() {
                     : <StatCard label="Miles" icon="🚗" value={miles.toFixed(1)} numericValue={miles} format={(n) => n.toFixed(1)} hideable={false} />}
                 </Pressable>
               </View>
+              )}
 
               {/* ── Analytics entry point (full-screen modal) ──────────────── */}
               {/* Pro gate runs BEFORE the sheet opens: presenting the fullScreen

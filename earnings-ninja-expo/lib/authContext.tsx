@@ -16,6 +16,7 @@ import {
 import { refreshPendingCount } from './pendingCount';
 import { DEMO_USER, enterDemoSession, exitDemoSession, isDemoActive } from './demoSession';
 import { loadUserTz, setUserTz, clearUserTz } from './userTz';
+import { clearStatCardsPref } from './statCardsPref';
 import { setPersistSuspended } from './queryPersist';
 
 // Wipe every device-local copy of the signed-in user's data: the entries/goals
@@ -44,6 +45,9 @@ async function clearAllLocalData(): Promise<void> {
     // Account timezone mirror: the next account must not inherit this one's
     // day-bucketing zone (offline math would disagree with its server).
     clearUserTz(),
+    // Driving stat cards ($/Mile + Miles) hidden-row preference: reset so the
+    // next account starts with the row visible.
+    clearStatCardsPref(),
   ]);
   await refreshPendingCount();
 }
