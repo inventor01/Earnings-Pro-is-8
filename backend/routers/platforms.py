@@ -283,6 +283,9 @@ LABEL_KINDS = {
 # Heading titles are rendered as compact section labels, so they carry a hard
 # 12-character cap (enforced here, not just in the client UI).
 MAX_HEADING_LABEL_LEN = 12
+# A single emoji grapheme can span many code points (ZWJ sequences, skin
+# tones, flags); the longest common sequences stay well under this.
+MAX_HEADING_EMOJI_CODEPOINTS = 16
 
 
 @router.get("/labels", response_model=List[LabelOverrideResponse])
@@ -323,6 +326,16 @@ async def set_label_override(
             status_code=422,
             detail=f"Heading titles are limited to {MAX_HEADING_LABEL_LEN} characters.",
         )
+    # Heading rows can also carry a custom emoji shown before the title.
+    # payload.emoji semantics: None = leave unchanged (older clients omit the
+    # field), '' = reset to the default emoji, non-empty = set. One visible
+    # emoji is one GRAPHEME but many code points (👩🏽‍🚀, 🏳️‍🌈), so cap by
+    # code points generously rather than len()==1.
+    emoji: Optional[str] = None
+    if kind == "heading" and payload.emoji is not None:
+        emoji = payload.emoji.strip()
+        if len(emoji) > MAX_HEADING_EMOJI_CODEPOINTS:
+            raise HTTPException(status_code=422, detail="Pick a single emoji.")
     row = (
         db.query(UserLabelOverride)
         .filter(
@@ -332,17 +345,29 @@ async def set_label_override(
         )
         .first()
     )
-    if not label:
-        # Reset to default.
+    # Resulting emoji for THIS write: None = leave the stored value untouched
+    # (payload omitted it), '' = clear, non-empty = set.
+    def _apply(target: UserLabelOverride) -> None:
+        target.label = label
+        if emoji is not None:
+            target.emoji = emoji or None
+
+    resulting_emoji = (
+        (emoji or None) if emoji is not None else (row.emoji if row is not None else None)
+    )
+    if not label and not resulting_emoji:
+        # Nothing overridden anymore — reset to default by deleting the row.
         if row is not None:
             db.delete(row)
             db.commit()
     else:
         if row is None:
-            row = UserLabelOverride(user_id=current_user.id, kind=kind, key=key, label=label)
+            row = UserLabelOverride(
+                user_id=current_user.id, kind=kind, key=key, label=label, emoji=emoji or None
+            )
             db.add(row)
         else:
-            row.label = label
+            _apply(row)
         try:
             db.commit()
         except IntegrityError:
@@ -359,7 +384,7 @@ async def set_label_override(
             )
             if existing is None:
                 raise HTTPException(status_code=409, detail="Could not save the label. Try again.")
-            existing.label = label
+            _apply(existing)
             db.commit()
 
     return (

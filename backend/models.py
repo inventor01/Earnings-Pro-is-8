@@ -245,7 +245,12 @@ class UserLabelOverride(Base):
     user_id = Column(String, ForeignKey("auth_users.id"), nullable=False, index=True)
     kind = Column(String, nullable=False)
     key = Column(String, nullable=False)
+    # Empty string = "no title override" (used when only the emoji is
+    # customized on a heading row).
     label = Column(String, nullable=False)
+    # Heading rows only: custom emoji shown before the title (one grapheme,
+    # validated in the router). NULL/empty = default emoji.
+    emoji = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     __table_args__ = (

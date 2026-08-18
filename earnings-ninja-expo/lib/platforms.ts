@@ -19,22 +19,32 @@ import { isDemoActive } from './demoSession';
 let PLATFORM_LABEL_OVERRIDES: Record<string, string> = {};
 let TYPE_LABEL_OVERRIDES: Record<string, string> = {};
 // Section-heading titles (kind='heading', keys PLATFORM / TYPE) — the user can
-// rename the "Platform" / "Type" headings themselves (12-char cap, display only).
+// rename the "Platform" / "Type" headings themselves (12-char cap, display
+// only) and pick a custom emoji shown before the title. A heading row with an
+// EMPTY label means "default title, custom emoji only".
 let HEADING_LABEL_OVERRIDES: Record<string, string> = {};
+let HEADING_EMOJI_OVERRIDES: Record<string, string> = {};
 
 export function applyLabelOverrides(list: LabelOverride[]): void {
   const p: Record<string, string> = {};
   const t: Record<string, string> = {};
   const h: Record<string, string> = {};
+  const he: Record<string, string> = {};
   for (const o of list) {
-    if (!o || typeof o.key !== 'string' || typeof o.label !== 'string' || !o.label) continue;
+    if (!o || typeof o.key !== 'string' || typeof o.label !== 'string') continue;
+    if (o.kind === 'heading') {
+      if (o.label) h[o.key] = o.label;
+      if (typeof o.emoji === 'string' && o.emoji) he[o.key] = o.emoji;
+      continue;
+    }
+    if (!o.label) continue;
     if (o.kind === 'platform') p[o.key] = o.label;
     else if (o.kind === 'type') t[o.key] = o.label;
-    else if (o.kind === 'heading') h[o.key] = o.label;
   }
   PLATFORM_LABEL_OVERRIDES = p;
   TYPE_LABEL_OVERRIDES = t;
   HEADING_LABEL_OVERRIDES = h;
+  HEADING_EMOJI_OVERRIDES = he;
 }
 
 export function platformLabel(appKey: string): string {
@@ -63,6 +73,60 @@ export function clampHeading(s: string): string {
 
 export function headingLabel(key: 'PLATFORM' | 'TYPE', fallback: string): string {
   return HEADING_LABEL_OVERRIDES[key] ?? fallback;
+}
+
+// Default emojis shown before the Add Entry section headings. Keep in sync
+// with the (previously hardcoded) values in the Add Entry form.
+export const DEFAULT_HEADING_EMOJI: Record<'PLATFORM' | 'TYPE', string> = {
+  PLATFORM: '🚗',
+  TYPE: '📝',
+};
+
+export function headingEmoji(key: 'PLATFORM' | 'TYPE'): string {
+  return HEADING_EMOJI_OVERRIDES[key] ?? DEFAULT_HEADING_EMOJI[key];
+}
+
+// One visible emoji = one GRAPHEME, which may span many code points
+// (👩🏽‍🚀, 🏳️‍🌈, 🇺🇸). Never validate with value.length — use the platform
+// grapheme segmenter when available, falling back to an emoji-cluster walk
+// that understands ZWJ sequences, variation selectors, skin-tone modifiers,
+// and regional-indicator (flag) pairs.
+export function firstGrapheme(s: string): string {
+  const trimmed = s.trim();
+  if (!trimmed) return '';
+  try {
+    const Seg = (Intl as any)?.Segmenter;
+    if (Seg) {
+      const it = new Seg(undefined, { granularity: 'grapheme' }).segment(trimmed)[Symbol.iterator]();
+      const first = it.next();
+      if (!first.done) return first.value.segment as string;
+    }
+  } catch {}
+  // Fallback cluster walk over code points.
+  const cps = Array.from(trimmed);
+  const isRegional = (c: string) => {
+    const cp = c.codePointAt(0)!;
+    return cp >= 0x1f1e6 && cp <= 0x1f1ff;
+  };
+  const isExtender = (c: string) => {
+    const cp = c.codePointAt(0)!;
+    return cp === 0xfe0f /* variation selector */ || (cp >= 0x1f3fb && cp <= 0x1f3ff) /* skin tone */;
+  };
+  let i = 0;
+  let out = cps[i++];
+  if (isRegional(out) && i < cps.length && isRegional(cps[i])) {
+    return out + cps[i]; // flag = exactly two regional indicators
+  }
+  while (i < cps.length) {
+    if (isExtender(cps[i])) { out += cps[i++]; continue; }
+    if (cps[i] === '\u200d' && i + 1 < cps.length) { // ZWJ joins the next emoji
+      out += cps[i] + cps[i + 1];
+      i += 2;
+      continue;
+    }
+    break;
+  }
+  return out;
 }
 
 const LABELS_MIRROR_KEY = 'labelOverridesMirror.v1';

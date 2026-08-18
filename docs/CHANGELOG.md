@@ -16,3 +16,14 @@
   headings keep their defaults for now (Revenue-only by product decision).
 - Accessibility: the headings expose an explicit VoiceOver/TalkBack rename
   action, so long-press is not the only path.
+
+### Pick your own emoji for the "Platform" / "Type" titles
+- The same long-press editor now has an emoji box next to the title field.
+  Type any emoji from the regular keyboard (skin tones, flags, and combined
+  emoji all work); only the first emoji is kept. Clear the box (or hit Reset)
+  to go back to the defaults (🚗 for Platform, 📝 for Type).
+- You can change just the emoji and keep the default title — the two are
+  independent. Saved on the account like the titles (syncs across devices,
+  survives reinstall); older app versions that only send a title never wipe a
+  saved emoji. Display-only; entries and analytics are untouched.
+- Demo Mode keeps its own sandboxed copy, like the titles.

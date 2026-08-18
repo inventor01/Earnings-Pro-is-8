@@ -48,10 +48,10 @@ def _headings(rows):
 def test_set_and_list_heading_label(client):
     r = client.put("/api/labels", json={"kind": "heading", "key": "PLATFORM", "label": "Gig App"})
     assert r.status_code == 200
-    assert _headings(r.json()) == [{"kind": "heading", "key": "PLATFORM", "label": "Gig App"}]
+    assert _headings(r.json()) == [{"kind": "heading", "key": "PLATFORM", "label": "Gig App", "emoji": None}]
 
     r = client.get("/api/labels")
-    assert _headings(r.json()) == [{"kind": "heading", "key": "PLATFORM", "label": "Gig App"}]
+    assert _headings(r.json()) == [{"kind": "heading", "key": "PLATFORM", "label": "Gig App", "emoji": None}]
 
 
 def test_twelve_char_boundary(client):
@@ -95,3 +95,58 @@ def test_pill_label_kinds_unaffected(client):
     # longer length allowance (no 12-char cap applied to them).
     r = client.put("/api/labels", json={"kind": "platform", "key": "DOORDASH", "label": "My Main Delivery App"})
     assert r.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Heading emoji customization (emoji shown before the section title)
+# ---------------------------------------------------------------------------
+
+def test_set_heading_emoji_with_title(client):
+    r = client.put("/api/labels", json={"kind": "heading", "key": "PLATFORM", "label": "Gig App", "emoji": "🛵"})
+    assert r.status_code == 200
+    assert _headings(r.json()) == [{"kind": "heading", "key": "PLATFORM", "label": "Gig App", "emoji": "🛵"}]
+
+
+def test_emoji_only_override_keeps_default_title(client):
+    # Empty label + emoji → row persists with label '' (default title).
+    r = client.put("/api/labels", json={"kind": "heading", "key": "TYPE", "label": "", "emoji": "📦"})
+    assert r.status_code == 200
+    assert _headings(r.json()) == [{"kind": "heading", "key": "TYPE", "label": "", "emoji": "📦"}]
+
+
+def test_complex_zwj_emoji_accepted(client):
+    for e in ["👩🏽\u200d🚀", "🏳️\u200d🌈", "🇺🇸"]:
+        r = client.put("/api/labels", json={"kind": "heading", "key": "TYPE", "label": "Order", "emoji": e})
+        assert r.status_code == 200, e
+        assert _headings(r.json())[0]["emoji"] == e
+
+
+def test_emoji_too_long_rejected(client):
+    r = client.put("/api/labels", json={"kind": "heading", "key": "TYPE", "label": "Order", "emoji": "🚗" * 20})
+    assert r.status_code == 422
+
+
+def test_old_client_label_update_preserves_emoji(client):
+    # Older builds omit the emoji field entirely — their title writes must
+    # not wipe a stored emoji.
+    client.put("/api/labels", json={"kind": "heading", "key": "PLATFORM", "label": "Gig App", "emoji": "🛵"})
+    r = client.put("/api/labels", json={"kind": "heading", "key": "PLATFORM", "label": "Hustle"})
+    h = _headings(r.json())[0]
+    assert h["label"] == "Hustle" and h["emoji"] == "🛵"
+
+
+def test_reset_clears_row_when_both_empty(client):
+    client.put("/api/labels", json={"kind": "heading", "key": "PLATFORM", "label": "Gig App", "emoji": "🛵"})
+    # Clear emoji only → row remains (title still overridden).
+    r = client.put("/api/labels", json={"kind": "heading", "key": "PLATFORM", "label": "Gig App", "emoji": ""})
+    assert _headings(r.json()) == [{"kind": "heading", "key": "PLATFORM", "label": "Gig App", "emoji": None}]
+    # Clear both → row deleted (full reset).
+    r = client.put("/api/labels", json={"kind": "heading", "key": "PLATFORM", "label": "", "emoji": ""})
+    assert _headings(r.json()) == []
+
+
+def test_old_client_blank_label_resets_when_no_emoji(client):
+    # Preserves pre-emoji behavior: blank label with no stored emoji = delete.
+    client.put("/api/labels", json={"kind": "heading", "key": "TYPE", "label": "Order"})
+    r = client.put("/api/labels", json={"kind": "heading", "key": "TYPE", "label": ""})
+    assert _headings(r.json()) == []

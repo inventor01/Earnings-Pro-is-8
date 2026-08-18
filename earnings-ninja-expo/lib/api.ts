@@ -254,7 +254,11 @@ export interface LabelOverride {
   // TYPE) rather than an individual pill. Display-only in every case.
   kind: 'platform' | 'type' | 'heading';
   key: string;   // e.g. DOORDASH / ORDER / PLATFORM
+  // Empty string on a heading row = "default title, only the emoji changed".
   label: string;
+  // Heading rows only: custom emoji before the title (one grapheme).
+  // null/absent = default emoji.
+  emoji?: string | null;
 }
 
 export interface Rollup {
@@ -922,12 +926,14 @@ const realApi = {
 
   // Upsert one override (empty/undefined label = reset to default). Returns
   // the full override list so callers can replace their cache atomically.
-  async setLabelOverride(kind: 'platform' | 'type' | 'heading', key: string, label: string | null): Promise<LabelOverride[]> {
+  // `emoji` (heading rows only): undefined = leave unchanged, '' = reset to
+  // the default emoji, non-empty = set. Label '' / null = default title.
+  async setLabelOverride(kind: 'platform' | 'type' | 'heading', key: string, label: string | null, emoji?: string): Promise<LabelOverride[]> {
     const headers = await getAuthHeaders();
     const res = await trackedFetch(`${API_BASE}/api/labels`, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind, key, label }),
+      body: JSON.stringify({ kind, key, label, ...(emoji !== undefined ? { emoji } : {}) }),
     });
     if (!res.ok) await api._throwApiError(res, 'Failed to save the label');
     return res.json();

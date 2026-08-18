@@ -618,9 +618,13 @@ export function demoSetHiddenTypes(keys: string[]): string[] {
 
 export function demoGetLabelOverrides(): LabelOverride[] { return [...s().labelOverrides]; }
 
-export function demoSetLabelOverride(kind: 'platform' | 'type' | 'heading', key: string, label: string | null): LabelOverride[] {
+export function demoSetLabelOverride(kind: 'platform' | 'type' | 'heading', key: string, label: string | null, emoji?: string): LabelOverride[] {
   const st = s();
+  const prev = st.labelOverrides.find(o => o.kind === kind && o.key === key);
   st.labelOverrides = st.labelOverrides.filter(o => !(o.kind === kind && o.key === key));
-  if (label) st.labelOverrides.push({ kind, key, label });
+  // Mirror the server semantics: emoji undefined = keep the stored emoji,
+  // '' = clear it; keep the row while either a label or an emoji remains.
+  const nextEmoji = kind === 'heading' ? (emoji !== undefined ? (emoji || null) : (prev?.emoji ?? null)) : null;
+  if (label || nextEmoji) st.labelOverrides.push({ kind, key, label: label || '', emoji: nextEmoji });
   return [...st.labelOverrides];
 }

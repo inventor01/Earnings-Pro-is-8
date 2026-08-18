@@ -271,9 +271,12 @@ class HiddenBuiltinsSet(BaseModel):
 
 
 class LabelOverrideSet(BaseModel):
-    kind: str   # 'platform' | 'type'
-    key: str    # builtin key, e.g. DOORDASH / ORDER
+    kind: str   # 'platform' | 'type' | 'heading'
+    key: str    # builtin key, e.g. DOORDASH / ORDER / PLATFORM
     label: Optional[str] = None  # None/empty → reset to default
+    # Heading rows only: custom emoji before the title. None = leave as-is
+    # (older clients omit it); empty string = reset to the default emoji.
+    emoji: Optional[str] = None
 
     _validate_label = field_validator("label")(_validate_custom_app)
 
@@ -282,6 +285,7 @@ class LabelOverrideResponse(BaseModel):
     kind: str
     key: str
     label: str
+    emoji: Optional[str] = None
 
     class Config:
         from_attributes = True

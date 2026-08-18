@@ -55,6 +55,7 @@ import {
   entryAppLabel, entryAppColor, colorForCustomName, applyPlatformStyles, PRESET_COLORS, canHideBuiltin,
   readPlatformsMirror, writePlatformsMirror, findDuplicatePlatform, MAX_PLATFORM_NAME_LEN,
   applyLabelOverrides, platformLabel, typeLabel, headingLabel, MAX_HEADING_LEN, headingCharCount, clampHeading, readLabelsMirror, writeLabelsMirror,
+  headingEmoji, firstGrapheme, DEFAULT_HEADING_EMOJI,
   customTypeKey, isCustomTypeKey, customTypeNameFromKey, typeKeyForEntry, entryTypeLabel,
   applyEntryTypeStyles, readEntryTypesMirror, writeEntryTypesMirror, findDuplicateEntryType,
   customCatKey, isCustomCatKey, customCatNameFromKey, entryCategoryLabel,
@@ -1275,7 +1276,7 @@ function DetailsForm({
   entryKind, onSwitchKind,
   platformOptions, onAddPlatform, onEditPlatform, typeOptions, onAddType, onEditType,
   categoryOptions, onAddCategory, onEditCategory,
-  platformHeading, typeHeading, onRenameHeading,
+  platformHeading, typeHeading, platformHeadingEmoji, typeHeadingEmoji, onRenameHeading,
   isBusiness, setIsBusiness,
   miles, setMiles, minutes, setMinutes, note, setNote, onEditAmount,
   receiptUri, onPickReceipt, onRemoveReceipt,
@@ -1325,6 +1326,8 @@ function DetailsForm({
   // long-press rename opener. Display-only; never touches records or form state.
   platformHeading: string;
   typeHeading: string;
+  platformHeadingEmoji: string;
+  typeHeadingEmoji: string;
   onRenameHeading: (key: 'PLATFORM' | 'TYPE') => void;
   isBusiness: boolean;
   setIsBusiness: (b: boolean) => void;
@@ -1449,7 +1452,7 @@ function DetailsForm({
             <FieldLabel
               onLongPress={entryKind === 'revenue' ? () => onRenameHeading('TYPE') : undefined}
               renameHint="Rename Type heading"
-            >📝 {typeHeading}</FieldLabel>
+            >{typeHeadingEmoji} {typeHeading}</FieldLabel>
             <PillSelect
               scroll
               options={[
@@ -1477,7 +1480,7 @@ function DetailsForm({
                 <FieldLabel
                   onLongPress={() => onRenameHeading('PLATFORM')}
                   renameHint="Rename Platform heading"
-                >🚗 {platformHeading}</FieldLabel>
+                >{platformHeadingEmoji} {platformHeading}</FieldLabel>
                 {appAutoFilled ? (
                   <View style={{
                     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -2074,6 +2077,9 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // When set, the modal edits a BUILT-IN pill label (cosmetic per-user
   // override; the underlying key stored on entries never changes).
   const [editingLabel, setEditingLabel] = useState<{ kind: 'platform' | 'type' | 'heading'; key: string; defaultLabel: string } | null>(null);
+  // Heading editor only: the emoji shown before the section title. Uses the
+  // native keyboard (full device emoji range); clamped to ONE grapheme on save.
+  const [newHeadingEmoji, setNewHeadingEmoji] = useState('');
   // Built-in ExpenseCategory value or 'CUSTOMCAT:<name>' selection key.
   const [category, setCategory]  = useState<string>('GAS');
   // Category pill options: visible built-ins (hidden ones filtered out, but
@@ -2260,6 +2266,7 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   const handleRenameHeading = (key: 'PLATFORM' | 'TYPE') => {
     const def = key === 'PLATFORM' ? 'Platform' : 'Type';
     setEditingLabel({ kind: 'heading', key, defaultLabel: def });
+    setNewHeadingEmoji(headingEmoji(key));
     setRenamingPlatform(null);
     setRenamingEntryType(null);
     setAddingEntryType(false);
@@ -2274,6 +2281,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // headingLabel reads the module map applyLabelOverrides just refreshed.)
   const platformHeading = useMemo(() => { void labelOverrides; return headingLabel('PLATFORM', 'Platform'); }, [labelOverrides]);
   const typeHeading = useMemo(() => { void labelOverrides; return headingLabel('TYPE', 'Type'); }, [labelOverrides]);
+  const platformHeadingEmoji = useMemo(() => { void labelOverrides; return headingEmoji('PLATFORM'); }, [labelOverrides]);
+  const typeHeadingEmoji = useMemo(() => { void labelOverrides; return headingEmoji('TYPE'); }, [labelOverrides]);
 
   // "+ Add" pill on the Type row → open the shared prompt in add-type mode.
   const handleAddType = () => {
@@ -2786,20 +2795,31 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
   // Save (or reset, when label === null) a built-in pill label override.
   const submitLabelOverride = async (labelArg?: string | null) => {
     if (!editingLabel || addPlatformBusy) return;
+    const isHeading = editingLabel.kind === 'heading';
     const label = labelArg === null ? null : (labelArg ?? newPlatformName).trim();
-    if (label === '') return;
+    // Headings allow saving with an empty title (= default title, custom
+    // emoji may still apply); pill renames still require a name.
+    if (label === '' && !isHeading) return;
     // Heading titles carry a hard 12-char cap. maxLength already blocks typing
     // past it, but never rely on the UI alone — validate before persisting.
-    if (editingLabel.kind === 'heading' && label !== null && headingCharCount(label) > MAX_HEADING_LEN) {
+    if (isHeading && label !== null && headingCharCount(label) > MAX_HEADING_LEN) {
       setAddPlatformError(`Titles are limited to ${MAX_HEADING_LEN} characters.`);
       return;
     }
     // Typing the default name back = reset to default.
     const effective = label !== null && label.toLowerCase() === editingLabel.defaultLabel.toLowerCase() ? null : label;
+    // Heading emoji: one grapheme; the default emoji (or blank) = reset ('').
+    // labelArg === null is the explicit Reset button — clear the emoji too.
+    let emojiToSend: string | undefined;
+    if (isHeading) {
+      const key = editingLabel.key as 'PLATFORM' | 'TYPE';
+      const g = labelArg === null ? '' : firstGrapheme(newHeadingEmoji);
+      emojiToSend = g === DEFAULT_HEADING_EMOJI[key] ? '' : g;
+    }
     setAddPlatformBusy(true);
     setAddPlatformError(null);
     try {
-      const list = await api.setLabelOverride(editingLabel.kind, editingLabel.key, effective);
+      const list = await api.setLabelOverride(editingLabel.kind, editingLabel.key, effective ?? (isHeading ? '' : null), emojiToSend);
       queryClient.setQueryData<LabelOverride[]>(['labelOverrides'], list);
       writeLabelsMirror(list).catch(() => {});
       setMirrorLabels(list);
@@ -3659,6 +3679,8 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
               onEditType={handleEditType}
               platformHeading={platformHeading}
               typeHeading={typeHeading}
+              platformHeadingEmoji={platformHeadingEmoji}
+              typeHeadingEmoji={typeHeadingEmoji}
               onRenameHeading={handleRenameHeading}
               expenseUi={effectiveEntryType === 'EXPENSE'}
               appAutoFilled={appAutoFilled && effectiveEntryType !== 'EXPENSE'}
@@ -3826,6 +3848,32 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
                   ? 'Name the expense category you want to track (e.g. Car Wash, Insurance).'
                   : 'Name the delivery app or gig platform you want to track (e.g. Roadie, Amazon Flex).'}
               </Text>
+              {/* Heading editor: custom emoji before the title. Native
+                  keyboard = full device emoji range; clamped to ONE visible
+                  emoji (grapheme) on save, never by UTF-16 length. */}
+              {editingLabel?.kind === 'heading' ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <TextInput
+                    value={newHeadingEmoji}
+                    onChangeText={(t) => {
+                      setNewHeadingEmoji(t);
+                      if (addPlatformError) setAddPlatformError(null);
+                    }}
+                    onBlur={() => setNewHeadingEmoji((v) => firstGrapheme(v))}
+                    placeholder={DEFAULT_HEADING_EMOJI[editingLabel.key as 'PLATFORM' | 'TYPE']}
+                    placeholderTextColor="#9ca3af"
+                    accessibilityLabel="Heading emoji"
+                    style={{
+                      width: 64, textAlign: 'center',
+                      backgroundColor: '#ffffff', borderWidth: 2, borderColor: '#d1d5db',
+                      borderRadius: 12, paddingVertical: 12, fontSize: 22,
+                    }}
+                  />
+                  <Text style={{ flex: 1, fontSize: 12, color: '#6b7280' }}>
+                    Emoji shown before the title. Clear it to use the default.
+                  </Text>
+                </View>
+              ) : null}
               <TextInput
                 value={newPlatformName}
                 onChangeText={(t) => {

@@ -496,6 +496,21 @@ _migrate_auth_users_add_onboarding()
 _migrate_auth_users_add_walkthrough()
 
 
+def _migrate_user_label_overrides_add_emoji() -> None:
+    """Add `emoji` to `user_label_overrides` (heading rows only: custom emoji
+    shown before the section title; NULL = default). Plain additive ADD COLUMN,
+    safe on both Postgres and SQLite; safe to re-run."""
+    insp = inspect(engine)
+    if not insp.has_table("user_label_overrides"):
+        return
+    cols = {c["name"] for c in insp.get_columns("user_label_overrides")}
+    if "emoji" in cols:
+        return
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE user_label_overrides ADD COLUMN emoji VARCHAR"))
+    logger.warning("Added user_label_overrides.emoji for heading emoji customization.")
+
+
 def _migrate_auth_users_add_password_changed_at() -> None:
     """Security-event stamp used to revoke pre-existing JWTs on password reset /
     email change. Nullable — existing rows keep NULL (no revocation) until their
@@ -590,6 +605,7 @@ Base.metadata.create_all(bind=engine)
 # The CI-unique functional index for user_entry_types must be (re)applied AFTER
 # create_all — on the boot that first introduces the table, the guarded call in
 # the migration list above no-ops because the table doesn't exist yet.
+_migrate_user_label_overrides_add_emoji()
 _migrate_user_entry_types_ci_unique()
 _migrate_user_expense_categories_ci_unique()
 
