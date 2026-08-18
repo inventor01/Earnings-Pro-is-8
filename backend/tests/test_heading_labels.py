@@ -150,3 +150,12 @@ def test_old_client_blank_label_resets_when_no_emoji(client):
     client.put("/api/labels", json={"kind": "heading", "key": "TYPE", "label": "Order"})
     r = client.put("/api/labels", json={"kind": "heading", "key": "TYPE", "label": ""})
     assert _headings(r.json()) == []
+
+
+def test_legacy_blank_label_reset_deletes_row_even_with_emoji(client):
+    # Old builds send {kind,key,label:''} with NO emoji field — that has
+    # always meant full reset; it must not strand a hidden emoji.
+    client.put("/api/labels", json={"kind": "heading", "key": "PLATFORM", "label": "Gig App", "emoji": "🛵"})
+    r = client.put("/api/labels", json={"kind": "heading", "key": "PLATFORM", "label": ""})
+    assert r.status_code == 200
+    assert _headings(r.json()) == []

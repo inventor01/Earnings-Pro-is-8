@@ -355,7 +355,13 @@ async def set_label_override(
     resulting_emoji = (
         (emoji or None) if emoji is not None else (row.emoji if row is not None else None)
     )
-    if not label and not resulting_emoji:
+    # Legacy reset compatibility: older builds send {kind,key,label:''} with NO
+    # emoji field, and that has always meant "reset this heading entirely".
+    # Preserve-on-omission only applies to nonblank title updates; a blank
+    # label with the emoji field omitted must delete the row (full reset),
+    # never strand a hidden emoji the old build can't see or clear.
+    legacy_blank_reset = kind == "heading" and not label and payload.emoji is None
+    if not label and (not resulting_emoji or legacy_blank_reset):
         # Nothing overridden anymore — reset to default by deleting the row.
         if row is not None:
             db.delete(row)
