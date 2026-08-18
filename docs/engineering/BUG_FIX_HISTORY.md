@@ -63,8 +63,8 @@ All password screens use the one shared `PasswordInput` (login/signup, 2FA
 disable, delete-account confirm). iOS 1.0.5 builds ≤ 117 affected.
 
 ### Fixed Version/Build
-Ships in the next native builds after 2026-08-17 (OTA is not used for this
-app). Exact build numbers to be recorded when kicked off.
+iOS 1.0.5 build 118; Android 1.0.5 versionCode 21 (kicked off 2026-08-17;
+OTA is not used for this app).
 
 ## 2026-08-17 — Incorrect "at least one must stay visible" validation + platform icon standardization
 
