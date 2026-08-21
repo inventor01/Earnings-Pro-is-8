@@ -42,7 +42,7 @@ jest.mock('../lib/localStore', () => ({
 import { api } from '../lib/api';
 import type { Entry, EntryCreate } from '../lib/api';
 import { registerDrainHandler, requestDrain } from '../lib/syncTrigger';
-import { drainQueue, clearQueue, getQueueDepth } from '../lib/offlineQueue';
+import { drainQueue, clearQueue, getQueueDepth, getQueuedCreates } from '../lib/offlineQueue';
 
 describe('syncTrigger bridge', () => {
   it('routes requestDrain to the registered handler and stops after unregister', () => {
@@ -150,6 +150,15 @@ describe('create syncs while the app stays open (transient hiccup → auto-retry
     expect(drainSpy).toHaveBeenCalledTimes(1); // requestDrain fired on enqueue
     expect(server.calls.POST).toBe(1); // only the failed attempt so far
 
+    // A pending create is still editable. Updating its negative synthetic id
+    // must patch the queued CREATE (not issue a doomed PUT), so reconnect
+    // uploads the corrected amount/note exactly once.
+    await api.updateEntry(synthetic.id, { amount: 42, note: 'corrected before sync' });
+    const [pending] = await getQueuedCreates();
+    expect(pending.payload.amount).toBe(42);
+    expect(pending.payload.note).toBe('corrected before sync');
+    expect(server.calls.POST).toBe(1); // no PUT/extra request while pending
+
     unregister();
 
     // --- The foreground auto-retry drains the queue WITHOUT an app restart.
@@ -157,6 +166,10 @@ describe('create syncs while the app stays open (transient hiccup → auto-retry
     expect(r).toEqual({ flushed: 1, failed: 0, dropped: 0 });
     expect(server.calls.POST).toBe(2); // the successful replay
     expect(server.rows.size).toBe(1); // exactly one row created
+    expect([...server.rows.values()][0]).toMatchObject({
+      amount: 42,
+      note: 'corrected before sync',
+    });
     expect(await getQueueDepth()).toBe(0);
 
     // --- A second drain is a no-op: the queue is empty, nothing re-pushed.

@@ -3567,15 +3567,11 @@ function AddEntryModal({ visible, onClose, prefill, editing, defaultDate }: {
       time: timeStr,
     };
     if (editing) {
-      // Guard: rows with a non-positive id are optimistic (not-yet-saved create)
-      // or offline-queued entries that don't exist on the server yet. PUTting
-      // them returns 404 "Entry not found". Tell the user to wait instead of
-      // surfacing a scary error. (The edit entry points also block opening, so
-      // this is a defensive backstop.)
-      if (editing.id <= 0) {
-        Alert.alert('Still saving', 'This entry hasn’t finished saving yet. Give it a moment, then try editing again.');
-        return;
-      }
+      // A negative id is an offline-created entry that has not reached the
+      // server yet. `api.updateEntry` deliberately supports it by patching its
+      // queued create payload in place, so the eventual upload uses the user's
+      // corrected details. Do NOT block this edit — the old <= 0 guard made a
+      // perfectly editable pending entry look permanently stuck "saving."
       savingRef.current = true;
       updateMutation.mutate({ id: editing.id, patch: payload }, {
         onSettled: () => { savingRef.current = false; },
@@ -8669,10 +8665,9 @@ export default function DashboardScreen() {
                         }}
                         onEdit={(entry) => {
                           hTap();
-                          if (entry.id <= 0) {
-                            Alert.alert('Still saving', 'This entry hasn’t finished saving yet. Give it a moment, then try editing again.');
-                            return;
-                          }
+                          // Pending offline entries use a negative synthetic
+                          // id. They remain editable: saving patches their
+                          // queued payload, which is uploaded on reconnect.
                           setEditingEntry(entry); setShowAdd(true);
                         }}
                         onLongPress={selectionMode ? undefined : (entry) => setDetailEntry(entry)}
@@ -8942,10 +8937,7 @@ export default function DashboardScreen() {
         onEdit={(entry) => {
           setDetailEntry(null);
           hTap();
-          if (entry.id <= 0) {
-            Alert.alert('Still saving', 'This entry hasn’t finished saving yet. Give it a moment, then try editing again.');
-            return;
-          }
+          // Same as the list pencil: queued offline creates are editable.
           setEditingEntry(entry);
           setShowAdd(true);
         }}
