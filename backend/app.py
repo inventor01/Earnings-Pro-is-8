@@ -777,6 +777,15 @@ async def support_page():
         media_type="text/html",
     )
 
+@app.get("/go", include_in_schema=False)
+@app.get("/go/", include_in_schema=False)
+async def go_page():
+    return FileResponse(
+        os.path.join(_LEGAL_DIR, "go.html"),
+        media_type="text/html",
+        headers={"Cache-Control": "no-cache"},
+    )
+
 # ── Referral invite landing page ─────────────────────────────────────────────
 # The mobile app shares HTTPS invite links (custom-scheme URLs are not tappable
 # in Messages/Mail/WhatsApp and are dead ends without the app installed). This
