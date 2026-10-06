@@ -1,5 +1,59 @@
 # Bug Fix History
 
+## 2026-10-06 — Concurrent Gunicorn workers raced import-time schema creation
+
+### Category
+Backend / Deployment / Database Migration Safety
+
+### Severity
+High — a deployment that introduced new tables caused multiple Gunicorn workers to attempt schema creation concurrently. Railway eventually recovered after one worker created the table, but other workers failed to boot during the race.
+
+### Platforms
+Production backend / website API. Native iOS and Android binaries are not directly affected.
+
+### Symptoms
+The 2026-10-06 production deployment that introduced the Android beta tester queue logged worker boot failures during startup. PostgreSQL reported a duplicate catalog-object error while creating `android_beta_tester_signups`, including `duplicate key value violates unique constraint "pg_type_typname_nsp_index"`. Railway later reported the service online because a subsequent worker restart occurred after the table already existed.
+
+### Confirmed Root Cause
+**VERIFIED from Railway production deploy logs.** The Docker image starts Gunicorn with four workers. Each worker imports `backend.app`. That module performs legacy schema mutations and `Base.metadata.create_all(bind=engine)` at import time. Four workers therefore entered the schema-mutation path concurrently. SQLAlchemy's `checkfirst` behavior is not a cross-process lock: two workers can both observe that a table is absent and then both issue `CREATE TABLE`. PostgreSQL serializes catalog writes only after the competing DDL has already been issued, so one worker succeeded while another failed with the duplicate type/catalog constraint.
+
+### Why the Architecture Allowed It
+Schema changes are still executed from application-import code instead of a single dedicated migration process. That design predates the current multi-worker Gunicorn deployment. It was safe only when one process performed startup work. Adding a new model made the latent race visible.
+
+### Permanent Fix
+All existing import-time schema mutation work is now serialized with a PostgreSQL advisory lock. A worker must acquire `pg_advisory_lock(2026100601)` before any of the legacy migration calls or `Base.metadata.create_all` can run. The lock is held through the final post-`create_all` index migrations and then explicitly released and the dedicated connection closed. Other workers block until the first worker finishes, then re-run the existing idempotent checks against the completed schema.
+
+SQLite/local development is unchanged because the advisory lock is PostgreSQL-only.
+
+### Files Changed
+- `backend/app.py` — added one database-wide migration advisory lock around the complete import-time schema-mutation window.
+- `docs/engineering/BUG_FIX_HISTORY.md` — documented production evidence, root cause, fix, and regression prevention.
+
+### Regression Prevention
+- Existing backend smoke CI compiles the backend and exercises the `/go` beta queue on SQLite.
+- Production verification must inspect Railway startup logs after schema-changing deploys for worker boot errors and duplicate DDL/catalog errors.
+- Future schema work should continue moving toward a dedicated versioned migration command rather than adding uncoordinated import-time DDL. Until that migration architecture is replaced, the advisory lock is the invariant protecting multi-worker startup.
+
+### QA Evidence
+- Original failure: **VERIFIED** in Railway deployment `92fb7980-c036-4a32-8105-db2819d6257e`.
+- Root cause: **VERIFIED** from the four-worker Gunicorn command plus concurrent PostgreSQL `CREATE TABLE android_beta_tester_signups` failure in deployment logs.
+- Fix before production deployment: static review + backend CI required.
+- Production verification after hotfix: inspect fresh Railway deploy logs; no worker boot/schema-race errors may remain before this item is considered closed.
+
+### Affected Version/Build
+Server deployment at Git commit `76d4a3698cd33d16a9032bb4561ed8998ac1de5a`.
+iOS version/build: N/A — server startup issue.
+Android versionCode: N/A — server startup issue.
+
+### Fixed Version/Build
+Server hotfix following the 2026-10-06 deployment.
+iOS version/build: N/A.
+Android versionCode: N/A.
+
+### Rollback / Risk Notes
+The lock does not alter application data or schema definitions. If acquiring the PostgreSQL lock fails, startup fails instead of running unsynchronized schema mutations. PostgreSQL releases the session advisory lock automatically if the worker process or database connection terminates unexpectedly.
+
+
 ## 2026-08-17 — iOS password text deletes after hide/show toggle (3rd and root-cause fix)
 
 ### Category
