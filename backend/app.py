@@ -478,6 +478,25 @@ def _migrate_auth_users_add_walkthrough() -> None:
     logger.warning("Added auth_users.walkthrough_completed (grandfathered existing rows).")
 
 
+# Gunicorn starts multiple workers concurrently. Every worker imports this module,
+# so the legacy import-time schema migrations below used to race each other
+# during a deploy. PostgreSQL can then see two CREATE TABLE / ALTER sequences at
+# once and fail a worker with duplicate catalog objects. Serialize the entire
+# schema-mutation window with one PostgreSQL advisory lock. The lock is
+# session-scoped and is automatically released if a worker dies; we also
+# release it explicitly after the final migration call below.
+_SCHEMA_MIGRATION_LOCK_KEY = 2026100601
+_schema_migration_lock_conn = None
+
+if engine.dialect.name == "postgresql":
+    _schema_migration_lock_conn = engine.connect()
+    _schema_migration_lock_conn.execute(
+        text("SELECT pg_advisory_lock(:key)"),
+        {"key": _SCHEMA_MIGRATION_LOCK_KEY},
+    )
+    logger.info("Acquired schema migration advisory lock.")
+
+
 _migrate_api_credentials_for_multi_user()
 _migrate_synced_orders_for_multi_user()
 _migrate_entries_add_idempotency_key()
@@ -608,6 +627,17 @@ Base.metadata.create_all(bind=engine)
 _migrate_user_label_overrides_add_emoji()
 _migrate_user_entry_types_ci_unique()
 _migrate_user_expense_categories_ci_unique()
+
+if _schema_migration_lock_conn is not None:
+    try:
+        _schema_migration_lock_conn.execute(
+            text("SELECT pg_advisory_unlock(:key)"),
+            {"key": _SCHEMA_MIGRATION_LOCK_KEY},
+        )
+        logger.info("Released schema migration advisory lock.")
+    finally:
+        _schema_migration_lock_conn.close()
+        _schema_migration_lock_conn = None
 
 app = FastAPI(title="Delivery Driver Earnings API", docs_url=None, redoc_url=None)
 
