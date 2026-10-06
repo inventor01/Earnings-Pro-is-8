@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 import asyncio
 import html
@@ -131,7 +131,7 @@ def _clean_meta(value: Optional[str]) -> Optional[str]:
 class AndroidBetaSignupRequest(BaseModel):
     email: EmailStr
     first_name: Optional[str] = None
-    platforms: list[str] = []
+    platforms: list[str] = Field(default_factory=list)
     consent: bool
     source: Optional[str] = None
     video_id: Optional[str] = None
