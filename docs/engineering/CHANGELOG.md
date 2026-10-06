@@ -12,3 +12,11 @@
 - Added smoke coverage for the new routes, delay messaging, and processor authentication.
 
 Operational state flow: pending -> approved -> sending -> invited.
+
+## 2026-10-06 — Android beta conversion copy refinement
+
+- Rewrote the Android beta funnel and both tester emails in a more formal, trust-oriented voice.
+- Replaced casual language with explicit access, approval, activation, and enrollment terminology.
+- Strengthened expectation-setting around the approximately one-hour Google Play activation window.
+- Clarified that no action is required until the second email arrives, reducing premature tester-page visits and perceived failures.
+- Refined the final enrollment CTA and instructions to make the conversion path more direct.
