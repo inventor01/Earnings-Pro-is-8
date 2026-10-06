@@ -31,11 +31,11 @@
     </main>
 
     <form id="androidForm" class="screen android" novalidate>
-      <section class="hero"><span class="eyebrow">Android closed beta</span><h1>Get early access on Android</h1><p class="lead">Our current Google Play closed test is restricted to approved Google accounts. Enter the exact Google account you use in the Play Store. After we add you, we’ll email the opt-in link and instructions.</p></section>
+      <section class="hero"><span class="eyebrow">Android closed beta</span><h1>Get early access on Android</h1><p class="lead">Our Google Play test is restricted to approved Google accounts. Enter the exact account you use in the Play Store. We’ll confirm your request now, add you first, then send the tester link in a second email after about an hour so Google Play has time to update.</p></section>
       <label class="field"><span class="label">Google Play email</span><input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@gmail.com"><span id="emailError" class="error" hidden>Enter a valid email for your Google account.</span><span id="gmailWarn" class="warn" hidden>This is not a Gmail address. That can still be valid, but it must exactly match the Google account signed into your Play Store.</span><span class="hint">Find it in Play Store → profile icon. It must match exactly.</span></label>
       <label class="field"><span class="label">First name <span class="optional">· optional</span></span><input id="name" type="text" autocomplete="given-name" maxlength="80"></label>
       <section class="field"><span class="label">Which apps do you drive for? <span class="optional">· optional</span></span><div id="chips" class="chips"></div></section>
-      <label class="consent"><input id="consent" type="checkbox"><span>Email me about the Android beta, including my tester opt-in link and test updates. Nothing else.</span></label>
+      <label class="consent"><input id="consent" type="checkbox"><span>Email me my Android beta status, tester link and test updates. Nothing else.</span></label>
       <span id="consentError" class="error" hidden>We need permission to send your tester link.</span>
       <div id="submitError" class="submiterror" role="alert" hidden></div>
       <button id="submit" class="submit" type="submit">Request beta access</button>
@@ -45,13 +45,13 @@
     <main id="done" class="screen done">
       <section class="hero"><span class="check" aria-hidden="true">✓</span><h1 id="doneTitle">You're on the list.</h1><p id="doneText" class="lead"></p></section>
       <section class="steps">
-        <div class="step"><span class="stepnum mono">01</span><div><div class="steptitle">We add your Google account</div><div class="stepbody">Your email is placed in our Google Play tester list.</div></div></div>
-        <div class="step"><span class="stepnum mono">02</span><div><div class="steptitle">Watch for your opt-in link</div><div class="stepbody">We’ll email the Google Play testing link once your account is approved.</div></div></div>
-        <div class="step"><span class="stepnum mono">03</span><div><div class="steptitle">Opt in on your Android phone</div><div class="stepbody">Open the link while signed into the same Google account, then choose “Become a tester”.</div></div></div>
-        <div class="step"><span class="stepnum mono">04</span><div><div class="steptitle">Install and use the beta</div><div class="stepbody">Install from Google Play and test the normal Earnings Ninja flows.</div></div></div>
-        <div class="step"><span class="stepnum mono">05</span><div><div class="steptitle">Stay opted in for at least 14 days</div><div class="stepbody">Google counts continuous participation. Please remain opted in and send us any bugs or feedback you find.</div></div></div>
+        <div class="step"><span class="stepnum mono">01</span><div><div class="steptitle">Confirmation arrives now</div><div class="stepbody">We’ll email you right away so you know the request worked.</div></div></div>
+        <div class="step"><span class="stepnum mono">02</span><div><div class="steptitle">We add your Google account</div><div class="stepbody">We put the exact email you submitted on the Google Play closed-test list first.</div></div></div>
+        <div class="step"><span class="stepnum mono">03</span><div><div class="steptitle">Give Google Play about an hour</div><div class="stepbody">The tester button can take time to appear after an account is added, so we intentionally wait before sending the link.</div></div></div>
+        <div class="step"><span class="stepnum mono">04</span><div><div class="steptitle">Your tester link arrives separately</div><div class="stepbody">Open the second email on your Android phone while signed into the same Google account, then choose “Become a tester”.</div></div></div>
+        <div class="step"><span class="stepnum mono">05</span><div><div class="steptitle">Install and stay opted in</div><div class="stepbody">Install Earnings Ninja and remain opted in for at least 14 continuous days so Google counts your participation.</div></div></div>
       </section>
-      <div class="notice">After you are added, you can also use the official <a href="https://play.google.com/apps/testing/com.earningsninja.app">Google Play testing page</a>.</div>
+      <div class="notice"><strong style="color:#ece6da">No tester link yet is intentional.</strong> If you reach Google Play too early, it can look like access is broken while your account is still syncing. Wait for the second email from us.</div>
       <button id="restart" class="secondarybtn" type="button">Use a different email</button>
     </main>
   </div></div>
@@ -107,7 +107,7 @@
       if(!res.ok||!data.success)throw new Error(data.detail||'We could not save your request. Please try again.')
       track('android_beta_submitted')
       $('doneTitle').textContent=first?`You're on the list, ${first}.`:`You're on the list.`
-      $('doneText').innerHTML=`We saved <strong style="color:#ece6da"></strong>. Watch for an email after your Google account is added to the closed test.`
+      $('doneText').innerHTML=`We saved <strong style="color:#ece6da"></strong>. You’ll get a confirmation now, then a separate tester-link email after we add your account and give Google Play about an hour to update.`
       $('doneText').querySelector('strong').textContent=email
       show('done')
     }catch(err){ $('submitError').textContent=err && err.message ? err.message : 'We could not save your request. Please try again.'; $('submitError').hidden=false }
