@@ -406,9 +406,9 @@ async def _send_android_beta_emails(
 
     safe_name = html.escape(first_name or "")
     safe_email = html.escape(email)
-    greeting = f"Hi {safe_name}," if safe_name else "Hi,"
+    greeting = f"Hello {safe_name}," if safe_name else "Hello,"
     delay = _beta_delay_minutes()
-    delay_label = "about an hour" if delay == 60 else f"about {delay} minutes"
+    delay_label = "approximately one hour" if delay == 60 else f"approximately {delay} minutes"
     public_url = os.getenv("PUBLIC_APP_URL", "https://earningsninja.com").rstrip("/")
     testing_url = "https://play.google.com/apps/testing/com.earningsninja.app"
     token = _approval_token(signup_id, email)
@@ -417,39 +417,39 @@ async def _send_android_beta_emails(
     user_body = f"""
       <p style="margin:0 0 14px;font-size:16px;line-height:1.65;color:#d8d0c4">{greeting}</p>
       <p style="margin:0 0 20px;font-size:16px;line-height:1.65;color:#d8d0c4">
-        We received your Android beta request for <strong style="color:#ffffff">{safe_email}</strong>.
+        Your request for Earnings Ninja Android beta access has been received for <strong style="color:#ffffff">{safe_email}</strong>.
       </p>
       <div style="background:#f5c518;border-radius:16px;padding:20px;margin:22px 0;color:#17130f">
-        <div style="font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px">What happens now</div>
-        <div style="font-size:25px;font-weight:900;letter-spacing:-.03em;margin-bottom:6px">Give us {html.escape(delay_label)}.</div>
-        <div style="font-size:14px;line-height:1.5">We add your Google account to the closed tester list first, then give Google Play time to update before we send your join link.</div>
+        <div style="font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px">Next step</div>
+        <div style="font-size:25px;font-weight:900;letter-spacing:-.03em;margin-bottom:6px">Your access link will follow shortly.</div>
+        <div style="font-size:14px;line-height:1.5">Please allow {html.escape(delay_label)} while we add your Google account to the approved tester list and Google Play finishes updating your access.</div>
       </div>
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:8px 0 20px">
-        <tr><td style="width:28px;vertical-align:top;color:#f5c518;font-weight:900;padding:8px 0">01</td><td style="padding:8px 0 8px 10px;font-size:15px;line-height:1.55;color:#d8d0c4"><strong style="color:#ffffff">We add this exact Google account.</strong><br>Your Play Store account has to match the email above.</td></tr>
-        <tr><td style="width:28px;vertical-align:top;color:#f5c518;font-weight:900;padding:8px 0">02</td><td style="padding:8px 0 8px 10px;font-size:15px;line-height:1.55;color:#d8d0c4"><strong style="color:#ffffff">Google Play catches up.</strong><br>The tester button can take a little time to appear after an account is added.</td></tr>
-        <tr><td style="width:28px;vertical-align:top;color:#f5c518;font-weight:900;padding:8px 0">03</td><td style="padding:8px 0 8px 10px;font-size:15px;line-height:1.55;color:#d8d0c4"><strong style="color:#ffffff">We send a second email.</strong><br>That email contains the official Google Play tester link and the exact steps to join.</td></tr>
+        <tr><td style="width:28px;vertical-align:top;color:#f5c518;font-weight:900;padding:8px 0">01</td><td style="padding:8px 0 8px 10px;font-size:15px;line-height:1.55;color:#d8d0c4"><strong style="color:#ffffff">We approve your Google account.</strong><br>We add the exact email above to the closed-test access list.</td></tr>
+        <tr><td style="width:28px;vertical-align:top;color:#f5c518;font-weight:900;padding:8px 0">02</td><td style="padding:8px 0 8px 10px;font-size:15px;line-height:1.55;color:#d8d0c4"><strong style="color:#ffffff">Google Play completes the access update.</strong><br>This short processing period helps ensure the tester option is available when you open the link.</td></tr>
+        <tr><td style="width:28px;vertical-align:top;color:#f5c518;font-weight:900;padding:8px 0">03</td><td style="padding:8px 0 8px 10px;font-size:15px;line-height:1.55;color:#d8d0c4"><strong style="color:#ffffff">We send your access email.</strong><br>Your second email will contain the official Google Play link and clear instructions to complete enrollment.</td></tr>
       </table>
       <div style="border:1px solid #4a4034;border-radius:12px;padding:14px 16px;font-size:14px;line-height:1.55;color:#bdb4a7">
-        You do not need to try the tester page yet. Waiting for the second email avoids the confusing “missing join button” problem while Google Play is still updating.
+        No action is required right now. Please wait for the second email before opening the Google Play tester page; this helps prevent access errors while your account is still being activated.
       </div>
     """
 
     user_params = {
         "from": RESEND_FROM,
         "to": [email],
-        "subject": "Android beta request received — we’re adding your account",
+        "subject": "Your Earnings Ninja Android beta request is confirmed",
         "html": _email_shell(
-            preheader=f"We got your Android beta request. Your tester link comes in {delay_label}.",
+            preheader=f"Your Android beta request is confirmed. Your access link will follow in {delay_label}.",
             eyebrow="Android closed beta",
-            heading="We got your request.",
+            heading="Your beta request is confirmed.",
             body_html=user_body,
         ),
         "text": (
             f"{greeting}\n\n"
-            f"We received your Android beta request for {email}.\n\n"
-            f"Give us {delay_label}. We add your Google account to the closed tester list first, "
-            "then give Google Play time to update. We will send a second email with the official "
-            "tester link and joining instructions. You do not need to try the tester page yet.\n\n"
+            f"Your request for Earnings Ninja Android beta access has been received for {email}.\n\n"
+            f"Please allow {delay_label} while we approve your Google account and Google Play completes "
+            "the access update. A second email will contain your official tester link and enrollment "
+            "instructions. No action is required until that email arrives.\n\n"
             "Earnings Ninja"
         ),
         **({"reply_to": RESEND_REPLY_TO} if RESEND_REPLY_TO else {}),
@@ -462,7 +462,7 @@ async def _send_android_beta_emails(
     ).strip()
 
     admin_body = f"""
-      <p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#d8d0c4">A new Android tester is waiting to be added to Google Play.</p>
+      <p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#d8d0c4">A new Android beta access request is ready for approval in Google Play.</p>
       <div style="background:#12100e;border:1px solid #342d26;border-radius:14px;padding:16px;margin:0 0 20px;font-size:14px;line-height:1.65;color:#d8d0c4">
         <div><strong style="color:#ffffff">Email:</strong> {safe_email}</div>
         <div><strong style="color:#ffffff">Name:</strong> {html.escape(first_name or "—")}</div>
@@ -473,11 +473,11 @@ async def _send_android_beta_emails(
         <div><strong style="color:#ffffff">Campaign:</strong> {html.escape(campaign_id or "—")}</div>
       </div>
       <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#d8d0c4">
-        Add the exact email above to the Google Play closed-test email list. After it is added, confirm below. The tester link will not send until you confirm, and never before the {html.escape(delay_label)} setup window has passed.
+        Add the exact email above to the Google Play closed-test access list. Once the account has been added, confirm below. The tester link will not be released until confirmation is recorded and the {html.escape(delay_label)} activation window has elapsed.
       </p>
       <table role="presentation" cellspacing="0" cellpadding="0" style="margin:22px 0">
         <tr><td bgcolor="#f5c518" style="border-radius:12px">
-          <a href="{html.escape(approval_url)}" style="display:inline-block;padding:15px 22px;color:#17130f;text-decoration:none;font-size:15px;font-weight:900">Confirm tester was added</a>
+          <a href="{html.escape(approval_url)}" style="display:inline-block;padding:15px 22px;color:#17130f;text-decoration:none;font-size:15px;font-weight:900">Confirm Google Play access</a>
         </td></tr>
       </table>
       <p style="margin:0;font-size:13px;line-height:1.55;color:#81786c">Google Play tester page for reference: <a href="{testing_url}" style="color:#f5c518">{testing_url}</a></p>
@@ -488,15 +488,15 @@ async def _send_android_beta_emails(
         "to": [notify_to],
         "subject": f"[Android Beta] Add tester: {email}",
         "html": _email_shell(
-            preheader=f"Add {email} to Google Play, then confirm so the delayed invite can send.",
+            preheader=f"Approve {email} in Google Play, then confirm to release the tester invitation after the activation window.",
             eyebrow="Tester action required",
-            heading="Add this tester first.",
+            heading="Approve this tester in Google Play.",
             body_html=admin_body,
         ),
         "text": (
             f"New Android beta tester\n\nEmail: {email}\nName: {first_name or '—'}\n"
             f"Platforms: {', '.join(platforms) or '—'}\n\n"
-            "Add this exact Google account to the Play Console closed-test list, then confirm here:\n"
+            "Add this exact Google account to the Play Console closed-test list, then confirm approval here:\n"
             f"{approval_url}\n\nReference tester page: {testing_url}"
         ),
         **({"reply_to": email} if email else {}),
@@ -529,9 +529,9 @@ def android_beta_approval_page(
 <body style="margin:0;background:#15120f;color:#ece6da;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
   <main style="max-width:560px;margin:0 auto;padding:48px 20px">
     <div style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#f5c518;font-weight:800;margin-bottom:12px">Earnings Ninja · Android beta</div>
-    <h1 style="font-size:32px;line-height:1.1;margin:0 0 16px">Confirm tester was added</h1>
-    <p style="font-size:16px;line-height:1.6;color:#b8afa2">Only confirm after <strong style="color:#fff">{safe_email}</strong> has been added to the Google Play closed-test email list.</p>
-    <button id="confirm" style="width:100%;min-height:56px;border:0;border-radius:14px;background:#f5c518;color:#15120f;font-weight:900;font-size:16px;margin-top:18px">Yes, tester is added</button>
+    <h1 style="font-size:32px;line-height:1.1;margin:0 0 16px">Confirm Google Play access</h1>
+    <p style="font-size:16px;line-height:1.6;color:#b8afa2">Confirm only after <strong style="color:#fff">{safe_email}</strong> has been added to the Google Play closed-test access list.</p>
+    <button id="confirm" style="width:100%;min-height:56px;border:0;border-radius:14px;background:#f5c518;color:#15120f;font-weight:900;font-size:16px;margin-top:18px">Confirm access has been added</button>
     <p id="status" style="font-size:14px;line-height:1.5;color:#9d9487;margin-top:16px"></p>
   </main>
 <script>
@@ -600,37 +600,37 @@ async def _send_android_beta_invite_email(signup: AndroidBetaTesterSignup) -> No
 
     body = f"""
       <p style="margin:0 0 14px;font-size:16px;line-height:1.65;color:#d8d0c4">{greeting}</p>
-      <p style="margin:0 0 20px;font-size:16px;line-height:1.65;color:#d8d0c4">Your Earnings Ninja Android beta setup window is complete. Use the same Google account we saved for you: <strong style="color:#ffffff">{safe_email}</strong>.</p>
+      <p style="margin:0 0 20px;font-size:16px;line-height:1.65;color:#d8d0c4">Your Earnings Ninja Android beta access is ready. Please continue using the Google account associated with your request: <strong style="color:#ffffff">{safe_email}</strong>.</p>
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:24px 0">
         <tr><td align="center" bgcolor="#f5c518" style="border-radius:14px">
-          <a href="{testing_url}" style="display:block;padding:17px 24px;color:#17130f;text-decoration:none;font-size:17px;font-weight:900">Open Google Play tester page</a>
+          <a href="{testing_url}" style="display:block;padding:17px 24px;color:#17130f;text-decoration:none;font-size:17px;font-weight:900">Join the Android beta</a>
         </td></tr>
       </table>
       <div style="background:#12100e;border:1px solid #342d26;border-radius:14px;padding:18px;margin:0 0 20px">
-        <div style="font-size:15px;font-weight:900;color:#ffffff;margin-bottom:10px">Do this on your Android phone</div>
-        <div style="font-size:14px;line-height:1.65;color:#c8c0b4">1. Make sure the Play Store is signed into <strong style="color:#fff">{safe_email}</strong>.<br>2. Open the button above and choose <strong style="color:#fff">Become a tester</strong>.<br>3. Install Earnings Ninja from Google Play.<br>4. Stay opted in for at least 14 continuous days.</div>
+        <div style="font-size:15px;font-weight:900;color:#ffffff;margin-bottom:10px">Complete enrollment on your Android phone</div>
+        <div style="font-size:14px;line-height:1.65;color:#c8c0b4">1. Confirm the Play Store is signed into <strong style="color:#fff">{safe_email}</strong>.<br>2. Select <strong style="color:#fff">Join the Android beta</strong> above, then choose <strong style="color:#fff">Become a tester</strong> in Google Play.<br>3. Install Earnings Ninja from Google Play.<br>4. Remain opted in for at least 14 continuous days so your participation is counted.</div>
       </div>
       <div style="border:1px solid #4a4034;border-radius:12px;padding:14px 16px;font-size:14px;line-height:1.55;color:#bdb4a7">
-        If “Become a tester” is not visible yet, Google Play may still be syncing your account. Wait 15–30 minutes, confirm you are signed into the exact email above, then reopen the link. If it still does not appear, reply to this email.
+        If “Become a tester” is not yet available, Google Play may still be completing the account update. Wait 15–30 minutes, confirm that the Play Store is signed into the exact email above, and reopen the link. If the option still does not appear, reply to this email and we will assist you.
       </div>
     """
 
     params = {
         "from": RESEND_FROM,
         "to": [signup.email],
-        "subject": "Your Earnings Ninja Android beta link is ready",
+        "subject": "Your Earnings Ninja Android beta access is ready",
         "html": _email_shell(
-            preheader="Your Android tester link is ready. Open it with the same Google account you submitted.",
+            preheader="Your Android beta access is ready. Complete enrollment with the same Google account you submitted.",
             eyebrow="Android beta access",
-            heading="Your tester link is ready.",
+            heading="Your Android beta access is ready.",
             body_html=body,
         ),
         "text": (
-            f"{greeting}\n\nYour Earnings Ninja Android beta link is ready.\n\n"
+            f"{greeting}\n\nYour Earnings Ninja Android beta access is ready.\n\n"
             f"Use the Play Store account {signup.email}. Open this link on your Android phone:\n"
-            f"{testing_url}\n\nChoose Become a tester, install Earnings Ninja, and stay opted in for "
+            f"{testing_url}\n\nChoose Become a tester, install Earnings Ninja, and remain opted in for "
             "at least 14 continuous days. If the Become a tester button is not visible, wait 15–30 "
-            "minutes, make sure the Play Store is signed into the exact email above, and reopen the link."
+            "minutes, confirm the Play Store is signed into the exact email above, and reopen the link."
         ),
         **({"reply_to": RESEND_REPLY_TO} if RESEND_REPLY_TO else {}),
     }
