@@ -320,6 +320,41 @@ class WaitlistSignup(Base):
     referral_source = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
+class AndroidBetaTesterSignup(Base):
+    __tablename__ = "android_beta_tester_signups"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, nullable=False, unique=True, index=True)
+    first_name = Column(String, nullable=True)
+    # JSON-encoded list of the gig platforms selected on /go.
+    platforms = Column(Text, nullable=True)
+    consent = Column(Boolean, default=False, nullable=False)
+    # First-touch attribution. We preserve these values on duplicate signups so
+    # the original acquisition source is not overwritten by a later revisit.
+    source = Column(String, nullable=True, index=True)
+    video_id = Column(String, nullable=True)
+    format_id = Column(String, nullable=True)
+    campaign_id = Column(String, nullable=True)
+    # Operational queue state. "pending" means the Google account still needs
+    # to be added to the Play Console tester list.
+    status = Column(String, default="pending", nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class GrowthEvent(Base):
+    __tablename__ = "growth_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_type = Column(String, nullable=False, index=True)
+    device = Column(String, nullable=True)
+    source = Column(String, nullable=True, index=True)
+    video_id = Column(String, nullable=True)
+    format_id = Column(String, nullable=True)
+    campaign_id = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+
 class PlatformIntegration(str, enum.Enum):
     UBER = "UBER"
     SHIPT = "SHIPT"
