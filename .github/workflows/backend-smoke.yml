@@ -80,7 +80,7 @@ jobs:
           assert page.status_code == 200, page.text
           assert "Know what you actually made." in page.text
           assert "/api/waitlist/android-beta" in page.text
-          assert "about an hour" in page.text.lower()
+          assert "approximately one hour" in page.text.lower()
           assert "play.google.com/apps/testing" not in page.text.lower()
 
           payload = {
