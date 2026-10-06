@@ -42,6 +42,7 @@ jobs:
           PUBLIC_APP_URL: http://localhost:8000
           RESEND_API_KEY: ""
           ALLOW_EPHEMERAL_SQLITE: "1"
+          BETA_INVITE_CRON_TOKEN: "ci-beta-cron-token"
         run: |
           python - <<'PY'
           from sqlalchemy import inspect
@@ -60,6 +61,9 @@ jobs:
           waitlist_paths = {getattr(r, "path", None) for r in waitlist_routes.router.routes}
           required_waitlist_paths = {
               "/api/waitlist/android-beta",
+              "/api/waitlist/android-beta/approve-page",
+              "/api/waitlist/android-beta/approve",
+              "/api/waitlist/android-beta/process-invites",
               "/api/waitlist/event",
           }
           missing_waitlist = required_waitlist_paths - waitlist_paths
@@ -76,6 +80,8 @@ jobs:
           assert page.status_code == 200, page.text
           assert "Know what you actually made." in page.text
           assert "/api/waitlist/android-beta" in page.text
+          assert "about an hour" in page.text.lower()
+          assert "play.google.com/apps/testing" not in page.text.lower()
 
           payload = {
               "email": "ci-android-tester@example.com",
@@ -94,6 +100,14 @@ jobs:
           duplicate = client.post("/api/waitlist/android-beta", json=payload)
           assert duplicate.status_code == 200, duplicate.text
           assert duplicate.json() == first.json()
+
+          # The delayed invite processor is private. A missing/wrong token must
+          # never expose or advance the tester queue.
+          unauth_process = client.post(
+              "/api/waitlist/android-beta/process-invites",
+              headers={"Authorization": "Bearer wrong-token"},
+          )
+          assert unauth_process.status_code == 401, unauth_process.text
 
           no_consent = client.post(
               "/api/waitlist/android-beta",
