@@ -1,0 +1,117 @@
+name: Backend Smoke
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - "requirements.txt"
+      - "Dockerfile"
+      - ".github/workflows/backend-smoke.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "requirements.txt"
+      - "Dockerfile"
+      - ".github/workflows/backend-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  backend-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install backend dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile backend
+        run: python -m compileall -q backend
+
+      - name: Smoke-test /go and beta queue
+        env:
+          DATABASE_URL: sqlite:////tmp/earnings-ninja-ci.db
+          JWT_SECRET_KEY: ci-only-not-a-secret
+          PUBLIC_APP_URL: http://localhost:8000
+          RESEND_API_KEY: ""
+          ALLOW_EPHEMERAL_SQLITE: "1"
+        run: |
+          python - <<'PY'
+          from sqlalchemy import inspect
+          from fastapi.testclient import TestClient
+
+          from backend.app import app
+          from backend.db import engine
+
+          routes = {getattr(route, "path", None) for route in app.routes}
+          required_routes = {
+              "/go",
+              "/api/waitlist/android-beta",
+              "/api/waitlist/event",
+          }
+          missing = required_routes - routes
+          assert not missing, f"missing routes: {sorted(missing)}"
+
+          tables = set(inspect(engine).get_table_names())
+          required_tables = {"android_beta_tester_signups", "growth_events"}
+          missing_tables = required_tables - tables
+          assert not missing_tables, f"missing tables: {sorted(missing_tables)}"
+
+          client = TestClient(app)
+
+          page = client.get("/go")
+          assert page.status_code == 200, page.text
+          assert "Know what you actually made." in page.text
+          assert "/api/waitlist/android-beta" in page.text
+
+          payload = {
+              "email": "ci-android-tester@example.com",
+              "first_name": "CI",
+              "platforms": ["DoorDash", "Uber Eats"],
+              "consent": True,
+              "source": "ci",
+              "video_id": "V001",
+              "format_id": "offer-choice",
+              "campaign_id": "smoke",
+          }
+          first = client.post("/api/waitlist/android-beta", json=payload)
+          assert first.status_code == 200, first.text
+          assert first.json().get("success") is True
+
+          duplicate = client.post("/api/waitlist/android-beta", json=payload)
+          assert duplicate.status_code == 200, duplicate.text
+          assert duplicate.json() == first.json()
+
+          no_consent = client.post(
+              "/api/waitlist/android-beta",
+              json={**payload, "email": "ci-no-consent@example.com", "consent": False},
+          )
+          assert no_consent.status_code == 422, no_consent.text
+
+          event = client.post(
+              "/api/waitlist/event",
+              json={
+                  "event_type": "landing_view",
+                  "device": "desktop",
+                  "source": "ci",
+                  "video_id": "V001",
+                  "format_id": "offer-choice",
+                  "campaign_id": "smoke",
+              },
+          )
+          assert event.status_code == 200, event.text
+          assert event.json().get("success") is True
+
+          bad_event = client.post(
+              "/api/waitlist/event",
+              json={"event_type": "made_up_event", "device": "desktop"},
+          )
+          assert bad_event.status_code == 422, bad_event.text
+          PY
