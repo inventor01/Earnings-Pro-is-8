@@ -51,6 +51,9 @@ jobs:
           from backend.db import engine
 
           routes = {getattr(route, "path", None) for route in app.routes}
+          print("APP ROUTES:", sorted(str(r) for r in routes if r))
+          from backend.routers import waitlist_routes
+          print("WAITLIST ROUTER ROUTES:", [getattr(r, "path", None) for r in waitlist_routes.router.routes])
           required_routes = {
               "/go",
               "/api/waitlist/android-beta",
