@@ -406,7 +406,7 @@ async def _send_android_beta_emails(
 
     safe_name = html.escape(first_name or "")
     safe_email = html.escape(email)
-    greeting = f"Hi {safe_name}," if safe_name else "Hi,"
+    greeting = f"Hello {safe_name}," if safe_name else "Hello,"
     delay = _beta_delay_minutes()
     delay_label = "approximately one hour" if delay == 60 else f"approximately {delay} minutes"
     public_url = os.getenv("PUBLIC_APP_URL", "https://earningsninja.com").rstrip("/")
@@ -628,9 +628,9 @@ async def _send_android_beta_invite_email(signup: AndroidBetaTesterSignup) -> No
         "text": (
             f"{greeting}\n\nYour Earnings Ninja Android beta access is ready.\n\n"
             f"Use the Play Store account {signup.email}. Open this link on your Android phone:\n"
-            f"{testing_url}\n\nChoose Become a tester, install Earnings Ninja, and remain opted in for 
+            f"{testing_url}\n\nChoose Become a tester, install Earnings Ninja, and remain opted in for "
             "at least 14 continuous days. If the Become a tester button is not visible, wait 15–30 "
-            "minutes, make sure the Play Store is signed into the exact email above, and reopen the link."
+            "minutes, confirm the Play Store is signed into the exact email above, and reopen the link."
         ),
         **({"reply_to": RESEND_REPLY_TO} if RESEND_REPLY_TO else {}),
     }
