@@ -90,7 +90,8 @@ export default function GoPage() {
     if (attribution.videoId) q.set('vid', attribution.videoId)
     if (attribution.formatId) q.set('fmt', attribution.formatId)
     if (attribution.campaignId) q.set('campaign', attribution.campaignId)
-    return `https://earningsninja.com/go${q.size ? `?${q}` : ''}`
+    const query = q.toString()
+    return `https://earningsninja.com/go${query ? `?${query}` : ''}`
   }, [attribution])
   const qr = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&color=15120f&bgcolor=ece6da&data=${encodeURIComponent(pageUrl)}`
 
