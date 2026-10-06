@@ -3,7 +3,6 @@ import LandingPage from './pages/LandingPage'
 import UpgradePage from './pages/UpgradePage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import DeleteAccountPage from './pages/DeleteAccountPage'
-import GoPage from './pages/GoPage'
 
 function Routes() {
   const { path } = useRouter()
@@ -11,7 +10,6 @@ function Routes() {
   if (clean === '/upgrade') return <UpgradePage />
   if (clean === '/reset-password') return <ResetPasswordPage />
   if (clean === '/delete-account') return <DeleteAccountPage />
-  if (clean === '/go') return <GoPage />
   return <LandingPage />
 }
 
