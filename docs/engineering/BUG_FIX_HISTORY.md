@@ -1,5 +1,62 @@
 # Bug Fix History
 
+## 2026-10-07 — Creative research automation ran but dashboard stayed at zero
+
+### Category
+Growth Automation / Creative OS / Observability
+
+### Severity
+High — the owner could not distinguish a running research job from a failed or non-ingested job, so the hands-off workflow appeared broken and no research progress was visible.
+
+### Platforms
+Production web Creative OS. Native iOS and Android binaries are not directly affected.
+
+### Symptoms
+The Ninja Viral Research Director automation reported a run timestamp, but `/creative` continued to show zero sources scanned, zero qualified candidates, zero watched videos, zero confirmed patterns, and zero top-three candidates.
+
+### Confirmed Root Cause
+**VERIFIED from the automation metadata and application architecture.** Automation execution state lived only in ChatGPT Automations while the Creative OS dashboard read only persisted `creative_research_candidates` rows. There was no persisted research-run lifecycle, no running/completed/failed state, and no ingestion acknowledgement connecting automation completion to the dashboard. Therefore a successful task launch could coexist with a dashboard containing all zeros.
+
+### Why the Architecture Allowed It
+The first Creative Research Engine implemented candidate storage but omitted a durable run-control record. It assumed that candidate rows would eventually appear and used zero counts as both "nothing has run" and "a run is in progress." The automation-to-owner handoff was asynchronous and had no first-class status/heartbeat contract.
+
+### Permanent Fix
+- Added `creative_research_runs` as a dedicated lifecycle table.
+- Added protected APIs to start a run, patch progress/completion/failure, and fetch the latest run.
+- Extended the research summary response with `latest_run`.
+- Updated the Creative OS UI with explicit RUNNING / COMPLETE / FAILED state, current step, start time, and error display.
+- Added regression coverage proving run creation, latest-run retrieval, count updates, completion timestamps, and summary integration.
+- The automation handoff contract now emits a start notification before research and a completion payload after research so the owner-thread operator can persist progress and ingest final candidates.
+
+### Files Changed
+- `backend/models.py`
+- `backend/routers/creative_os.py`
+- `backend/legal/creative.html`
+- `.github/workflows/backend-smoke.yml`
+- `docs/engineering/BUG_FIX_HISTORY.md`
+
+### Regression Prevention
+A research run may never be represented only by candidate counts again. Every autonomous run must have one durable `run_id` with an explicit terminal state. Zero candidates with `status=completed` means "completed with no candidates"; zero candidates with `status=running` means work is still in progress; `status=failed` carries the error.
+
+### QA Evidence
+- Original symptom: **VERIFIED** — automation metadata showed a run while the production Creative OS remained at zero.
+- Root cause: **VERIFIED** by code audit — no research-run persistence or lifecycle endpoint existed.
+- Fix verification: backend CI must pass the exact run-lifecycle regression sequence before merge.
+- Production verification: create a real run, confirm RUNNING appears in `/creative`, then confirm terminal state and counts after the handoff.
+
+### Affected Version/Build
+Server release containing Creative Research Engine v1 on 2026-10-07.
+iOS version/build: N/A.
+Android versionCode: N/A.
+
+### Fixed Version/Build
+Server hotfix following the 2026-10-07 observability failure.
+iOS version/build: N/A.
+Android versionCode: N/A.
+
+### Rollback / Risk Notes
+The new table is additive and does not modify user or creative candidate data. If rolled back, candidate storage remains intact but the dashboard loses explicit run state and returns to ambiguous zero-count behavior.
+
 ## 2026-10-06 — Concurrent Gunicorn workers raced import-time schema creation
 
 ### Category

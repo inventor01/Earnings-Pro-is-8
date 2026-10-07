@@ -623,3 +623,34 @@ class CreativeResearchCandidate(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class CreativeResearchRun(Base):
+    """Observable lifecycle for one autonomous research-director run.
+
+    The dashboard must distinguish "nothing happened" from "research is
+    running", "research failed", and "research completed but found nothing".
+    Run state is therefore persisted independently from candidate rows.
+    """
+
+    __tablename__ = "creative_research_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    run_id = Column(String, nullable=False, unique=True, index=True)
+    trigger = Column(String, nullable=False, default="manual")  # manual | scheduled | retry
+    status = Column(String, nullable=False, default="running", index=True)  # running | completed | failed
+
+    current_step = Column(String, nullable=True)
+    scanned_count = Column(Integer, default=0, nullable=False)
+    qualified_count = Column(Integer, default=0, nullable=False)
+    watched_count = Column(Integer, default=0, nullable=False)
+    confirmed_pattern_count = Column(Integer, default=0, nullable=False)
+    top3_count = Column(Integer, default=0, nullable=False)
+
+    error_code = Column(String, nullable=True)
+    error_message = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
+
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    completed_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
