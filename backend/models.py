@@ -552,3 +552,74 @@ class CreativeContentJob(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class CreativeResearchCandidate(Base):
+    """Evidence-backed short-form reference discovered by the research engine.
+
+    Research evidence is stored separately from production jobs so popularity
+    metrics do not get confused with subjective creative scoring. A candidate
+    only becomes a CreativeContentJob after the owner selects it.
+    """
+
+    __tablename__ = "creative_research_candidates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    candidate_id = Column(String, nullable=False, unique=True, index=True)
+    source_key = Column(String, nullable=False, unique=True, index=True)
+    platform = Column(String, nullable=False, index=True)  # instagram | tiktok | youtube
+    lane = Column(String, nullable=False, index=True)      # concept | hook | format | adjacent
+    stage = Column(String, nullable=False, default="raw", index=True)
+
+    source_url = Column(Text, nullable=False)
+    source_content_id = Column(String, nullable=True)
+    source_creator = Column(String, nullable=True)
+    source_title = Column(Text, nullable=True)
+    source_published_at = Column(DateTime, nullable=True)
+
+    views = Column(BigInteger, nullable=True)
+    likes = Column(BigInteger, nullable=True)
+    comments = Column(BigInteger, nullable=True)
+    creator_followers = Column(BigInteger, nullable=True)
+    engagement_rate = Column(Float, nullable=True)
+    outlier_score = Column(Float, nullable=True)
+    breakout_score = Column(Float, nullable=True)
+    vph = Column(Float, nullable=True)
+
+    watched = Column(Boolean, default=False, nullable=False)
+    pattern_key = Column(String, nullable=True, index=True)
+    pattern_support_count = Column(Integer, nullable=True)
+    evidence_confidence = Column(String, nullable=False, default="low")
+    evidence_notes = Column(Text, nullable=True)
+
+    first_frame = Column(Text, nullable=True)
+    hook_1s = Column(Text, nullable=True)
+    hook_3s = Column(Text, nullable=True)
+    camera_notes = Column(Text, nullable=True)
+    motion_notes = Column(Text, nullable=True)
+    pacing_notes = Column(Text, nullable=True)
+    payoff_notes = Column(Text, nullable=True)
+    loop_notes = Column(Text, nullable=True)
+    sound_notes = Column(Text, nullable=True)
+
+    scroll_stop_score = Column(Float, nullable=True)
+    ninja_fit_score = Column(Float, nullable=True)
+    simplicity_score = Column(Float, nullable=True)
+    originality_score = Column(Float, nullable=True)
+    cost_efficiency_score = Column(Float, nullable=True)
+    loop_share_score = Column(Float, nullable=True)
+    broad_audience_score = Column(Float, nullable=True)
+    brand_fit_score = Column(Float, nullable=True)
+    creative_total_score = Column(Float, nullable=True)
+
+    suggested_content_id = Column(String, nullable=True)
+    adaptation_title = Column(String, nullable=True)
+    adaptation_hook = Column(Text, nullable=True)
+    adaptation_beat_sheet = Column(Text, nullable=True)
+    production_route = Column(String, nullable=True)
+    production_complexity = Column(String, nullable=True)
+    paid_generation_required = Column(Boolean, nullable=True)
+    rejection_reason = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

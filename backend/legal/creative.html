@@ -6,12 +6,14 @@
 <meta name="theme-color" content="#11100e">
 <title>Ninja Creative OS</title>
 <style>
-:root{--bg:#11100e;--card:#1b1814;--card2:#211d18;--line:#373127;--text:#f4efe6;--muted:#9e9587;--yellow:#f5c518;--green:#4fd07a;--red:#ef7d72}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}button,input{font:inherit}
-.shell{max-width:1180px;margin:0 auto;padding:28px 20px 60px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:28px}.brand{display:flex;align-items:center;gap:14px}.logo{width:52px;height:52px;border-radius:50%;overflow:hidden;background:#5cae65}.logo img{width:64px;height:64px;object-fit:cover;margin:-4px}.title h1{margin:0;font-size:26px;letter-spacing:-.03em}.title p{margin:4px 0 0;color:var(--muted);font-size:13px}.pill{font-size:12px;border:1px solid var(--line);padding:8px 10px;border-radius:999px;color:var(--muted)}
+:root{--bg:#11100e;--card:#1b1814;--card2:#211d18;--line:#373127;--text:#f4efe6;--muted:#9e9587;--yellow:#f5c518;--green:#4fd07a;--red:#ef7d72;--blue:#8bc5ff}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}button,input{font:inherit}a{color:inherit}
+.shell{max-width:1220px;margin:0 auto;padding:28px 20px 60px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:28px}.brand{display:flex;align-items:center;gap:14px}.logo{width:52px;height:52px;border-radius:50%;overflow:hidden;background:#5cae65}.logo img{width:64px;height:64px;object-fit:cover;margin:-4px}.title h1{margin:0;font-size:26px;letter-spacing:-.03em}.title p{margin:4px 0 0;color:var(--muted);font-size:13px}.pill{font-size:12px;border:1px solid var(--line);padding:8px 10px;border-radius:999px;color:var(--muted)}
 .auth{max-width:520px;margin:14vh auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px}.auth h1{margin:0 0 8px;font-size:28px}.auth p{margin:0 0 18px;color:var(--muted);line-height:1.55}.authrow{display:flex;gap:8px}.auth input{flex:1;min-width:0;background:#11100e;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:14px}.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:800;cursor:pointer}.primary{background:var(--yellow);color:#15120f}.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}.danger{color:#ffb1a8;border-color:#6b3c35}.hidden{display:none!important}
-.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:28px}.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}.stat small{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}.stat strong{display:block;margin-top:8px;font-size:27px}.section{margin:28px 0}.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:14px}.sectionhead h2{font-size:19px;margin:0}.sectionhead p{font-size:13px;color:var(--muted);margin:0}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px}.cardtop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.id{font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--yellow)}.page{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}.card h3{margin:0;font-size:19px;line-height:1.25}.hook{font-size:14px;line-height:1.55;color:#d5cec2}.score{display:flex;align-items:end;justify-content:space-between;border-top:1px solid var(--line);padding-top:13px}.score strong{font-size:26px}.score span{font-size:12px;color:var(--muted)}.cost{font-size:12px;color:var(--muted)}.actions{display:flex;gap:8px}.actions button{flex:1}.queue{display:flex;flex-direction:column;gap:8px}.row{display:grid;grid-template-columns:130px 110px 1fr 120px 100px;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 15px;font-size:13px}.status{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:6px 8px;text-align:center;color:var(--muted);text-transform:uppercase}.winner{color:#8de6a9}.empty{color:var(--muted);padding:20px;border:1px dashed var(--line);border-radius:14px}.toast{position:fixed;right:20px;bottom:20px;background:#262018;border:1px solid var(--line);padding:13px 16px;border-radius:12px;box-shadow:0 14px 40px #0008;font-size:13px}
-@media(max-width:820px){.grid{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:1fr}.row{grid-template-columns:1fr 100px}.row>:nth-child(2),.row>:nth-child(4),.row>:nth-child(5){display:none}.top{align-items:flex-start}.pill{display:none}}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:28px}.researchGrid{grid-template-columns:repeat(5,minmax(0,1fr))}.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}.stat small{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}.stat strong{display:block;margin-top:8px;font-size:27px}.section{margin:30px 0}.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:14px}.sectionhead h2{font-size:19px;margin:0}.sectionhead p{font-size:13px;color:var(--muted);margin:4px 0 0;line-height:1.4}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px}.researchCard{background:linear-gradient(180deg,#1d1a15,#171512)}.cardtop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.id{font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--yellow)}.page{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}.card h3{margin:0;font-size:19px;line-height:1.25}.hook{font-size:14px;line-height:1.55;color:#d5cec2}.score{display:flex;align-items:end;justify-content:space-between;border-top:1px solid var(--line);padding-top:13px}.score strong{font-size:26px}.score span{font-size:12px;color:var(--muted)}.cost{font-size:12px;color:var(--muted)}.actions{display:flex;gap:8px}.actions button{flex:1}.queue{display:flex;flex-direction:column;gap:8px}.row{display:grid;grid-template-columns:130px 110px 1fr 120px 100px;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 15px;font-size:13px}.status{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:6px 8px;text-align:center;color:var(--muted);text-transform:uppercase}.winner{color:#8de6a9}.empty{color:var(--muted);padding:20px;border:1px dashed var(--line);border-radius:14px}.toast{position:fixed;right:20px;bottom:20px;background:#262018;border:1px solid var(--line);padding:13px 16px;border-radius:12px;box-shadow:0 14px 40px #0008;font-size:13px;z-index:20}
+.meta{display:flex;flex-wrap:wrap;gap:6px}.chip{font-size:11px;padding:6px 8px;border-radius:999px;background:#242019;border:1px solid var(--line);color:#c8c0b4}.chip.good{color:#9ee9b5;border-color:#315943}.chip.medium{color:#f2d98b;border-color:#5f5330}.chip.low{color:#e0a8a2;border-color:#5e3833}.sourceLink{font-size:12px;color:var(--blue);text-decoration:none}.evidence{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.evidence div{background:#141210;border:1px solid #2a261f;border-radius:10px;padding:9px}.evidence small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase}.evidence strong{display:block;margin-top:4px;font-size:14px}.adapt{border-top:1px solid var(--line);padding-top:12px}.adapt small{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.07em}.adapt p{margin:6px 0 0;font-size:13px;line-height:1.5;color:#ddd5c9}.researchNote{background:#151913;border:1px solid #314331;border-radius:15px;padding:14px 16px;font-size:13px;line-height:1.5;color:#cbd8c9;margin-bottom:14px}
+@media(max-width:980px){.researchGrid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:820px){.grid,.researchGrid{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:1fr}.row{grid-template-columns:1fr 100px}.row>:nth-child(2),.row>:nth-child(4),.row>:nth-child(5){display:none}.top{align-items:flex-start}.pill{display:none}.evidence{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -24,8 +26,8 @@
 
 <div id="app" class="shell hidden">
   <header class="top">
-    <div class="brand"><div class="logo"><img src="/icon-512.png" alt=""></div><div class="title"><h1>Ninja Creative OS</h1><p>Owner view · decisions, not prompts</p></div></div>
-    <div style="display:flex;gap:8px;align-items:center"><span class="pill">Earnings Ninja Creative Engine</span><button id="logout" class="btn ghost">Lock</button></div>
+    <div class="brand"><div class="logo"><img src="/icon-512.png" alt=""></div><div class="title"><h1>Ninja Creative OS</h1><p>Owner view · research first · decisions, not prompts</p></div></div>
+    <div style="display:flex;gap:8px;align-items:center"><span class="pill">Evidence-backed Creative Engine</span><button id="logout" class="btn ghost">Lock</button></div>
   </header>
 
   <section class="grid">
@@ -36,12 +38,25 @@
   </section>
 
   <section class="section">
-    <div class="sectionhead"><div><h2>Needs You</h2><p>Only the highest-priority decisions should land here.</p></div><button id="refresh" class="btn ghost">Refresh</button></div>
+    <div class="sectionhead"><div><h2>Research Engine</h2><p>Broad discovery → evidence filter → actual watch → pattern proof → top 3 owner decisions.</p></div><button id="refresh" class="btn ghost">Refresh</button></div>
+    <div class="researchNote">A video does not qualify because it has lots of views. Research keeps raw evidence separate from creative judgment, requires independent examples before calling a pattern confirmed, and records whether the actual moving video was inspected.</div>
+    <section class="grid researchGrid">
+      <div class="stat"><small>Sources scanned</small><strong id="researchTotal">0</strong></div>
+      <div class="stat"><small>Qualified</small><strong id="researchQualified">0</strong></div>
+      <div class="stat"><small>Actually watched</small><strong id="researchWatched">0</strong></div>
+      <div class="stat"><small>Confirmed patterns</small><strong id="researchPatterns">0</strong></div>
+      <div class="stat"><small>Top 3</small><strong id="researchTop3">0</strong></div>
+    </section>
+    <div id="researchCards" class="cards"></div>
+  </section>
+
+  <section class="section">
+    <div class="sectionhead"><div><h2>Needs You</h2><p>Production decisions only. Research choices live above.</p></div></div>
     <div id="needs" class="cards"></div>
   </section>
 
   <section class="section">
-    <div class="sectionhead"><div><h2>Winners</h2><p>Formats that deserve variants.</p></div></div>
+    <div class="sectionhead"><div><h2>Winners</h2><p>Our own results eventually outrank generic trend popularity.</p></div></div>
     <div id="winners" class="cards"></div>
   </section>
 
@@ -57,11 +72,30 @@
   let token=localStorage.getItem('en_creative_token')||''
   const headers=()=>({'Authorization':'Bearer '+token,'Content-Type':'application/json'})
   const money=n=>'$'+Number(n||0).toFixed(2)
+  const compact=n=>{if(n==null)return '—';n=Number(n);if(n>=1e6)return (n/1e6).toFixed(n>=1e7?0:1)+'M';if(n>=1e3)return (n/1e3).toFixed(n>=1e4?0:1)+'K';return String(Math.round(n))}
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))
-  function toast(msg){const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),1800)}
+  function toast(msg){const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2200)}
   function card(job,interactive=false){
     const score=job.scores&&job.scores.total!=null?Number(job.scores.total).toFixed(1):'—'
     return '<article class="card"><div class="cardtop"><div><div class="id">'+esc(job.content_id)+'</div><div class="page">'+esc(job.page)+'</div></div><div class="status">'+esc(job.status.replaceAll('_',' '))+'</div></div><h3>'+esc(job.title)+'</h3><div class="hook">'+esc(job.hook||job.agent_note||'No brief yet.')+'</div><div class="score"><div><span>Score</span><strong>'+score+'</strong></div><div class="cost">Expected '+money(job.expected_cost)+'</div></div>'+(interactive?'<div class="actions"><button class="btn primary" data-approve="'+job.id+'">Approve</button><button class="btn ghost danger" data-reject="'+job.id+'">Reject</button></div>':'')+'</article>'
+  }
+  function researchCard(r){
+    const e=r.evidence||{}, a=r.adaptation||{}, s=r.creative_scores||{}
+    const conf=String(e.confidence||'low').toLowerCase()
+    const score=s.total!=null?Number(s.total).toFixed(1):'—'
+    const watched=e.watched?'<span class="chip good">video watched</span>':'<span class="chip medium">metadata only</span>'
+    const pattern=(e.pattern_support_count||0)>=3?'<span class="chip good">'+esc(e.pattern_support_count)+' independent refs</span>':'<span class="chip medium">'+esc(e.pattern_support_count||0)+' pattern refs</span>'
+    const paid=a.paid_generation_required===true?'<span class="chip medium">paid render likely</span>':a.paid_generation_required===false?'<span class="chip good">no paid render expected</span>':''
+    return '<article class="card researchCard">'+
+      '<div class="cardtop"><div><div class="id">'+esc(r.candidate_id)+'</div><div class="page">'+esc(r.platform)+' · '+esc(r.lane)+'</div></div><div class="status">'+esc(r.stage.replaceAll('_',' '))+'</div></div>'+
+      '<h3>'+esc(a.title||r.source_title||'Untitled research candidate')+'</h3>'+
+      '<div class="meta"><span class="chip '+conf+'">'+esc(conf)+' evidence</span>'+watched+pattern+paid+'</div>'+
+      '<div class="evidence"><div><small>Views</small><strong>'+compact(e.views)+'</strong></div><div><small>Outlier</small><strong>'+esc(e.outlier_score??e.breakout_score??'—')+'</strong></div><div><small>VPH</small><strong>'+compact(e.vph)+'</strong></div></div>'+
+      '<div class="adapt"><small>Original Ninja adaptation</small><p>'+esc(a.hook||'Adaptation hook not written yet.')+'</p></div>'+
+      '<div class="score"><div><span>Creative fit</span><strong>'+score+'</strong></div><div class="cost">'+esc(a.production_route||'route TBD')+' · '+esc(a.complexity||'complexity TBD')+'</div></div>'+
+      '<a class="sourceLink" href="'+esc(r.source_url)+'" target="_blank" rel="noopener noreferrer">Open research reference</a>'+
+      '<div class="actions"><button class="btn primary" data-produce="'+r.id+'">Produce</button><button class="btn ghost danger" data-pass="'+r.id+'">Pass</button></div>'+
+    '</article>'
   }
   async function api(path,opts={}){
     const res=await fetch(path,{...opts,headers:{...headers(),...(opts.headers||{})}})
@@ -72,20 +106,34 @@
   }
   async function load(){
     try{
-      const [sum,jobs]=await Promise.all([api('/api/creative/summary'),api('/api/creative/jobs?limit=50')])
+      const [sum,jobs,research]=await Promise.all([
+        api('/api/creative/summary'),
+        api('/api/creative/jobs?limit=50'),
+        api('/api/creative/research/summary')
+      ])
       $('needsCount').textContent=(sum.by_status.needs_approval||0)
       $('renderCount').textContent=(sum.by_status.rendering||0)+(sum.by_status.qa||0)
       $('readyCount').textContent=(sum.by_status.ready_to_post||0)+(sum.by_status.scheduled||0)
       $('spend').textContent=money(sum.projected_spend)
-      $('needs').innerHTML=sum.needs_you.length?sum.needs_you.map(j=>card(j,true)).join(''):'<div class="empty">Nothing needs your decision right now.</div>'
-      $('winners').innerHTML=sum.winners.length?sum.winners.map(j=>card(j,false)).join(''):'<div class="empty">No winners yet. The first one will appear here automatically after measurement.</div>'
+      $('researchTotal').textContent=research.total||0
+      $('researchQualified').textContent=(research.by_stage.qualified||0)+(research.by_stage.watched||0)+(research.by_stage.pattern_confirmed||0)+(research.by_stage.top3||0)+(research.by_stage.selected||0)
+      $('researchWatched').textContent=research.watched||0
+      $('researchPatterns').textContent=research.confirmed_patterns||0
+      $('researchTop3').textContent=(research.top3||[]).length
+      $('researchCards').innerHTML=research.top3&&research.top3.length?research.top3.map(researchCard).join(''):'<div class="empty">The research director has not promoted any candidates into the owner top 3 yet.</div>'
+      $('needs').innerHTML=sum.needs_you.length?sum.needs_you.map(j=>card(j,true)).join(''):'<div class="empty">Nothing needs a production decision right now.</div>'
+      $('winners').innerHTML=sum.winners.length?sum.winners.map(j=>card(j,false)).join(''):'<div class="empty">No winners yet. Posted performance will eventually feed the research ranking.</div>'
       $('queue').innerHTML=jobs.jobs.length?jobs.jobs.map(j=>'<div class="row"><div class="id">'+esc(j.content_id)+'</div><div class="page">'+esc(j.page)+'</div><div>'+esc(j.title)+'</div><div class="status '+(j.status==='winner'?'winner':'')+'">'+esc(j.status.replaceAll('_',' '))+'</div><div>'+money(j.expected_cost)+'</div></div>').join(''):'<div class="empty">Creative queue is empty.</div>'
       document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>decide(b.dataset.approve,'approve'))
       document.querySelectorAll('[data-reject]').forEach(b=>b.onclick=()=>decide(b.dataset.reject,'reject'))
+      document.querySelectorAll('[data-produce]').forEach(b=>b.onclick=()=>produce(b.dataset.produce))
+      document.querySelectorAll('[data-pass]').forEach(b=>b.onclick=()=>passResearch(b.dataset.pass))
       $('auth').classList.add('hidden');$('app').classList.remove('hidden')
     }catch(e){ if(e.message==='Unauthorized'){localStorage.removeItem('en_creative_token');$('app').classList.add('hidden');$('auth').classList.remove('hidden');$('authError').textContent='Token not accepted.'} else $('authError').textContent=e.message }
   }
   async function decide(id,action){try{await api('/api/creative/jobs/'+id+'/'+action,{method:'POST'});toast(action==='approve'?'Approved':'Rejected');await load()}catch(e){toast(e.message)}}
+  async function produce(id){try{const r=await api('/api/creative/research/'+id+'/promote',{method:'POST',body:JSON.stringify({page:'ninja'})});toast('Selected for production: '+r.job.content_id);await load()}catch(e){toast(e.message)}}
+  async function passResearch(id){try{await api('/api/creative/research/'+id+'/reject',{method:'POST',body:JSON.stringify({rejection_reason:'Owner passed from Top 3'})});toast('Research candidate passed');await load()}catch(e){toast(e.message)}}
   $('login').onclick=()=>{token=$('token').value.trim();localStorage.setItem('en_creative_token',token);load()}
   $('token').addEventListener('keydown',e=>{if(e.key==='Enter')$('login').click()})
   $('logout').onclick=()=>{localStorage.removeItem('en_creative_token');location.reload()}
