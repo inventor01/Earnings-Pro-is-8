@@ -9,7 +9,7 @@ import secrets
 from urllib.parse import urlparse
 
 from backend.db import get_db
-from backend.models import CreativeContentJob, CreativeResearchCandidate
+from backend.models import CreativeContentJob, CreativeResearchCandidate, CreativeResearchRun
 
 router = APIRouter(prefix="/api/creative", tags=["creative-os"])
 
@@ -335,6 +335,36 @@ class ResearchBatchCreate(BaseModel):
     candidates: list[ResearchCandidateCreate] = Field(min_length=1, max_length=100)
 
 
+class ResearchRunStart(BaseModel):
+    run_id: str = Field(min_length=3, max_length=120)
+    trigger: str = Field(default="manual", max_length=40)
+    current_step: Optional[str] = Field(default="Starting research", max_length=240)
+    notes: Optional[str] = None
+
+
+class ResearchRunPatch(BaseModel):
+    status: Optional[str] = None
+    current_step: Optional[str] = Field(default=None, max_length=240)
+    scanned_count: Optional[int] = Field(default=None, ge=0)
+    qualified_count: Optional[int] = Field(default=None, ge=0)
+    watched_count: Optional[int] = Field(default=None, ge=0)
+    confirmed_pattern_count: Optional[int] = Field(default=None, ge=0)
+    top3_count: Optional[int] = Field(default=None, ge=0)
+    error_code: Optional[str] = Field(default=None, max_length=120)
+    error_message: Optional[str] = None
+    notes: Optional[str] = None
+
+    @field_validator("status")
+    @classmethod
+    def _status_ok(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        value = value.strip().lower()
+        if value not in {"running", "completed", "failed"}:
+            raise ValueError("Unsupported research run status")
+        return value
+
+
 class ResearchPromoteRequest(BaseModel):
     page: str = "ninja"
     content_id: Optional[str] = Field(default=None, min_length=3, max_length=80)
@@ -361,6 +391,29 @@ def _validate_research_invariants(
             status_code=422,
             detail="pattern_confirmed requires at least 3 independent supporting examples",
         )
+
+
+def _serialize_run(row: CreativeResearchRun) -> dict:
+    return {
+        "id": row.id,
+        "run_id": row.run_id,
+        "trigger": row.trigger,
+        "status": row.status,
+        "current_step": row.current_step,
+        "counts": {
+            "scanned": row.scanned_count,
+            "qualified": row.qualified_count,
+            "watched": row.watched_count,
+            "confirmed_patterns": row.confirmed_pattern_count,
+            "top3": row.top3_count,
+        },
+        "error_code": row.error_code,
+        "error_message": row.error_message,
+        "notes": row.notes,
+        "started_at": row.started_at.isoformat() if row.started_at else None,
+        "completed_at": row.completed_at.isoformat() if row.completed_at else None,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
 
 
 def _serialize(row: CreativeContentJob) -> dict:
@@ -619,6 +672,61 @@ def reject_creative_job(job_id: int, request: Request, db: Session = Depends(get
     return _serialize(row)
 
 
+@router.post("/research/runs")
+def start_research_run(
+    request: Request,
+    body: ResearchRunStart,
+    db: Session = Depends(get_db),
+):
+    _require_creative_admin(request)
+    row = db.query(CreativeResearchRun).filter(CreativeResearchRun.run_id == body.run_id).first()
+    if row:
+        return _serialize_run(row)
+    row = CreativeResearchRun(
+        run_id=body.run_id,
+        trigger=body.trigger.strip().lower(),
+        status="running",
+        current_step=body.current_step,
+        notes=body.notes,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return _serialize_run(row)
+
+
+@router.patch("/research/runs/{run_id}")
+def patch_research_run(
+    run_id: str,
+    request: Request,
+    body: ResearchRunPatch,
+    db: Session = Depends(get_db),
+):
+    _require_creative_admin(request)
+    row = db.query(CreativeResearchRun).filter(CreativeResearchRun.run_id == run_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Research run not found")
+    values = body.model_dump(exclude_unset=True)
+    next_status = values.get("status", row.status)
+    for key, value in values.items():
+        setattr(row, key, value)
+    if next_status in {"completed", "failed"} and row.completed_at is None:
+        row.completed_at = datetime.utcnow()
+    if next_status == "running":
+        row.completed_at = None
+    row.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(row)
+    return _serialize_run(row)
+
+
+@router.get("/research/runs/latest")
+def latest_research_run(request: Request, db: Session = Depends(get_db)):
+    _require_creative_admin(request)
+    row = db.query(CreativeResearchRun).order_by(CreativeResearchRun.started_at.desc()).first()
+    return {"run": _serialize_run(row) if row else None}
+
+
 @router.get("/research/summary")
 def research_summary(request: Request, db: Session = Depends(get_db)):
     _require_creative_admin(request)
@@ -640,6 +748,7 @@ def research_summary(request: Request, db: Session = Depends(get_db)):
         for r in rows
         if r.pattern_key and (r.pattern_support_count or 0) >= 3
     })
+    latest_run = db.query(CreativeResearchRun).order_by(CreativeResearchRun.started_at.desc()).first()
     return {
         "total": len(rows),
         "by_stage": by_stage,
@@ -647,6 +756,7 @@ def research_summary(request: Request, db: Session = Depends(get_db)):
         "watched": watched_count,
         "confirmed_patterns": confirmed_patterns,
         "top3": [_serialize_research(row) for row in top3],
+        "latest_run": _serialize_run(latest_run) if latest_run else None,
     }
 
 
