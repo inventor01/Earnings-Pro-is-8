@@ -43,6 +43,7 @@ jobs:
           RESEND_API_KEY: ""
           ALLOW_EPHEMERAL_SQLITE: "1"
           BETA_INVITE_CRON_TOKEN: "ci-beta-cron-token"
+          CREATIVE_OS_TOKEN: "ci-creative-token"
         run: |
           python - <<'PY'
           from sqlalchemy import inspect
@@ -70,11 +71,49 @@ jobs:
           assert not missing_waitlist, f"missing waitlist routes: {sorted(missing_waitlist)}"
 
           tables = set(inspect(engine).get_table_names())
-          required_tables = {"android_beta_tester_signups", "growth_events"}
+          required_tables = {"android_beta_tester_signups", "growth_events", "creative_content_jobs"}
           missing_tables = required_tables - tables
           assert not missing_tables, f"missing tables: {sorted(missing_tables)}"
 
           client = TestClient(app)
+
+          creative_page = client.get("/creative")
+          assert creative_page.status_code == 200, creative_page.text
+          assert "Ninja Creative OS" in creative_page.text
+
+          unauth_creative = client.get("/api/creative/summary")
+          assert unauth_creative.status_code == 401, unauth_creative.text
+
+          auth_headers = {"Authorization": "Bearer ci-creative-token"}
+          create_job = client.post(
+              "/api/creative/jobs",
+              headers=auth_headers,
+              json={
+                  "content_id": "EN-N-0001",
+                  "page": "ninja",
+                  "status": "needs_approval",
+                  "title": "Ninja waits at pickup counter",
+                  "hook": "The most patient delivery driver alive.",
+                  "virality_score": 9,
+                  "ninja_fit_score": 10,
+                  "simplicity_score": 9,
+                  "originality_score": 8,
+                  "cost_efficiency_score": 9,
+                  "brand_fit_score": 7,
+              },
+          )
+          assert create_job.status_code == 200, create_job.text
+          creative_job = create_job.json()
+          assert creative_job["scores"]["total"] is not None
+          job_id = creative_job["id"]
+
+          summary = client.get("/api/creative/summary", headers=auth_headers)
+          assert summary.status_code == 200, summary.text
+          assert summary.json()["by_status"]["needs_approval"] == 1
+
+          approved = client.post(f"/api/creative/jobs/{job_id}/approve", headers=auth_headers)
+          assert approved.status_code == 200, approved.text
+          assert approved.json()["status"] == "approved"
 
           page = client.get("/go")
           assert page.status_code == 200, page.text
