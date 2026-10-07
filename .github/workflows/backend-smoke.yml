@@ -71,7 +71,7 @@ jobs:
           assert not missing_waitlist, f"missing waitlist routes: {sorted(missing_waitlist)}"
 
           tables = set(inspect(engine).get_table_names())
-          required_tables = {"android_beta_tester_signups", "growth_events", "creative_content_jobs"}
+          required_tables = {"android_beta_tester_signups", "growth_events", "creative_content_jobs", "creative_research_candidates"}
           missing_tables = required_tables - tables
           assert not missing_tables, f"missing tables: {sorted(missing_tables)}"
 
@@ -114,6 +114,96 @@ jobs:
           approved = client.post(f"/api/creative/jobs/{job_id}/approve", headers=auth_headers)
           assert approved.status_code == 200, approved.text
           assert approved.json()["status"] == "approved"
+
+          research_batch = client.post(
+              "/api/creative/research/batch",
+              headers=auth_headers,
+              json={
+                  "candidates": [
+                      {
+                          "candidate_id": "R-TT-001",
+                          "source_key": "tiktok:123",
+                          "platform": "tiktok",
+                          "lane": "format",
+                          "stage": "top3",
+                          "source_url": "https://www.tiktok.com/@example/video/123",
+                          "source_content_id": "123",
+                          "source_creator": "example",
+                          "source_title": "Reference title",
+                          "views": 1250000,
+                          "creator_followers": 25000,
+                          "engagement_rate": 0.08,
+                          "outlier_score": 14.2,
+                          "watched": True,
+                          "pattern_key": "deadpan-character-normal-setting",
+                          "pattern_support_count": 3,
+                          "evidence_confidence": "high",
+                          "first_frame": "Unexpected character already in frame",
+                          "hook_1s": "Immediate visual contradiction",
+                          "hook_3s": "Character remains deadpan while scene reacts",
+                          "motion_notes": "Small deliberate head turn",
+                          "payoff_notes": "Silent stare",
+                          "loop_notes": "Hard cut back to opening pose",
+                          "scroll_stop_score": 9.5,
+                          "ninja_fit_score": 9.8,
+                          "simplicity_score": 9.0,
+                          "originality_score": 8.7,
+                          "cost_efficiency_score": 9.2,
+                          "loop_share_score": 8.9,
+                          "broad_audience_score": 9.1,
+                          "brand_fit_score": 6.0,
+                          "suggested_content_id": "EN-N-0101",
+                          "adaptation_title": "Ninja in a normal place",
+                          "adaptation_hook": "A fully armored green Ninja is treated as completely ordinary.",
+                          "adaptation_beat_sheet": "0-1 reveal; 1-4 mundane action; 4-7 reaction; 7-9 deadpan payoff.",
+                          "production_route": "Genjutsu reference motion",
+                          "production_complexity": "low",
+                          "paid_generation_required": False
+                      }
+                  ]
+              },
+          )
+          assert research_batch.status_code == 200, research_batch.text
+          research_candidate = research_batch.json()["candidates"][0]
+          assert research_candidate["creative_scores"]["total"] is not None
+          research_id = research_candidate["id"]
+
+          research_summary = client.get("/api/creative/research/summary", headers=auth_headers)
+          assert research_summary.status_code == 200, research_summary.text
+          assert research_summary.json()["by_stage"]["top3"] == 1
+          assert research_summary.json()["watched"] == 1
+          assert research_summary.json()["confirmed_patterns"] == 1
+
+          bad_pattern = client.post(
+              "/api/creative/research/batch",
+              headers=auth_headers,
+              json={
+                  "candidates": [
+                      {
+                          "candidate_id": "R-YT-002",
+                          "source_key": "youtube:abc",
+                          "platform": "youtube",
+                          "lane": "concept",
+                          "stage": "pattern_confirmed",
+                          "source_url": "https://youtube.com/shorts/abcdefghijk",
+                          "watched": True,
+                          "pattern_support_count": 1,
+                          "evidence_confidence": "medium"
+                      }
+                  ]
+              },
+          )
+          assert bad_pattern.status_code == 422, bad_pattern.text
+
+          promoted = client.post(
+              f"/api/creative/research/{research_id}/promote",
+              headers=auth_headers,
+              json={"page": "ninja"},
+          )
+          assert promoted.status_code == 200, promoted.text
+          assert promoted.json()["research"]["stage"] == "selected"
+          assert promoted.json()["job"]["content_id"] == "EN-N-0101"
+          assert promoted.json()["job"]["status"] == "approved"
 
           page = client.get("/go")
           assert page.status_code == 200, page.text
