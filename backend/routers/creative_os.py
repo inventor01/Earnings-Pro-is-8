@@ -253,6 +253,18 @@ def create_creative_job(
         return _serialize(existing)
 
     values = body.model_dump()
+    # Scores are normalized before persistence, so remove the raw values from
+    # the generic payload instead of passing the same kwargs twice.
+    for score_key in (
+        "virality_score",
+        "ninja_fit_score",
+        "simplicity_score",
+        "originality_score",
+        "cost_efficiency_score",
+        "brand_fit_score",
+    ):
+        values.pop(score_key, None)
+
     total_score = _weighted_total(body)
     row = CreativeContentJob(
         **values,
