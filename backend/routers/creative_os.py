@@ -6,6 +6,7 @@ from typing import Optional
 from datetime import datetime
 import os
 import secrets
+from urllib.parse import urlparse
 
 from backend.db import get_db
 from backend.models import CreativeContentJob, CreativeResearchCandidate
@@ -233,6 +234,14 @@ class ResearchCandidateCreate(BaseModel):
     production_complexity: Optional[str] = None
     paid_generation_required: Optional[bool] = None
     rejection_reason: Optional[str] = None
+
+    @field_validator("source_url")
+    @classmethod
+    def _source_url_ok(cls, value: str) -> str:
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("source_url must be an http(s) URL")
+        return value
 
     @field_validator("platform")
     @classmethod
