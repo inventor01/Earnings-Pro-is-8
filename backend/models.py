@@ -496,3 +496,59 @@ class PasswordResetToken(Base):
     expires_at = Column(DateTime, nullable=False)
     used = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class CreativeContentJob(Base):
+    """Internal control-plane record for the Earnings Ninja creative engine.
+
+    This is intentionally separate from public app/user data. It stores the
+    lifecycle of one creative concept from research through publishing and
+    measurement so the owner can supervise work without managing prompts.
+    """
+
+    __tablename__ = "creative_content_jobs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    content_id = Column(String, nullable=False, unique=True, index=True)
+    page = Column(String, nullable=False, index=True)  # ninja | brand | media
+    status = Column(String, nullable=False, default="idea", index=True)
+
+    title = Column(String, nullable=False)
+    reference_url = Column(Text, nullable=True)
+    reference_notes = Column(Text, nullable=True)
+    format_type = Column(String, nullable=True)
+    source = Column(String, nullable=True)
+
+    hook = Column(Text, nullable=True)
+    beat_sheet = Column(Text, nullable=True)
+    caption = Column(Text, nullable=True)
+    cta = Column(Text, nullable=True)
+    tracking_url = Column(Text, nullable=True)
+
+    virality_score = Column(Float, nullable=True)
+    ninja_fit_score = Column(Float, nullable=True)
+    simplicity_score = Column(Float, nullable=True)
+    originality_score = Column(Float, nullable=True)
+    cost_efficiency_score = Column(Float, nullable=True)
+    brand_fit_score = Column(Float, nullable=True)
+    total_score = Column(Float, nullable=True)
+
+    generation_model = Column(String, nullable=True)
+    expected_cost = Column(Float, nullable=True)
+    render_job_id = Column(String, nullable=True)
+    render_url = Column(Text, nullable=True)
+    thumbnail_url = Column(Text, nullable=True)
+
+    views = Column(Integer, nullable=True)
+    likes = Column(Integer, nullable=True)
+    comments = Column(Integer, nullable=True)
+    shares = Column(Integer, nullable=True)
+    clicks = Column(Integer, nullable=True)
+    conversions = Column(Integer, nullable=True)
+    outlier_multiple = Column(Float, nullable=True)
+
+    owner_note = Column(Text, nullable=True)
+    agent_note = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
