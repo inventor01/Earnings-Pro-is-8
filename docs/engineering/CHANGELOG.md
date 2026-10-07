@@ -47,3 +47,11 @@ Operational state flow: pending -> approved -> sending -> invited.
 - Added owner-side Promote and Pass actions. Promote converts a research candidate into an approved CreativeContentJob while preserving source evidence.
 - Redesigned /creative with a Research Engine funnel, actual-watch counts, confirmed-pattern counts and a top-three owner decision surface.
 - Added regression smoke coverage for research-table creation, batch ingest, scoring, evidence invariants, summary and promotion into production.
+
+
+## 2026-10-07 — Creative research run observability
+
+- Added durable research-run lifecycle state so the Creative OS distinguishes running, completed, failed, and never-started states.
+- Added protected start/progress/latest-run endpoints and terminal error reporting.
+- Added RUNNING / COMPLETE / FAILED status to the Research Engine dashboard instead of ambiguous all-zero counters.
+- Added CI coverage for research-run creation, progress counts, completion timestamps, and summary integration.
