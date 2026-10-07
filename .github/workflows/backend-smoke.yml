@@ -71,7 +71,7 @@ jobs:
           assert not missing_waitlist, f"missing waitlist routes: {sorted(missing_waitlist)}"
 
           tables = set(inspect(engine).get_table_names())
-          required_tables = {"android_beta_tester_signups", "growth_events", "creative_content_jobs", "creative_research_candidates"}
+          required_tables = {"android_beta_tester_signups", "growth_events", "creative_content_jobs", "creative_research_candidates", "creative_research_runs"}
           missing_tables = required_tables - tables
           assert not missing_tables, f"missing tables: {sorted(missing_tables)}"
 
@@ -173,6 +173,43 @@ jobs:
           assert research_summary.json()["by_stage"]["top3"] == 1
           assert research_summary.json()["watched"] == 1
           assert research_summary.json()["confirmed_patterns"] == 1
+
+          started_run = client.post(
+              "/api/creative/research/runs",
+              headers=auth_headers,
+              json={
+                  "run_id": "ci-run-001",
+                  "trigger": "manual",
+                  "current_step": "Scanning outliers"
+              },
+          )
+          assert started_run.status_code == 200, started_run.text
+          assert started_run.json()["status"] == "running"
+
+          latest_run = client.get("/api/creative/research/runs/latest", headers=auth_headers)
+          assert latest_run.status_code == 200, latest_run.text
+          assert latest_run.json()["run"]["run_id"] == "ci-run-001"
+
+          completed_run = client.patch(
+              "/api/creative/research/runs/ci-run-001",
+              headers=auth_headers,
+              json={
+                  "status": "completed",
+                  "current_step": "Top 3 ready",
+                  "scanned_count": 42,
+                  "qualified_count": 9,
+                  "watched_count": 5,
+                  "confirmed_pattern_count": 3,
+                  "top3_count": 3
+              },
+          )
+          assert completed_run.status_code == 200, completed_run.text
+          assert completed_run.json()["counts"]["top3"] == 3
+          assert completed_run.json()["completed_at"] is not None
+
+          research_summary_with_run = client.get("/api/creative/research/summary", headers=auth_headers)
+          assert research_summary_with_run.status_code == 200, research_summary_with_run.text
+          assert research_summary_with_run.json()["latest_run"]["status"] == "completed"
 
           bad_pattern = client.post(
               "/api/creative/research/batch",
