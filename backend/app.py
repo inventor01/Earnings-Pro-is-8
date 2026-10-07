@@ -7,7 +7,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import inspect, text
-from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard, waitlist_routes, referrals, platforms, entry_types, expense_categories, feedback, subscription
+from backend.routers import health, settings, entries, rollup, goals, suggestions, oauth, points, auth_routes, leaderboard_routes, dashboard, waitlist_routes, referrals, platforms, entry_types, expense_categories, feedback, subscription, creative_os
 from backend.db import engine, Base
 from backend.services.background_jobs import start_background_jobs, stop_background_jobs
 import os
@@ -748,6 +748,7 @@ app.include_router(referrals.router, prefix="/api", tags=["referrals"])
 app.include_router(waitlist_routes.router, tags=["waitlist"])
 app.include_router(feedback.router, prefix="/api", tags=["feedback"])
 app.include_router(subscription.router, prefix="/api", tags=["subscription"])
+app.include_router(creative_os.router)
 
 # Serve frontend static files (must be after all API routes)
 # Check multiple possible dist locations
@@ -814,6 +815,15 @@ async def go_page():
         os.path.join(_LEGAL_DIR, "go.html"),
         media_type="text/html",
         headers={"Cache-Control": "no-cache"},
+    )
+
+@app.get("/creative", include_in_schema=False)
+@app.get("/creative/", include_in_schema=False)
+async def creative_os_page():
+    return FileResponse(
+        os.path.join(_LEGAL_DIR, "creative.html"),
+        media_type="text/html",
+        headers={"Cache-Control": "no-store"},
     )
 
 # ── Referral invite landing page ─────────────────────────────────────────────
