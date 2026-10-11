@@ -1,0 +1,169 @@
+name: Earnings Ninja - Expo CI and Releases
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/earnings-ninja-eas.yml"
+      - "earnings-ninja-expo/**"
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "What should EAS do? Builds and submissions require explicit selection."
+        required: true
+        type: choice
+        default: verify
+        options:
+          - verify
+          - build-android-preview
+          - build-android-play
+          - build-ios-production
+          - build-both-production
+          - submit-ios-testflight
+          - submit-android-internal
+      build_id:
+        description: "Specific EAS build ID (required for submission; prevents accidentally submitting the wrong build)"
+        required: false
+        type: string
+      confirm_submit:
+        description: "For submission only, type SUBMIT; publishing to production is never automatic"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: earnings-ninja-eas-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: earnings-ninja-expo
+    shell: bash
+
+jobs:
+  verify:
+    name: Tests, Expo config and access
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout application
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: earnings-ninja-expo/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Test application logic
+        run: npx jest --ci --runInBand
+
+      - name: Validate Expo project configuration
+        run: npx expo config --type public --json > /dev/null
+
+      - name: Set up Expo authentication
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          packager: npm
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Verify token access to Expo
+        run: eas whoami
+
+  build_or_submit:
+    name: "${{ inputs.operation }}"
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation != 'verify' }}
+    needs: [verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout application
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: earnings-ninja-expo/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Set up Expo authentication
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          packager: npm
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build selected platform (cloud build only; no submission)
+        if: ${{ startsWith(inputs.operation, 'build-') }}
+        env:
+          OPERATION: ${{ inputs.operation }}
+        run: |
+          set -euo pipefail
+          case "$OPERATION" in
+            build-android-preview)
+              eas build --platform android --profile preview --non-interactive
+              ;;
+            build-android-play)
+              eas build --platform android --profile play --non-interactive
+              ;;
+            build-ios-production)
+              eas build --platform ios --profile production --non-interactive
+              ;;
+            build-both-production)
+              eas build --platform all --profile production --non-interactive
+              ;;
+            *)
+              echo "::error::Unknown build operation"
+              exit 1
+              ;;
+          esac
+
+      - name: Verify requested submission is explicit and build-specific
+        if: ${{ startsWith(inputs.operation, 'submit-') }}
+        env:
+          EAS_BUILD_ID: ${{ inputs.build_id }}
+          CONFIRM_SUBMIT: ${{ inputs.confirm_submit }}
+        run: |
+          set -euo pipefail
+          if [[ "$CONFIRM_SUBMIT" != "SUBMIT" ]]; then
+            echo "::error::Type SUBMIT in confirmation input to upload to a testing store track."
+            exit 1
+          fi
+          if [[ ! "$EAS_BUILD_ID" =~ ^[a-zA-Z0-9-]{10,100}$ ]]; then
+            echo "::error::Provide the exact EAS build ID; no --latest fallback is permitted."
+            exit 1
+          fi
+
+      - name: Submit selected build to TestFlight (not App Store public release)
+        if: ${{ inputs.operation == 'submit-ios-testflight' }}
+        env:
+          EAS_BUILD_ID: ${{ inputs.build_id }}
+        run: eas submit --platform ios --profile testflight --id "$EAS_BUILD_ID" --non-interactive
+
+      - name: Submit selected build to Google Play internal testing
+        if: ${{ inputs.operation == 'submit-android-internal' }}
+        env:
+          EAS_BUILD_ID: ${{ inputs.build_id }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
+            echo "::error::Configure GOOGLE_PLAY_SERVICE_ACCOUNT_JSON in GitHub Actions secrets."
+            exit 1
+          fi
+          umask 077
+          mkdir -p credentials
+          printf '%s' "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" > credentials/google-play-service-account.json
+          trap 'rm -f credentials/google-play-service-account.json' EXIT
+          eas submit --platform android --profile play --id "$EAS_BUILD_ID" --non-interactive
