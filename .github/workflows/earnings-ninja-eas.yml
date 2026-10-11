@@ -51,6 +51,15 @@ jobs:
       - name: Checkout application
         uses: actions/checkout@v4
 
+      - name: Require EXPO_TOKEN GitHub Actions secret
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [[ -z "${EXPO_TOKEN:-}" ]]; then
+            echo "::error title=Expo token missing::EXPO_TOKEN is not available as a repository Actions secret. Add it at Settings > Secrets and variables > Actions for inventor01/Earnings-Pro-is-8 (not just in Expo, another repo, or a GitHub Environment)."
+            exit 1
+          fi
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
