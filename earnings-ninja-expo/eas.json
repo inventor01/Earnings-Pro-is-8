@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 16.0.0",
-    "appVersionSource": "local"
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -46,8 +46,8 @@
     "testflight": {
       "distribution": "store",
       "channel": "preview",
-      "credentialsSource": "local",
-      "autoIncrement": false,
+      "credentialsSource": "remote",
+      "autoIncrement": true,
       "ios": {
         "simulator": false,
         "resourceClass": "m-medium"
