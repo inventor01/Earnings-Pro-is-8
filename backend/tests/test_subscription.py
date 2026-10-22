@@ -500,3 +500,21 @@ def test_rest_response_cannot_overwrite_a_concurrent_refund(setup, monkeypatch):
     assert not asyncio.run(entitlements.refresh_from_revenuecat(u, session))
     assert not entitlements.is_pro_now(_user(session))
     assert _user(session).pro_entitlement_source == "webhook"
+
+
+@pytest.mark.parametrize("entitlements", [[], None])
+def test_unmapped_purchase_cannot_grant_pro(setup, entitlements):
+    client, session = setup
+    response = _post(client, _event("INITIAL_PURCHASE", entitlement_ids=entitlements))
+    assert response.status_code == 200
+    assert not response.json()["handled"]
+    assert not _user(session).pro_entitlement_active
+
+
+def test_legacy_single_entitlement_field_can_grant_lifetime_pro(setup):
+    client, session = setup
+    response = _post(client, _event("NON_RENEWING_PURCHASE", entitlement_ids=None,
+                                   entitlement_id="pro", expiration_at_ms=None))
+    assert response.status_code == 200
+    assert response.json()["handled"]
+    assert entitlements.is_pro_now(_user(session))

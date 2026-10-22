@@ -8,17 +8,18 @@ Reviewed from main commit `e765111e84e1bacb4569b2b8d52d78fc6090c257`. Changes ar
 - Password resets and login-email changes revoke older sessions at full timestamp precision, including tokens issued earlier in the same second. Missing/invalid issuance times fail revocation checks. Login and MFA exchanges cannot mint a usable session across a concurrent password change.
 - MFA challenges bind to the current server-side code generation. Old/resubmitted challenges, replaced codes and consumed codes cannot be replayed. Conditional database updates enforce attempt and resend limits across workers. Resends cannot extend the original verification deadline. Enabling MFA never returns a login token.
 - Signup and password-reset validation enforce bcrypt's UTF-8 byte limit before hashing or consuming a reset token, preventing oversized-password server errors.
-- Malformed subscription expiries cannot become lifetime Pro access. Malformed webhooks are rejected without mutation. Event watermarks require valid timestamps. Production PostgreSQL row locks serialize lifecycle updates; an older REST response cannot overwrite a newer webhook. Stale active entitlements are rechecked when RevenueCat is configured.
+- Malformed subscription expiries cannot become lifetime Pro access. Purchases must explicitly include the Pro entitlement before granting access. Malformed webhooks are rejected without mutation. Event watermarks require valid timestamps. Production PostgreSQL row locks serialize lifecycle updates; an older REST response cannot overwrite a newer webhook. Stale active entitlements are rechecked when RevenueCat is configured.
 - OAuth query parameters are properly URL encoded.
 - EAS archives explicitly exclude local credentials, signing keys, environment files and dependencies.
 - Compatible dependency patches include XML parsing, CSS processing, compression, shell quoting, tar handling and UUID fixes. Unused Vitest tooling was removed from the legacy web app. Lockfiles use HTTPS npm registry URLs instead of a private Replit HTTP mirror.
-- CI runs backend regressions, mobile type checking/tests/iOS export, both web builds, Python auditing and the reviewed npm advisory gate. Existing secret scanning remains enabled. The mobile test environment now sets UTC consistently.
+- The Python 3.11 CI runner exposed an inherited vulnerable setuptools version. Requirements now enforce setuptools 83 or later, and CI/container builds upgrade their package-installation tooling before installing the backend.
+- CI runs backend regressions, a production-container build/import check, mobile type checking/tests/iOS export, both web builds, Python auditing (including Gunicorn) and the reviewed npm advisory gate. Existing secret scanning remains enabled. The mobile test environment now sets UTC consistently.
 
 ## Verification
 
 | Check | Result |
 |---|---|
-| Backend tests | 210 passed; baseline 173 passed |
+| Backend tests | 213 passed; baseline 173 passed |
 | Mobile TypeScript | Passed |
 | Mobile Jest | 191 tests in 23 suites passed |
 | Expo iOS production export | Passed, Hermes bundle generated |
@@ -28,7 +29,7 @@ Reviewed from main commit `e765111e84e1bacb4569b2b8d52d78fc6090c257`. Changes ar
 | Gitleaks 8.30.1 current-source scan | No leaks detected; official release digest verified |
 | Bandit | No high-severity findings; four medium/low-confidence findings reviewed: three fixed-literal migration statements and one escaped HTML email, not attacker-controlled SQL |
 
-The same security fixes were merged into the existing local TestFlight source using a three-way merge, preserving its unpublished app features. That source separately passed **240 backend tests, 231 mobile tests in 32 suites, TypeScript checking and an iOS production export**. Its existing credential/archive exclusions were preserved. Original versions of changed local files were backed up before applying the merge.
+The same security fixes were merged into the existing local TestFlight source using a three-way merge, preserving its unpublished app features. That source separately passed **243 backend tests, 231 mobile tests in 32 suites, TypeScript checking and an iOS production export**. Its existing credential/archive exclusions were preserved. Original versions of changed local files were backed up before applying the merge.
 
 Python checks used an isolated Python 3.13 environment with the updated SQLAlchemy 2.0.55 pin. CI and the production Dockerfile use Python 3.11. Tests used disposable SQLite databases and disabled outbound email/network calls. PostgreSQL concurrency behavior is guarded in code but was not exercised against a live PostgreSQL service. The iOS export verifies JavaScript/assets, not an Xcode archive, signing, installation or physical-device behavior. Production was not mutated during QA.
 

@@ -204,12 +204,12 @@ async def revenuecat_webhook(request: Request, db: Session = Depends(get_db)):
         )
         return {"ok": True, "handled": False}
 
-    # Only the Pro entitlement matters. If the event names entitlements and
-    # none of them is ours, acknowledge without touching state.
+    # A purchase only grants Pro when RevenueCat explicitly associates it
+    # with our entitlement. Unmapped/empty entitlements are not Pro purchases.
     ent_ids = event.get("entitlement_ids") or (
         [event["entitlement_id"]] if event.get("entitlement_id") else []
     )
-    if ent_ids and PRO_ENTITLEMENT_ID not in ent_ids:
+    if PRO_ENTITLEMENT_ID not in ent_ids:
         return {"ok": True, "handled": False}
 
     # Idempotency / ordering: drop deliveries older than the last APPLIED

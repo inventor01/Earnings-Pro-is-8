@@ -35,10 +35,25 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -r requirements.txt pip-audit
+      - run: python -m pip install --upgrade pip setuptools wheel
+      - run: pip install -r requirements.txt gunicorn pip-audit
       - run: python -m pytest backend/tests -q
       - run: pip-audit --progress-spinner off
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --tag earnings-ninja-security-qa .
+      - name: Smoke-test the production image with an isolated database
+        run: >-
+          docker run --rm --entrypoint python
+          -e ENVIRONMENT=test -e ALLOW_EPHEMERAL_SQLITE=1
+          -e DATABASE_URL=sqlite:////tmp/container-smoke.db
+          -e JWT_SECRET_KEY=ci-only-container-smoke-signing-key
+          earnings-ninja-security-qa
+          -c 'from backend.app import app; assert app is not None'
 
   mobile:
     runs-on: ubuntu-latest
