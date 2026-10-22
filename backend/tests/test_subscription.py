@@ -2,6 +2,7 @@
 event handling, idempotent ordering), the /api/subscription/status endpoint
 (stored state + REST fallback), and the require_pro gating dependency."""
 from datetime import datetime, timedelta, timezone
+import asyncio
 
 import pytest
 from fastapi import Depends, FastAPI
@@ -437,3 +438,83 @@ def test_require_pro_expired_entitlement_rejected(setup, monkeypatch):
     u.pro_entitlement_updated_at = datetime.now(timezone.utc).isoformat()
     session.commit()
     assert client.get("/api/pro-only").status_code == 403
+
+
+@pytest.mark.parametrize("payload", [[], {"event": []}, {"event": "bad"},
+    _event("INITIAL_PURCHASE", expiration_at_ms="not-a-date"),
+    _event("INITIAL_PURCHASE", expiration_at_ms=10**100),
+    _event("INITIAL_PURCHASE", event_timestamp_ms="bad"),
+    _event("INITIAL_PURCHASE", event_timestamp_ms=None),
+    _event("INITIAL_PURCHASE", event_timestamp_ms=10**100),
+    _event("INITIAL_PURCHASE", event_timestamp_ms=123.5),
+    _event("INITIAL_PURCHASE", entitlement_ids="pro"),
+    _event("TRANSFER", transferred_from="someone")])
+def test_malformed_webhook_never_grants_access(setup, payload):
+    client, session = setup
+    assert _post(client, payload).status_code == 400
+    assert not entitlements.is_pro_now(_user(session))
+
+
+@pytest.mark.parametrize("expiry", ["invalid", "", "2026-99-99"])
+def test_malformed_stored_expiry_is_not_a_lifetime_grant(setup, monkeypatch, expiry):
+    client, session = setup
+    monkeypatch.setattr(revenuecat_service, "is_configured", lambda: False)
+    u = _user(session)
+    entitlements.apply_entitlement_state(u, active=True, expires_at=expiry, source="webhook")
+    session.commit()
+    assert client.get("/api/pro-only").status_code == 403
+    assert entitlements.is_state_stale(u)
+
+
+def test_stale_active_state_is_rechecked_before_granting(setup, monkeypatch):
+    client, session = setup
+    u = _user(session)
+    entitlements.apply_entitlement_state(u, active=True, expires_at=None, source="webhook")
+    u.pro_entitlement_updated_at = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
+    session.commit()
+    monkeypatch.setattr(revenuecat_service, "is_configured", lambda: True)
+
+    async def revoked(_):
+        return {"active": False, "expires_at": None}
+
+    monkeypatch.setattr(revenuecat_service, "fetch_pro_entitlement", revoked)
+    assert client.get("/api/pro-only").status_code == 403
+
+
+def test_rest_response_cannot_overwrite_a_concurrent_refund(setup, monkeypatch):
+    _, session = setup
+    u = _user(session)
+    user_id = u.id
+
+    async def racing_lookup(_):
+        session.query(AuthUser).filter_by(id=user_id).update({
+            "pro_entitlement_active": False,
+            "pro_entitlement_event_ts_ms": _now_ms(),
+            "pro_entitlement_updated_at": datetime.now(timezone.utc).isoformat(),
+            "pro_entitlement_source": "webhook",
+        }, synchronize_session=False)
+        session.commit()
+        return {"active": True, "expires_at": None}
+
+    monkeypatch.setattr(revenuecat_service, "fetch_pro_entitlement", racing_lookup)
+    assert not asyncio.run(entitlements.refresh_from_revenuecat(u, session))
+    assert not entitlements.is_pro_now(_user(session))
+    assert _user(session).pro_entitlement_source == "webhook"
+
+
+@pytest.mark.parametrize("entitlements", [[], None])
+def test_unmapped_purchase_cannot_grant_pro(setup, entitlements):
+    client, session = setup
+    response = _post(client, _event("INITIAL_PURCHASE", entitlement_ids=entitlements))
+    assert response.status_code == 200
+    assert not response.json()["handled"]
+    assert not _user(session).pro_entitlement_active
+
+
+def test_legacy_single_entitlement_field_can_grant_lifetime_pro(setup):
+    client, session = setup
+    response = _post(client, _event("NON_RENEWING_PURCHASE", entitlement_ids=None,
+                                   entitlement_id="pro", expiration_at_ms=None))
+    assert response.status_code == 200
+    assert response.json()["handled"]
+    assert entitlements.is_pro_now(_user(session))

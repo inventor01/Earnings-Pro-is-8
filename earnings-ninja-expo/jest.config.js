@@ -2,6 +2,9 @@
 // hashes package.json "scripts" — stays identical to the installed build. Run
 // the suite with `npx jest` (no "test" script is added to package.json for the
 // same fingerprint reason).
+// Date-picker bridge cases model a UTC device, independent of the CI host.
+process.env.TZ = 'UTC';
+
 module.exports = {
   preset: 'jest-expo',
   testMatch: ['**/__tests__/**/*.test.ts'],

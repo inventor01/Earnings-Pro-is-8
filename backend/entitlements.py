@@ -51,8 +51,11 @@ def is_pro_now(user: AuthUser) -> bool:
     right now (active flag set AND expiry, if any, in the future)."""
     if not bool(getattr(user, "pro_entitlement_active", False)):
         return False
-    expires = _parse_iso(getattr(user, "pro_entitlement_expires_at", None))
-    return expires is None or expires > _now()
+    raw_expiry = getattr(user, "pro_entitlement_expires_at", None)
+    if raw_expiry is None:
+        return True  # Explicitly absent expiry means a lifetime entitlement.
+    expires = _parse_iso(raw_expiry)
+    return expires is not None and expires > _now()
 
 
 def is_state_stale(user: AuthUser) -> bool:
@@ -63,8 +66,9 @@ def is_state_stale(user: AuthUser) -> bool:
     if updated is None:
         return True
     if bool(getattr(user, "pro_entitlement_active", False)):
-        expires = _parse_iso(getattr(user, "pro_entitlement_expires_at", None))
-        if expires is not None and expires <= _now():
+        raw_expiry = getattr(user, "pro_entitlement_expires_at", None)
+        expires = _parse_iso(raw_expiry)
+        if raw_expiry is not None and (expires is None or expires <= _now()):
             return True
     return _now() - updated > STALE_AFTER
 
@@ -91,17 +95,26 @@ async def refresh_from_revenuecat(user: AuthUser, db: Session) -> bool:
     Returns True when a definitive answer was obtained and stored; False when
     the check couldn't run (unconfigured / network error) — stored state is
     left untouched in that case."""
+    watermark = user.pro_entitlement_event_ts_ms
+    updated_at = user.pro_entitlement_updated_at
     state = await revenuecat_service.fetch_pro_entitlement(user.id)
     if state is None:
         return False
-    apply_entitlement_state(
-        user,
-        active=state["active"],
-        expires_at=state["expires_at"],
-        source="rest",
-    )
+    # A webhook arriving during the REST request has newer information. Never
+    # overwrite it with the response to an older lookup.
+    applied = db.query(AuthUser).filter(
+        AuthUser.id == user.id,
+        AuthUser.pro_entitlement_event_ts_ms == watermark,
+        AuthUser.pro_entitlement_updated_at == updated_at,
+    ).update({
+        "pro_entitlement_active": bool(state["active"]),
+        "pro_entitlement_expires_at": state["expires_at"],
+        "pro_entitlement_updated_at": _now().isoformat(),
+        "pro_entitlement_source": "rest",
+    }, synchronize_session=False)
     db.commit()
-    return True
+    db.refresh(user)
+    return bool(applied)
 
 
 async def require_pro(
@@ -111,15 +124,13 @@ async def require_pro(
     """FastAPI dependency for Pro-only endpoints. Fails CLOSED: non-Pro users
     get a generic 403. When the stored state is missing/stale, a live
     RevenueCat check runs first so a paying user is never wrongly rejected."""
-    if is_pro_now(user):
-        return user
     if is_state_stale(user) and revenuecat_service.is_configured():
         try:
             await refresh_from_revenuecat(user, db)
         except Exception as exc:  # never 500 a gate on a lookup hiccup
             logger.warning("Pro re-verification failed for %s: %s", user.id, exc)
-        if is_pro_now(user):
-            return user
+    if is_pro_now(user):
+        return user
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
         detail="Pro subscription required",

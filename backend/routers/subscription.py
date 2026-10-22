@@ -97,7 +97,7 @@ def _advance_watermark(user: AuthUser, event_ts) -> None:
 def _ms_to_iso(ms) -> str | None:
     try:
         return datetime.fromtimestamp(int(ms) / 1000, tz=timezone.utc).isoformat()
-    except (ValueError, TypeError, OSError):
+    except (ValueError, TypeError, OSError, OverflowError):
         return None
 
 
@@ -113,8 +113,8 @@ async def revenuecat_webhook(request: Request, db: Session = Depends(get_db)):
     # RevenueCat sends the header value exactly as configured in the
     # dashboard; accept both the raw value and a "Bearer " prefixed form.
     if not (
-        hmac.compare_digest(provided, secret)
-        or hmac.compare_digest(provided, f"Bearer {secret}")
+        hmac.compare_digest(provided.encode("utf-8"), secret.encode("utf-8"))
+        or hmac.compare_digest(provided.encode("utf-8"), f"Bearer {secret}".encode("utf-8"))
     ):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -123,10 +123,28 @@ async def revenuecat_webhook(request: Request, db: Session = Depends(get_db)):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON")
 
-    event = (body or {}).get("event") or {}
+    if not isinstance(body, dict) or not isinstance(body.get("event", {}), dict):
+        raise HTTPException(status_code=400, detail="Invalid webhook event")
+    event = body.get("event") or {}
     etype = str(event.get("type") or "").upper()
     app_user_id = event.get("app_user_id") or event.get("original_app_user_id")
     event_ts = event.get("event_timestamp_ms")
+    if event_ts is None and etype in GRANT_EVENTS | REVOKE_EVENTS | {"TRANSFER", "CANCELLATION"}:
+        raise HTTPException(status_code=400, detail="Missing event timestamp")
+    if event_ts is not None:
+        try:
+            if isinstance(event_ts, (bool, float)) or int(event_ts) < 0 or _ms_to_iso(event_ts) is None:
+                raise ValueError
+            event_ts = int(event_ts)
+        except (ValueError, TypeError, OverflowError):
+            raise HTTPException(status_code=400, detail="Invalid event timestamp")
+    raw_expiry = event.get("expiration_at_ms")
+    if raw_expiry is not None and (isinstance(raw_expiry, (bool, float)) or _ms_to_iso(raw_expiry) is None):
+        raise HTTPException(status_code=400, detail="Invalid expiration timestamp")
+    for field in ("entitlement_ids", "transferred_from", "transferred_to"):
+        value = event.get(field)
+        if value is not None and (not isinstance(value, list) or any(not isinstance(v, str) for v in value)):
+            raise HTTPException(status_code=400, detail=f"Invalid {field}")
 
     if etype == "TRANSFER":
         # Entitlement moved between RevenueCat identities. Revoke every known
@@ -136,7 +154,7 @@ async def revenuecat_webhook(request: Request, db: Session = Depends(get_db)):
         # with stale state so the next Pro-gated request re-verifies.
         handled = False
         for uid in (event.get("transferred_from") or []):
-            src = db.query(AuthUser).filter(AuthUser.id == str(uid)).first()
+            src = db.query(AuthUser).filter(AuthUser.id == str(uid)).populate_existing().with_for_update().first()
             if src and not _event_is_stale(src, event_ts):
                 apply_entitlement_state(
                     src, active=False, expires_at=None,
@@ -145,7 +163,7 @@ async def revenuecat_webhook(request: Request, db: Session = Depends(get_db)):
                 handled = True
         db.commit()
         for uid in (event.get("transferred_to") or []):
-            dst = db.query(AuthUser).filter(AuthUser.id == str(uid)).first()
+            dst = db.query(AuthUser).filter(AuthUser.id == str(uid)).populate_existing().with_for_update().first()
             if not dst or _event_is_stale(dst, event_ts):
                 continue
             handled = True
@@ -177,7 +195,8 @@ async def revenuecat_webhook(request: Request, db: Session = Depends(get_db)):
 
     # RevenueCat app_user_id == backend AuthUser.id (Purchases.logIn(user.id)).
     # Anonymous SDK ids ($RCAnonymousID:…) won't match — log and acknowledge.
-    user = db.query(AuthUser).filter(AuthUser.id == str(app_user_id)).first()
+    # Serialize lifecycle updates for this account across production workers.
+    user = db.query(AuthUser).filter(AuthUser.id == str(app_user_id)).populate_existing().with_for_update().first()
     if not user:
         logger.warning(
             "RevenueCat webhook: no user for app_user_id=%s (event %s); acknowledged.",
@@ -185,12 +204,12 @@ async def revenuecat_webhook(request: Request, db: Session = Depends(get_db)):
         )
         return {"ok": True, "handled": False}
 
-    # Only the Pro entitlement matters. If the event names entitlements and
-    # none of them is ours, acknowledge without touching state.
+    # A purchase only grants Pro when RevenueCat explicitly associates it
+    # with our entitlement. Unmapped/empty entitlements are not Pro purchases.
     ent_ids = event.get("entitlement_ids") or (
         [event["entitlement_id"]] if event.get("entitlement_id") else []
     )
-    if ent_ids and PRO_ENTITLEMENT_ID not in ent_ids:
+    if PRO_ENTITLEMENT_ID not in ent_ids:
         return {"ok": True, "handled": False}
 
     # Idempotency / ordering: drop deliveries older than the last APPLIED

@@ -9,6 +9,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "overrides": {
+    "compression": "^1.8.2"
+  },
   "dependencies": {
     "@replit/connectors-sdk": "^0.4.1",
     "@replit/revenuecat-sdk": "^4.2.0",
