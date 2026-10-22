@@ -7,7 +7,7 @@ These lock in the guarantees added by the Aug 2026 security audit:
   429 once their per-IP rate limits are exceeded.
 """
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import jwt as pyjwt
 import pytest
@@ -101,12 +101,13 @@ def test_token_issued_after_password_change_survives(auth_app, db_session):
 
 
 def test_same_second_token_survives(auth_app, db_session):
-    # Login immediately after a reset signs a token in the same second as
-    # password_changed_at; it must not be rejected (iat is floored to seconds).
-    now = datetime.utcnow().replace(microsecond=0)
+    # A fresh token issued AFTER a reset must survive even within one second.
+    now = (datetime.utcnow() - timedelta(seconds=10)).replace(microsecond=0)
     user = _make_user(db_session, password_changed_at=(now + timedelta(microseconds=500000)).isoformat())
     token = pyjwt.encode(
-        {"sub": user.id, "email": user.email, "iat": now, "exp": now + timedelta(hours=1)},
+        {"sub": user.id, "email": user.email,
+         "iat": now.replace(tzinfo=timezone.utc).timestamp() + 0.75,
+         "exp": now + timedelta(hours=1)},
         SECRET_KEY, algorithm=JWT_ALGORITHM,
     )
     r = auth_app.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})

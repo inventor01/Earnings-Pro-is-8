@@ -1,4 +1,18 @@
 # Exclude locally-generated and build artifacts from EAS archive
+node_modules/
+.expo/
+.cache/
+.env
+.env.*
+!.env.example
+credentials.json
+credentials/
+*.p8
+*.p12
+*.pem
+*.key
+*.mobileprovision
+*.jks
 dist/
 android/
 ios/

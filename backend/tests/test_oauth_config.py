@@ -2,6 +2,7 @@
 providers must fail fast with 503, and configured providers must use the
 env-provided values."""
 import pytest
+from urllib.parse import parse_qs, urlparse
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -99,7 +100,7 @@ def test_configured_authorize_uses_env_values(client, monkeypatch):
     assert r.status_code == 200
     url = r.json()["auth_url"]
     assert "client_id=real_uber_id" in url
-    assert "https://api.earningsninja.app/api/oauth/uber/callback" in url
+    assert parse_qs(urlparse(url).query)["redirect_uri"] == ["https://api.earningsninja.app/api/oauth/uber/callback"]
     assert "demo" not in url
     assert "localhost" not in url
 

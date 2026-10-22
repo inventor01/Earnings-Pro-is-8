@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from backend.db import get_db
 from backend.models import AuthUser
 import logging
+import math
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,25 @@ def _unauthorized(detail: str = "Not authenticated") -> HTTPException:
     )
 
 
+def token_is_revoked(payload: dict, changed_at: str | None) -> bool:
+    """Compare issuance and the security-event stamp without dropping precision."""
+    if not changed_at:
+        return False
+    try:
+        changed = datetime.fromisoformat(changed_at)
+        if changed.tzinfo is None:
+            changed = changed.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        # Preserve compatibility with old malformed database stamps.
+        logger.error("Invalid password_changed_at security-event stamp")
+        return False
+    try:
+        issued = float(payload["iat"])
+    except (KeyError, ValueError, TypeError, OverflowError):
+        return True
+    return not math.isfinite(issued) or issued < changed.timestamp()
+
+
 def get_current_user(
     credentials=Depends(security),
     db: Session = Depends(get_db),
@@ -118,11 +138,9 @@ def get_current_user(
     except jwt.InvalidTokenError:
         raise _unauthorized("Invalid token")
 
-    # Reject MFA challenge tokens. They carry `sub`+`exp` (so they'd otherwise
-    # satisfy the decode above) but are only valid at /auth/mfa/verify — never as
-    # a full access token. Without this guard a half-authenticated user (password
-    # correct, 2nd factor NOT yet supplied) could call any protected route.
-    if payload.get("typ") == "mfa":
+    # OAuth state and MFA challenges share the signer, but are never sessions.
+    # Legacy access tokens have neither category field; keep those working.
+    if payload.get("typ") not in (None, "access") or "purpose" in payload:
         raise _unauthorized("Invalid token")
 
     user_id = payload.get("sub")
@@ -134,28 +152,7 @@ def get_current_user(
         # Token's user no longer exists (deleted account, etc). Do NOT auto-create.
         raise _unauthorized("User not found")
 
-    # Session revocation on security events: any token issued BEFORE the last
-    # password reset / login-email change is dead, even if unexpired. Tokens
-    # issued in the same second as the event (e.g. the fresh token returned by
-    # the event itself) remain valid (strict <).
-    changed_at = getattr(user, "password_changed_at", None)
-    if changed_at:
-        try:
-            changed_dt = datetime.fromisoformat(changed_at)
-            if changed_dt.tzinfo is None:
-                # Stored via datetime.utcnow().isoformat() — naive but UTC.
-                changed_dt = changed_dt.replace(tzinfo=timezone.utc)
-            # PyJWT encodes iat at integer-second granularity, while the stored
-            # stamp has microseconds. Floor BOTH to whole seconds or a token
-            # issued later within the same second (e.g. the fresh token
-            # /auth/change-email returns) would compare as older and be killed.
-            changed_ts = int(changed_dt.timestamp())
-            iat = payload.get("iat")
-            if iat is not None and int(float(iat)) < changed_ts:
-                raise _unauthorized("Token expired")
-        except HTTPException:
-            raise
-        except (ValueError, TypeError):
-            pass  # malformed stamp — never lock every session out
+    if token_is_revoked(payload, getattr(user, "password_changed_at", None)):
+        raise _unauthorized("Token expired")
 
     return user

@@ -13,7 +13,7 @@ from backend.models import (
 import hashlib
 import re
 import secrets
-from backend.auth import get_current_user, verify_prelaunch_token
+from backend.auth import get_current_user, verify_prelaunch_token, token_is_revoked
 from backend.services.email_service import (
     send_password_reset_email,
     send_mfa_code_email,
@@ -27,7 +27,7 @@ from pydantic import BaseModel
 import bcrypt
 import uuid
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 
 router = APIRouter()
@@ -126,6 +126,15 @@ def verify_password(password: str, hash_value: str) -> bool:
     except Exception:
         return False
 
+
+def _validate_new_password(password: str) -> None:
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    if len(password) > 64:
+        raise HTTPException(status_code=400, detail="Password must be 64 characters or fewer")
+    if len(password.encode("utf-8")) > 72:
+        raise HTTPException(status_code=400, detail="Password is too long; use fewer characters.")
+
 def _hash_reset_token(token: str) -> str:
     """Reset tokens are stored ONLY as SHA-256 digests: a read-only DB leak must
     never expose a live account-takeover secret. The raw token exists solely in
@@ -136,11 +145,12 @@ def _hash_reset_token(token: str) -> str:
 def create_access_token(user_id: str, email: str) -> str:
     """Create a signed JWT with an expiration claim. The `exp` claim is required
     by `backend.auth.get_current_user` — tokens without it are rejected."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     payload = {
         "sub": user_id,
         "email": email,
-        "iat": now,
+        "typ": "access",
+        "iat": now.timestamp(),
         "exp": now + ACCESS_TOKEN_TTL,
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
@@ -212,31 +222,45 @@ async def _issue_mfa_challenge(
     challenge's expiry to the ORIGINAL issue so Resend can mint a new code but
     never extend the overall window — once `issued_at + MFA_CHALLENGE_TTL` passes
     the session is dead and the user must re-enter their password."""
+    now = datetime.utcnow()
+    origin = issued_at or now
+    exp = origin + MFA_CHALLENGE_TTL
+    if exp <= now:
+        raise HTTPException(status_code=400, detail="This verification session expired. Please sign in again.")
     code = _generate_mfa_code()
-    user.mfa_code_hash = hash_password(code)
-    user.mfa_code_expires_at = (datetime.utcnow() + MFA_CODE_TTL).isoformat()
-    user.mfa_code_attempts = 0
+    code_hash = hash_password(code)
+    # Replacing a challenge must be conditional: two workers resending the
+    # same generation may not both advance its signed resend counter.
+    pending = db.query(AuthUser).filter(
+        AuthUser.id == user.id,
+        AuthUser.password_changed_at == user.password_changed_at,
+    )
+    if gen:
+        pending = pending.filter(AuthUser.mfa_code_hash == user.mfa_code_hash)
+    replaced = pending.update({
+        "mfa_code_hash": code_hash,
+        "mfa_code_expires_at": min(now + MFA_CODE_TTL, exp).isoformat(),
+        "mfa_code_attempts": 0,
+    }, synchronize_session=False)
     db.commit()
+    if not replaced:
+        raise HTTPException(status_code=400, detail="Invalid verification session. Please sign in again.")
     try:
         await send_mfa_code_email(user.email, code, user.first_name)
     except Exception as e:
         # Don't 500 on email failure — the user can hit Resend. Never log the code.
         print(f"[MFA] Failed to send code to {_mask_email(user.email or '')}: {e}")
-    now = datetime.utcnow()
-    origin = issued_at or now
-    # Hard ceiling anchored to the first issue; clamp so we never mint an already-
-    # expired token if Resend is hit right at the edge of the window.
-    exp = origin + MFA_CHALLENGE_TTL
-    if exp <= now:
-        exp = now + timedelta(seconds=30)
     payload = {
         "sub": user.id,
         "typ": "mfa",
         "purpose": purpose,
         "gen": gen,
-        "iat0": int(origin.timestamp()),
-        "iat": now,
+        "iat0": origin.replace(tzinfo=timezone.utc).timestamp(),
+        "iat": now.replace(tzinfo=timezone.utc).timestamp(),
         "exp": exp,
+        # Bind the signed challenge to the exact server-side code generation.
+        # Replacing/consuming the code invalidates every older challenge.
+        "jti": hashlib.sha256(code_hash.encode("utf-8")).hexdigest(),
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
 
@@ -251,9 +275,22 @@ def _decode_mfa_challenge(token: str) -> Dict:
         raise HTTPException(status_code=400, detail="This verification session expired. Please sign in again.")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=400, detail="Invalid verification session.")
-    if payload.get("typ") != "mfa":
+    if payload.get("typ") != "mfa" or payload.get("purpose") not in ("login", "enable"):
         raise HTTPException(status_code=400, detail="Invalid verification session.")
     return payload
+
+
+def _require_current_mfa_challenge(user: AuthUser, payload: Dict) -> None:
+    binding = payload.get("jti")
+    code_hash = user.mfa_code_hash
+    expected = hashlib.sha256(code_hash.encode("utf-8")).hexdigest() if code_hash else ""
+    if (
+        not isinstance(binding, str)
+        or not expected
+        or not secrets.compare_digest(binding, expected)
+        or token_is_revoked(payload, user.password_changed_at)
+    ):
+        raise HTTPException(status_code=400, detail="Invalid verification session. Please sign in again.")
 
 
 # ---------------------------------------------------------------------------
@@ -308,10 +345,7 @@ async def _signup(
         raise HTTPException(status_code=400, detail="Email and password are required")
     # Length limits — MUST stay in lockstep with the mobile client's signup
     # validation (app/login.tsx): username ≤ 20 chars, password 6–64 chars.
-    if len(request.password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
-    if len(request.password) > 64:
-        raise HTTPException(status_code=400, detail="Password must be 64 characters or fewer")
+    _validate_new_password(request.password)
     if request.username and len(request.username.strip()) > 20:
         raise HTTPException(status_code=400, detail="Username must be 20 characters or fewer")
     
@@ -536,8 +570,15 @@ async def _login(request: LoginRequest, db: Session = Depends(get_db)):
     if not user or not user.password_hash:
         raise HTTPException(status_code=401, detail="Invalid email, username, or password")
     
+    # Timestamp the authentication proof before expensive password verification;
+    # a reset racing that check must revoke this session too.
+    token = create_access_token(user.id, user.email)
+    security_stamp = user.password_changed_at
     if not verify_password(request.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email, username, or password")
+    db.refresh(user)
+    if user.password_changed_at != security_stamp:
+        raise HTTPException(status_code=401, detail="Please sign in again with your current password")
 
     # Password is correct. If this user opted into email 2FA, withhold the access
     # token: email a code and return a challenge the client exchanges at
@@ -551,7 +592,6 @@ async def _login(request: LoginRequest, db: Session = Depends(get_db)):
             "email": _mask_email(user.email),
         }
 
-    token = create_access_token(user.id, user.email)
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -569,45 +609,54 @@ async def mfa_verify(request: Request, body: MfaVerifyRequest, db: Session = Dep
     user = db.query(AuthUser).filter(AuthUser.id == str(payload.get("sub"))).first()
     if not user:
         raise HTTPException(status_code=400, detail="Invalid verification session.")
+    _require_current_mfa_challenge(user, payload)
     if not user.mfa_code_hash or not user.mfa_code_expires_at:
         raise HTTPException(status_code=400, detail="No code is pending. Please request a new one.")
 
     try:
         expires = datetime.fromisoformat(user.mfa_code_expires_at)
+        if expires.tzinfo is not None:
+            expires = expires.astimezone(timezone.utc).replace(tzinfo=None)
     except Exception:
         expires = datetime.utcnow() - timedelta(seconds=1)
     if datetime.utcnow() > expires:
-        user.mfa_code_hash = None
-        user.mfa_code_expires_at = None
-        user.mfa_code_attempts = 0
-        db.commit()
         raise HTTPException(status_code=400, detail="That code expired. Please request a new one.")
 
     if (user.mfa_code_attempts or 0) >= MFA_MAX_ATTEMPTS:
-        user.mfa_code_hash = None
-        user.mfa_code_expires_at = None
-        user.mfa_code_attempts = 0
-        db.commit()
         raise HTTPException(status_code=429, detail="Too many incorrect codes. Please request a new one.")
 
+    active_hash = user.mfa_code_hash
+    security_stamp = user.password_changed_at
+    claimed = db.query(AuthUser).filter(
+        AuthUser.id == user.id,
+        AuthUser.mfa_code_hash == active_hash,
+        func.coalesce(AuthUser.mfa_code_attempts, 0) < MFA_MAX_ATTEMPTS,
+    ).update({AuthUser.mfa_code_attempts: func.coalesce(AuthUser.mfa_code_attempts, 0) + 1},
+             synchronize_session=False)
+    db.commit()
+    if not claimed:
+        raise HTTPException(status_code=400, detail="Invalid verification session.")
+    db.refresh(user)
     code = (body.code or "").strip()
-    if not verify_password(code, user.mfa_code_hash):
-        user.mfa_code_attempts = (user.mfa_code_attempts or 0) + 1
-        db.commit()
-        remaining = max(0, MFA_MAX_ATTEMPTS - user.mfa_code_attempts)
+    if not verify_password(code, active_hash):
+        remaining = max(0, MFA_MAX_ATTEMPTS - (user.mfa_code_attempts or 0))
         raise HTTPException(status_code=400, detail=f"Incorrect code. {remaining} attempt(s) left.")
 
-    # Correct — consume the code so it can't be replayed.
-    user.mfa_code_hash = None
-    user.mfa_code_expires_at = None
-    user.mfa_code_attempts = 0
-    if payload.get("purpose") == "enable":
-        user.mfa_enabled = True
-        db.commit()
-        return {"success": True, "mfa_enabled": True}
-
-    db.commit()
+    # A conditional consume prevents concurrent successful requests from
+    # exchanging the same code for multiple authenticated sessions.
     token = create_access_token(user.id, user.email)
+    updates = {"mfa_code_hash": None, "mfa_code_expires_at": None, "mfa_code_attempts": 0}
+    if payload.get("purpose") == "enable":
+        updates["mfa_enabled"] = True
+    consumed = db.query(AuthUser).filter(
+        AuthUser.id == user.id, AuthUser.mfa_code_hash == active_hash,
+        AuthUser.password_changed_at == security_stamp,
+    ).update(updates, synchronize_session=False)
+    db.commit()
+    if not consumed:
+        raise HTTPException(status_code=400, detail="Invalid verification session.")
+    if payload.get("purpose") == "enable":
+        return {"success": True, "mfa_enabled": True}
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -627,6 +676,7 @@ async def mfa_resend(request: Request, body: MfaResendRequest, db: Session = Dep
     user = db.query(AuthUser).filter(AuthUser.id == str(payload.get("sub"))).first()
     if not user or not user.email:
         raise HTTPException(status_code=400, detail="Invalid verification session.")
+    _require_current_mfa_challenge(user, payload)
     gen = int(payload.get("gen") or 0)
     if gen >= MFA_MAX_RESENDS:
         raise HTTPException(status_code=429, detail="Too many code requests. Please sign in again.")
@@ -1074,8 +1124,7 @@ async def reset_password(request: Request, body: ResetPasswordRequest, db: Sessi
         raise HTTPException(status_code=400, detail="Reset token has expired")
     
     # Validate new password
-    if len(body.new_password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    _validate_new_password(body.new_password)
     
     # Find the user
     user = db.query(AuthUser).filter(AuthUser.id == token_record.user_id).first()

@@ -1,0 +1,82 @@
+name: Security QA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --test scripts/audit-dependencies.test.mjs
+      - run: node scripts/audit-dependencies.mjs
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ENVIRONMENT: test
+      ALLOW_EPHEMERAL_SQLITE: "1"
+      DATABASE_URL: sqlite:////tmp/security-qa.db
+      JWT_SECRET_KEY: ci-only-security-regression-test-signing-key
+      RESEND_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements.txt pip-audit
+      - run: python -m pytest backend/tests -q
+      - run: pip-audit --progress-spinner off
+
+  mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: earnings-ninja-expo
+    env:
+      CI: "1"
+      TZ: UTC
+      EXPO_NO_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: earnings-ninja-expo/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npx --no-install tsc --noEmit
+      - run: npx --no-install jest --runInBand
+      - run: npx --no-install expo export --platform ios --output-dir /tmp/ios-export
+
+  web-builds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        directory: [landing, frontend]
+    defaults:
+      run:
+        working-directory: ${{ matrix.directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ matrix.directory }}/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run build

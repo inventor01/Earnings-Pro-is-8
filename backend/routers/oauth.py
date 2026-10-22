@@ -10,6 +10,7 @@ import jwt
 import logging
 import os
 import secrets
+from urllib.parse import urlencode
 
 router = APIRouter()
 
@@ -62,7 +63,8 @@ if _unconfigured:
 # Without this, the callback couldn't tell which logged-in user the
 # authorization-code belongs to (and an attacker could trick a victim into
 # linking the attacker's upstream account to the victim's Earnings Ninja
-# account — classic CSRF on the OAuth callback). The nonce defeats replay.
+# account — classic CSRF on the OAuth callback). The nonce makes states unique;
+# the provider also consumes authorization codes once during token exchange.
 OAUTH_STATE_TTL = timedelta(minutes=10)
 
 
@@ -126,7 +128,7 @@ async def uber_authorize(current_user: AuthUser = Depends(get_current_user)):
         "scope": "delivery.read delivery.write",
         "state": state,
     }
-    query_string = "&".join([f"{k}={v}" for k, v in params.items()])
+    query_string = urlencode(params)
     return {"auth_url": f"https://login.uber.com/oauth/v2/authorize?{query_string}"}
 
 
@@ -207,7 +209,7 @@ async def shipt_authorize(current_user: AuthUser = Depends(get_current_user)):
         "scope": "orders.read orders.write",
         "state": state,
     }
-    query_string = "&".join([f"{k}={v}" for k, v in params.items()])
+    query_string = urlencode(params)
     return {"auth_url": f"https://api.shipt.com/oauth/authorize?{query_string}"}
 
 
